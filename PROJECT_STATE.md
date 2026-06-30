@@ -4,7 +4,7 @@
 > Asana owns *tasks & priorities*; this file owns *technical reality* — what's built, what's broken,
 > what's in flight. Keep it short and current, not a changelog.
 
-_Last updated: 2026-06-30 by Claude (advisory/eng setup session; same-day update: data dictionary, migrations convention, source count)_
+_Last updated: 2026-06-30 by Claude (art-director session: UI/UX v8 polish pass; data dictionary, migrations convention, source count)_
 
 ---
 
@@ -29,6 +29,10 @@ Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-u
 - **`docs/DATA_DICTIONARY.md`** (column-level schema map) and **`db/migrations/`** (forward-only migration convention) added.
 - **New mockup** (`app/meatcode_mockup.html`, Jun 30) adds a Protocol Library and an aroma Prediction
   surface on top of Map / Oracle / Research.
+- **Art-direction pass v8** (`UI-UX Designer/MeatCODE_mockup_v8_UIUX-polish.html`): teal-consistency
+  fixes (avatar / bubbles / globe), emoji→SVG icons, personas realigned to the 4 real audiences,
+  dashboard now fronts all 5 domains, Simulate marked *Preview*, molecular names monospaced.
+  Candidate — awaiting Lior's approval to promote to `app/meatcode_mockup.html`. See `UI-UX Designer/DESIGN_NOTES_v8.md`.
 
 ## In flight
 - Repo scaffold first push (this session). Pending local copy of two iCloud-only files
