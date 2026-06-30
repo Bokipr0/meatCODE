@@ -51,6 +51,9 @@ Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-u
    non-null `abstract` + `search_vec`); that's the true size of the citable corpus.
 
 ## Decisions (most recent first)
+- **2026-06-30** — Design deliverables live in `meatCODE/UI-UX Designer/`. Product brand is unified on
+  GFI seaweed-teal (wine/pomegranate retired). v8 polish is a review candidate; promoting it to the
+  canonical `app/meatcode_mockup.html` needs Lior's go.
 - **2026-06-30** — Canonical repo is a fresh `Bokipr0/meatCODE` (not the old `Airtable-rag`), to shed
   Airtable-migration baggage. Architecture = three homes: Git (code/docs) · Neon (data) · Asana (tasks).
   A single `PROJECT_STATE.md` is the cross-agent technical-status handoff.
