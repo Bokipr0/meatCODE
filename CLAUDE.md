@@ -1,5 +1,7 @@
 # MeatCODE — repository guide for agents
 
+_Last updated: 2026-06-30 12:23 UTC · advisory session · added File-update conventions (stamps + AGENT_UPDATE_LOG.md)_
+
 **Read this first, then `PROJECT_STATE.md`.** This repo is the single source of truth for everything
 file-based on MeatCODE. If anything here conflicts with a scattered copy elsewhere on disk
 (the parent *Claude Database* folder, the iCloud *GFI Database* folder, old uploads) — *this repo wins.*
@@ -71,12 +73,27 @@ meatCODE/
     Never have two agents writing `main` in the same clone at once.
 
 **At the end of every session:**
-1. Update `PROJECT_STATE.md` — move finished items to Done, add what's now in-flight,
-   log any decision in the Decisions section with the date.
-2. `git add -A && git commit -m "<what changed>" && git push`
+1. **Stamp** every file you created or materially changed with a last-updated note (see *File-update conventions* below).
+2. **Append a detailed entry to `AGENT_UPDATE_LOG.md`** (newest first) — what changed, which files, why, what's next.
+3. Update `PROJECT_STATE.md` — move finished items to Done, add what's now in-flight, log any decision with the date.
+4. Pushing to GitHub is done by **Lior on his Mac** via `sync_meatcode.command` — the cowork sandbox can't run git on the mounted folder, so agents never run `git` here.
 
-That's the whole discipline: **pull + read STATE first; update STATE + commit + push last.**
+That's the whole discipline: **read STATE first; stamp + log + update STATE last.**
 Any session opened afterwards is automatically current.
+
+---
+
+## File-update conventions (last-updated stamps + the update log)
+
+Two requirements on every working session — this is how Lior tracks who changed what:
+
+**1. Stamp every text file you create or materially edit** with a last-updated note near the top, in the file's own comment syntax. Use UTC; run `date -u` if unsure of the time. Update the existing stamp in place — don't stack new ones.
+- Markdown / docs → `_Last updated: YYYY-MM-DD HH:MM UTC · <agent or session label> · <one-line what changed>_`
+- Python / SQL / shell → `# Last updated: YYYY-MM-DD HH:MM UTC · <label> · <what>`
+- HTML / XML → `<!-- Last updated: YYYY-MM-DD HH:MM UTC · <label> · <what> -->`
+- Binary / data files (xlsx, png, gif, docx) can't carry a stamp → record them in the log only.
+
+**2. Append a detailed entry to `AGENT_UPDATE_LOG.md`** (newest at top) for the session: what changed, files touched, why, result, next. The stamp is the quick in-file marker; the log is the full audit trail. Copy the template at the top of that file.
 
 ---
 

@@ -8,7 +8,7 @@
 cd "$(dirname "$0")" || exit 1   # = meatCODE/ repo root
 
 # 1) Need the API key in meatCODE/.env
-if [ ! -f .env ] || ! grep -q '^ANTHROPIC_API_KEY=sk-' .env 2>/dev/null; then
+if [ ! -f .env ] || ! grep -qE '^ANTHROPIC_API_KEY=[[:space:]]*sk-' .env 2>/dev/null; then
   echo "⚠  No Anthropic key found."
   echo "   Create a file  meatCODE/.env  containing one line:"
   echo "       ANTHROPIC_API_KEY=sk-ant-...your key..."
