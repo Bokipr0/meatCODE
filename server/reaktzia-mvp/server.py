@@ -28,9 +28,9 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel
 import anthropic
 
-# ── env loading: try ./.env then ../.env ─────────────────────────────────────
+# ── env loading: try ./.env, ../.env, then the repo root (meatCODE/.env) ─────
 HERE = Path(__file__).resolve().parent
-for candidate in (HERE / ".env", HERE.parent / ".env"):
+for candidate in (HERE / ".env", HERE.parent / ".env", HERE.parent.parent / ".env"):
     if candidate.is_file():
         load_dotenv(candidate, override=False)
         print(f"[reaktzia] loaded env from {candidate}", file=sys.stderr)

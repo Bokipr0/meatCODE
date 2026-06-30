@@ -33,7 +33,7 @@ from urllib.parse import urlparse
 
 # ─── Config ──────────────────────────────────────────────────────────
 PORT       = 8000
-MODEL      = "claude-sonnet-4-5"           # change if you want a different model
+MODEL      = "claude-sonnet-4-6"           # if you get a model-access error, try "claude-opus-4-8" or "claude-haiku-4-5-20251001"
 MAX_TOKENS = 1600
 SYSTEM_PROMPT = (
     "You are MeatCODE Oracle — a flavor & aroma research assistant for "
@@ -49,11 +49,13 @@ SYSTEM_PROMPT = (
 )
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.dirname(HERE)          # meatCODE/ repo root (server/ is one level down)
+SERVE_DIR = REPO_ROOT                      # serve the whole repo so /app/meatcode_mockup.html resolves
 
 
 # ─── tiny .env loader (no python-dotenv needed) ──────────────────────
-def load_dotenv(path=os.path.join(HERE, ".env")):
-    if not os.path.exists(path): return
+def load_dotenv(path):
+    if not path or not os.path.exists(path): return
     for line in open(path, encoding="utf-8"):
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line: continue
@@ -61,7 +63,9 @@ def load_dotenv(path=os.path.join(HERE, ".env")):
         k, v = k.strip(), v.strip().strip('"').strip("'")
         os.environ.setdefault(k, v)
 
-load_dotenv()
+# .env at repo root first (the convention), then next to this script as fallback
+load_dotenv(os.path.join(REPO_ROOT, ".env"))
+load_dotenv(os.path.join(HERE, ".env"))
 API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 if not API_KEY:
     sys.stderr.write(
@@ -85,7 +89,7 @@ client = anthropic.Anthropic(api_key=API_KEY)
 class Handler(SimpleHTTPRequestHandler):
     # Serve static files from the folder this script lives in
     def __init__(self, *a, **kw):
-        super().__init__(*a, directory=HERE, **kw)
+        super().__init__(*a, directory=SERVE_DIR, **kw)
 
     def log_message(self, fmt, *args):
         sys.stderr.write("[%s] %s\n" % (self.log_date_time_string(), fmt % args))
@@ -156,8 +160,11 @@ class Handler(SimpleHTTPRequestHandler):
 # ─── Run it ──────────────────────────────────────────────────────────
 def main():
     httpd = HTTPServer(("0.0.0.0", PORT), Handler)
+    candidates = ["app/meatcode_mockup.html", "meatcode_mockup.html",
+                  "app/MeatCODE_Mockup_GFI_v7.html"]
+    mock = next((c for c in candidates if os.path.exists(os.path.join(SERVE_DIR, c))), candidates[0])
     print(f"\n  MeatCODE server running on http://localhost:{PORT}")
-    print(f"  Open:  http://localhost:{PORT}/MeatCODE_Mockup_GFI_v7.html")
+    print(f"  Open:  http://localhost:{PORT}/{mock}")
     print(f"  Model: {MODEL}")
     print(f"  Press Ctrl+C to stop.\n")
     try:

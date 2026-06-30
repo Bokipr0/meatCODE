@@ -80,6 +80,12 @@ Any session opened afterwards is automatically current.
 
 ---
 
+## Connecting to Neon (data)
+One `.env` at the repo root (`meatCODE/.env`, git-ignored) holds `DATABASE_URL` + `ANTHROPIC_API_KEY`. Copy from `.env.example`.
+- **Agents / scripts:** `from db.connect import get_conn`, or run `python3 db/connect.py` for a live row-count + citable-corpus snapshot. Never hard-code credentials.
+- **The mockup never talks to Neon directly.** It calls the local FastAPI server (`server/reaktzia-mvp/`, port 8000), which reads the same root `.env`. Start it with `server/reaktzia-mvp/run_server.command`; verify at `http://127.0.0.1:8000/api/health` (expects `db_ok: true`, `has_anthropic_key: true`).
+- Neon auto-sleeps; the first query after idle wakes it (a few seconds).
+
 ## Conventions
 - Secrets (`.env`, API keys) never get committed. Use `.env.example` as the template.
 - Large binaries (demo GIFs, big PDFs) — keep out of git history; link or store in `data/` (gitignored)

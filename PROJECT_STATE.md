@@ -24,9 +24,16 @@ Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-u
 - **Expert network map v3**: co-authorship lines, connection badges, network stats.
 - **Two Oracle backends** coexist: `reaktzia-mvp/` (FastAPI + Neon + RAG, real cited papers) and the
   thin `meatcode_server.py` (SDK-only, SSE streaming, for fast demos / Neon-asleep fallback).
+- **Oracle live-demo wired** (2026-06-30, advisory session): `meatcode_server.py` now serves the repo
+  root so `app/meatcode_mockup.html` + assets load; model → `claude-sonnet-4-6`; `.env` read from repo
+  root. `run_oracle.command` (double-click) starts the server and opens the mockup. Verified: compiles
+  cleanly + SSE contract matches the mockup (`POST /api/ask` → `sources/chunk/done`, payload `{question}`).
+  Pending only Lior adding `ANTHROPIC_API_KEY` to `meatCODE/.env` and running it. (Thin = no citations;
+  RAG-with-citations = the `reaktzia-mvp/` server once `DATABASE_URL` is in `.env`.)
 - **Postgres schema** migrated (literature, molecules, experts, protocols, outputs — one schema).
 - **Dimensions.ai ingester** added to the pipeline.
 - **`docs/DATA_DICTIONARY.md`** (column-level schema map) and **`db/migrations/`** (forward-only migration convention) added.
+- **Neon wiring:** `db/connect.py` shared accessor for all agents; `reaktzia-mvp/server.py` now also reads `.env` from the repo root, so a single `meatCODE/.env` powers both the server and agents. (Blocked only on Lior adding the real `DATABASE_URL`.)
 - **New mockup** (`app/meatcode_mockup.html`, Jun 30) adds a Protocol Library and an aroma Prediction
   surface on top of Map / Oracle / Research.
 - **Art-direction pass v8** (`UI-UX Designer/MeatCODE_mockup_v8_UIUX-polish.html`): teal-consistency
@@ -37,8 +44,11 @@ Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-u
 ## In flight
 - Repo scaffold first push (this session). Pending local copy of two iCloud-only files
   (`analysis/streamlit_dashboard.py`, `app/expert_network_map.html`) — see Open items.
-- Phase 0 closeout items still open in Asana: tagging taxonomy v0.1, hub architecture doc (sitemap +
-  schema + journeys + UI), first mini-demo asset.
+- Phase 0 closeout items: **tagging taxonomy v0.1** → drafted `docs/TAGGING_TAXONOMY_v0.1.md` (7 faceted
+  axes anchored on existing topics + schema ENUMs; awaiting Lior's topics `.md` + sensory-list confirm).
+  **Hub architecture** → drafted `docs/HUB_ARCHITECTURE_v0.1.md` (tight 4-surface MVP: Oracle/Literature/
+  Expert/Molecular; sitemap, data model, journeys, tool stack). Both awaiting Daniel sign-off. First
+  mini-demo asset = the live Oracle (`run_oracle.command`), pending Lior's `.env` key.
 
 ## Next (highest leverage first)
 1. **Literature collection — the crux.** Get from ~34 to 1,000–2,000 high-value sources (Asana due Jul 31).
