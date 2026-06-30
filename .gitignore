@@ -1,0 +1,34 @@
+# --- Secrets ---
+.env
+.env.local
+*.key
+*.pem
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# --- Data snapshots & exports (Neon is the real source) ---
+/data/*
+!/data/.gitkeep
+
+# --- Large binaries (link or store outside git) ---
+*.gif
+*.mov
+*.mp4
+
+# --- Local SQLite caches from the pipeline ---
+*.sqlite
+*.db
+layer_e*.sqlite

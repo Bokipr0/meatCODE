@@ -1,0 +1,102 @@
+# MeatCODE — repository guide for agents
+
+**Read this first, then `PROJECT_STATE.md`.** This repo is the single source of truth for everything
+file-based on MeatCODE. If anything here conflicts with a scattered copy elsewhere on disk
+(the parent *Claude Database* folder, the iCloud *GFI Database* folder, old uploads) — *this repo wins.*
+Those old copies are being retired.
+
+> **Canonical working location — all agents operate HERE:**
+> `/Users/lior/Documents/Claude/Projects/Claude Database/meatCODE`
+> This folder is mounted into every cowork session, so every agent reaches it directly.
+> Do all reads, edits, commits, and pushes inside this folder. Remote: `Bokipr0/meatCODE`.
+> Never edit MeatCODE files in the parent *Claude Database* folder or in iCloud — only here.
+
+---
+
+## The three homes (do not mix them up)
+
+MeatCODE state lives in three places, each authoritative for one kind of thing:
+
+| Kind of thing | Authoritative home | How an agent uses it |
+|---|---|---|
+| Code, docs, mockup, SQL, **technical status** | **This git repo** (`Bokipr0/meatCODE`) | Pull at start, commit + push at end. Edit files here, nowhere else. |
+| Structured data (literature, molecules, experts, protocols) | **Neon Postgres** | Query live via `DATABASE_URL`. Never cache copies into the repo. |
+| Tasks, milestones, phases, priorities | **Asana** ("MeatCODE – Open Flavor & Aroma Initiative", owned by Daniel) | Read live. Don't track task status in docs. |
+
+Why agents used to fall out of sync: code/knowledge were smeared across a local folder, an iCloud
+folder, GitHub, and ephemeral uploads. **One home per kind of thing fixes that.** Never use a local
+folder or iCloud as shared memory between agents again.
+
+---
+
+## Repo map
+
+```
+meatCODE/
+  CLAUDE.md            ← this file (conventions + protocol)
+  PROJECT_STATE.md     ← living technical status: done / in-flight / decisions / next
+  README.md
+  .env.example         ← copy to .env and fill keys (.env is gitignored)
+  app/                 ← the product surface
+    meatcode_mockup.html      ← CANONICAL mockup (Map / Oracle / Research + Protocol library + Prediction)
+    expert_network_map.html   ← standalone expert/co-authorship network view
+    assets/                   ← logo, chord-diagram SVG, media
+  server/              ← backends
+    meatcode_server.py        ← thin single-file demo server (Anthropic SDK only, no DB) — fast demos / fallback
+    MeatCODE_API_Quickstart.md
+    reaktzia-mvp/             ← full FastAPI + Neon + RAG (real cited papers)
+  db/                  ← schema, migrations, seeds (source-controlled SQL)
+    taxonomy/                 ← topics hierarchy CSVs
+  pipeline/            ← literature pipeline (Dimensions ingester, Layer C/E, migration scripts)
+  analysis/            ← streamlit_dashboard.py and other internal-only analysis tools
+  docs/                ← strategy: roadmap, use scenarios, decks, 2-pager, reports
+    decks/  reports/
+  data/                ← exports/snapshots ONLY (gitignored). Neon is the real source.
+```
+
+---
+
+## Agent operating protocol (this is what keeps every session current)
+
+**At the start of every session:**
+1. `git pull`
+2. Read `CLAUDE.md` (this file), then `PROJECT_STATE.md`.
+3. Check Asana for the current task if the work is task-driven.
+
+**While working:**
+- Edit files in this repo only. Query Neon and Asana live — don't snapshot them into files.
+- **Parallel safety (Lior runs a mix of sequential + parallel cowork agents):**
+  - Single agent at a time → just work on `main`.
+  - Spawning parallel agents → give each its own `git worktree` (or branch), then merge back.
+    Never have two agents writing `main` in the same clone at once.
+
+**At the end of every session:**
+1. Update `PROJECT_STATE.md` — move finished items to Done, add what's now in-flight,
+   log any decision in the Decisions section with the date.
+2. `git add -A && git commit -m "<what changed>" && git push`
+
+That's the whole discipline: **pull + read STATE first; update STATE + commit + push last.**
+Any session opened afterwards is automatically current.
+
+---
+
+## Conventions
+- Secrets (`.env`, API keys) never get committed. Use `.env.example` as the template.
+- Large binaries (demo GIFs, big PDFs) — keep out of git history; link or store in `data/` (gitignored)
+  or use Git LFS if they must be versioned.
+- Brand: wine / pomegranate palette, distinct from Claude's cream+orange. (Design tokens live in the mockup.)
+- Owner/supervisor: **Daniel Dikovsky** (GFI IL Head of SciTech). Author/core execution: **Lior Teper**.
+
+## Key facts an agent should know
+- **2026 is the validation year, not launch.** The #1 risk is building the full vision too early —
+  prefer a narrow, validated MVP. Push back on scope creep.
+- The strategic hypothesis: meaty flavor should be engineered as **process flavor** (cooking-generated
+  precursor + lipid + matrix + heat chemistry), not only added as a final flavor mix.
+- Phase 1 (Jun–Aug 2026) crux: **collect first 1,000–2,000 high-value literature sources** (currently
+  ~34 migrated). Closing this gap is the foundation everything else stands on.
+- Ecosystem interest already in: Wageningen (WUR — joint GC-MS / volatile-atlas idea), Masha Niv, FSI.
+- Stack: Neon Postgres · Dimensions.ai-fed pipeline (Layer C typed extraction + Layer E store, 3-tier
+  relevance) · Streamlit (internal) · Metabase planned (stakeholder self-serve) · mockup → Next.js planned.
+  Oracle chatbot phased: keyword RAG → pgvector hybrid → Next.js SSE streaming → auth + feedback.
+- Neon auto-sleeps; for multi-agent access either keep it warm or go through `meatcode_server.py`
+  as the always-on API so agents never handle raw DB credentials.

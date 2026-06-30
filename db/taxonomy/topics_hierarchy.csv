@@ -1,0 +1,109 @@
+root_branch,level,parent_slug,parent_name,slug,name,full_path,indented_name
+analytics,1,,,chromatography,Chromatography,Chromatography,Chromatography
+analytics,2,chromatography,Chromatography,gc_olfactometry,GC-Olfactometry (GC-O),Chromatography > GC-Olfactometry (GC-O),  - GC-Olfactometry (GC-O)
+analytics,2,chromatography,Chromatography,gcms_topic,GCMS,Chromatography > GCMS,  - GCMS
+analytics,2,chromatography,Chromatography,hplc_topic,HPLC,Chromatography > HPLC,  - HPLC
+analytics,2,chromatography,Chromatography,hs_spme_topic,HS-SPME,Chromatography > HS-SPME,  - HS-SPME
+analytics,2,chromatography,Chromatography,lcms_topic,LCMS,Chromatography > LCMS,  - LCMS
+analytics,2,chromatography,Chromatography,safe_topic,SAFE (Solvent-Assisted Flavor Evaporation),Chromatography > SAFE (Solvent-Assisted Flavor Evaporation),  - SAFE (Solvent-Assisted Flavor Evaporation)
+analytics,1,,,omics,Omics,Omics,Omics
+analytics,2,omics,Omics,genomics,Genomics,Omics > Genomics,  - Genomics
+analytics,2,omics,Omics,lipidomics_topic,Lipidomics,Omics > Lipidomics,  - Lipidomics
+analytics,2,omics,Omics,metabolomics_topic,Metabolomics,Omics > Metabolomics,  - Metabolomics
+analytics,2,omics,Omics,peptidomics_topic,Peptidomics,Omics > Peptidomics,  - Peptidomics
+analytics,2,omics,Omics,proteomics_topic,Proteomics,Omics > Proteomics,  - Proteomics
+analytics,2,omics,Omics,transcriptomics,Transcriptomics,Omics > Transcriptomics,  - Transcriptomics
+analytics,2,omics,Omics,volatilomics,Volatilomics,Omics > Volatilomics,  - Volatilomics
+analytics,1,,,sensory_analysis,Sensory analysis,Sensory analysis,Sensory analysis
+analytics,2,sensory_analysis,Sensory analysis,aeda,Aroma Extract Dilution Analysis (AEDA),Sensory analysis > Aroma Extract Dilution Analysis (AEDA),  - Aroma Extract Dilution Analysis (AEDA)
+analytics,2,sensory_analysis,Sensory analysis,consumer_panel_topic,Consumer panel,Sensory analysis > Consumer panel,  - Consumer panel
+analytics,2,sensory_analysis,Sensory analysis,electronic_nose,Electronic nose,Sensory analysis > Electronic nose,  - Electronic nose
+analytics,2,sensory_analysis,Sensory analysis,electronic_tongue,Electronic tongue,Sensory analysis > Electronic tongue,  - Electronic tongue
+analytics,2,sensory_analysis,Sensory analysis,qda,QDA (Quantitative Descriptive Analysis),Sensory analysis > QDA (Quantitative Descriptive Analysis),  - QDA (Quantitative Descriptive Analysis)
+analytics,2,sensory_analysis,Sensory analysis,sniffing_topic,Sniffing,Sensory analysis > Sniffing,  - Sniffing
+analytics,2,sensory_analysis,Sensory analysis,tasting_topic,Tasting,Sensory analysis > Tasting,  - Tasting
+analytics,2,sensory_analysis,Sensory analysis,threshold_testing,Threshold testing / odor activity values,Sensory analysis > Threshold testing / odor activity values,  - Threshold testing / odor activity values
+analytics,2,sensory_analysis,Sensory analysis,time_intensity,Time-intensity analysis,Sensory analysis > Time-intensity analysis,  - Time-intensity analysis
+analytics,1,,,spectroscopy,Spectroscopy,Spectroscopy,Spectroscopy
+analytics,2,spectroscopy,Spectroscopy,ftir,FTIR,Spectroscopy > FTIR,  - FTIR
+analytics,2,spectroscopy,Spectroscopy,mass_spectrometry,Mass spectrometry,Spectroscopy > Mass spectrometry,  - Mass spectrometry
+analytics,2,spectroscopy,Spectroscopy,nmr,NMR spectroscopy,Spectroscopy > NMR spectroscopy,  - NMR spectroscopy
+flavor_chemistry,1,,,heme,Heme,Heme,Heme
+flavor_chemistry,2,heme,Heme,hemoglobin,Hemoglobin,Heme > Hemoglobin,  - Hemoglobin
+flavor_chemistry,2,heme,Heme,leghemoglobin,Leghemoglobin,Heme > Leghemoglobin,  - Leghemoglobin
+flavor_chemistry,2,heme,Heme,myoglobin,Myoglobin,Heme > Myoglobin,  - Myoglobin
+flavor_chemistry,1,,,matrix_interactions,Matrix interactions,Matrix interactions,Matrix interactions
+flavor_chemistry,1,,,metallic,Metallic,Metallic,Metallic
+flavor_chemistry,1,,,modeling,Modeling,Modeling,Modeling
+flavor_chemistry,2,modeling,Modeling,ai_ml,AI / ML,Modeling > AI / ML,  - AI / ML
+flavor_chemistry,2,modeling,Modeling,pinn,PINN (Physics-Informed NN),Modeling > PINN (Physics-Informed NN),  - PINN (Physics-Informed NN)
+flavor_chemistry,1,,,process_flavor,Process flavor,Process flavor,Process flavor
+flavor_chemistry,2,process_flavor,Process flavor,caramelization_topic,Caramelization,Process flavor > Caramelization,  - Caramelization
+flavor_chemistry,2,process_flavor,Process flavor,maillard,Maillard,Process flavor > Maillard,  - Maillard
+flavor_chemistry,3,maillard,Maillard,amadori_rearrangement,Amadori rearrangement,Process flavor > Maillard > Amadori rearrangement,    - Amadori rearrangement
+flavor_chemistry,3,maillard,Maillard,amino_acids,Amino acids,Process flavor > Maillard > Amino acids,    - Amino acids
+flavor_chemistry,3,maillard,Maillard,furan_chemistry,Furan chemistry,Process flavor > Maillard > Furan chemistry,    - Furan chemistry
+flavor_chemistry,3,maillard,Maillard,heyns_rearrangement,Heyns rearrangement,Process flavor > Maillard > Heyns rearrangement,    - Heyns rearrangement
+flavor_chemistry,3,maillard,Maillard,peptide,Peptide,Process flavor > Maillard > Peptide,    - Peptide
+flavor_chemistry,3,maillard,Maillard,primary_sugars,Primary sugars,Process flavor > Maillard > Primary sugars,    - Primary sugars
+flavor_chemistry,3,maillard,Maillard,pyrazine_chemistry,Pyrazine chemistry,Process flavor > Maillard > Pyrazine chemistry,    - Pyrazine chemistry
+flavor_chemistry,3,maillard,Maillard,strecker_degradation_topic,Strecker degradation,Process flavor > Maillard > Strecker degradation,    - Strecker degradation
+flavor_chemistry,3,maillard,Maillard,sulfur_chemistry,Sulfur chemistry,Process flavor > Maillard > Sulfur chemistry,    - Sulfur chemistry
+flavor_chemistry,4,sulfur_chemistry,Sulfur chemistry,disulfides,Disulfides,Process flavor > Maillard > Sulfur chemistry > Disulfides,      - Disulfides
+flavor_chemistry,4,sulfur_chemistry,Sulfur chemistry,polysulfides,Polysulfides,Process flavor > Maillard > Sulfur chemistry > Polysulfides,      - Polysulfides
+flavor_chemistry,4,sulfur_chemistry,Sulfur chemistry,thiols,Thiols,Process flavor > Maillard > Sulfur chemistry > Thiols,      - Thiols
+flavor_chemistry,4,sulfur_chemistry,Sulfur chemistry,thiophenes,Thiophenes,Process flavor > Maillard > Sulfur chemistry > Thiophenes,      - Thiophenes
+flavor_chemistry,3,maillard,Maillard,vitamins,Vitamins,Process flavor > Maillard > Vitamins,    - Vitamins
+flavor_chemistry,2,process_flavor,Process flavor,maillard_lipid,Maillard-Lipid interaction,Process flavor > Maillard-Lipid interaction,  - Maillard-Lipid interaction
+flavor_chemistry,2,process_flavor,Process flavor,oil_chemistry,Oil chemistry,Process flavor > Oil chemistry,  - Oil chemistry
+flavor_chemistry,3,oil_chemistry,Oil chemistry,beta_oxidation,Beta-oxidation,Process flavor > Oil chemistry > Beta-oxidation,    - Beta-oxidation
+flavor_chemistry,3,oil_chemistry,Oil chemistry,lipid_oxidation_topic,Lipid oxidation,Process flavor > Oil chemistry > Lipid oxidation,    - Lipid oxidation
+flavor_chemistry,3,oil_chemistry,Oil chemistry,lipoxygenase_pathway,Lipoxygenase pathway (LOX),Process flavor > Oil chemistry > Lipoxygenase pathway (LOX),    - Lipoxygenase pathway (LOX)
+flavor_ingredients,1,,,encapsulated_flavors,Encapsulated flavors,Encapsulated flavors,Encapsulated flavors
+flavor_ingredients,1,,,enzymatic_processing,Enzymatic processing,Enzymatic processing,Enzymatic processing
+flavor_ingredients,1,,,fermentation_topic,Fermentation,Fermentation,Fermentation
+flavor_ingredients,1,,,flavor_house,Flavor house,Flavor house,Flavor house
+flavor_ingredients,1,,,modulators,Flavor modulators,Flavor modulators,Flavor modulators
+flavor_ingredients,2,modulators,Flavor modulators,bitter_blockers,Bitter blockers,Flavor modulators > Bitter blockers,  - Bitter blockers
+flavor_ingredients,2,modulators,Flavor modulators,kokumi_enhancers,Kokumi enhancers,Flavor modulators > Kokumi enhancers,  - Kokumi enhancers
+flavor_ingredients,2,modulators,Flavor modulators,salt_enhancers,Salt enhancers,Flavor modulators > Salt enhancers,  - Salt enhancers
+flavor_ingredients,2,modulators,Flavor modulators,umami_enhancers,Umami enhancers,Flavor modulators > Umami enhancers,  - Umami enhancers
+flavor_ingredients,1,,,hvp_topic,Hydrolyzed Vegetable Protein (HVP),Hydrolyzed Vegetable Protein (HVP),Hydrolyzed Vegetable Protein (HVP)
+flavor_ingredients,1,,,liquid_smoke,Liquid smoke,Liquid smoke,Liquid smoke
+flavor_ingredients,1,,,maillard_intermediates_ing,Maillard intermediates as ingredients,Maillard intermediates as ingredients,Maillard intermediates as ingredients
+flavor_ingredients,1,,,plant_fat_alternatives,Plant-fat alternatives,Plant-fat alternatives,Plant-fat alternatives
+flavor_ingredients,2,plant_fat_alternatives,Plant-fat alternatives,oleogels_topic,Oleogels,Plant-fat alternatives > Oleogels,  - Oleogels
+flavor_ingredients,2,plant_fat_alternatives,Plant-fat alternatives,structured_fats_topic,Structured fats,Plant-fat alternatives > Structured fats,  - Structured fats
+flavor_ingredients,1,,,reaction_flavors_topic,Reaction flavors / process flavors,Reaction flavors / process flavors,Reaction flavors / process flavors
+flavor_ingredients,1,,,yeast_extract_topic,Yeast extract,Yeast extract,Yeast extract
+meat_analogs,1,,,meat_analogs,Meat analogs,Meat analogs,Meat analogs
+meat_analogs,2,meat_analogs,Meat analogs,printed_meat,3D-printed meat,Meat analogs > 3D-printed meat,  - 3D-printed meat
+meat_analogs,2,meat_analogs,Meat analogs,beany_note_reduction,Beany note reduction,Meat analogs > Beany note reduction,  - Beany note reduction
+meat_analogs,2,meat_analogs,Meat analogs,cultivated_meat,Cultivated / cell-based meat,Meat analogs > Cultivated / cell-based meat,  - Cultivated / cell-based meat
+meat_analogs,2,meat_analogs,Meat analogs,hmma,HMMA (high-moisture meat analogs),Meat analogs > HMMA (high-moisture meat analogs),  - HMMA (high-moisture meat analogs)
+meat_analogs,2,meat_analogs,Meat analogs,heme_analogues,Heme analogues (synthetic biology),Meat analogs > Heme analogues (synthetic biology),  - Heme analogues (synthetic biology)
+meat_analogs,2,meat_analogs,Meat analogs,hybrid_products,Hybrid products (animal + plant),Meat analogs > Hybrid products (animal + plant),  - Hybrid products (animal + plant)
+meat_analogs,2,meat_analogs,Meat analogs,lmma,LMMA (low-moisture meat analogs / TVP),Meat analogs > LMMA (low-moisture meat analogs / TVP),  - LMMA (low-moisture meat analogs / TVP)
+meat_analogs,2,meat_analogs,Meat analogs,mycoprotein_analog,Mycoprotein,Meat analogs > Mycoprotein,  - Mycoprotein
+meat_analogs,2,meat_analogs,Meat analogs,off_note_masking,Off-note masking,Meat analogs > Off-note masking,  - Off-note masking
+meat_analogs,2,meat_analogs,Meat analogs,plant_based_proteins,Plant-based proteins,Meat analogs > Plant-based proteins,  - Plant-based proteins
+meat_analogs,2,meat_analogs,Meat analogs,precision_fermentation,Precision fermentation,Meat analogs > Precision fermentation,  - Precision fermentation
+meat_science,1,,,connective_tissue,Connective tissue chemistry,Connective tissue chemistry,Connective tissue chemistry
+meat_science,2,connective_tissue,Connective tissue chemistry,collagen,Collagen,Connective tissue chemistry > Collagen,  - Collagen
+meat_science,2,connective_tissue,Connective tissue chemistry,elastin,Elastin,Connective tissue chemistry > Elastin,  - Elastin
+meat_science,1,,,culinary_aspects,Culinary aspects,Culinary aspects,Culinary aspects
+meat_science,2,culinary_aspects,Culinary aspects,cooking,Cooking,Culinary aspects > Cooking,  - Cooking
+meat_science,2,culinary_aspects,Culinary aspects,grill,Grill,Culinary aspects > Grill,  - Grill
+meat_science,1,,,meat_aroma,Meat aroma,Meat aroma,Meat aroma
+meat_science,1,,,meat_flavor,Meat flavor,Meat flavor,Meat flavor
+meat_science,2,meat_flavor,Meat flavor,marbling,Marbling / intramuscular fat,Meat flavor > Marbling / intramuscular fat,  - Marbling / intramuscular fat
+meat_science,2,meat_flavor,Meat flavor,myoglobin_meat,Myoglobin (meat),Meat flavor > Myoglobin (meat),  - Myoglobin (meat)
+meat_science,1,,,processing,Processing,Processing,Processing
+meat_science,2,processing,Processing,ageing,Ageing,Processing > Ageing,  - Ageing
+meat_science,2,processing,Processing,brining,Brining / salting,Processing > Brining / salting,  - Brining / salting
+meat_science,2,processing,Processing,curing,Curing,Processing > Curing,  - Curing
+meat_science,2,processing,Processing,fermentation_meat,Fermentation (meat),Processing > Fermentation (meat),  - Fermentation (meat)
+meat_science,2,processing,Processing,post_rigor,Post-rigor biochemistry,Processing > Post-rigor biochemistry,  - Post-rigor biochemistry
+meat_science,2,processing,Processing,pre_rigor,Pre-rigor biochemistry,Processing > Pre-rigor biochemistry,  - Pre-rigor biochemistry
+meat_science,2,processing,Processing,smoking,Smoking,Processing > Smoking,  - Smoking
+meat_science,2,processing,Processing,thermal,Thermal,Processing > Thermal,  - Thermal
