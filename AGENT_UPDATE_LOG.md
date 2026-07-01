@@ -19,6 +19,13 @@ _Last updated: 2026-06-30 12:23 UTC · advisory session · created this log + up
 
 ---
 
+## 2026-06-30 12:55 UTC · advisory session · Oracle answer-engine decision doc
+- What:    Reviewed Lior's proposed "tag-summoned expert agents + consensus vote" retrieval design; consulted the Algorithm Expert sub-agent (independent, same conclusion). Wrote a plain-English decision doc.
+- Files:   `docs/DECISION_Oracle_Answer_Engine.md` (new).
+- Why:     Lior asked for a subjective expert view + a non-expert-friendly write-up.
+- Result:  Recommendation: keep the goal, drop the agent-swarm. Build single-pass tag-aware hybrid RAG (understand→retrieve[pgvector+full-text+soft tags]→rerank→grounded answer with persona + citations). Reserve multi-agent for rare multi-field questions, done as sequential decomposition, later.
+- Next:    Lior/Daniel review; if agreed → embed citable sources into pgvector + build the 4-step pipeline + a 30–50 Q golden eval set this month.
+
 ## 2026-06-30 12:45 UTC · advisory session · Repo cleanup
 - What:    Deleted junk + one exact duplicate from `meatCODE/`.
 - Files:   Removed 6 `.DS_Store`, `server/__pycache__/` + `server/reaktzia-mvp/__pycache__/` (.pyc), and the duplicate `docs/MeatCODE for WUR.pdf` (kept the canonical `docs/decks/` copy).

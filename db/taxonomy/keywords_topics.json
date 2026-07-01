@@ -1,0 +1,730 @@
+[
+  {
+    "keyword": "Aroma Extract Dilution Analysis (AEDA)",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "aeda",
+    "topic_name": "Aroma Extract Dilution Analysis (AEDA)",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Consumer panel meat flavor",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "consumer_panel_topic",
+    "topic_name": "Consumer panel",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Electronic nose meat flavor",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "electronic_nose",
+    "topic_name": "Electronic nose",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Electronic tongue meat flavor",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "electronic_tongue",
+    "topic_name": "Electronic tongue",
+    "topic_level": 2
+  },
+  {
+    "keyword": "FTIR meat flavor",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "ftir",
+    "topic_name": "FTIR",
+    "topic_level": 2
+  },
+  {
+    "keyword": "GC-Olfactometry (GC-O) meat flavor",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "gc_olfactometry",
+    "topic_name": "GC-Olfactometry (GC-O)",
+    "topic_level": 2
+  },
+  {
+    "keyword": "GCMS meat flavor",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "gcms_topic",
+    "topic_name": "GCMS",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Genomics meat flavor",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "genomics",
+    "topic_name": "Genomics",
+    "topic_level": 2
+  },
+  {
+    "keyword": "HPLC meat flavor",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "hplc_topic",
+    "topic_name": "HPLC",
+    "topic_level": 2
+  },
+  {
+    "keyword": "HS-SPME meat flavor",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "hs_spme_topic",
+    "topic_name": "HS-SPME",
+    "topic_level": 2
+  },
+  {
+    "keyword": "LCMS meat flavor",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "lcms_topic",
+    "topic_name": "LCMS",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Lipidomics",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "lipidomics_topic",
+    "topic_name": "Lipidomics",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Mass spectrometry meat flavor",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "mass_spectrometry",
+    "topic_name": "Mass spectrometry",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Metabolomics meat flavor",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "metabolomics_topic",
+    "topic_name": "Metabolomics",
+    "topic_level": 2
+  },
+  {
+    "keyword": "NMR spectroscopy meat flavor",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "nmr",
+    "topic_name": "NMR spectroscopy",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Peptidomics meat flavor",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "peptidomics_topic",
+    "topic_name": "Peptidomics",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Proteomics meat flavor",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "proteomics_topic",
+    "topic_name": "Proteomics",
+    "topic_level": 2
+  },
+  {
+    "keyword": "QDA (Quantitative Descriptive Analysis) meat flavor",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "qda",
+    "topic_name": "QDA (Quantitative Descriptive Analysis)",
+    "topic_level": 2
+  },
+  {
+    "keyword": "SAFE (Solvent-Assisted Flavor Evaporation)",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "safe_topic",
+    "topic_name": "SAFE (Solvent-Assisted Flavor Evaporation)",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Sniffing meat flavor",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "sniffing_topic",
+    "topic_name": "Sniffing",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Tasting meat flavor",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "tasting_topic",
+    "topic_name": "Tasting",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Threshold testing / odor activity values",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "threshold_testing",
+    "topic_name": "Threshold testing / odor activity values",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Time-intensity analysis meat flavor",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "time_intensity",
+    "topic_name": "Time-intensity analysis",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Transcriptomics meat flavor",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "transcriptomics",
+    "topic_name": "Transcriptomics",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Volatilomics meat flavor",
+    "branch": "analytics",
+    "priority": "HIGH",
+    "topic_slug": "volatilomics",
+    "topic_name": "Volatilomics",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Matrix interactions meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "HIGH",
+    "topic_slug": "matrix_interactions",
+    "topic_name": "Matrix interactions",
+    "topic_level": 1
+  },
+  {
+    "keyword": "Metallic meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "HIGH",
+    "topic_slug": "metallic",
+    "topic_name": "Metallic",
+    "topic_level": 1
+  },
+  {
+    "keyword": "AI / ML meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "HIGH",
+    "topic_slug": "ai_ml",
+    "topic_name": "AI / ML",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Caramelization meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "HIGH",
+    "topic_slug": "caramelization_topic",
+    "topic_name": "Caramelization",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Hemoglobin meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "HIGH",
+    "topic_slug": "hemoglobin",
+    "topic_name": "Hemoglobin",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Leghemoglobin meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "HIGH",
+    "topic_slug": "leghemoglobin",
+    "topic_name": "Leghemoglobin",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Maillard-Lipid interaction",
+    "branch": "flavor_chemistry",
+    "priority": "HIGH",
+    "topic_slug": "maillard_lipid",
+    "topic_name": "Maillard-Lipid interaction",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Myoglobin meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "HIGH",
+    "topic_slug": "myoglobin",
+    "topic_name": "Myoglobin",
+    "topic_level": 2
+  },
+  {
+    "keyword": "PINN (Physics-Informed NN) meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "HIGH",
+    "topic_slug": "pinn",
+    "topic_name": "PINN (Physics-Informed NN)",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Amadori rearrangement meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "MED",
+    "topic_slug": "amadori_rearrangement",
+    "topic_name": "Amadori rearrangement",
+    "topic_level": 3
+  },
+  {
+    "keyword": "Amino acids meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "MED",
+    "topic_slug": "amino_acids",
+    "topic_name": "Amino acids",
+    "topic_level": 3
+  },
+  {
+    "keyword": "Furan chemistry meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "MED",
+    "topic_slug": "furan_chemistry",
+    "topic_name": "Furan chemistry",
+    "topic_level": 3
+  },
+  {
+    "keyword": "Heyns rearrangement meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "MED",
+    "topic_slug": "heyns_rearrangement",
+    "topic_name": "Heyns rearrangement",
+    "topic_level": 3
+  },
+  {
+    "keyword": "Lipid oxidation",
+    "branch": "flavor_chemistry",
+    "priority": "MED",
+    "topic_slug": "lipid_oxidation_topic",
+    "topic_name": "Lipid oxidation",
+    "topic_level": 3
+  },
+  {
+    "keyword": "Lipoxygenase pathway (LOX) meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "MED",
+    "topic_slug": "lipoxygenase_pathway",
+    "topic_name": "Lipoxygenase pathway (LOX)",
+    "topic_level": 3
+  },
+  {
+    "keyword": "Peptide meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "MED",
+    "topic_slug": "peptide",
+    "topic_name": "Peptide",
+    "topic_level": 3
+  },
+  {
+    "keyword": "Primary sugars meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "MED",
+    "topic_slug": "primary_sugars",
+    "topic_name": "Primary sugars",
+    "topic_level": 3
+  },
+  {
+    "keyword": "Pyrazine chemistry meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "MED",
+    "topic_slug": "pyrazine_chemistry",
+    "topic_name": "Pyrazine chemistry",
+    "topic_level": 3
+  },
+  {
+    "keyword": "Strecker degradation meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "MED",
+    "topic_slug": "strecker_degradation_topic",
+    "topic_name": "Strecker degradation",
+    "topic_level": 3
+  },
+  {
+    "keyword": "Vitamins meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "MED",
+    "topic_slug": "vitamins",
+    "topic_name": "Vitamins",
+    "topic_level": 3
+  },
+  {
+    "keyword": "β-oxidation meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "MED",
+    "topic_slug": "beta_oxidation",
+    "topic_name": "β-oxidation",
+    "topic_level": 3
+  },
+  {
+    "keyword": "Disulfides meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "MED",
+    "topic_slug": "disulfides",
+    "topic_name": "Disulfides",
+    "topic_level": 4
+  },
+  {
+    "keyword": "Polysulfides meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "MED",
+    "topic_slug": "polysulfides",
+    "topic_name": "Polysulfides",
+    "topic_level": 4
+  },
+  {
+    "keyword": "Thiols meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "MED",
+    "topic_slug": "thiols",
+    "topic_name": "Thiols",
+    "topic_level": 4
+  },
+  {
+    "keyword": "Thiophenes meat flavor",
+    "branch": "flavor_chemistry",
+    "priority": "MED",
+    "topic_slug": "thiophenes",
+    "topic_name": "Thiophenes",
+    "topic_level": 4
+  },
+  {
+    "keyword": "Encapsulated flavors",
+    "branch": "flavor_ingredients",
+    "priority": "HIGH",
+    "topic_slug": "encapsulated_flavors",
+    "topic_name": "Encapsulated flavors",
+    "topic_level": 1
+  },
+  {
+    "keyword": "Enzymatic processing meat flavor",
+    "branch": "flavor_ingredients",
+    "priority": "HIGH",
+    "topic_slug": "enzymatic_processing",
+    "topic_name": "Enzymatic processing",
+    "topic_level": 1
+  },
+  {
+    "keyword": "Fermentation meat flavor",
+    "branch": "flavor_ingredients",
+    "priority": "HIGH",
+    "topic_slug": "fermentation_topic",
+    "topic_name": "Fermentation",
+    "topic_level": 1
+  },
+  {
+    "keyword": "Flavor house",
+    "branch": "flavor_ingredients",
+    "priority": "HIGH",
+    "topic_slug": "flavor_house",
+    "topic_name": "Flavor house",
+    "topic_level": 1
+  },
+  {
+    "keyword": "Hydrolyzed Vegetable Protein (HVP) meat flavor",
+    "branch": "flavor_ingredients",
+    "priority": "HIGH",
+    "topic_slug": "hvp_topic",
+    "topic_name": "Hydrolyzed Vegetable Protein (HVP)",
+    "topic_level": 1
+  },
+  {
+    "keyword": "Liquid smoke meat flavor",
+    "branch": "flavor_ingredients",
+    "priority": "HIGH",
+    "topic_slug": "liquid_smoke",
+    "topic_name": "Liquid smoke",
+    "topic_level": 1
+  },
+  {
+    "keyword": "Maillard intermediates as ingredients",
+    "branch": "flavor_ingredients",
+    "priority": "HIGH",
+    "topic_slug": "maillard_intermediates_ing",
+    "topic_name": "Maillard intermediates as ingredients",
+    "topic_level": 1
+  },
+  {
+    "keyword": "Reaction flavors / process flavors",
+    "branch": "flavor_ingredients",
+    "priority": "HIGH",
+    "topic_slug": "reaction_flavors_topic",
+    "topic_name": "Reaction flavors / process flavors",
+    "topic_level": 1
+  },
+  {
+    "keyword": "Yeast extract meat flavor",
+    "branch": "flavor_ingredients",
+    "priority": "HIGH",
+    "topic_slug": "yeast_extract_topic",
+    "topic_name": "Yeast extract",
+    "topic_level": 1
+  },
+  {
+    "keyword": "Bitter blockers meat flavor",
+    "branch": "flavor_ingredients",
+    "priority": "HIGH",
+    "topic_slug": "bitter_blockers",
+    "topic_name": "Bitter blockers",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Kokumi enhancers meat flavor",
+    "branch": "flavor_ingredients",
+    "priority": "HIGH",
+    "topic_slug": "kokumi_enhancers",
+    "topic_name": "Kokumi enhancers",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Oleogels meat flavor",
+    "branch": "flavor_ingredients",
+    "priority": "HIGH",
+    "topic_slug": "oleogels_topic",
+    "topic_name": "Oleogels",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Salt enhancers meat flavor",
+    "branch": "flavor_ingredients",
+    "priority": "HIGH",
+    "topic_slug": "salt_enhancers",
+    "topic_name": "Salt enhancers",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Structured fats meat flavor",
+    "branch": "flavor_ingredients",
+    "priority": "HIGH",
+    "topic_slug": "structured_fats_topic",
+    "topic_name": "Structured fats",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Umami enhancers",
+    "branch": "flavor_ingredients",
+    "priority": "HIGH",
+    "topic_slug": "umami_enhancers",
+    "topic_name": "Umami enhancers",
+    "topic_level": 2
+  },
+  {
+    "keyword": "3D-printed meat",
+    "branch": "meat_analogs",
+    "priority": "HIGH",
+    "topic_slug": "printed_meat",
+    "topic_name": "3D-printed meat",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Beany note reduction meat flavor",
+    "branch": "meat_analogs",
+    "priority": "HIGH",
+    "topic_slug": "beany_note_reduction",
+    "topic_name": "Beany note reduction",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Cultivated / cell-based meat",
+    "branch": "meat_analogs",
+    "priority": "HIGH",
+    "topic_slug": "cultivated_meat",
+    "topic_name": "Cultivated / cell-based meat",
+    "topic_level": 2
+  },
+  {
+    "keyword": "HMMA (high-moisture meat analogs)",
+    "branch": "meat_analogs",
+    "priority": "HIGH",
+    "topic_slug": "hmma",
+    "topic_name": "HMMA (high-moisture meat analogs)",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Heme analogues (synthetic biology) meat flavor",
+    "branch": "meat_analogs",
+    "priority": "HIGH",
+    "topic_slug": "heme_analogues",
+    "topic_name": "Heme analogues (synthetic biology)",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Hybrid products (animal + plant) meat flavor",
+    "branch": "meat_analogs",
+    "priority": "HIGH",
+    "topic_slug": "hybrid_products",
+    "topic_name": "Hybrid products (animal + plant)",
+    "topic_level": 2
+  },
+  {
+    "keyword": "LMMA (low-moisture meat analogs / TVP)",
+    "branch": "meat_analogs",
+    "priority": "HIGH",
+    "topic_slug": "lmma",
+    "topic_name": "LMMA (low-moisture meat analogs / TVP)",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Mycoprotein meat flavor",
+    "branch": "meat_analogs",
+    "priority": "HIGH",
+    "topic_slug": "mycoprotein_analog",
+    "topic_name": "Mycoprotein",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Off-note masking meat flavor",
+    "branch": "meat_analogs",
+    "priority": "HIGH",
+    "topic_slug": "off_note_masking",
+    "topic_name": "Off-note masking",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Plant-based proteins meat flavor",
+    "branch": "meat_analogs",
+    "priority": "HIGH",
+    "topic_slug": "plant_based_proteins",
+    "topic_name": "Plant-based proteins",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Precision fermentation meat flavor",
+    "branch": "meat_analogs",
+    "priority": "HIGH",
+    "topic_slug": "precision_fermentation",
+    "topic_name": "Precision fermentation",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Meat aroma",
+    "branch": "meat_science",
+    "priority": "HIGH",
+    "topic_slug": "meat_aroma",
+    "topic_name": "Meat aroma",
+    "topic_level": 1
+  },
+  {
+    "keyword": "Ageing meat flavor",
+    "branch": "meat_science",
+    "priority": "HIGH",
+    "topic_slug": "ageing",
+    "topic_name": "Ageing",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Brining / salting meat flavor",
+    "branch": "meat_science",
+    "priority": "HIGH",
+    "topic_slug": "brining",
+    "topic_name": "Brining / salting",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Collagen meat flavor",
+    "branch": "meat_science",
+    "priority": "HIGH",
+    "topic_slug": "collagen",
+    "topic_name": "Collagen",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Cooking meat flavor",
+    "branch": "meat_science",
+    "priority": "HIGH",
+    "topic_slug": "cooking",
+    "topic_name": "Cooking",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Curing meat flavor",
+    "branch": "meat_science",
+    "priority": "HIGH",
+    "topic_slug": "curing",
+    "topic_name": "Curing",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Elastin meat flavor",
+    "branch": "meat_science",
+    "priority": "HIGH",
+    "topic_slug": "elastin",
+    "topic_name": "Elastin",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Fermentation (meat)",
+    "branch": "meat_science",
+    "priority": "HIGH",
+    "topic_slug": "fermentation_meat",
+    "topic_name": "Fermentation (meat)",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Grill meat flavor",
+    "branch": "meat_science",
+    "priority": "HIGH",
+    "topic_slug": "grill",
+    "topic_name": "Grill",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Marbling / intramuscular fat meat flavor",
+    "branch": "meat_science",
+    "priority": "HIGH",
+    "topic_slug": "marbling",
+    "topic_name": "Marbling / intramuscular fat",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Myoglobin (meat)",
+    "branch": "meat_science",
+    "priority": "HIGH",
+    "topic_slug": "myoglobin_meat",
+    "topic_name": "Myoglobin (meat)",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Post-rigor biochemistry meat flavor",
+    "branch": "meat_science",
+    "priority": "HIGH",
+    "topic_slug": "post_rigor",
+    "topic_name": "Post-rigor biochemistry",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Pre-rigor biochemistry meat flavor",
+    "branch": "meat_science",
+    "priority": "HIGH",
+    "topic_slug": "pre_rigor",
+    "topic_name": "Pre-rigor biochemistry",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Smoking meat flavor",
+    "branch": "meat_science",
+    "priority": "HIGH",
+    "topic_slug": "smoking",
+    "topic_name": "Smoking",
+    "topic_level": 2
+  },
+  {
+    "keyword": "Thermal meat flavor",
+    "branch": "meat_science",
+    "priority": "HIGH",
+    "topic_slug": "thermal",
+    "topic_name": "Thermal",
+    "topic_level": 2
+  }
+]

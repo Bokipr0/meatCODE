@@ -33,7 +33,11 @@ Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-u
 - **Postgres schema** migrated (literature, molecules, experts, protocols, outputs — one schema).
 - **Dimensions.ai ingester** added to the pipeline.
 - **`docs/DATA_DICTIONARY.md`** (column-level schema map) and **`db/migrations/`** (forward-only migration convention) added.
-- **Neon wiring:** `db/connect.py` shared accessor for all agents; `reaktzia-mvp/server.py` now also reads `.env` from the repo root, so a single `meatCODE/.env` powers both the server and agents. (Blocked only on Lior adding the real `DATABASE_URL`.)
+- **Neon wiring:** `db/connect.py` shared accessor for all agents; `reaktzia-mvp/server.py` now also reads `.env` from the repo root, so a single `meatCODE/.env` powers both the server and agents. Live connection verified 2026-06-30.
+- **FTS applied live:** `db/migrations/0001_sources_fts_search_vec.sql` run against Neon — `sources.search_vec` was missing (Oracle retrieval would have errored); now populated 496/496 + GIN index + auto-refresh trigger. Ranked retrieval confirmed working.
+- **Taxonomy = governing bible:** `db/taxonomy/keywords_topics.json` (91 keywords, 5 branches) is the single source of truth. `db/taxonomy.py` is the one loader every script imports (no hardcoded topic lists); `pipeline/sync_taxonomy.py` upserts it into the `topics` table (synced live — 91 updated, 112 rows). `pipeline/openalex_ingest.py` now defaults its queries from the taxonomy and tags each new source to canonical topics via `source_topics`. Rule documented in CLAUDE.md.
+- **Corpus expanded 496 → 828 sources (+332)** via `openalex_ingest.py` (now multi-source; **Europe PMC** default since OpenAlex full-text search was returning 503, OpenAlex selectable when healthy). All from 75 HIGH-priority taxonomy queries, deduped by DOI/provider-id, all citable (`search_vec`), all tagged to canonical branches (analytics 136, flavor_ingredients 67, meat_science 52, meat_analogs 43, flavor_chemistry 34). Next options: deeper pass (`--per-topic 15`) + MED topics toward 1,000; back-tag the original 496 to the taxonomy for uniform sorting.
+- **Quality + priority scoring live (2026-07-01):** migration `0002_source_scoring.sql` added `priority_score`, `is_review`, `relevance_llm`. `pipeline/score_priority.py` = deterministic composite (relevance proxy · venue tier · review-type · citations/year · recency · taxonomy-tagged) + dedupe (removed 10 dupes → 818). `pipeline/score_relevance.py` = LLM gate (Haiku) scoring all 818 for meaty-process-flavor relevance 0-100; `priority_score` blends 60% LLM + 40% deterministic. Result: 45 sources ≥80, and **202 flagged <40 (keyword-matched but off-topic — nutrition/contaminants/health) = review/quarantine shortlist.** Use: rank hub/Oracle by `priority_score DESC`; Oracle should filter `relevance_llm >= 60` so it never cites off-topic papers. Tunable weights at top of score_priority.py.
 - **New mockup** (`app/meatcode_mockup.html`, Jun 30) adds a Protocol Library and an aroma Prediction
   surface on top of Map / Oracle / Research.
 - **Art-direction pass v8** (`UI-UX Designer/MeatCODE_mockup_v8_UIUX-polish.html`): teal-consistency
@@ -74,10 +78,13 @@ Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-u
 ## Open items / risks
 - **Two artifacts not yet in repo** (were iCloud cloud-only during setup): copy from the GFI Database
   iCloud folder before first push — `streamlit_dashboard.py` → `analysis/`, `expert_network_map.html` → `app/`.
-- **Source gap** — ~500 sources now in Neon (Lior, 2026-06-30; up from the 34 migrated). Still short of
-  the 1,000–2,000 target, and the *citable* count is what matters: verify how many have non-null
-  `abstract` + `search_vec` (only those surface in the Oracle's RAG). The Prediction surface in the
-  mockup implies a model this corpus can't yet back — frame it as hypothesis-generation, not authority.
+- **Source corpus (verified live 2026-06-30):** 496 sources (462 with abstracts), 799 molecules,
+  **3,129 experts** (Dimensions ingest — far above the old 374), 45 claims. The Prediction surface in
+  the mockup implies a model this corpus can't yet back — frame as hypothesis-generation, not authority.
+  Still short of the 1,000–2,000 source target (Phase 1 crux).
+- **Oracle recall — tune next:** `reaktzia-mvp/retrieval.py` uses `websearch_to_tsquery`, which ANDs all
+  terms, so a full natural-language question often matches **0 rows** and the Oracle silently falls back
+  to no-sources. Switch to keyword extraction or OR/`|` query semantics to lift recall before any expert demo.
 - **Neon auto-sleep** will bite concurrent multi-agent access; keep warm or front with `meatcode_server.py`.
 - `__pycache__/` + `.DS_Store` copied into `server/reaktzia-mvp/` are permission-locked; `.gitignore`
   excludes them so they won't be committed.

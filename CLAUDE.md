@@ -97,6 +97,14 @@ Two requirements on every working session — this is how Lior tracks who change
 
 ---
 
+## Taxonomy — the governing "bible"
+`db/taxonomy/keywords_topics.json` is the single source of truth for topics/keywords/priorities
+(91 keywords across 5 branches: analytics, flavor_chemistry, flavor_ingredients, meat_analogs, meat_science).
+**Edit topics ONLY there.** This is how the whole DB stays governed by one taxonomy:
+- **Every script reads it via `db/taxonomy.py` — never hardcode topic/keyword lists.** `search_queries()` drives literature ingest, `classify(text)` tags arbitrary text, `sort_key()` gives canonical ordering (branch order → priority HIGH→MED → level).
+- **The DB mirrors it:** after editing the bible run `python3 pipeline/sync_taxonomy.py` to upsert into the `topics` table (by slug, never deletes). New sources are tagged to canonical topics via `source_topics` at ingest time (`openalex_ingest.py` does this automatically).
+- Filter and sort everywhere by canonical branch order then priority. A JSON file can't force compliance on its own — compliance = this loader + the synced `topics` table + this rule.
+
 ## Connecting to Neon (data)
 One `.env` at the repo root (`meatCODE/.env`, git-ignored) holds `DATABASE_URL` + `ANTHROPIC_API_KEY`. Copy from `.env.example`.
 - **Agents / scripts:** `from db.connect import get_conn`, or run `python3 db/connect.py` for a live row-count + citable-corpus snapshot. Never hard-code credentials.
