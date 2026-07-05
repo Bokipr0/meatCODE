@@ -1,6 +1,6 @@
 # UI/UX Design Notes — v8 polish pass
 
-_Art director: Claude · 2026-06-30 · base file: `app/meatcode_mockup.html` (identical copy at pass start)_
+_Art director: Claude · 2026-06-30 (round 1) → 2026-07-01 (round 2, dashboard) · base file: `app/meatcode_mockup.html` (identical copy at pass start)_
 
 This folder holds design-review iterations of the MeatCODE product UI. The canonical product
 mockup lives at `../app/meatcode_mockup.html`; files here are candidates pending Lior's approval to
@@ -22,6 +22,19 @@ wine/red hexes, all scenes intact).
   Research had a home entry point).
 - **Simulate marked "Preview"** — it's the future-facing element; honest framing for the validation demo.
 - **Molecular names set in monospace** in the database table — small move, real analytical-instrument credibility.
+
+**Round 2 — dashboard visual upgrade (2026-07-01)**
+Round 1 read as too subtle (its changes sat on non-default scenes and small elements), so this round
+targets the default dashboard for immediate visible impact:
+- **Per-domain color accents** — each of the 5 cards carries its domain color as a left border + a
+  tinted icon chip (Map teal · Oracle deep-teal · Research coral · Toolbench olive · Simulate sage).
+- **Hover-lift cards** — cards raise with a shadow on hover (`translateY(-3px)` + `--shadow-lg`).
+- **Hero upgrade** — added an eyebrow ("MeatCODE · your workspace") and a 4-metric stat strip
+  (1,000+ Sources · 374 Researchers · 89 Organizations · 5 Domains); numbers set in monospace.
+- **Accented "For you" cards** — coral left border + hover lift, matching the card language.
+
+_Note: these changes were applied and markup-verified but not yet visually rendered — the Claude-in-Chrome
+extension was disconnected and the sandbox has no browser. Reconnect it to screenshot-verify future passes._
 
 **Deliberately deferred (need Lior's sign-off — structural, not cosmetic)**
 - Collapse the two competing nav systems (top domain bar vs. bottom dock overlap on Map / Database / For You).

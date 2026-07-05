@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<!-- Last updated: 2026-07-05 13:30 UTC · deploy-templates session · reference template proving the connector -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MeatCODE — Example Oracle Template</title>
+<style>
+  :root {
+    --bg: #FAF6EF; --bg-deep: #F2EBDA;
+    --wine: #00736E; --wine-deep: #015A56; --wine-mist: #E0F0EE; --wine-tint: #B5DDD8;
+    --ink: #1A1A1A; --ink-dim: #4A4A4A; --ink-faint: #8A8A8A; --surface: #FFFFFF;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px 24px; }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px; flex-wrap: wrap; gap: 8px; }
+  h1 { color: var(--wine); font-size: 22px; }
+  .status { font-size: 12px; }
+  .box { background: var(--surface); border: 1px solid var(--bg-deep); border-radius: 14px; padding: 8px; display: flex; gap: 8px; }
+  textarea { flex: 1; border: none; resize: none; font: inherit; padding: 10px; background: transparent; outline: none; min-height: 46px; }
+  button.ask { background: var(--wine); color: #fff; border: none; border-radius: 10px; padding: 0 20px; font-weight: 600; cursor: pointer; }
+  button.ask:disabled { opacity: .5; cursor: default; }
+  .chips { margin: 14px 0; display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { background: var(--wine-mist); color: var(--wine-deep); border: 1px solid var(--wine-tint); border-radius: 20px; padding: 6px 14px; font-size: 13px; cursor: pointer; }
+  #sources { margin: 18px 0 8px; display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px; }
+  .mc-source { background: var(--bg-deep); border-radius: 6px; padding: 3px 8px; color: var(--ink-dim); }
+  #answer { white-space: pre-wrap; line-height: 1.6; color: var(--ink); min-height: 40px; }
+  [data-mc-state="error"] { color: #B3261E; }
+  [data-mc-state="loading"] { color: var(--ink-faint); }
+  h2 { font-size: 14px; color: var(--ink-dim); margin: 32px 0 12px; text-transform: uppercase; letter-spacing: .06em; }
+  .mc-paper { padding: 10px 0; border-bottom: 1px solid var(--bg-deep); font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Oracle (example template)</h1>
+    <span class="status" data-mc-health></span>
+  </header>
+
+  <div class="box">
+    <textarea data-mc-input placeholder="Ask about meaty flavor, heme, Maillard chemistry…"></textarea>
+    <button class="ask" data-mc-ask data-mc-output="#answer" data-mc-sources="#sources">Ask</button>
+  </div>
+
+  <div class="chips">
+    <button class="chip" data-mc-ask data-mc-question="Why does heme iron drive meaty aroma?" data-mc-output="#answer" data-mc-sources="#sources">Heme &amp; meaty aroma</button>
+    <button class="chip" data-mc-ask data-mc-question="What precursors matter for process flavor in cooked meat analogs?" data-mc-output="#answer" data-mc-sources="#sources">Process-flavor precursors</button>
+  </div>
+
+  <div id="sources"></div>
+  <div id="answer"></div>
+
+  <h2>Recent papers</h2>
+  <div data-mc-recent="5"></div>
+</div>
+
+<script src="meatcode-api.js"></script>
+</body>
+</html>

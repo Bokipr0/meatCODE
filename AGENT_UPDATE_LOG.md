@@ -1,6 +1,6 @@
 # MeatCODE — Agent Update Log
 
-_Last updated: 2026-06-30 12:23 UTC · advisory session · created this log + update conventions_
+_Last updated: 2026-07-01 11:18 UTC · art-director session · UI/UX v8 polish + dashboard upgrade_
 
 > **Every agent appends an entry here at the end of any working session — newest at the top.**
 > This is the detailed audit trail of who changed what, when, and why. The short in-file
@@ -18,6 +18,49 @@ _Last updated: 2026-06-30 12:23 UTC · advisory session · created this log + up
 ```
 
 ---
+
+## 2026-07-05 ~13:30 UTC · Claude Design session · New screen handoff (Home / Map / Oracle / Research)
+- What:    Produced 4 high-fidelity screen designs against the MeatCODE Design System (Claude
+           Design, outside the mounted sandbox) — Home (workspace dashboard), Community Map,
+           Food Oracle (ask/empty state only), Research phase picker. Packaged as a dev handoff
+           with screenshots, annotated source, and exact design-token values.
+- Files:   `UI-UX Designer/design_handoffs/2026-07-05_home-map-oracle-research/` (new — README.md,
+           screenshots/, source/). Filed into the repo + logged by the deploy-templates session
+           (2026-07-05) — the handoff was prepared outside git write access.
+- Why:     Lior's request to hand deployed/designed screens to the agent team for implementation.
+           These four screens are the "templates I created in Claude Design" that the deploy-templates
+           session built the serving infrastructure for (`app/templates/` + `meatcode-api.js`).
+- Result:  Bundle ready to build from — README is self-sufficient (layout, colors, type, tokens,
+           per-screen component notes, explicitly flagged gaps).
+- Next:    (1) Decide the build target — deploy as server-served HTML wired to the live Claude+Neon
+           backend via `meatcode-api.js` (matches Lior's stated goal), or recreate as React in the
+           planned Next.js frontend (handoff author's assumption). (2) Oracle's answered/loading
+           states are designed in the source file (typing dots, streamed answer + CiteChips, paper
+           modal) but only the empty/ask state was screenshotted. (3) Map's ranked list showed two
+           variants (plain "MATCH" vs. numeric score) — the numeric-score version is in the source.
+
+## 2026-07-05 13:30 UTC · deploy-templates session · Claude Design templates → live server
+- What:    Made Claude Design templates deployable so their elements talk to Claude + Neon through the same FastAPI server the canonical mockup uses. Added a static mount + listing endpoint to the server, a shared drop-in connector script, a self-populating gallery, a README, and two reference templates.
+- Files:   `server/reaktzia-mvp/server.py` (added `StaticFiles` import, `/api/templates` listing endpoint, `/templates` static mount of `app/templates/`, updated root + docstring), `app/templates/meatcode-api.js` (new — SSE `ask()` mirroring the mockup's proven parser, plus `health`/`paper`/`recentPapers` and zero-JS `data-mc-*` auto-wiring), `app/templates/index.html` (new — gallery that self-populates from `/api/templates`), `app/templates/README.md` (new — 3-step deploy + wiring docs), `app/templates/example-oracle.html` + `oracle-demo.html` (reference templates).
+- Why:     Lior asked to deploy all templates built in Claude Design so their elements interact with his Claude/MCP the same way the HTML mockup does.
+- Result:  Any exported Claude Design `.html` dropped into `app/templates/` is served at `http://127.0.0.1:8000/templates/`, appears in the gallery automatically, and gains live Claude+DB access by including `<script src="meatcode-api.js"></script>` and either `data-mc-*` attributes or the `MeatCODE.*` JS API. Verified: server.py parses; template path-resolution + listing logic confirmed against the real folder (index.html correctly excluded). Full uvicorn boot not run in-sandbox (fastapi/psycopg2/anthropic not installed here) — runs via `run_server.command` on the Mac as usual.
+- Next:    Getting the actual Claude Design projects into the repo needs a manual export (DesignSync needs an interactive claude.ai login not available in cowork) — export each template's HTML and drop it in `app/templates/`, or use Design's "Send to Claude Code Web". Templates that need endpoints beyond ask/papers will need new `/api/*` routes.
+
+---
+
+## 2026-07-01 11:18 UTC · art-director session · UI/UX v8 polish + dashboard upgrade + repo consolidation
+- What:    Art-direction pass on the product mockup, in two rounds, plus consolidating design work into the repo and fixing the parent-folder routing that causes agent drift.
+- Files:   `UI-UX Designer/MeatCODE_mockup_v8_UIUX-polish.html` (new candidate, moved in from a loose out-of-repo folder), `UI-UX Designer/DESIGN_NOTES_v8.md` (new), parent `Claude Database/CLAUDE.md` (added redirect banner → `meatCODE/`), `PROJECT_STATE.md` (v8 entry + decision), this log.
+- Why:     Lior asked Claude to act as standing art director — improve visuals + screen flow; then "keep working it" (round 1 read as too subtle); then centralize everything under meatCODE.
+- Result:  Round 1 — avatar wine→teal (all scenes), research bubbles + globe recolored to teal/coral/olive, emoji bell→SVG icon, onboarding personas realigned to the 4 real audiences, dashboard now fronts all 5 domains, Simulate marked "Preview", molecular names monospaced. Round 2 (dashboard) — per-domain color accents (left border + tinted icon chip), hover-lift cards, hero eyebrow + 4-metric stat strip, accented "For you" cards. Markup verified balanced (11/11 sections, 1065/1065 divs). v8 base was byte-identical to canonical `app/meatcode_mockup.html`, so it's a clean superset.
+- Next:    Lior reopen/refresh the file; then choose: (a) promote v8 → `app/meatcode_mockup.html`, (b) carry the richer treatment into Oracle/Map/Research/Toolbench, or (c) the deferred structural round (nav dedup, cross-domain links, second typeface). Reconnect Claude-in-Chrome so future passes are screenshot-verified. Push via `sync_meatcode.command`.
+
+## 2026-06-30 13:05 UTC · advisory session · Decision doc → Word (.docx)
+- What:    Generated a polished Word version of the Oracle answer-engine decision doc (wine-accent headings, footer, US-Letter). Validated OK (50 paragraphs).
+- Files:   `docs/DECISION_Oracle_Answer_Engine.docx` (new; mirrors the .md).
+- Why:     Lior asked for a docx for sharing/review (Daniel-friendly).
+- Result:  Shareable Word doc alongside the markdown source.
+- Next:    Same as decision doc — review, then build the pipeline + golden eval set.
 
 ## 2026-06-30 12:55 UTC · advisory session · Oracle answer-engine decision doc
 - What:    Reviewed Lior's proposed "tag-summoned expert agents + consensus vote" retrieval design; consulted the Algorithm Expert sub-agent (independent, same conclusion). Wrote a plain-English decision doc.

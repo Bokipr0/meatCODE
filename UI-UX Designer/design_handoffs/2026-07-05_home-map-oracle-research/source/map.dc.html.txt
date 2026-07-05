@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="MeatCODE Map" description="Community Map — researcher/company toggle, ranked expert list, detail panel" -->
+<!-- CHAT SCOPE: edit only files inside templates/meatcode-map/. Shared DS files (styles.css, components/, tokens/) are read-only from here — flag changes there instead of duplicating. -->
+<helmet>
+<script src="./ds-base.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;background:#FAF6EF;font-family:"Varela Round",system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#1A1A1A;}
+  .row-card{display:grid;grid-template-columns:1fr 64px;gap:8px;align-items:center;padding:11px 12px;background:#fff;border:1px solid #E5DDD0;border-radius:12px;cursor:pointer;transition:all .12s;}
+  .row-card:hover{border-color:#4FA59F;background:#E0F0EE;}
+  .mode-btn{padding:12px 22px;border:0;font-family:inherit;font-size:14.5px;font-weight:700;cursor:pointer;border-radius:10px;display:flex;align-items:center;gap:8px;}
+  .back-btn{background:transparent;border:0;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700;color:#00736E;display:inline-flex;align-items:center;gap:5px;padding:0 0 6px;}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#FAF6EF;padding:32px 36px;">
+  <div style="max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:14px;">
+
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;">
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#00736E;margin-bottom:4px;">The Community</div>
+        <h1 style="font-size:28px;font-weight:700;margin:0;letter-spacing:-0.01em;">Who's shaping flavor science · worldwide</h1>
+      </div>
+      <div style="background:#fff;border:1px solid #E5DDD0;padding:10px 16px;border-radius:12px;display:flex;align-items:center;gap:8px;font-size:13.5px;color:#8A8A8A;min-width:280px;">🔍 Search by name, topic, or institution…</div>
+    </div>
+
+    <div style="display:flex;gap:4px;background:#F7F0E0;border:1px solid #E5DDD0;border-radius:14px;padding:4px;align-self:flex-start;">
+      <sc-if value="{{ isResearchers }}" hint-placeholder-val="{{ true }}">
+        <button class="mode-btn" onclick="{{ showResearchers }}" style="background:#00736E;color:#FAF6EF;box-shadow:0 4px 16px rgba(0,67,64,0.08);">Researchers<small style="font-size:10px;opacity:.85;font-weight:400;">368 in your topics</small></button>
+      </sc-if>
+      <sc-if value="{{ isCompanies }}" hint-placeholder-val="{{ false }}">
+        <button class="mode-btn" onclick="{{ showResearchers }}" style="background:transparent;color:#4A4A4A;">Researchers<small style="font-size:10px;opacity:.85;font-weight:400;">368 in your topics</small></button>
+      </sc-if>
+      <sc-if value="{{ isCompanies }}" hint-placeholder-val="{{ false }}">
+        <button class="mode-btn" onclick="{{ showCompanies }}" style="background:#00736E;color:#FAF6EF;box-shadow:0 4px 16px rgba(0,67,64,0.08);">Companies<small style="font-size:10px;opacity:.85;font-weight:400;">42 alt-meat players</small></button>
+      </sc-if>
+      <sc-if value="{{ isResearchers }}" hint-placeholder-val="{{ true }}">
+        <button class="mode-btn" onclick="{{ showCompanies }}" style="background:transparent;color:#4A4A4A;">Companies<small style="font-size:10px;opacity:.85;font-weight:400;">42 alt-meat players</small></button>
+      </sc-if>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 340px;gap:0;background:linear-gradient(135deg,#E6F2F0 0%,#BFE0DB 55%,#93C9C2 100%);border:1px solid #E5DDD0;border-radius:22px;min-height:560px;overflow:hidden;">
+
+      <div style="position:relative;overflow:hidden;">
+        <svg viewBox="0 0 100 60" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;display:block;">
+          <g fill="#FFFFFF" stroke="rgba(0,67,64,0.12)" stroke-width="0.3">
+            <path d="M8,20 Q14,14 22,17 Q28,20 24,30 Q20,42 12,40 Q5,34 8,20Z"></path>
+            <path d="M22,40 Q28,40 27,48 Q25,56 20,54 Q17,48 22,40Z"></path>
+            <path d="M44,16 Q52,12 58,17 Q62,22 56,26 Q48,26 44,22Z"></path>
+            <path d="M46,26 Q54,26 55,34 Q56,46 50,48 Q44,44 45,34 Q45,28 46,26Z"></path>
+            <path d="M62,18 Q78,12 88,20 Q92,28 84,34 Q72,36 64,30 Q60,24 62,18Z"></path>
+            <path d="M80,40 Q88,38 90,44 Q88,50 82,48 Q78,44 80,40Z"></path>
+          </g>
+          <sc-for list="{{ mapDots }}" as="d" hint-placeholder-count="6">
+            <circle cx="{{ d.x }}" cy="{{ d.y }}" r="{{ d.r }}" fill="{{ d.fill }}" stroke="#fff" stroke-width="0.6" onclick="{{ d.onSelect }}" style="cursor:pointer;"></circle>
+          </sc-for>
+        </svg>
+        <div style="position:absolute;bottom:18px;left:18px;background:rgba(255,255,255,0.92);border:1px solid #E5DDD0;border-radius:12px;padding:10px 14px;display:flex;gap:14px;font-size:11.5px;font-weight:700;color:#4A4A4A;backdrop-filter:blur(4px);">
+          <span style="display:flex;align-items:center;gap:6px;"><i style="width:9px;height:9px;border-radius:50%;background:#00736E;display:inline-block;"></i>Academic</span>
+          <span style="display:flex;align-items:center;gap:6px;"><i style="width:9px;height:9px;border-radius:50%;background:#C77E5F;display:inline-block;"></i>Company</span>
+        </div>
+      </div>
+
+      <aside style="background:#fff;border-left:1px solid #E5DDD0;padding:20px 18px;display:flex;flex-direction:column;gap:10px;overflow-y:auto;">
+
+        <sc-if value="{{ noneSelected }}" hint-placeholder-val="{{ true }}">
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#8A8A8A;display:flex;justify-content:space-between;align-items:center;margin:0 2px 4px;">
+            <span>{{ listTitle }}</span>
+            <span style="background:#E0F0EE;color:#015A56;padding:2px 8px;border-radius:100px;font-size:10.5px;">{{ listCount }} shown</span>
+          </div>
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="5">
+            <div class="row-card" onclick="{{ r.onSelect }}">
+              <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+                <span style="font-size:13.5px;font-weight:700;color:#1A1A1A;line-height:1.2;">{{ r.name }}</span>
+                <span style="font-size:11.5px;color:#4A4A4A;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ r.org }}</span>
+                <span style="font-size:10.5px;color:#8A8A8A;">{{ r.loc }}</span>
+              </div>
+              <x-import component-from-global-scope="MeatCODEDesignSystem_3810c8.ScoreBar" value="{{ r.score }}" showNumber="{{ true }}" label="Match" width="56" hint-size="60px,56px"></x-import>
+            </div>
+          </sc-for>
+        </sc-if>
+
+        <sc-if value="{{ hasSelected }}" hint-placeholder-val="{{ false }}">
+          <button class="back-btn" onclick="{{ clearSelection }}">← Back to list</button>
+          <div style="font-size:11.5px;color:#00736E;font-weight:700;letter-spacing:0.06em;">📍 {{ sel.loc }}</div>
+          <h3 style="margin:0;font-size:19px;font-weight:700;">{{ sel.name }}</h3>
+          <div style="font-size:13px;color:#4A4A4A;">{{ sel.org }}</div>
+          <div style="display:flex;flex-direction:column;margin-top:4px;">
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #E5DDD0;font-size:13px;color:#4A4A4A;"><span>{{ sel.metricLabel }}</span><b style="color:#1A1A1A;">{{ sel.metricValue }}</b></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #E5DDD0;font-size:13px;color:#4A4A4A;"><span>Outreach</span><b style="color:#7A8C5F;">{{ sel.outreach }}</b></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;color:#4A4A4A;"><span>Relevance score</span><b style="font-family:var(--font-mono,monospace);color:#015A56;">{{ sel.score }}</b></div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">
+            <sc-for list="{{ sel.tags }}" as="t" hint-placeholder-count="3">
+              <x-import component-from-global-scope="MeatCODEDesignSystem_3810c8.Chip" tone="neutral" hint-size="80px,32px">{{ t }}</x-import>
+            </sc-for>
+          </div>
+          <div style="margin-top:auto;padding-top:12px;">
+            <x-import component-from-global-scope="MeatCODEDesignSystem_3810c8.Button" style="width:100%" hint-size="100%,44px">{{ sel.cta }}</x-import>
+          </div>
+        </sc-if>
+
+      </aside>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const RESEARCHERS = [
+  { name: "Dr. Elena Cerný", org: "ETH Zürich", loc: "Zürich · CH", x: 50.5, y: 20.4, score: 94, metricLabel: "Papers in your area", metricValue: 38, outreach: "Open to collaborate", tags: ["Maillard", "pyrazines", "Strecker"], cta: "Open full profile →" },
+  { name: "Prof. Rina Sohail", org: "Wageningen U.", loc: "Wageningen · NL", x: 48.5, y: 18.6, score: 91, metricLabel: "Papers in your area", metricValue: 41, outreach: "Open to collaborate", tags: ["pea protein", "off-notes", "masking"], cta: "Open full profile →" },
+  { name: "Dr. Marcus Feld", org: "TU München", loc: "München · DE", x: 51.5, y: 19.8, score: 86, metricLabel: "Papers in your area", metricValue: 27, outreach: "Selective", tags: ["lipid oxidation", "aldehydes"], cta: "Open full profile →" },
+  { name: "Dr. Aya Tanaka", org: "Kyoto University", loc: "Kyoto · JP", x: 84, y: 22.8, score: 83, metricLabel: "Papers in your area", metricValue: 33, outreach: "Open to collaborate", tags: ["koji", "fermentation aroma"], cta: "Open full profile →" },
+  { name: "Dr. Noa Bar-Lev", org: "Tel Aviv University", loc: "Tel Aviv · IL", x: 56.5, y: 25.2, score: 80, metricLabel: "Papers in your area", metricValue: 19, outreach: "Open to collaborate", tags: ["sensory thresholds", "GC-MS"], cta: "Open full profile →" },
+];
+const COMPANIES = [
+  { name: "Redefine Meat", org: "Fiber-aligned beef analogs", loc: "Rehovot · IL", x: 56.8, y: 25.5, score: 88, metricLabel: "Founded", metricValue: "2018", outreach: "Partnering", tags: ["3D-printed", "beef analog"], cta: "View company profile →" },
+  { name: "Givaudan", org: "Flavor house · savory", loc: "Vernier · CH", x: 50.2, y: 20.7, score: 85, metricLabel: "Founded", metricValue: "1895", outreach: "Selective", tags: ["yeast extract", "masking"], cta: "View company profile →" },
+  { name: "Motif FoodWorks", org: "Ingredient design", loc: "Boston · US", x: 22, y: 21, score: 79, metricLabel: "Founded", metricValue: "2019", outreach: "Partnering", tags: ["heme", "process flavor"], cta: "View company profile →" },
+  { name: "Planted", org: "Fermented whole-cut", loc: "Kemptthal · CH", x: 50.4, y: 20.4, score: 76, metricLabel: "Founded", metricValue: "2019", outreach: "Selective", tags: ["fermentation", "texture"], cta: "View company profile →" },
+];
+
+class Component extends DCLogic {
+  state = { mode: "researchers", selected: null };
+
+  select(kind, idx) {
+    this.setState({ mode: kind, selected: idx });
+  }
+
+  renderVals() {
+    const mode = this.state.mode;
+    const list = mode === "researchers" ? RESEARCHERS : COMPANIES;
+    const sel = this.state.selected != null ? list[this.state.selected] : null;
+
+    const researchersOn = mode === "researchers";
+
+    const mapDots = list.map((r, i) => ({
+      x: r.x, y: r.y, r: this.state.selected === i ? 2.2 : 1.5,
+      fill: mode === "companies" ? "#C77E5F" : "#00736E",
+      onSelect: () => this.select(mode, i),
+    }));
+
+    const rows = list.map((r, i) => ({
+      name: r.name, org: r.org, loc: r.loc, score: r.score,
+      onSelect: () => this.select(mode, i),
+    }));
+
+    return {
+      isResearchers: researchersOn,
+      isCompanies: !researchersOn,
+      showResearchers: () => this.setState({ mode: "researchers", selected: null }),
+      showCompanies: () => this.setState({ mode: "companies", selected: null }),
+      listTitle: researchersOn ? "Experts in your topics" : "Companies to watch",
+      listCount: list.length,
+      mapDots,
+      rows,
+      noneSelected: sel == null,
+      hasSelected: sel != null,
+      sel: sel || {},
+      clearSelection: () => this.setState({ selected: null }),
+    };
+  }
+}
+</script>
+</body>
+</html>

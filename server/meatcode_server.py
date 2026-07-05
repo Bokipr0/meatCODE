@@ -27,9 +27,9 @@ If you'd rather keep the key in a file: drop a `.env` next to this script with
 ANTHROPIC_API_KEY=sk-ant-...  on its own line. The script reads it automatically.
 """
 
-import os, sys, json, threading
+import os, sys, json, re, threading
 from http.server import HTTPServer, SimpleHTTPRequestHandler
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 # ─── Config ──────────────────────────────────────────────────────────
 PORT       = 8000
@@ -84,6 +84,20 @@ except ImportError:
 
 client = anthropic.Anthropic(api_key=API_KEY)
 
+# ─── optional Postgres (for /api/experts and /api/papers) ────────────
+# Oracle + static serving work without a DB; these endpoints need DATABASE_URL
+# (read from the same .env). If psycopg2 or the URL is missing, they 503 and the
+# mockup falls back to its demo data.
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+def pg_rows(sql, params=()):
+    import psycopg2
+    from psycopg2.extras import RealDictCursor
+    with psycopg2.connect(DATABASE_URL) as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(sql, params)
+            return [dict(r) for r in cur.fetchall()]
+
 
 # ─── HTTP handler ────────────────────────────────────────────────────
 class Handler(SimpleHTTPRequestHandler):
@@ -103,6 +117,61 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_OPTIONS(self):
         self.send_response(204); self.end_headers()
+
+    # ─── JSON helper ───
+    def _send_json(self, obj, code=200):
+        body = json.dumps(obj, default=str).encode("utf-8")
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        try:
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
+    # ─── GET: /api/* handled here; everything else = static files ───
+    def do_GET(self):
+        path = urlparse(self.path).path
+        if path.startswith("/api/"):
+            return self._handle_api_get(path)
+        return super().do_GET()
+
+    def _handle_api_get(self, path):
+        qs = parse_qs(urlparse(self.path).query)
+        if path == "/api/health":
+            return self._send_json({"ok": True, "db": bool(DATABASE_URL), "model": MODEL})
+        if not DATABASE_URL:
+            return self._send_json({"error": "DATABASE_URL not configured"}, 503)
+        try:
+            if path == "/api/experts":
+                limit = max(1, min(500, int((qs.get("limit") or ["200"])[0])))
+                return self._send_json(pg_rows(
+                    "SELECT id, name, affiliation, country, org_type::text AS org_type, "
+                    "relevance_score::float AS relevance_score, h_index, total_papers, "
+                    "keywords, orcid, linkedin_url, current_org FROM experts "
+                    "WHERE relevance_score IS NOT NULL "
+                    "ORDER BY relevance_score DESC NULLS LAST, h_index DESC NULLS LAST LIMIT %s",
+                    (limit,)))
+            m = re.match(r"^/api/experts/(\d+)$", path)
+            if m:
+                rows = pg_rows(
+                    "SELECT id, name, affiliation, country, org_type::text AS org_type, "
+                    "research_field::text AS research_field, relevance_score::float AS relevance_score, "
+                    "h_index, total_papers, keywords, key_research, knowledge_gaps, orcid, "
+                    "linkedin_url, email, current_org, dimensions_topics FROM experts WHERE id=%s",
+                    (int(m.group(1)),))
+                return self._send_json(rows[0] if rows else {"error": "not found"}, 200 if rows else 404)
+            m = re.match(r"^/api/papers/(\d+)$", path)
+            if m:
+                rows = pg_rows(
+                    "SELECT id, name, year, authors, journal, venue, doi, abstract, url, "
+                    "citation_count, priority_score::float AS priority_score, relevance_llm "
+                    "FROM sources WHERE id=%s", (int(m.group(1)),))
+                return self._send_json(rows[0] if rows else {"error": "not found"}, 200 if rows else 404)
+            return self._send_json({"error": "unknown endpoint " + path}, 404)
+        except Exception as e:
+            return self._send_json({"error": "database error: " + str(e)[:200]}, 503)
 
     def do_POST(self):
         path = urlparse(self.path).path
@@ -166,6 +235,7 @@ def main():
     print(f"\n  MeatCODE server running on http://localhost:{PORT}")
     print(f"  Open:  http://localhost:{PORT}/{mock}")
     print(f"  Model: {MODEL}")
+    print(f"  Database: {'connected via DATABASE_URL' if DATABASE_URL else 'NOT set — /api/experts will 503, mockup uses demo data'}")
     print(f"  Press Ctrl+C to stop.\n")
     try:
         httpd.serve_forever()

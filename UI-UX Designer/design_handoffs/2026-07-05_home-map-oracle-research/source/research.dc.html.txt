@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="MeatCODE Research" description="Research phase picker — Juice / Lipid / Matrix / Volatiles" -->
+<!-- CHAT SCOPE: edit only files inside templates/meatcode-research/. Shared DS files (styles.css, components/, tokens/) are read-only from here — flag changes there instead of duplicating. -->
+<helmet>
+<script src="./ds-base.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;background:var(--bg,#FAF6EF);font-family:"Varela Round",system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink,#1A1A1A);}
+</style>
+</helmet>
+<div style="min-height:100vh;background:var(--bg,#FAF6EF);padding:32px 36px;">
+  <div style="max-width:1000px;margin:0 auto;">
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-size:11px;letter-spacing:0.20em;text-transform:uppercase;color:var(--domain-research,#C77E5F);font-weight:700;">Research · pick your phase</div>
+      <h1 style="font-size:28px;font-weight:700;margin:6px 0 4px;color:var(--ink,#1A1A1A);">What kind of system are you studying?</h1>
+      <p style="font-size:14.5px;color:var(--ink-dim,#4A4A4A);max-width:680px;margin:0 auto;line-height:1.55;">MeatCODE narrows the database by the phase your reaction lives in. Pick one — we'll then drill into the sub-topics most relevant to it.</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:18px;">
+
+      <x-import component-from-global-scope="MeatCODEDesignSystem_3810c8.Card" accent="var(--domain-research)" hover="{{ true }}" onClick="{{ selectJuice }}" hint-size="100%,220px">
+        <div style="display:flex;flex-direction:column;gap:12px;height:100%;">
+          <div style="width:64px;height:64px;border-radius:14px;display:grid;place-items:center;background:var(--teal-mist);color:var(--teal-deep);font-family:'JetBrains Mono',monospace;font-weight:700;font-size:22px;">J</div>
+          <div>
+            <h3 style="font-size:22px;font-weight:700;margin:0;color:var(--ink,#1A1A1A);">Juice</h3>
+            <div style="margin:6px 0 8px;">
+              <x-import component-from-global-scope="MeatCODEDesignSystem_3810c8.Badge" tone="teal" hint-size="90px,20px">Water-based</x-import>
+            </div>
+            <p style="margin:0;font-size:13px;color:var(--ink-dim,#4A4A4A);line-height:1.55;">Aqueous matrices: broths, plant juices, hydrolysates. Where polar volatiles, sugars and free amino acids drive the chemistry.</p>
+          </div>
+          <div style="margin-top:auto;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--domain-research,#C77E5F);display:flex;justify-content:flex-end;">Open sub-topics →</div>
+        </div>
+      </x-import>
+
+      <x-import component-from-global-scope="MeatCODEDesignSystem_3810c8.Card" accent="var(--domain-research)" hover="{{ true }}" onClick="{{ selectLipid }}" hint-size="100%,220px">
+        <div style="display:flex;flex-direction:column;gap:12px;height:100%;">
+          <div style="width:64px;height:64px;border-radius:14px;display:grid;place-items:center;background:var(--coral-soft);color:#7A4628;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:22px;">L</div>
+          <div>
+            <h3 style="font-size:22px;font-weight:700;margin:0;color:var(--ink,#1A1A1A);">Lipid</h3>
+            <div style="margin:6px 0 8px;">
+              <x-import component-from-global-scope="MeatCODEDesignSystem_3810c8.Badge" tone="coral" hint-size="90px,20px">Fat-based</x-import>
+            </div>
+            <p style="margin:0;font-size:13px;color:var(--ink-dim,#4A4A4A);line-height:1.55;">Oils, fats, lipid emulsions. The home of lipid-oxidation aldehydes, fat-soluble top-notes, and frying chemistry.</p>
+          </div>
+          <div style="margin-top:auto;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--domain-research,#C77E5F);display:flex;justify-content:flex-end;">Open sub-topics →</div>
+        </div>
+      </x-import>
+
+      <x-import component-from-global-scope="MeatCODEDesignSystem_3810c8.Card" accent="var(--domain-research)" hover="{{ true }}" onClick="{{ selectMatrix }}" hint-size="100%,220px">
+        <div style="display:flex;flex-direction:column;gap:12px;height:100%;">
+          <div style="width:64px;height:64px;border-radius:14px;display:grid;place-items:center;background:var(--olive-soft);color:#3A4A25;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:22px;">M</div>
+          <div>
+            <h3 style="font-size:22px;font-weight:700;margin:0;color:var(--ink,#1A1A1A);">Matrix</h3>
+            <div style="margin:6px 0 8px;">
+              <x-import component-from-global-scope="MeatCODEDesignSystem_3810c8.Badge" tone="olive" hint-size="90px,20px">Solid / complex</x-import>
+            </div>
+            <p style="margin:0;font-size:13px;color:var(--ink-dim,#4A4A4A);line-height:1.55;">Protein isolates, extruded textures, formulated systems. Where binding, release and Maillard chemistry interact with structure.</p>
+          </div>
+          <div style="margin-top:auto;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--domain-research,#C77E5F);display:flex;justify-content:flex-end;">Open sub-topics →</div>
+        </div>
+      </x-import>
+
+      <x-import component-from-global-scope="MeatCODEDesignSystem_3810c8.Card" accent="var(--domain-research)" hover="{{ true }}" onClick="{{ selectVolatiles }}" hint-size="100%,220px">
+        <div style="display:flex;flex-direction:column;gap:12px;height:100%;">
+          <div style="width:64px;height:64px;border-radius:14px;display:grid;place-items:center;background:var(--plum-soft);color:#4F3360;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:22px;">V</div>
+          <div>
+            <h3 style="font-size:22px;font-weight:700;margin:0;color:var(--ink,#1A1A1A);">Volatiles</h3>
+            <div style="margin:6px 0 8px;">
+              <x-import component-from-global-scope="MeatCODEDesignSystem_3810c8.Badge" tone="plum" hint-size="90px,20px">Headspace</x-import>
+            </div>
+            <p style="margin:0;font-size:13px;color:var(--ink-dim,#4A4A4A);line-height:1.55;">The aroma molecules themselves — what GC-MS, SPME and the panel actually capture. Top-notes, off-notes, OAVs.</p>
+          </div>
+          <div style="margin-top:auto;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--domain-research,#C77E5F);display:flex;justify-content:flex-end;">Open sub-topics →</div>
+        </div>
+      </x-import>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { selected: null };
+
+  renderVals() {
+    return {
+      selected: this.state.selected,
+      selectJuice: () => this.setState({ selected: "juice" }),
+      selectLipid: () => this.setState({ selected: "lipid" }),
+      selectMatrix: () => this.setState({ selected: "matrix" }),
+      selectVolatiles: () => this.setState({ selected: "volatiles" }),
+    };
+  }
+}
+</script>
+</body>
+</html>

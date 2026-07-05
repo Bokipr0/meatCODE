@@ -4082,7 +4082,7 @@ window.rebuildExpertList = function () {};
     var scored = d.items.map(function (r, i) {
       var sr = Object.assign({}, r);
       sr._idx = i;
-      sr._score = scoreFor(r, i, d.kind);
+      sr._score = (r._realScore != null) ? r._realScore : scoreFor(r, i, d.kind);
       return sr;
     }).sort(function (a, b) { return b._score - a._score; });
 
@@ -4218,6 +4218,68 @@ window.rebuildExpertList = function () {};
   });
 })();
 
+</script>
+
+<script>
+/* ═══ Live experts from Neon (via reaktzia-mvp /api/experts) ═══
+   Replaces the demo RESEARCHERS array with real curated experts, keeps the
+   list + globe + detail panel working, and falls back to demo data if the
+   server is offline. Needs the DB-backed reaktzia-mvp server on :8000. */
+(function () {
+  var API = (typeof API_BASE !== 'undefined' && API_BASE) ? API_BASE : 'http://127.0.0.1:8000';
+  var CC = {
+    'germany':[51.2,10.4],'canada':[56.1,-106.3],'usa':[39.8,-98.6],'united states':[39.8,-98.6],'us':[39.8,-98.6],
+    'switzerland':[46.8,8.2],'israel':[31.5,34.8],'china':[35.9,104.2],'cn':[35.9,104.2],
+    'south korea':[36.5,127.9],'korea':[36.5,127.9],'kr':[36.5,127.9],'spain':[40.0,-3.7],'es':[40.0,-3.7],
+    'finland':[64.0,26.0],'fi':[64.0,26.0],'poland':[52.0,19.0],'pl':[52.0,19.0],'united kingdom':[54.0,-2.0],
+    'uk':[54.0,-2.0],'gb':[54.0,-2.0],'netherlands':[52.1,5.3],'nl':[52.1,5.3],'japan':[36.2,138.3],'jp':[36.2,138.3],
+    'belgium':[50.5,4.5],'be':[50.5,4.5],'brazil':[-14.2,-51.9],'br':[-14.2,-51.9],'france':[46.6,2.2],'fr':[46.6,2.2],
+    'italy':[41.9,12.6],'it':[41.9,12.6],'sweden':[62.0,15.0],'se':[62.0,15.0],'denmark':[56.0,10.0],'dk':[56.0,10.0],
+    'norway':[61.0,8.0],'no':[61.0,8.0],'ireland':[53.4,-8.0],'ie':[53.4,-8.0],'austria':[47.6,14.1],'at':[47.6,14.1],
+    'india':[22.0,79.0],'in':[22.0,79.0],'australia':[-25.3,133.8],'au':[-25.3,133.8],'portugal':[39.5,-8.0],'pt':[39.5,-8.0]
+  };
+  function coords(country, i) {
+    var c = CC[(country || '').trim().toLowerCase()] || [18, -35];  // fallback: mid-Atlantic
+    var j = ((i * 37) % 100) / 100 - 0.5;                           // deterministic jitter
+    return [c[0] + j * 6, c[1] + j * 6];
+  }
+  function inferType(aff) {
+    var a = (aff || '').toLowerCase();
+    if (/givaudan|firmenich|iff|symrise|dsm|kerry|mane|takasago|nestl|unilever|company|\binc\b|ltd|gmbh|corp/.test(a)) return 'ind';
+    if (/\bgfi\b|good food|institute for|foundation|\bngo\b/.test(a)) return 'ngo';
+    return 'acad';
+  }
+  function toTopics(kw) {
+    if (!kw) return [];
+    return String(kw).split(/[;,\n]/).map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 4);
+  }
+  function applyExperts(list) {
+    if (!Array.isArray(list) || !list.length || typeof RESEARCHERS === 'undefined') return;
+    var mapped = list.map(function (e, i) {
+      var ll = coords(e.country, i);
+      return { id: e.id, name: e.name, full: e.name, org: e.affiliation || e.current_org || '',
+        loc: e.country || '', nation: e.country || '', lat: ll[0], lng: ll[1],
+        type: inferType(e.affiliation), rating: Math.max(1, Math.round((e.relevance_score || 0) * 5)),
+        flagged: (e.relevance_score || 0) >= 0.9, papers: e.total_papers || 0, patents: 0,
+        h_index: e.h_index, topics: toTopics(e.keywords),
+        _realScore: Math.round((e.relevance_score || 0) * 100) };
+    });
+    RESEARCHERS.length = 0; Array.prototype.push.apply(RESEARCHERS, mapped);
+    if (typeof CONNECTIONS !== 'undefined') CONNECTIONS.length = 0;  // no real co-authorship edges yet
+    try { if (typeof buildNationOptions === 'function') buildNationOptions(); } catch (e) {}
+    try { if (typeof renderLayer === 'function') renderLayer(); } catch (e) {}
+    try { if (typeof rebuildExpertList === 'function') rebuildExpertList(); } catch (e) {}
+    console.log('[meatCODE] loaded ' + mapped.length + ' live experts from Neon');
+  }
+  function load() {
+    fetch(API + '/api/experts?limit=200')
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(applyExperts)
+      .catch(function (err) { console.warn('[meatCODE] live experts unavailable (' + err + ') — using demo data'); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load);
+  else load();
+})();
 </script>
 
 </body>

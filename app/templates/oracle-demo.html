@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<!-- Last updated: 2026-07-05 13:30 UTC · deploy-templates session · reference template showing data-attribute wiring -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Oracle Demo — wiring reference</title>
+<style>
+  :root {
+    --bg: #FAF6EF; --bg-deep: #F2EBDA;
+    --wine: #00736E; --wine-deep: #015A56; --wine-mist: #E0F0EE;
+    --ink: #1A1A1A; --ink-dim: #4A4A4A; --surface: #FFFFFF;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 48px 24px; }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 { color: var(--wine); font-size: 22px; margin-bottom: 4px; }
+  .sub { color: var(--ink-dim); font-size: 13px; margin-bottom: 24px; }
+  textarea { width: 100%; min-height: 72px; border: 1px solid var(--bg-deep); border-radius: 10px; padding: 12px; font: inherit; background: var(--surface); resize: vertical; }
+  textarea:focus { outline: 2px solid var(--wine); border-color: transparent; }
+  button { margin-top: 10px; background: var(--wine); color: #fff; border: 0; border-radius: 8px; padding: 10px 22px; font: inherit; font-weight: 600; cursor: pointer; }
+  button:hover { background: var(--wine-deep); }
+  button:disabled { opacity: .5; cursor: default; }
+  .panel { background: var(--surface); border: 1px solid var(--bg-deep); border-radius: 12px; padding: 18px; margin-top: 20px; }
+  .panel h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-dim); margin-bottom: 10px; }
+  #sources .mc-source { display: inline-block; background: var(--wine-mist); color: var(--wine-deep); border-radius: 6px; padding: 3px 8px; margin: 0 6px 6px 0; font-size: 12px; }
+  #answer { white-space: pre-wrap; line-height: 1.6; font-size: 15px; }
+  #recent .mc-paper { padding: 8px 0; border-bottom: 1px solid var(--bg-deep); font-size: 13px; color: var(--ink-dim); }
+  #recent .mc-paper strong { color: var(--ink); }
+  .status { font-size: 12px; float: right; }
+  a.back { color: var(--wine); font-size: 13px; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← gallery</a>
+  <span class="status" data-mc-health></span>
+  <h1>Oracle Demo</h1>
+  <p class="sub">Reference template: everything below is wired to the MeatCODE server with
+     <b>data attributes only</b> — no custom JavaScript. Copy this pattern into any Claude Design export.</p>
+
+  <textarea id="q" data-mc-input placeholder="Ask the MeatCODE Oracle… e.g. what drives roasted meaty aroma in Maillard systems?"></textarea>

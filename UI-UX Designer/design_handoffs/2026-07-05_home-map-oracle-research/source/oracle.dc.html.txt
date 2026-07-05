@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="MeatCODE Oracle" description="Cite-backed RAG chatbot screen — ask, retrieve sources, cited answer, paper detail modal" -->
+<!-- CHAT SCOPE: edit only files inside templates/meatcode-oracle/. Shared DS files (styles.css, components/, tokens/) are read-only from here — flag changes there instead of duplicating. -->
+<helmet>
+<script src="./ds-base.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Varela+Round&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;background:var(--bg,#FAF6EF);font-family:"Varela Round",system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink,#1A1A1A);}
+  textarea{font-family:"Varela Round",system-ui,sans-serif;}
+  @keyframes ocp{0%,80%,100%{opacity:.25;transform:scale(.85);}40%{opacity:1;transform:scale(1.1);}}
+  .oc-dot{width:7px;height:7px;border-radius:50%;background:var(--teal,#00736E);display:inline-block;animation:ocp 1.4s infinite ease-in-out;}
+  .starter{padding:7px 14px;background:var(--surface,#fff);border:1.5px solid var(--line,#E5DDD0);border-radius:100px;font-size:12.5px;color:var(--ink-dim,#4A4A4A);cursor:pointer;display:inline-block;transition:all .12s;}
+  .starter:hover{border-color:var(--teal-soft,#4FA59F);background:var(--teal-mist,#E0F0EE);}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(42,31,31,.45);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:50;opacity:0;pointer-events:none;transition:opacity .18s cubic-bezier(.16,1,.3,1);}
+  .modal-backdrop.open{opacity:1;pointer-events:auto;}
+  .modal-card{background:var(--surface,#fff);border-radius:var(--radius-2xl,22px);max-width:520px;width:92%;max-height:80vh;overflow-y:auto;padding:26px 28px;box-shadow:0 24px 64px rgba(0,0,0,0.22);transform:translateY(8px);transition:transform .18s cubic-bezier(.16,1,.3,1);}
+  .modal-backdrop.open .modal-card{transform:translateY(0);}
+  .modal-close{position:absolute;top:16px;right:18px;background:none;border:0;font-size:16px;cursor:pointer;color:var(--ink-faint,#8A8A8A);}
+  .oc-source-row{display:flex;align-items:center;gap:12px;padding:6px 0;cursor:pointer;border-radius:8px;}
+  .oc-source-row:hover{background:var(--teal-mist,#E0F0EE);}
+</style>
+</helmet>
+<div style="min-height:100vh;background:var(--bg,#FAF6EF);padding:40px 24px;">
+  <div style="max-width:860px;margin:0 auto;">
+
+    <div style="text-align:center;margin-bottom:22px;">
+      <h1 style="font-size:36px;font-weight:700;color:var(--ink,#1A1A1A);margin:0 0 6px;">Ask the Food Oracle</h1>
+      <p style="font-size:14.5px;color:var(--ink-dim,#4A4A4A);margin:0;">Cite-backed answers from the flavor and aroma database</p>
+    </div>
+
+    <div style="background:var(--surface,#fff);border:1.5px solid var(--line,#E5DDD0);border-radius:22px;padding:22px 24px 16px;margin-bottom:20px;box-shadow:0 4px 16px rgba(0,67,64,0.08);">
+      <textarea value="{{ question }}" oninput="{{ onInput }}" onkeydown="{{ onKeyDown }}" placeholder="Ask about a molecule, a mechanism, or an off-note — every answer cites its sources." rows="2" style="width:100%;min-height:56px;resize:none;border:none;outline:none;background:transparent;color:var(--ink,#1A1A1A);font-size:18px;line-height:1.5;padding:0;box-sizing:border-box;"></textarea>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:6px;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <x-import component-from-global-scope="MeatCODEDesignSystem_3810c8.Chip" tone="teal" hint-size="140px,32px">Maillard chemistry</x-import>
+          <x-import component-from-global-scope="MeatCODEDesignSystem_3810c8.Chip" tone="coral" hint-size="140px,32px">Off-note masking</x-import>
+        </div>
+        <x-import component-from-global-scope="MeatCODEDesignSystem_3810c8.Button" pill="{{ true }}" size="sm" onClick="{{ onAsk }}" disabled="{{ askDisabled }}" hint-size="80px,40px">Ask ↑</x-import>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin:0 0 22px;">
+      <span class="starter" onclick="{{ pick0 }}">How do I mask beany off-notes in pea protein?</span>
+      <span class="starter" onclick="{{ pick1 }}">Key Maillard top-notes for plant-based beef?</span>
+      <span class="starter" onclick="{{ pick2 }}">Which volatiles drive popcorn aroma?</span>
+      <span class="starter" onclick="{{ pick3 }}">What does fermentation contribute to meaty aroma?</span>
+    </div>
+
+    <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 30px;text-align:center;background:var(--surface,#fff);border:1.5px dashed var(--line-strong,#D2C8B5);border-radius:22px;color:var(--ink-faint,#8A8A8A);">
+        <div style="font-size:36px;margin-bottom:8px;opacity:.4;">·</div>
+        <div style="font-size:14px;font-weight:700;color:var(--ink-dim,#4A4A4A);margin-bottom:4px;">Waiting on your question</div>
+        <div style="font-size:12.5px;line-height:1.5;max-width:340px;color:var(--ink-faint,#8A8A8A);">Pick a starter above or type your own. Every answer is generated over papers retrieved from the MeatCODE database — citations link to the source.</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isLoading }}" hint-placeholder-val="{{ false }}">
+      <div style="background:var(--surface,#fff);border:1px solid var(--line,#E5DDD0);border-radius:22px;padding:20px 28px;display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;gap:6px;align-items:center;color:var(--ink-dim,#4A4A4A);font-size:13px;">
+          <span class="oc-dot" style="animation-delay:0s;"></span>
+          <span class="oc-dot" style="animation-delay:0.15s;"></span>
+          <span class="oc-dot" style="animation-delay:0.3s;"></span>
+          <span style="margin-left:6px;">{{ loadingLabel }}</span>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isError }}" hint-placeholder-val="{{ false }}">
+      <div style="background:var(--coral-soft,#F2D7C8);border:1px solid var(--coral,#C77E5F);border-radius:22px;padding:22px 26px;display:flex;flex-direction:column;gap:10px;">
+        <div style="display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#7A4628;">⚠ Something went wrong</div>
+        <div style="font-size:14px;color:var(--ink-dim,#4A4A4A);line-height:1.5;">{{ errorMessage }}</div>
+        <div>
+          <x-import component-from-global-scope="MeatCODEDesignSystem_3810c8.Button" variant="outline" size="sm" onClick="{{ onAsk }}" hint-size="90px,36px">Try again</x-import>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isAnswer }}" hint-placeholder-val="{{ false }}">
+      <div style="background:var(--surface,#fff);border:1px solid var(--line,#E5DDD0);border-radius:22px;padding:24px 28px;">
+
+        <div style="margin-bottom:16px;">
+          <div style="font-size:11px;font-weight:700;color:var(--ink-faint,#8A8A8A);letter-spacing:0.16em;text-transform:uppercase;margin-bottom:8px;">Sources retrieved</div>
+          <sc-for list="{{ sources }}" as="s" hint-placeholder-count="3">
+            <div class="oc-source-row" onclick="{{ s.onOpen }}">
+              <x-import component-from-global-scope="MeatCODEDesignSystem_3810c8.CiteChip" hint-size="24px,26px">{{ s.id }}</x-import>
+              <span style="font-size:13.5px;color:var(--ink-dim,#4A4A4A);">{{ s.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <h3 style="font-size:12px;font-weight:700;color:var(--teal,#00736E);letter-spacing:0.18em;text-transform:uppercase;margin:0 0 12px;">Answer</h3>
+        <p style="font-size:16px;line-height:1.7;color:var(--ink,#1A1A1A);margin:0 0 12px;">
+          Beany off-notes in pea protein are driven largely by lipid-oxidation aldehydes — hexanal is the dominant impact compound
+          <x-import component-from-global-scope="MeatCODEDesignSystem_3810c8.CiteChip" inline="{{ true }}" onClick="{{ openCite1 }}" hint-size="24px,20px">1</x-import>.
+          The most reliable masking route pairs a physical strategy (cyclodextrin or protein binding) with a Maillard-derived savory top-note that competes perceptually
+          <x-import component-from-global-scope="MeatCODEDesignSystem_3810c8.CiteChip" inline="{{ true }}" onClick="{{ openCite2 }}" hint-size="24px,20px">2</x-import>.
+        </p>
+        <p style="font-size:16px;line-height:1.7;color:var(--ink,#1A1A1A);margin:0 0 18px;">
+          Fermentation pre-treatment (koji or lactic) further lowers hexanal before it reaches the panel, and stacks well with bitter-blockers
+          <x-import component-from-global-scope="MeatCODEDesignSystem_3810c8.CiteChip" inline="{{ true }}" onClick="{{ openCite3 }}" hint-size="24px,20px">3</x-import>.
+        </p>
+
+        <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--line,#E5DDD0);">
+          <div style="font-size:11px;font-weight:700;color:var(--ink-faint,#8A8A8A);letter-spacing:0.16em;text-transform:uppercase;margin-bottom:8px;">Follow up</div>
+          <span class="starter" onclick="{{ pickF0 }}" style="margin-right:6px;">Which cyclodextrin binds hexanal best?</span>
+          <span class="starter" onclick="{{ pickF1 }}">How much does koji lower hexanal?</span>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+
+<sc-if value="{{ modalOpen }}" hint-placeholder-val="{{ false }}">
+  <div class="modal-backdrop open" onclick="{{ closeModal }}">
+    <div class="modal-card" onclick="{{ stopProp }}" style="position:relative;">
+      <button class="modal-close" onclick="{{ closeModal }}">✕</button>
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--teal,#00736E);margin-bottom:8px;">Source {{ modalPaper.id }}</div>
+      <h3 style="margin:0 0 6px;font-size:20px;font-weight:700;color:var(--ink,#1A1A1A);">{{ modalPaper.title }}</h3>
+      <div style="font-size:13px;color:var(--ink-dim,#4A4A4A);margin-bottom:16px;">{{ modalPaper.author }} · {{ modalPaper.year }} · {{ modalPaper.journal }}</div>
+      <p style="font-size:14px;line-height:1.65;color:var(--ink-dim,#4A4A4A);margin:0 0 18px;">{{ modalPaper.abstract }}</p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <sc-for list="{{ modalPaper.tags }}" as="t" hint-placeholder-count="2">
+          <x-import component-from-global-scope="MeatCODEDesignSystem_3810c8.Chip" tone="neutral" hint-size="80px,32px">{{ t }}</x-import>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const PAPERS = {
+  1: { id: 1, label: "Murray et al. 2021 · Off-flavours in pea protein isolates", title: "Off-flavours in pea protein isolates: origin and mitigation", author: "Murray, K. et al.", year: 2021, journal: "J. Agric. Food Chem.", abstract: "Reviews the volatile and non-volatile compounds responsible for beany/grassy notes in commercial pea protein isolates, identifying hexanal and related lipid-oxidation aldehydes as the dominant impact compounds across processing routes.", tags: ["pea protein", "hexanal", "lipid oxidation"] },
+  2: { id: 2, label: "Sohail et al. 2022 · Masking strategies review", title: "Masking strategies for plant-protein off-notes: a comparative review", author: "Sohail, R. et al.", year: 2022, journal: "Trends Food Sci. Technol.", abstract: "Compares physical (cyclodextrin encapsulation, protein binding) and perceptual (Maillard top-note competition) masking strategies for off-notes in plant-based matrices, with guidance on combining both for durable sensory results.", tags: ["masking", "cyclodextrin", "Maillard"] },
+  3: { id: 3, label: "Cerny 2003 · Fermentation & aroma modulation", title: "Fermentation-driven modulation of meaty aroma precursors", author: "Cerny, E.", year: 2003, journal: "Food Chem.", abstract: "Demonstrates that koji and lactic fermentation pre-treatments substantially reduce hexanal and related aldehydes prior to thermal processing, and shows additive effects when stacked with bitter-blocking compounds.", tags: ["fermentation", "koji", "aldehydes"] },
+};
+
+class Component extends DCLogic {
+  state = { question: "", stage: "empty", modalId: null };
+
+  onInput = (e) => this.setState({ question: e.target.value });
+  onKeyDown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); this.ask(); } };
+
+  ask(text) {
+    if (text) this.setState({ question: text });
+    this.setState({ stage: "loading" });
+    clearTimeout(this._t);
+    this._t = setTimeout(() => this.setState({ stage: "answer" }), 1100);
+  }
+
+  openModal(id) {
+    this.setState({ modalId: id });
+  }
+
+  renderVals() {
+    const q = this.state.question || "";
+    const modalPaper = this.state.modalId != null ? PAPERS[this.state.modalId] : null;
+
+    return {
+      question: q,
+      onInput: this.onInput,
+      onKeyDown: this.onKeyDown,
+      onAsk: () => this.ask(),
+      askDisabled: q.trim().length === 0,
+      isEmpty: this.state.stage === "empty",
+      isLoading: this.state.stage === "loading",
+      isError: this.state.stage === "error",
+      isAnswer: this.state.stage === "answer",
+      loadingLabel: "Retrieving passages & writing a cited answer…",
+      errorMessage: "The Oracle couldn't reach the literature database. Check your connection and try again.",
+      sources: Object.values(PAPERS).map((p) => ({ id: p.id, label: p.label, onOpen: () => this.openModal(p.id) })),
+      openCite1: () => this.openModal(1),
+      openCite2: () => this.openModal(2),
+      openCite3: () => this.openModal(3),
+      pick0: () => this.ask("How do I mask beany off-notes in pea protein?"),
+      pick1: () => this.ask("What are the key Maillard top-notes for plant-based beef?"),
+      pick2: () => this.ask("Which volatiles drive the popcorn aroma of 2-acetyl-1-pyrroline?"),
+      pick3: () => this.ask("What does fermentation contribute to meaty aroma profiles?"),
+      pickF0: () => this.ask("Which cyclodextrin binds hexanal best?"),
+      pickF1: () => this.ask("How much does koji lower hexanal?"),
+      modalOpen: modalPaper != null,
+      modalPaper: modalPaper || {},
+      closeModal: () => this.setState({ modalId: null }),
+      stopProp: (e) => e.stopPropagation(),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

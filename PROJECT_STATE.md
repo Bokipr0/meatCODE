@@ -4,7 +4,7 @@
 > Asana owns *tasks & priorities*; this file owns *technical reality* — what's built, what's broken,
 > what's in flight. Keep it short and current, not a changelog.
 
-_Last updated: 2026-06-30 by Claude (art-director session: UI/UX v8 polish pass; data dictionary, migrations convention, source count)_
+_Last updated: 2026-07-05 by Claude (deploy-templates session: Claude Design templates now deployable against the live FastAPI server via a shared connector)_
 
 ---
 
@@ -38,12 +38,26 @@ Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-u
 - **Taxonomy = governing bible:** `db/taxonomy/keywords_topics.json` (91 keywords, 5 branches) is the single source of truth. `db/taxonomy.py` is the one loader every script imports (no hardcoded topic lists); `pipeline/sync_taxonomy.py` upserts it into the `topics` table (synced live — 91 updated, 112 rows). `pipeline/openalex_ingest.py` now defaults its queries from the taxonomy and tags each new source to canonical topics via `source_topics`. Rule documented in CLAUDE.md.
 - **Corpus expanded 496 → 828 sources (+332)** via `openalex_ingest.py` (now multi-source; **Europe PMC** default since OpenAlex full-text search was returning 503, OpenAlex selectable when healthy). All from 75 HIGH-priority taxonomy queries, deduped by DOI/provider-id, all citable (`search_vec`), all tagged to canonical branches (analytics 136, flavor_ingredients 67, meat_science 52, meat_analogs 43, flavor_chemistry 34). Next options: deeper pass (`--per-topic 15`) + MED topics toward 1,000; back-tag the original 496 to the taxonomy for uniform sorting.
 - **Quality + priority scoring live (2026-07-01):** migration `0002_source_scoring.sql` added `priority_score`, `is_review`, `relevance_llm`. `pipeline/score_priority.py` = deterministic composite (relevance proxy · venue tier · review-type · citations/year · recency · taxonomy-tagged) + dedupe (removed 10 dupes → 818). `pipeline/score_relevance.py` = LLM gate (Haiku) scoring all 818 for meaty-process-flavor relevance 0-100; `priority_score` blends 60% LLM + 40% deterministic. Result: 45 sources ≥80, and **202 flagged <40 (keyword-matched but off-topic — nutrition/contaminants/health) = review/quarantine shortlist.** Use: rank hub/Oracle by `priority_score DESC`; Oracle should filter `relevance_llm >= 60` so it never cites off-topic papers. Tunable weights at top of score_priority.py.
+- **Expert map now live-data-backed (2026-07-01):** `reaktzia-mvp` gained `GET /api/experts` (ranked, curated) + `GET /api/experts/{id}`; verified over HTTP. `app/meatcode_mockup.html` fetches them on load, replaces the demo `RESEARCHERS` in place (globe + list + detail), ranks by real `relevance_score`, falls back to demo data if the server is offline. Surfaces the **374 curated experts** (relevance-scored), not all 3,129 raw authors. Caveats: co-authorship edges cleared (`expert_relations` empty — no fake links); globe uses country→centroid coords w/ jitter (country data sparse). **Needs the DB-backed reaktzia-mvp server on :8000, not the thin meatcode_server.py.**
 - **New mockup** (`app/meatcode_mockup.html`, Jun 30) adds a Protocol Library and an aroma Prediction
   surface on top of Map / Oracle / Research.
 - **Art-direction pass v8** (`UI-UX Designer/MeatCODE_mockup_v8_UIUX-polish.html`): teal-consistency
   fixes (avatar / bubbles / globe), emoji→SVG icons, personas realigned to the 4 real audiences,
   dashboard now fronts all 5 domains, Simulate marked *Preview*, molecular names monospaced.
   Candidate — awaiting Lior's approval to promote to `app/meatcode_mockup.html`. See `UI-UX Designer/DESIGN_NOTES_v8.md`.
+- **Claude Design templates deployable (2026-07-05):** new `app/templates/` folder is served by the
+  `reaktzia-mvp` FastAPI server (`/templates/` static mount + `/api/templates` listing). Any exported
+  Design `.html` dropped in gains the same live Claude+Neon access as the mockup by including
+  `<script src="meatcode-api.js"></script>` — the shared connector wraps the proven `/api/ask` SSE flow
+  (`ask/health/paper/recentPapers`) and adds zero-JS `data-mc-*` auto-wiring. Self-populating gallery at
+  `http://127.0.0.1:8000/templates/`; see `app/templates/README.md` + `example-oracle.html`/`oracle-demo.html`.
+- **New screen designs handed off (2026-07-05, Claude Design session):** Home, Community Map,
+  Food Oracle (empty/ask state screenshotted; answered + loading + modal states present in source),
+  and Research phase picker — high-fidelity, on the MeatCODE Design System tokens. Packaged at
+  `UI-UX Designer/design_handoffs/2026-07-05_home-map-oracle-research/` (README + screenshots +
+  annotated source). These are the Claude Design templates the `app/templates/` serving work targets.
+  Awaiting Lior's go on build target (deploy-as-served-HTML wired to Claude/Neon vs. Next.js rebuild),
+  same review gate as the v8 polish pass.
 
 ## In flight
 - Repo scaffold first push (this session). Pending local copy of two iCloud-only files
