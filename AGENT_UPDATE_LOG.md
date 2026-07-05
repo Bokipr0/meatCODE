@@ -1,6 +1,6 @@
 # MeatCODE — Agent Update Log
 
-_Last updated: 2026-07-01 11:18 UTC · art-director session · UI/UX v8 polish + dashboard upgrade_
+_Last updated: 2026-07-05 ~21:20 UTC · Project Coordinator + Advisory · weekly sync + doc-consistency fix_
 
 > **Every agent appends an entry here at the end of any working session — newest at the top.**
 > This is the detailed audit trail of who changed what, when, and why. The short in-file
@@ -16,6 +16,84 @@ _Last updated: 2026-07-01 11:18 UTC · art-director session · UI/UX v8 polish +
 - Result:  <outcome, what works now>
 - Next:    <follow-ups left open, if any>
 ```
+
+---
+
+## 2026-07-05 ~21:35 UTC · Project Coordinator · PARALLEL team run — corpus white-space analysis (consolidated)
+Data Engineer (empirical) + Advisory (strategic) ran simultaneously on disjoint files against the shared objective, then reported back for the coordinator to consolidate and reconcile.
+
+### Data Engineer · corpus coverage — `analysis/white_space_analysis.py` + `analysis/white_space_data.md`
+- What:   Per-topic & per-branch tagged-source counts + high-relevance (`relevance_llm≥60`) shares, tagged-vs-untagged split, thin-layer counts (claims, molecule categories). Re-runnable, SELECT-only.
+- Result: 818 sources but only **329 (40%) tagged** in `source_topics` (489 untagged legacy). Branch coverage: analytics 134 (54% high-rel, best); meat_analogs 43 (14%, thinnest). **5 HIGH-priority topics with ZERO tagged sources**: PINN, LMMA/TVP, Precision fermentation, Pre-rigor biochemistry, Cooking. claims=45; molecules 799 but 784 uncategorized.
+- Next:   Back-tag the 489 legacy sources before treating any "0" as a confirmed gap; categorize molecules.
+
+### Advisory · white-space map — `docs/white_space_map.md`
+- What:   First strategic white-space map (grouped by branch/theme) + ranked 10 highest-leverage research questions + 3 WUR-GC-MS quick-wins; every gap framed as an unvalidated hypothesis (trust-first).
+- Result: Top leverage — thiamine/sulfur precursor engineering in plant bases; Maillard×lipid cross-talk in plant matrices; mechanism-first precursor/peptide design; a_w effects on 2-acetyl-1-pyrroline/furanthiols in HMMA; bitter-blocker×aroma-masking synergy; process-formed vs pre-added flavor robustness; heme-analogue degradation; matrix→aroma-release kinetics.
+- Next:   Re-rank once DE numbers fold in; Daniel sign-off; consider quick-win #3 (targeted synthesis over the existing 818) first.
+
+### Coordinator reconciliation
+- **The two halves agree:** Advisory's analog/plant-chemistry questions map directly onto the DE's empirical finding that `meat_analogs` is the thinnest, weakest-quality branch and that analog topics (precision fermentation, LMMA/TVP) have zero tagged coverage.
+- **Shared caveat:** only 40% of sources are tagged, so empirical "gaps" are PROVISIONAL until the 489 legacy sources are back-tagged — that back-tag is the #1 prerequisite before this map is treated as authoritative. The thin 45-claims layer also means some "gaps" may be an extraction-pipeline gap, not a true literature gap.
+
+## 2026-07-05 ~21:20 UTC · Project Coordinator + Advisory · weekly sync + doc-consistency fix
+- What:    (Advisory) Corrected a stale line in PROJECT_STATE.md that still claimed "two Oracle backends coexist (reaktzia-mvp/ + meatcode_server.py)" — reaktzia-mvp/ was deleted 2026-07-05, so it's now documented as the single `server/meatcode_server.py` backend. (Coordinator) Read the full week of AGENT_UPDATE_LOG + PROJECT_STATE, wrote a management status note for Daniel, and prepared an Asana reconciliation proposal (not yet applied — awaiting Lior's OK before mutating the board).
+- Files:   `PROJECT_STATE.md` (backend line + last-updated stamp), `docs/2026-07-05_status_for_daniel.md` (new), this log.
+- Why:     Lior dispatched (via the Agent Command Center) a weekly-sync order: summarize what each agent did, reconcile Asana with reality, draft a Daniel note; Advisory to keep infra/docs consistent.
+- Result:  Daniel-ready status note saved; PROJECT_STATE now matches the single-backend reality. Week's throughput captured: corpus 496→818 + scoring + FTS (Data Engineer); live/filterable expert map + per-expert actions (Data Engineer + UI Designer); backend consolidation + template refold + conn-leak fix; v8 polish + 4 new screens (UI Designer); Oracle hybrid-RAG decision (Algorithm Expert); infra/three-homes + define docs (Advisory).
+- Next:    Lior to confirm the Asana reconciliation (below) so the Coordinator can apply it; Daniel sign-off on tagging taxonomy v0.1 + hub architecture v0.1 + Oracle build; push via sync_meatcode.command.
+- Asana reconciliation proposed (repo shows delivered, Asana still open): "Choose tool stack for knowledge hub infrastructure", "Define hub architecture (sitemap, schema, journeys, UI concept)", "Define tagging taxonomy v0.1", "Define literature search scope and create search strings" → mark complete. Phase-1 build milestones (Literature DB v1, Molecular DB alpha, Expert map v1) remain legitimately in-progress (e.g. corpus 818/1,000+), so leave open.
+
+- What:    Per Lior ("remove the agents that are on my server", confirmed full-feature removal), stripped the entire agent-team dashboard from the backend. Deleted `server/agents.py` and `app/agent_dashboard.html`; removed from `server/meatcode_server.py` the `import agents`, the `/agents` pretty-URL route, all GET routes (`/api/agents`, `/api/team/run[s]`, `/api/updates`) and POST routes (`/api/agents`, `/api/team/run`, `/api/team/broadcast`), and the `/agents` startup-banner line; reverted `run_oracle.command` to open only the mockup; cleared the gitignored runtime state (`data/agents_roster.json`, `data/agent_runs.json`).
+- Files:   deleted `server/agents.py`, `app/agent_dashboard.html`; edited `server/meatcode_server.py`, `run_oracle.command`; cleaned `data/`.
+- Why:     Lior wants the agent system off his server; he keeps the standalone Claude-Artifact build (`app/agent_team_artifact.html`, published) separately.
+- Result:  Server booted (dummy key) and verified: KEPT — `/api/health` ok, `/templates/` serves, `/api/experts` returns live Neon (Thomas Hofmann); GONE — `/api/agents`, POST `/api/team/run`, and `/agents` all 404. Kept `ThreadingHTTPServer` + the `pg_rows` connection-leak fix (general improvements, not agent-specific — flagged for Lior in case he wants those reverted too). The Data Engineer's `/api/experts` filters + `/api/expert-facets` are untouched.
+- Next:    None required. If Lior later wants live agents in a pinned/always-on form, that needs the backend hosted (Render/Railway) — the standalone artifact can't do it (sandboxed).
+
+## 2026-07-05 ~20:25 UTC · Project Coordinator · PARALLEL team run — expert-map filter buttons (consolidated)
+Two specialists ran simultaneously on one objective (new, clickable expert-map buttons wired to Neon via `meatcode_server.py`), each owning a disjoint file against a fixed API contract, then reported back for the coordinator to log.
+
+### Data Engineer · expert API filters — `server/meatcode_server.py`
+- What:   Extended `GET /api/experts` with optional `q` (name/affiliation ILIKE substring), `country` (case-insensitive exact), `sort` (`relevance` default | `h_index` | `papers`; unknown→relevance), `min_relevance` (float), `limit` (default 200, clamp 1..500) — all parameterized SQL, base `relevance_score IS NOT NULL` kept. Added `GET /api/expert-facets` → `{countries:[{country,count}], total}` for the UI's country buttons.
+- Why:    Back the new UI filter controls with a matching contract, built in parallel with the front-end.
+- Result: `py_compile` clean; verified live vs Neon — `q=schieberle`→Schieberle; `country=Germany&sort=h_index`→Hofmann(68)/Schieberle(63)/Selke(33); `min_relevance=0.9`→only ≥0.9; facets sum to the 374 curated experts. All existing endpoints + 503-fallback unchanged.
+- Next:   `experts.country` is inconsistently coded (ISO vs full name, "US" vs "USA") → facet buttons fragment; needs a normalization pass.
+
+### UI/UX Designer · expert-map filter controls — `app/meatcode_mockup.html`
+- What:   New `#mcFilterBar` in the Map scene: search input (300ms debounce → `q`), country `<select>` (top-8 from `/api/expert-facets` → `country`), sort buttons Relevance/H-index/Papers (→ `sort`), "Top-rated only" toggle (→ `min_relevance=0.9`), Reset, live result count + loading/empty/error states. On change → refetch `/api/experts`, reuse the existing loader's mapping via a new `window.mcApplyExperts` export (no duplicated logic), re-render list+globe (each call guarded); never blanks on empty/error.
+- Why:    Wire the static expert map to the live, filterable endpoints per the shared contract.
+- Result: all inline `<script>` blocks pass `node --check`; fetch URLs/params grep-match the contract; file serves over HTTP (200). Live in-browser click-test not possible in the sandbox.
+- Next:   Browser click-test with the server running; optional URL-hash filter state for shareable views.
+
+## 2026-07-05 ~20:10 UTC · agent-dashboard session · STANDALONE Claude-Artifact build (the deliverable Lior asked for)
+- What:    Recalibrated after feedback: Lior wanted a STANDALONE single-file HTML he can connect to Claude as an Artifact — not a server-wired page. Built `app/agent_team_artifact.html`: one self-contained file (inline CSS/JS, no external requests, CSP-safe) with the full platform — pick/edit/add agents, select multiple, one goal, one-click **parallel** run, per-agent progress cards, Project Coordinator broadcast, recent-runs history, and a Team-activity feed. Agents run for real via the Claude Artifact runtime API `window.claude.complete()`; opened outside an artifact it auto-detects and falls back to **Demo mode** (clearly-labelled simulated output) so the UI is fully explorable. State persists in `localStorage` (no server/data files).
+- Files:   `app/agent_team_artifact.html` (new — the standalone artifact). The earlier server-wired `app/agent_dashboard.html` + `server/agents.py` stay as the on-prem variant.
+- Why:     Lior: "create a standalone html that I can connect to claude artifact" with the agent-team features.
+- Result:  Rendered + driven live in a headless browser (Demo mode): layout clean/on-brand, banner correctly explains demo vs live, selecting Data Engineer + UI Designer + the expert-map goal → both ran in parallel to `done`, Coordinator broadcast rendered and posted to the activity feed, run button re-enabled. To go live: paste the file into a Claude.ai conversation as an Artifact (where `window.claude.complete` exists) — no server needed.
+- Next:    Optional: swap the localStorage activity log to sync with the real AGENT_UPDATE_LOG when run on-prem; add a per-deliverable copy/export; a "sync round" so workers see each other's drafts before the coordinator.
+
+## 2026-07-05 ~19:40 UTC · agent-dashboard session · agent-team management platform (server-wired variant)
+- What:    Built Lior an agent-team control panel on top of `meatcode_server.py`. Pick a set of role-scoped agents (Data Engineer / UI-UX Designer / Project Coordinator / Oracle Researcher — editable + extendable), hand them ONE goal, hit Run: each agent runs **simultaneously** (one background thread each) as a Claude call with its own mandate + live PROJECT_STATE context, aware of its teammates so deliverables fit together. Progress streams into per-agent cards; a Project Coordinator pass then synthesises the run and appends a real entry to this very log ("broadcast to the team"). Recent-runs history + an activity feed (parsed from AGENT_UPDATE_LOG) round it out. Switched the server to ThreadingHTTPServer so parallel runs + polling don't block the Oracle stream.
+- Files:   `server/agents.py` (new — roster, threaded orchestration, JSON persistence in gitignored `data/`, coordinator broadcast, log parser); `server/meatcode_server.py` (new routes: GET `/api/agents`,`/api/team/run[s]`,`/api/updates`; POST `/api/agents`,`/api/team/run`,`/api/team/broadcast`; `/agents` pretty URL; ThreadingHTTPServer); `app/agent_dashboard.html` (new — minimalist on-brand control panel); `run_oracle.command` (also opens `/agents`).
+- Why:     Lior wants one easy management platform to choose agents, dispatch multiple workers on a shared problem in one click, watch their progress on the big goals, and have a coordinator spread the latest updates to the team.
+- Result:  Smoke-tested end-to-end with a DUMMY key (no spend, no real log entry): roster seeds, `/agents` serves, POST run spawns parallel threads, both agents dispatched + statuses captured (401 → error path), run finalized to `done`, history + `data/` persistence + updates feed all correct (feed now skips the template heading). The success path (real Claude output + real coordinator log append) is the product itself — runs on Lior's real key from the dashboard. v1 boundary: agents produce **text deliverables/plans**, they do NOT auto-edit the repo/DB yet.
+- Next:    (1) Optional "Apply" action per deliverable to actually land an agent's SQL/HTML (the deliberate opt-in beyond v1's read-only safety boundary). (2) Optional "sync round" where workers see each other's first outputs before the coordinator. (3) Consider bumping the Oracle/agent model Sonnet 4.6 → Sonnet 5.
+
+## 2026-07-05 ~19:00 UTC · deploy-templates session · template layer refolded onto the sole backend
+- What:    After `reaktzia-mvp/` was deleted (it held the template static-mount + listing added earlier that day), rebuilt that functionality onto `server/meatcode_server.py` — the stdlib `http.server` that `run_oracle.command` launches. Added `GET /api/templates` (lists `app/templates/*.html`), `GET /api/papers/recent[?limit]` (Neon), a `/templates/…` pretty-URL rewrite → `app/templates/…` (bare `/templates/` serves the gallery), and enriched `GET /api/health` to the `{ok, db_ok, has_anthropic_key, model}` shape `meatcode-api.js` reads. Fixed a real connection leak in `pg_rows` (psycopg2 `with connect()` commits but never closes → leaks one Neon connection per request; now `try/finally conn.close()`). Repointed the template folder's docs/status strings from the deleted `reaktzia-mvp` to `meatcode_server.py` / `run_oracle.command`.
+- Files:   `server/meatcode_server.py`; `app/templates/README.md`, `index.html`, `meatcode-api.js` (stamps + reaktzia→meatcode_server refs).
+- Why:     Lior deleted `reaktzia-mvp/` and asked to make the template-serving work through `meatcode_server.py` under `run_oracle.command`.
+- Result:  Booted the server (dummy key) and smoke-tested live: `/api/health` returns the connector shape; `/api/templates` lists both reference templates; `/api/papers/recent` returned **real Neon papers** (DB is wired via repo `.env`); `/templates/`, `/templates/meatcode-api.js`, and `/templates/example-oracle.html` all serve. `/api/ask` streaming path is unchanged from the working mockup wiring (not re-tested — needs a real key). Templates now gain live Claude+Neon access with `<script src="meatcode-api.js"></script>` + `data-mc-*`, gallery at `http://localhost:8000/templates/`.
+- Next:    Optional: the earlier server-improvement assessment (raise Oracle `max_tokens`, singleton Anthropic client, `/api/ask` `k`-clamp, prompt caching, model bump Sonnet 4.6→Sonnet 5) still stands; none are required for the templates to work.
+
+---
+
+## 2026-07-05 ~18:10 UTC · data-eng / advisory session · corpus scoring + live expert map + server consolidation
+- What:    (1) Applied FTS migration 0001 — `sources.search_vec` now 496/496 citable + trigger. (2) Expanded corpus 496→818 via a multi-source ingester (Europe PMC default; OpenAlex full-text search was returning 503) driven by the taxonomy bible, deduped + tagged to `source_topics`. (3) Made the taxonomy the governing bible: `db/taxonomy.py` loader + `pipeline/sync_taxonomy.py` (topics synced). (4) Quality/priority scoring: migration 0002 added `priority_score`/`is_review`/`relevance_llm`; `score_priority.py` (composite + dedupe -10 rows) and `score_relevance.py` (LLM/Haiku gate — all 818 scored, 202 flagged <40 off-topic). (5) Expert map now live-data-backed: `meatcode_server.py` serves Neon-backed `GET /api/experts`, `/api/experts/{id}`, `/api/papers/{id}` (+ `/api/health`); mockup fetches real curated experts into globe/list/detail with demo fallback.
+- Files:   db/migrations/0001_*,0002_*; db/connect.py, db/taxonomy.py, db/taxonomy/keywords_topics.json, docs/DATA_DICTIONARY.md; pipeline/openalex_ingest.py, sync_taxonomy.py, score_priority.py, score_relevance.py; server/meatcode_server.py; app/meatcode_mockup.html; run_oracle.command; CLAUDE.md; PROJECT_STATE.md
+- Why:     Lior: connect Neon to server+agents, expand DB by taxonomy, verify/prioritize paper quality, and make the expert map interactive with real Neon experts off meatcode_server.
+- Result:  All verified live over HTTP against Neon. `reaktzia-mvp/` deleted → `server/meatcode_server.py` is the sole backend; `run_oracle.command` launches it and opens the mockup with a working live expert map + Oracle. Corpus: 818 sources (all citable); experts 3,129 (374 curated surfaced on the map).
+- Next:    Foundational older-reviews pass (corpus is recency-skewed); optionally quarantine the 202 low-relevance papers; normalize `experts.country` (ISO↔name) for better globe placement; deeper ingest toward 1,000–2,000.
 
 ---
 

@@ -18,9 +18,9 @@ if [ ! -f .env ] || ! grep -qE '^ANTHROPIC_API_KEY=[[:space:]]*sk-' .env 2>/dev/
 fi
 
 # 2) Make sure the anthropic SDK is installed
-python3 -c "import anthropic" 2>/dev/null || {
-  echo "Installing the Anthropic SDK (one-time)…"
-  python3 -m pip install --user anthropic || pip3 install anthropic
+python3 -c "import anthropic, psycopg2" 2>/dev/null || {
+  echo "Installing dependencies (one-time): anthropic + psycopg2…"
+  python3 -m pip install --user anthropic psycopg2-binary || pip3 install anthropic psycopg2-binary
 }
 
 # 3) Open the mockup once the server is up

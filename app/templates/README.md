@@ -1,10 +1,10 @@
 # Claude Design templates → live MeatCODE app
 
-_Last updated: 2026-07-05 13:30 UTC · deploy-templates session · initial version_
+_Last updated: 2026-07-05 · deploy-templates session · repointed to server/meatcode_server.py after reaktzia-mvp removal_
 
 This folder deploys the templates you build in **Claude Design** so their elements
-talk to Claude + the Neon database through the **same** FastAPI server the canonical
-mockup uses (`server/reaktzia-mvp/`, port 8000). No per-template server code — you
+talk to Claude + the Neon database through the **same** server the canonical mockup
+uses (`server/meatcode_server.py`, port 8000). No per-template server code — you
 drop an exported HTML file in here and wire its elements with data attributes.
 
 ## How it fits together
@@ -13,9 +13,9 @@ drop an exported HTML file in here and wire its elements with data attributes.
 Claude Design template (.html)  ──include──▶  meatcode-api.js
                                                      │  (SSE / fetch)
                                                      ▼
-                            server/reaktzia-mvp  (FastAPI, :8000)
-                                 /api/ask   → Claude (streams answer + citations)
-                                 /api/papers → Neon Postgres
+                          server/meatcode_server.py  (:8000)
+                               /api/ask     → Claude (streams answer)
+                               /api/papers  → Neon Postgres
 ```
 
 The server already reads `ANTHROPIC_API_KEY` and `DATABASE_URL` from the repo `.env`,
@@ -74,9 +74,11 @@ MeatCODE.recentPapers(6).then(ps => {});
 
 ## Run it
 
+Double-click **`run_oracle.command`** in the repo root (it starts
+`server/meatcode_server.py` on port 8000 and opens the mockup), then:
+
 ```
-server/reaktzia-mvp/run_server.command      # starts uvicorn on :8000
-open http://127.0.0.1:8000/templates/       # the gallery
+open http://localhost:8000/templates/       # the template gallery
 ```
 
 Templates opened directly via `file://` also work — `meatcode-api.js` detects that

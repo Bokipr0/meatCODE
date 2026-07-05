@@ -4,7 +4,7 @@
 > Asana owns *tasks & priorities*; this file owns *technical reality* — what's built, what's broken,
 > what's in flight. Keep it short and current, not a changelog.
 
-_Last updated: 2026-07-05 by Claude (deploy-templates session: Claude Design templates now deployable against the live FastAPI server via a shared connector)_
+_Last updated: 2026-07-05 by Claude (advisory: corrected the stale "two backends" line to reflect the single `meatcode_server.py`; + Project Coordinator weekly sync — see AGENT_UPDATE_LOG.md and docs/2026-07-05_status_for_daniel.md)_
 
 ---
 
@@ -22,14 +22,14 @@ Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-u
 - **Streamlit dashboard** (6 tabs: Overview, Sources & Relevance, Molecules, Review Queue, Run History,
   Pipeline Controls).
 - **Expert network map v3**: co-authorship lines, connection badges, network stats.
-- **Two Oracle backends** coexist: `reaktzia-mvp/` (FastAPI + Neon + RAG, real cited papers) and the
-  thin `meatcode_server.py` (SDK-only, SSE streaming, for fast demos / Neon-asleep fallback).
-- **Oracle live-demo wired** (2026-06-30, advisory session): `meatcode_server.py` now serves the repo
-  root so `app/meatcode_mockup.html` + assets load; model → `claude-sonnet-4-6`; `.env` read from repo
-  root. `run_oracle.command` (double-click) starts the server and opens the mockup. Verified: compiles
-  cleanly + SSE contract matches the mockup (`POST /api/ask` → `sources/chunk/done`, payload `{question}`).
-  Pending only Lior adding `ANTHROPIC_API_KEY` to `meatCODE/.env` and running it. (Thin = no citations;
-  RAG-with-citations = the `reaktzia-mvp/` server once `DATABASE_URL` is in `.env`.)
+- **Single backend** (`server/meatcode_server.py`): `reaktzia-mvp/` was deleted 2026-07-05 — one stdlib
+  server now serves the mockup + assets, the Oracle (`POST /api/ask`, SSE), and the Neon-backed
+  expert/paper endpoints. _(Corrected 2026-07-05, advisory: this file previously listed "two backends".)_
+- **Oracle live-demo wired**: `meatcode_server.py` serves the repo root so `app/meatcode_mockup.html` +
+  assets load; model → `claude-sonnet-4-6`; `.env` read from repo root. `run_oracle.command` (double-click)
+  starts the server and opens the mockup. Verified: compiles cleanly + SSE contract matches the mockup
+  (`POST /api/ask` → `sources/chunk/done`, payload `{question}`). Pending only Lior adding
+  `ANTHROPIC_API_KEY` to `meatCODE/.env` and running it.
 - **Postgres schema** migrated (literature, molecules, experts, protocols, outputs — one schema).
 - **Dimensions.ai ingester** added to the pipeline.
 - **`docs/DATA_DICTIONARY.md`** (column-level schema map) and **`db/migrations/`** (forward-only migration convention) added.
@@ -38,19 +38,41 @@ Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-u
 - **Taxonomy = governing bible:** `db/taxonomy/keywords_topics.json` (91 keywords, 5 branches) is the single source of truth. `db/taxonomy.py` is the one loader every script imports (no hardcoded topic lists); `pipeline/sync_taxonomy.py` upserts it into the `topics` table (synced live — 91 updated, 112 rows). `pipeline/openalex_ingest.py` now defaults its queries from the taxonomy and tags each new source to canonical topics via `source_topics`. Rule documented in CLAUDE.md.
 - **Corpus expanded 496 → 828 sources (+332)** via `openalex_ingest.py` (now multi-source; **Europe PMC** default since OpenAlex full-text search was returning 503, OpenAlex selectable when healthy). All from 75 HIGH-priority taxonomy queries, deduped by DOI/provider-id, all citable (`search_vec`), all tagged to canonical branches (analytics 136, flavor_ingredients 67, meat_science 52, meat_analogs 43, flavor_chemistry 34). Next options: deeper pass (`--per-topic 15`) + MED topics toward 1,000; back-tag the original 496 to the taxonomy for uniform sorting.
 - **Quality + priority scoring live (2026-07-01):** migration `0002_source_scoring.sql` added `priority_score`, `is_review`, `relevance_llm`. `pipeline/score_priority.py` = deterministic composite (relevance proxy · venue tier · review-type · citations/year · recency · taxonomy-tagged) + dedupe (removed 10 dupes → 818). `pipeline/score_relevance.py` = LLM gate (Haiku) scoring all 818 for meaty-process-flavor relevance 0-100; `priority_score` blends 60% LLM + 40% deterministic. Result: 45 sources ≥80, and **202 flagged <40 (keyword-matched but off-topic — nutrition/contaminants/health) = review/quarantine shortlist.** Use: rank hub/Oracle by `priority_score DESC`; Oracle should filter `relevance_llm >= 60` so it never cites off-topic papers. Tunable weights at top of score_priority.py.
-- **Expert map now live-data-backed (2026-07-01):** `reaktzia-mvp` gained `GET /api/experts` (ranked, curated) + `GET /api/experts/{id}`; verified over HTTP. `app/meatcode_mockup.html` fetches them on load, replaces the demo `RESEARCHERS` in place (globe + list + detail), ranks by real `relevance_score`, falls back to demo data if the server is offline. Surfaces the **374 curated experts** (relevance-scored), not all 3,129 raw authors. Caveats: co-authorship edges cleared (`expert_relations` empty — no fake links); globe uses country→centroid coords w/ jitter (country data sparse). **Needs the DB-backed reaktzia-mvp server on :8000, not the thin meatcode_server.py.**
+- **Expert map now live-data-backed (2026-07-01):** `reaktzia-mvp` gained `GET /api/experts` (ranked, curated) + `GET /api/experts/{id}`; verified over HTTP. `app/meatcode_mockup.html` fetches them on load, replaces the demo `RESEARCHERS` in place (globe + list + detail), ranks by real `relevance_score`, falls back to demo data if the server is offline. Surfaces the **374 curated experts** (relevance-scored), not all 3,129 raw authors. Caveats: co-authorship edges cleared (`expert_relations` empty — no fake links); globe uses country→centroid coords w/ jitter (country data sparse).
+- **`reaktzia-mvp/` deleted; `server/meatcode_server.py` is now the SOLE backend (2026-07-05).** It serves the repo (mockup + assets), the Oracle (`POST /api/ask`, SSE), and reads Neon for `GET /api/experts`, `/api/experts/{id}`, `/api/papers/{id}` (psycopg2 + `DATABASE_URL` from `.env`; degrades to 503→demo data if DB missing). `run_oracle.command` double-click starts it on :8000 and opens `app/meatcode_mockup.html` → interactive live expert map + Oracle. Verified end-to-end over HTTP.
+- **Expert-map FILTERS shipped (2026-07-05, parallel team run — Data Eng + UI Designer):** `GET /api/experts` now accepts `q` / `country` / `sort`(relevance|h_index|papers) / `min_relevance` / `limit`; new `GET /api/expert-facets` returns country counts. The mockup's Map scene gained a `#mcFilterBar` (search, country select, sort buttons, "Top-rated only" toggle, reset, live count + loading/empty/error states) wired to those endpoints, reusing `window.mcApplyExperts` to re-render list+globe. Both sides verified (server live vs Neon; mockup `node --check` + HTTP load); **browser click-test still pending**. Known data issue: `experts.country` mixes ISO codes and full names → fragmented country facets; normalization pass recommended.
+- **First white-space map (2026-07-05, parallel team run — Data Eng + Advisory):** `analysis/white_space_analysis.py` + `analysis/white_space_data.md` (empirical: 329/818 sources tagged; meat_analogs thinnest at 14% high-rel; **5 HIGH-priority topics with 0 tagged sources**) and `docs/white_space_map.md` (strategic map + ranked 10 research questions + 3 WUR quick-wins; gaps framed as hypotheses). The two AGREE — analog/plant-chemistry is the biggest gap (thiamine/sulfur route in plant bases, Maillard×lipid cross-talk, a_w effects on 2-AP/furanthiols, mechanism-first precursor design). ⚠️ **Provisional**: only ~40% of sources are tagged in `source_topics` — back-tag the 489 legacy sources before treating gaps as confirmed; molecules 784/799 uncategorized; claims only 45. Next: back-tag + re-rank, then Daniel sign-off.
 - **New mockup** (`app/meatcode_mockup.html`, Jun 30) adds a Protocol Library and an aroma Prediction
   surface on top of Map / Oracle / Research.
 - **Art-direction pass v8** (`UI-UX Designer/MeatCODE_mockup_v8_UIUX-polish.html`): teal-consistency
   fixes (avatar / bubbles / globe), emoji→SVG icons, personas realigned to the 4 real audiences,
   dashboard now fronts all 5 domains, Simulate marked *Preview*, molecular names monospaced.
   Candidate — awaiting Lior's approval to promote to `app/meatcode_mockup.html`. See `UI-UX Designer/DESIGN_NOTES_v8.md`.
-- **Claude Design templates deployable (2026-07-05):** new `app/templates/` folder is served by the
-  `reaktzia-mvp` FastAPI server (`/templates/` static mount + `/api/templates` listing). Any exported
-  Design `.html` dropped in gains the same live Claude+Neon access as the mockup by including
-  `<script src="meatcode-api.js"></script>` — the shared connector wraps the proven `/api/ask` SSE flow
-  (`ask/health/paper/recentPapers`) and adds zero-JS `data-mc-*` auto-wiring. Self-populating gallery at
-  `http://127.0.0.1:8000/templates/`; see `app/templates/README.md` + `example-oracle.html`/`oracle-demo.html`.
+- **Agent-team platform — STANDALONE Claude-Artifact build (2026-07-05):** `app/agent_team_artifact.html`
+  is a single self-contained file (inline CSS/JS, no external requests, `localStorage` state) with the whole
+  platform — pick/edit/add agents, multi-select, one goal, one-click **parallel** run, per-agent progress,
+  Project Coordinator broadcast, runs history, activity feed. Agents run via the Claude Artifact runtime
+  `window.claude.complete()`; outside an artifact it falls back to a clearly-labelled **Demo mode**. To use:
+  paste into a Claude.ai conversation as an Artifact — no server. Verified live in a headless browser (demo).
+  This is the standalone deliverable Lior asked for (the pinned artifact runs sandboxed = **Demo mode only**;
+  it cannot reach Claude or Neon — live runs would need a hosted backend).
+  **Published to claude.ai artifacts (2026-07-05):** https://claude.ai/code/artifact/39bb2bad-9d15-4655-8c12-097e261401b0
+  (default-private, in Lior's pinned area; source of truth stays `app/agent_team_artifact.html` — re-publish from there on changes).
+- **Server-wired agent dashboard REMOVED (2026-07-05):** the on-prem control panel (`app/agent_dashboard.html`
+  + `server/agents.py` + the `/agents` page and `/api/agents`, `/api/team/*`, `/api/updates` routes) was
+  deleted from `meatcode_server.py` at Lior's request. The server is back to Oracle + expert map + templates.
+  Verified after removal: `/api/health`, `/templates/`, and `/api/experts` (live Neon) all still work; every
+  agent route now 404s. `ThreadingHTTPServer` and the `pg_rows` connection-leak fix were kept (both are
+  general server improvements, not agent-specific). The standalone artifact above is untouched.
+- **Claude Design templates deployable (2026-07-05):** `app/templates/` is served by the sole backend
+  `server/meatcode_server.py` — `/templates/…` pretty-URL rewrite (bare `/templates/` = gallery) plus
+  `GET /api/templates` (self-populating listing) and `GET /api/papers/recent`. Any exported Design `.html`
+  dropped in gains the same live Claude+Neon access as the mockup by including
+  `<script src="meatcode-api.js"></script>` — the connector wraps `/api/ask` (SSE) + `health/paper/recentPapers`
+  and adds zero-JS `data-mc-*` auto-wiring. Launch via `run_oracle.command`; gallery at
+  `http://localhost:8000/templates/`. Smoke-tested live (health/templates/recent/gallery all serve; recent
+  returned real Neon papers). See `app/templates/README.md` + `example-oracle.html`/`oracle-demo.html`.
+  (The earlier `reaktzia-mvp` static-mount version of this was lost when that folder was deleted; refolded here.)
 - **New screen designs handed off (2026-07-05, Claude Design session):** Home, Community Map,
   Food Oracle (empty/ask state screenshotted; answered + loading + modal states present in source),
   and Research phase picker — high-fidelity, on the MeatCODE Design System tokens. Packaged at

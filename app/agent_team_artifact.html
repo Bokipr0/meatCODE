@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<!-- MeatCODE Agent Team — STANDALONE Claude-Artifact build.
+     Self-contained (no server, no external requests). Agents run via the Claude
+     Artifact runtime API window.claude.complete(). Paste this file into a Claude
+     conversation as an Artifact (or publish it) to run agents live; opened locally
+     it falls back to Demo mode so the UI is fully explorable. State persists in
+     the browser (localStorage). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MeatCODE · Agent Team</title>
+<style>
+  :root{
+    --bg:#FAF6EF; --bg-deep:#F2EBDA; --surface:#fff;
+    --teal:#00736E; --teal-deep:#015A56; --teal-soft:#4FA59F; --teal-tint:#B5DDD8; --teal-mist:#E0F0EE;
+    --ink:#1A1A1A; --ink-dim:#4A4A4A; --ink-faint:#8A8A8A;
+    --line:#E5DDD0; --line-strong:#D2C8B5; --coral:#C77E5F; --coral-soft:#F2D7C8;
+    --ok:#2E7D5B; --sys:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sys);-webkit-font-smoothing:antialiased}
+  /* banner */
+  #banner{display:none;padding:9px 22px;font-size:12.5px;text-align:center;background:var(--coral-soft);color:#7a3b1e;border-bottom:1px solid var(--coral)}
+  #banner b{cursor:pointer;text-decoration:underline}
+  /* top bar */
+  header{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;
+    padding:0 22px;height:60px;background:var(--surface);border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:10px}
+  .mark{width:30px;height:30px;background:var(--teal);color:#fff;border-radius:8px;display:grid;place-items:center;font-weight:700;box-shadow:0 4px 16px rgba(0,67,64,.1)}
+  .brand b{font-size:17px;color:var(--teal-deep)}
+  .brand span{font-size:13px;color:var(--ink-faint)}
+  #conn{font-size:12px;font-family:var(--mono);display:flex;align-items:center;gap:10px}
+  #resetBtn{font:inherit;font-size:11px;background:none;border:0;color:var(--ink-faint);cursor:pointer;text-decoration:underline}
+  /* layout */
+  .wrap{display:grid;grid-template-columns:300px 1fr;gap:20px;max-width:1180px;margin:0 auto;padding:22px}
+  @media(max-width:820px){.wrap{grid-template-columns:1fr}}
+  .col-title{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);margin:0 2px 10px}
+  /* roster */
+  .agent{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 13px;margin-bottom:10px;transition:border-color .12s,box-shadow .12s;cursor:pointer}
+  .agent:hover{border-color:var(--teal-soft)}
+  .agent.sel{border-color:var(--teal);box-shadow:0 0 0 2px var(--teal-mist)}
+  .agent .row{display:flex;align-items:center;gap:9px}
+  .agent .emoji{font-size:20px;width:26px;text-align:center}
+  .agent .name{font-weight:700;font-size:14px;flex:1}
+  .agent .tick{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--line-strong);display:grid;place-items:center;color:#fff;font-size:12px;flex:none}
+  .agent.sel .tick{background:var(--teal);border-color:var(--teal)}
+  .agent .mandate{font-size:11.5px;color:var(--ink-dim);line-height:1.45;margin-top:7px;max-height:0;overflow:hidden;transition:max-height .18s}
+  .agent.open .mandate{max-height:240px}
+  .agent .edit{font-size:11px;color:var(--teal);margin-top:7px;display:none}
+  .agent.open .edit{display:inline-block}
+  .agent input.f,.agent textarea.f{width:100%;font:inherit;font-size:12px;border:1px solid var(--line);border-radius:7px;padding:6px 8px;margin-top:6px;background:var(--bg);color:var(--ink)}
+  .agent textarea.f{min-height:92px;resize:vertical;line-height:1.4}
+  .agent .del{font-size:11px;color:var(--coral);margin-left:10px;cursor:pointer}
+  .side-actions{display:flex;gap:8px;margin-top:4px}
+  .btn{font:inherit;font-weight:700;border:0;border-radius:9px;padding:8px 14px;cursor:pointer;font-size:13px}
+  .btn.primary{background:var(--teal);color:#fff}.btn.primary:hover{background:var(--teal-deep)}
+  .btn.primary:disabled{opacity:.45;cursor:default}
+  .btn.ghost{background:var(--bg-deep);color:var(--ink-dim)}.btn.ghost:hover{background:var(--teal-mist);color:var(--teal-deep)}
+  .btn.sm{padding:6px 11px;font-size:12px}
+  /* composer */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:18px}
+  .card h2{font-size:15px;color:var(--teal-deep);margin-bottom:4px}
+  .card .hint{font-size:12.5px;color:var(--ink-faint);margin-bottom:12px}
+  textarea#goal{width:100%;min-height:96px;font:inherit;font-size:15px;line-height:1.5;border:1px solid var(--line);border-radius:12px;padding:12px 14px;resize:vertical;background:var(--bg);color:var(--ink)}
+  textarea#goal:focus{outline:2px solid var(--teal);border-color:transparent;background:#fff}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+  .chip{background:var(--teal-mist);color:var(--teal-deep);border:1px solid var(--teal-tint);border-radius:100px;padding:4px 11px;font-size:12px;font-weight:700}
+  .chip.empty{background:var(--bg-deep);color:var(--ink-faint);border-color:var(--line);font-weight:400}
+  .composer-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:4px}
+  .bcast{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-dim);cursor:pointer;user-select:none}
+  .bcast input{width:16px;height:16px;accent-color:var(--teal)}
+  /* run board */
+  .run-agent{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+  .run-agent .head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .run-agent .head .name{font-weight:700;font-size:14px;flex:1}
+  .pill{font-family:var(--mono);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:100px}
+  .pill.queued{background:var(--bg-deep);color:var(--ink-faint)}
+  .pill.running{background:var(--teal-mist);color:var(--teal-deep)}
+  .pill.running::after{content:" ●";animation:blink 1s infinite}
+  .pill.done{background:#E3F1E9;color:var(--ok)}
+  .pill.error{background:var(--coral-soft);color:#8a3b1e}
+  @keyframes blink{50%{opacity:.3}}
+  .run-agent pre{white-space:pre-wrap;font-family:var(--mono);font-size:12px;line-height:1.55;color:var(--ink-dim);
+    background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:11px 12px;max-height:360px;overflow:auto}
+  .coord{border:1px solid var(--teal-tint);background:var(--teal-mist);border-radius:14px;padding:15px 17px;margin-top:4px}
+  .coord .tag{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--teal-deep);margin-bottom:7px}
+  .coord p{font-size:13.5px;line-height:1.6;color:var(--ink);white-space:pre-wrap}
+  .coord .logged{font-size:11.5px;color:var(--teal-deep);margin-top:9px;font-weight:700}
+  /* history + feed */
+  .mini{display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;cursor:pointer;background:var(--surface);font-size:12.5px}
+  .mini:hover{border-color:var(--teal-soft);background:var(--teal-mist)}
+  .mini .goal{flex:1;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mini .who{font-size:15px;letter-spacing:-2px}
+  .feed-item{padding:10px 0;border-bottom:1px solid var(--line)}
+  .feed-item:last-child{border:0}
+  .feed-item .m{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint)}
+  .feed-item .t{font-weight:700;font-size:13px;color:var(--teal-deep);margin:2px 0}
+  .feed-item .d{font-size:12px;color:var(--ink-dim);line-height:1.5;white-space:pre-wrap}
+  .empty-note{color:var(--ink-faint);font-size:12.5px;padding:6px 2px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:820px){.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="banner"></div>
+<header>
+  <div class="brand">
+    <div class="mark">M</div>
+    <div><b>MeatCODE</b> <span>· Agent Team</span></div>
+  </div>
+  <div id="conn"><span id="connState">checking…</span><button id="resetBtn" title="Clear saved team + history">reset</button></div>
+</header>
+
+<div class="wrap">
+  <aside>
+    <div class="col-title">Your team</div>
+    <div id="roster"></div>
+    <div class="side-actions">
+      <button class="btn ghost sm" id="addAgent">＋ Add agent</button>
+    </div>
+  </aside>
+
+  <main>
+    <div class="card">
+      <h2>New team task</h2>
+      <div class="hint">Write the goal, pick the agents on the left, hit run — they work it simultaneously.</div>
+      <textarea id="goal" placeholder="e.g. Improve the expert map: add several clickable buttons wired to the database endpoints, and update the team on what was just done."></textarea>
+      <div class="chips" id="selChips"></div>
+      <div class="composer-foot">
+        <label class="bcast"><input type="checkbox" id="bcast" checked> Project Coordinator broadcasts the update to the team when done</label>
+        <button class="btn primary" id="runBtn" disabled>Run team ▶</button>
+      </div>
+    </div>
+
+    <div id="board"></div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>Recent runs</h2>
+        <div id="runs"><div class="empty-note">No runs yet.</div></div>
+      </div>
+      <div class="card">
+        <h2>Team activity</h2>
+        <div class="hint" style="margin-bottom:6px">Coordinator broadcasts land here — the shared record of what's been done.</div>
+        <div id="feed"><div class="empty-note">No updates yet.</div></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ============================================================================
+   MeatCODE Agent Team — standalone. Runs agents through the Claude Artifact
+   runtime (window.claude.complete). No server; state lives in localStorage.
+   ============================================================================ */
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?'':s);
+
+/* ---- Claude connection (artifact runtime) + graceful fallback ---- */
+const HAS_CLAUDE = (typeof window !== 'undefined') && window.claude && typeof window.claude.complete === 'function';
+let DEMO = !HAS_CLAUDE;   // if the artifact API is absent, default to Demo mode
+
+async function askClaude(prompt){
+  if(HAS_CLAUDE && !DEMO){
+    const out = await window.claude.complete(prompt);
+    return (typeof out === 'string') ? out : (out && out.completion) || String(out);
+  }
+  // Demo mode — fabricate a plausible, clearly-labelled deliverable.
+  await new Promise(r=>setTimeout(r, 700 + Math.floor(Math.random()*900)));
+  return demoReply(prompt);
+}
+function demoReply(prompt){
+  const role = (prompt.match(/You are the ([^.\n]+?) on the MeatCODE/) || [,'Agent'])[1];
+  return '[SIMULATED — connect this as a Claude Artifact to get real output]\n\n'+
+    role+' deliverable for the goal:\n'+
+    '• Concrete step 1 tailored to this role\n'+
+    '• Concrete step 2 with the specific file / endpoint / component it touches\n'+
+    '• Hand-off note: what another agent needs from me to proceed.';
+}
+
+/* ---- tiny persistence (localStorage, degrades to memory) ---- */
+const mem = {};
+const store = {
+  get(k,d){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return (k in mem)?mem[k]:d; } },
+  set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){ mem[k]=v; } },
+};
+const K_ROSTER='mc_roster', K_RUNS='mc_runs', K_FEED='mc_feed';
+
+/* ---- default team (editable) ---- */
+const DEFAULT_ROSTER = [
+  {id:'data-engineer', name:'Data Engineer', emoji:'🧪', mandate:'Own the Neon Postgres database, the literature/expert pipeline, and the server data endpoints. You write SQL, design and wire /api/* endpoints, and make sure the data the UI needs exists and is queryable. Deliver concrete SQL and endpoint code/specs, not prose.'},
+  {id:'ui-designer', name:'UI / UX Designer', emoji:'🎨', mandate:'Own the product surface — the mockup and any HTML/CSS/JS the user sees. Hold the wine/seaweed-teal brand. Design and build clickable, on-brand UI that talks to the server via fetch/SSE. Deliver real markup + styles + the wiring, matching existing design tokens.'},
+  {id:'project-coordinator', name:'Project Coordinator', emoji:'📋', mandate:'Keep the whole team in sync. Read what every other agent produced, resolve overlaps and dependencies into one coherent plan, and write the crisp "what was done / what\'s next" update the team relies on. You broadcast progress to the team activity log.'},
+  {id:'oracle-researcher', name:'Oracle Researcher', emoji:'🔬', mandate:'Own flavor & aroma science grounding — meaty process-flavor chemistry (Maillard, lipid oxidation, sulfur volatiles, off-note masking), the literature corpus, and what the Oracle should answer. Deliver science-grounded requirements, example questions, and source-backed guidance.'},
+];
+
+const PROJECT_CONTEXT =
+  "MeatCODE is GFI Israel's flavor & aroma research platform: a Neon Postgres corpus of literature + "+
+  "experts, a Claude-powered Oracle (cite-backed answers), and an interactive expert map, with an HTML "+
+  "product surface. 2026 is the validation year — prefer a narrow, validated MVP over the full vision.";
+
+let roster = store.get(K_ROSTER, null) || DEFAULT_ROSTER.map(a=>({...a}));
+let selected = new Set();
+let runs = store.get(K_RUNS, []);
+let feed = store.get(K_FEED, []);
+let activeRun = null;
+
+/* ---- connection chip + banner ---- */
+function paintConn(){
+  const el = $('#connState');
+  if(HAS_CLAUDE && !DEMO){ el.textContent='● Claude connected'; el.style.color='var(--teal)'; $('#banner').style.display='none'; }
+  else {
+    el.textContent = DEMO ? '● Demo mode' : '● not connected';
+    el.style.color = 'var(--coral)';
+    const b = $('#banner'); b.style.display='block';
+    b.innerHTML = HAS_CLAUDE
+      ? 'Demo mode on — outputs are simulated. <b id="liveToggle">Switch to live Claude</b>.'
+      : 'This artifact is sandboxed — no Claude connection here, so agent runs are <b>simulated (Demo mode)</b>. '+
+        'For REAL agent runs, use the MeatCODE server dashboard: run <code>run_oracle.command</code>, then open '+
+        '<code>localhost:8000/agents</code>. A pinned/standalone artifact can\'t reach Claude or your database.';
+    const t = document.getElementById('liveToggle');
+    if(t) t.onclick=()=>{ DEMO=false; paintConn(); };
+  }
+}
+
+/* ---- roster ---- */
+function renderRoster(){
+  const box=$('#roster'); box.innerHTML='';
+  roster.forEach((a,i)=>{
+    const el=document.createElement('div');
+    el.className='agent'+(selected.has(a.id)?' sel':'');
+    el.innerHTML='<div class="row"><span class="emoji">'+esc(a.emoji||'🤖')+'</span>'+
+      '<span class="name">'+esc(a.name)+'</span>'+
+      '<span class="tick">'+(selected.has(a.id)?'✓':'')+'</span></div>'+
+      '<div class="mandate">'+esc(a.mandate)+'</div>'+
+      '<span class="edit">✎ edit role<span class="del" data-i="'+i+'">delete</span></span>';
+    el.querySelector('.row').addEventListener('click',e=>{ e.stopPropagation();
+      selected.has(a.id)?selected.delete(a.id):selected.add(a.id); renderRoster(); });
+    el.addEventListener('click',()=>el.classList.toggle('open'));
+    el.querySelector('.edit').addEventListener('click',e=>{
+      if(e.target.classList.contains('del')){ e.stopPropagation(); roster.splice(i,1); selected.delete(a.id); persistRoster(); renderRoster(); return; }
+      e.stopPropagation(); openEditor(el,a); });
+    box.appendChild(el);
+  });
+  renderChips();
+}
+function openEditor(el,a){
+  el.classList.add('open');
+  el.querySelector('.mandate').style.display='none';
+  el.querySelector('.edit').style.display='none';
+  const w=document.createElement('div');
+  w.innerHTML='<input class="f" data-k="emoji" value="'+esc(a.emoji)+'" placeholder="emoji">'+
+    '<input class="f" data-k="name" value="'+esc(a.name)+'" placeholder="name">'+
+    '<textarea class="f" data-k="mandate" placeholder="what this agent owns">'+esc(a.mandate)+'</textarea>'+
+    '<button class="btn primary sm" style="margin-top:8px">Save</button>';
+  w.querySelectorAll('.f').forEach(f=>{ f.addEventListener('click',e=>e.stopPropagation());
+    f.addEventListener('input',()=>{ a[f.dataset.k]=f.value; if(f.dataset.k==='name'&&!a.id) a.id=slug(f.value); }); });
+  w.querySelector('button').addEventListener('click',e=>{ e.stopPropagation();
+    if(!a.id) a.id=slug(a.name||'agent'); persistRoster(); renderRoster(); });
+  el.appendChild(w);
+}
+function slug(s){ return (String(s).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'')||'agent').slice(0,40)+'-'+Math.random().toString(36).slice(2,5); }
+function persistRoster(){ store.set(K_ROSTER, roster); }
+$('#addAgent').addEventListener('click',()=>{
+  const a={id:'', name:'New agent', emoji:'🤖', mandate:''}; roster.push(a); renderRoster();
+  openEditor($('#roster').lastChild, a);
+});
+
+/* ---- selected chips + run enable ---- */
+function renderChips(){
+  const box=$('#selChips'); box.innerHTML='';
+  const chosen=roster.filter(a=>selected.has(a.id));
+  if(!chosen.length) box.innerHTML='<span class="chip empty">no agents selected</span>';
+  else chosen.forEach(a=>{ const c=document.createElement('span'); c.className='chip'; c.textContent=(a.emoji||'')+' '+a.name; box.appendChild(c); });
+  $('#runBtn').disabled = !(chosen.length && $('#goal').value.trim());
+}
+$('#goal').addEventListener('input',renderChips);
+
+/* ---- run a team (agents in parallel) ---- */
+function agentPrompt(agent, goal, teammates){
+  const others = teammates.map(t=>t.name).join(', ') || 'no one else';
+  return 'You are the '+agent.name+' on the MeatCODE team.\n'+PROJECT_CONTEXT+'\n\n'+
+    'YOUR MANDATE:\n'+agent.mandate+'\n\n'+
+    'You are collaborating with: '+others+'. Do ONLY your part; assume they cover theirs. Where your '+
+    'work depends on theirs (or theirs on yours), name the hand-off explicitly so it can be coordinated.\n\n'+
+    'SHARED GOAL:\n'+goal+'\n\n'+
+    'Deliver a concrete, buildable work product for YOUR part — real SQL / endpoint code / HTML+CSS / specs '+
+    'as appropriate, not vague prose. Be specific enough to implement directly. Keep it tight.';
+}
+function coordinatorPrompt(goal, done){
+  const bundle = done.map(a=>'### '+a.emoji+' '+a.name+'\n'+a.output).join('\n\n') || '(no completed outputs)';
+  return 'You are the Project Coordinator for the MeatCODE team. Several agents just worked a shared goal in '+
+    'parallel. Write the team\'s progress update: a tight, concrete summary of what was produced and what '+
+    'happens next. Plain prose, no hype, 6-10 sentences. Be specific about the files/endpoints/deliverables '+
+    'the agents named.\n\nSHARED GOAL:\n'+goal+'\n\nAGENT DELIVERABLES:\n'+bundle;
+}
+
+$('#runBtn').addEventListener('click',startRun);
+async function startRun(){
+  const goal=$('#goal').value.trim();
+  const chosen=roster.filter(a=>selected.has(a.id));
+  if(!goal||!chosen.length) return;
+  $('#runBtn').disabled=true;
+
+  const run={ id:Date.now().toString(36), goal, created:Date.now(), broadcast:$('#bcast').checked,
+    agents: chosen.map(a=>({id:a.id,name:a.name,emoji:a.emoji,status:'queued',output:'',error:null})),
+    coordinator:null };
+  activeRun=run; runs.unshift(run); if(runs.length>25) runs.pop();
+  renderBoard(); renderRuns();
+
+  // fire every agent at once — true simultaneous dispatch
+  await Promise.all(run.agents.map(async ra=>{
+    const agent=chosen.find(a=>a.id===ra.id);
+    const mates=chosen.filter(a=>a.id!==ra.id);
+    ra.status='running'; renderBoard();
+    try{ ra.output=(await askClaude(agentPrompt(agent,goal,mates))).trim(); ra.status='done'; }
+    catch(e){ ra.error=String(e&&e.message?e.message:e).slice(0,300); ra.status='error'; }
+    renderBoard();
+  }));
+
+  if(run.broadcast){ await broadcast(run); }
+  store.set(K_RUNS, runs);
+  $('#runBtn').disabled=false; renderRuns();
+}
+
+async function broadcast(run){
+  const done=run.agents.filter(a=>a.status==='done');
+  renderBoard(); // shows "writing broadcast…"
+  let summary;
+  try{ summary=(await askClaude(coordinatorPrompt(run.goal, done))).trim(); }
+  catch(e){ summary='(coordinator error: '+String(e).slice(0,160)+')'; }
+  run.coordinator={ summary, at:Date.now() };
+  feed.unshift({ when:new Date(run.created).toISOString().slice(0,16).replace('T',' '),
+    label:'agent-team run', title:(run.goal.length>70?run.goal.slice(0,67)+'…':run.goal),
+    who:run.agents.map(a=>a.name).join(', '), summary });
+  if(feed.length>30) feed.pop();
+  store.set(K_FEED, feed); store.set(K_RUNS, runs);
+  renderBoard(); renderFeed();
+}
+
+/* ---- render: board / runs / feed ---- */
+function renderBoard(){
+  const b=$('#board'); b.innerHTML='';
+  if(!activeRun) return;
+  const t=document.createElement('div'); t.className='col-title';
+  t.textContent='Run · '+esc(activeRun.goal).slice(0,90)+(activeRun.goal.length>90?'…':''); b.appendChild(t);
+  activeRun.agents.forEach(a=>{
+    const el=document.createElement('div'); el.className='run-agent';
+    el.innerHTML='<div class="head"><span style="font-size:19px">'+esc(a.emoji)+'</span>'+
+      '<span class="name">'+esc(a.name)+'</span><span class="pill '+a.status+'">'+a.status+'</span></div>';
+    const pre=document.createElement('pre');
+    pre.textContent = a.status==='error' ? ('⚠ '+a.error) : (a.output || (a.status==='running'?'…working':'queued'));
+    el.appendChild(pre); b.appendChild(el);
+  });
+  const allDone=activeRun.agents.every(a=>a.status==='done'||a.status==='error');
+  if(activeRun.coordinator){
+    const c=document.createElement('div'); c.className='coord';
+    c.innerHTML='<div class="tag">📋 Project Coordinator · broadcast</div>';
+    const p=document.createElement('p'); p.textContent=activeRun.coordinator.summary; c.appendChild(p);
+    const l=document.createElement('div'); l.className='logged'; l.textContent='✓ posted to Team activity — the whole team can see it'; c.appendChild(l);
+    b.appendChild(c);
+  } else if(allDone && activeRun.broadcast){
+    const w=document.createElement('div'); w.className='empty-note'; w.textContent='Coordinator is writing the broadcast…'; b.appendChild(w);
+  } else if(allDone && !activeRun.broadcast){
+    const btn=document.createElement('button'); btn.className='btn ghost sm'; btn.textContent='📋 Broadcast update to team';
+    btn.onclick=()=>{ btn.disabled=true; btn.textContent='Broadcasting…'; broadcast(activeRun); };
+    b.appendChild(btn);
+  }
+}
+function renderRuns(){
+  const box=$('#runs');
+  if(!runs.length){ box.innerHTML='<div class="empty-note">No runs yet.</div>'; return; }
+  box.innerHTML='';
+  runs.forEach(r=>{
+    const status = r.agents.every(a=>a.status==='done'||a.status==='error') ? 'done' : 'running';
+    const el=document.createElement('div'); el.className='mini';
+    el.innerHTML='<span class="who">'+r.agents.map(a=>a.emoji).join('')+'</span>'+
+      '<span class="goal">'+esc(r.goal)+'</span><span class="pill '+status+'">'+status+'</span>';
+    el.onclick=()=>{ activeRun=r; renderBoard(); window.scrollTo({top:0,behavior:'smooth'}); };
+    box.appendChild(el);
+  });
+}
+function renderFeed(){
+  const box=$('#feed');
+  if(!feed.length){ box.innerHTML='<div class="empty-note">No updates yet.</div>'; return; }
+  box.innerHTML='';
+  feed.forEach(it=>{
+    const el=document.createElement('div'); el.className='feed-item';
+    el.innerHTML='<div class="m">'+esc(it.when)+' · '+esc(it.who)+'</div>'+
+      '<div class="t">'+esc(it.title)+'</div>'+
+      '<div class="d">'+esc(it.summary)+'</div>';
+    box.appendChild(el);
+  });
+}
+
+/* ---- reset ---- */
+$('#resetBtn').addEventListener('click',()=>{
+  if(!confirm('Clear your saved team, runs, and activity?')) return;
+  ['mc_roster','mc_runs','mc_feed'].forEach(k=>{ try{localStorage.removeItem(k);}catch(e){} delete mem[k]; });
+  roster=DEFAULT_ROSTER.map(a=>({...a})); selected=new Set(); runs=[]; feed=[]; activeRun=null;
+  renderRoster(); renderRuns(); renderFeed(); renderBoard();
+});
+
+/* ---- boot ---- */
+paintConn(); renderRoster(); renderRuns(); renderFeed();
+</script>
+</body>
+</html>

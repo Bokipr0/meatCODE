@@ -1,8 +1,8 @@
 /* MeatCODE template connector
- * Last updated: 2026-07-05 13:30 UTC · deploy-templates session · initial version
+ * Last updated: 2026-07-05 · deploy-templates session · repointed docs/status to server/meatcode_server.py (reaktzia-mvp removed)
  *
  * Drop-in bridge between a Claude Design template page and the MeatCODE
- * FastAPI server (server/reaktzia-mvp, port 8000) — the same server the
+ * MeatCODE server (server/meatcode_server.py, port 8000) — the same server the
  * canonical mockup talks to. Include it in any template:
  *
  *     <script src="meatcode-api.js"></script>
@@ -186,7 +186,7 @@
                             (h.has_anthropic_key ? '' : ' — no API key');
       el.style.color = ok ? '#00736E' : '#B3261E';
     }).catch(function () {
-      el.textContent = '● offline — start server/reaktzia-mvp (port 8000)';
+      el.textContent = '● offline — start the server (run_oracle.command, port 8000)';
       el.style.color = '#B3261E';
     });
   }

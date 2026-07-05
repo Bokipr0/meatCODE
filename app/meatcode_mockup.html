@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
+<!-- Last updated: 2026-07-05 14:48 UTC · UI/UX Designer (parallel team run) · added live expert-map filter bar (search/country/sort/top-rated/reset) wired to GET /api/experts + /api/expert-facets. -->
 <title>MeatCODE · GFI Israel — flavor & aroma research</title>
 <meta name="viewport" content="width=1440" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1445,6 +1446,70 @@ section.scene.active { display: block; }
   font-family: inherit; cursor: pointer;
   box-shadow: var(--shadow);
 }
+
+/* v9 · live expert filter bar (search / country / sort / top-rated / reset) */
+.mc-filterbar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 14px; padding: 10px 12px; margin-bottom: 14px;
+}
+.mc-search-box {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-deep); border: 1px solid var(--line);
+  border-radius: 10px; padding: 8px 12px;
+  min-width: 220px; flex: 1 1 220px; max-width: 320px;
+}
+.mc-search-box svg { width: 14px; height: 14px; color: var(--ink-faint); flex-shrink: 0; }
+.mc-search-box input {
+  border: 0; background: transparent; outline: none;
+  font-family: inherit; font-size: 13.5px; color: var(--ink);
+  width: 100%;
+}
+.mc-search-box input::placeholder { color: var(--ink-faint); }
+.mc-country-select {
+  border: 1px solid var(--line); background: var(--bg-deep);
+  border-radius: 10px; padding: 8px 10px;
+  font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--ink-dim);
+  cursor: pointer; max-width: 190px;
+}
+.mc-sort-group { display: flex; gap: 4px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+.mc-sort-btn {
+  border: 0; background: transparent; cursor: pointer;
+  font-family: inherit; font-size: 11.5px; font-weight: 700;
+  color: var(--ink-dim); padding: 7px 12px; border-radius: 8px;
+}
+.mc-sort-btn.on { background: var(--wine); color: var(--surface); box-shadow: var(--shadow); }
+.mc-toggle-chip {
+  font-size: 11.5px; font-weight: 700; padding: 8px 13px; border-radius: 100px;
+  background: var(--surface-2); border: 1px solid var(--line);
+  color: var(--ink-dim); cursor: pointer; white-space: nowrap;
+}
+.mc-toggle-chip.on { background: var(--wine-mist); color: var(--wine-deep); border-color: var(--wine-tint); }
+.mc-reset-btn {
+  border: 0; background: transparent; cursor: pointer;
+  font-family: inherit; font-size: 12px; font-weight: 700;
+  color: var(--wine); padding: 8px 6px;
+}
+.mc-reset-btn:hover { color: var(--wine-deep); text-decoration: underline; }
+.mc-result-count {
+  margin-left: auto; font-size: 11.5px; font-weight: 700;
+  color: var(--ink-faint); white-space: nowrap;
+  display: flex; align-items: center; gap: 8px;
+}
+.mc-result-count .mc-status-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--olive); flex-shrink: 0;
+}
+.mc-result-count.loading .mc-status-dot { background: var(--brass); animation: mcPulse 1s ease-in-out infinite; }
+.mc-result-count.error .mc-status-dot { background: #C77E5F; }
+@keyframes mcPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+.mc-empty-banner {
+  display: none; padding: 10px 14px; margin: 0 0 10px;
+  background: var(--wine-mist); border: 1px solid var(--wine-tint);
+  color: var(--wine-deep); font-size: 12.5px; font-weight: 600;
+  border-radius: 10px;
+}
+.mc-empty-banner.show { display: block; }
 /* Company info card panel */
 .company-info {
   background: linear-gradient(135deg, var(--wine-mist) 0%, var(--surface) 100%);
@@ -2006,7 +2071,7 @@ section.scene.active { display: block; }
             <div class="eyebrow">The Community</div>
             <h1>Who's shaping flavor science · worldwide</h1>
           </div>
-          <div class="map-search-wide">🔍 Search by name, topic, or institution…</div>
+          <div class="map-search-wide" style="display:none;">🔍 Search by name, topic, or institution…</div>
         </div>
         <div class="map-top-toggle" id="mapTopToggle">
           <button class="on" data-toggle="researchers">
@@ -2019,6 +2084,27 @@ section.scene.active { display: block; }
           </button>
           <button class="map-full-db-btn" onclick="location.hash='#research-db'">Full researchers DB →</button>
         </div>
+
+        <!-- v9 · live expert filter bar — search / country / sort / top-rated / reset (wired to GET /api/experts + /api/expert-facets) -->
+        <div class="mc-filterbar" id="mcFilterBar">
+          <div class="mc-search-box">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="5"/><line x1="11" y1="11" x2="14" y2="14"/></svg>
+            <input type="text" id="mcSearchInput" placeholder="Search by name or affiliation…" autocomplete="off" />
+          </div>
+          <select class="mc-country-select" id="mcCountrySelect">
+            <option value="">All countries</option>
+          </select>
+          <div class="mc-sort-group" id="mcSortGroup">
+            <button class="mc-sort-btn on" data-sort="relevance">Relevance</button>
+            <button class="mc-sort-btn" data-sort="h_index">H-index</button>
+            <button class="mc-sort-btn" data-sort="papers">Papers</button>
+          </div>
+          <button class="mc-toggle-chip" id="mcTopRatedToggle" type="button">★ Top-rated only</button>
+          <button class="mc-reset-btn" id="mcResetBtn" type="button">Reset</button>
+          <div class="mc-result-count" id="mcResultCount"><span class="mc-status-dot"></span><span id="mcResultCountText">— experts</span></div>
+        </div>
+        <div class="mc-empty-banner" id="mcEmptyBanner">No experts match — adjust filters.</div>
+
         <div class="globe-wrap">
           <div id="globe-canvas"></div>
           <div class="globe-legend">
@@ -4271,6 +4357,7 @@ window.rebuildExpertList = function () {};
     try { if (typeof rebuildExpertList === 'function') rebuildExpertList(); } catch (e) {}
     console.log('[meatCODE] loaded ' + mapped.length + ' live experts from Neon');
   }
+  window.mcApplyExperts = applyExperts;  // exposed so the filter-bar module (below) reuses this exact mapping
   function load() {
     fetch(API + '/api/experts?limit=200')
       .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
@@ -4279,6 +4366,199 @@ window.rebuildExpertList = function () {};
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load);
   else load();
+})();
+</script>
+
+<script>
+/* ═══ v9 · Expert map filter bar — search / country / sort / top-rated / reset ═══
+   Wires the controls added to #mcFilterBar (Map scene) to the live experts API:
+     GET /api/experts?q=&country=&sort=relevance|h_index|papers&min_relevance=&limit=
+     GET /api/expert-facets → {"countries":[{country,count}], total}
+   Reuses window.mcApplyExperts (same RESEARCHERS mapping as the base live-experts loader)
+   so the globe / list / detail panel stay in sync. Purely additive — falls back to whatever
+   RESEARCHERS already holds (demo or previously-loaded live data) on any error, never throws. */
+(function () {
+  var API = (typeof API_BASE !== 'undefined' && API_BASE) ? API_BASE : 'http://127.0.0.1:8000';
+  var state = { q: '', country: '', sort: 'relevance', topRatedOnly: false };
+  var debounceTimer = null;
+
+  var els = {};
+  function refs() {
+    els.bar          = document.getElementById('mcFilterBar');
+    els.search       = document.getElementById('mcSearchInput');
+    els.country      = document.getElementById('mcCountrySelect');
+    els.sortGroup    = document.getElementById('mcSortGroup');
+    els.topRated     = document.getElementById('mcTopRatedToggle');
+    els.reset        = document.getElementById('mcResetBtn');
+    els.count        = document.getElementById('mcResultCount');
+    els.countText    = document.getElementById('mcResultCountText');
+    els.emptyBanner  = document.getElementById('mcEmptyBanner');
+  }
+
+  function setStatus(mode) {
+    // mode: 'loading' | 'ok' | 'error'
+    if (!els.count) return;
+    els.count.classList.remove('loading', 'error');
+    if (mode === 'loading') els.count.classList.add('loading');
+    if (mode === 'error') els.count.classList.add('error');
+  }
+
+  function buildQuery() {
+    var params = [];
+    if (state.q) params.push('q=' + encodeURIComponent(state.q));
+    if (state.country) params.push('country=' + encodeURIComponent(state.country));
+    params.push('sort=' + encodeURIComponent(state.sort));
+    if (state.topRatedOnly) params.push('min_relevance=0.9');
+    params.push('limit=200');
+    return params.join('&');
+  }
+
+  function fetchExperts() {
+    setStatus('loading');
+    var qs = buildQuery();
+    fetch(API + '/api/experts?' + qs)
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function (list) {
+        var arr = Array.isArray(list) ? list : [];
+        if (els.emptyBanner) els.emptyBanner.classList.toggle('show', arr.length === 0);
+        if (els.countText) els.countText.textContent = arr.length + ' expert' + (arr.length === 1 ? '' : 's');
+        setStatus('ok');
+        if (arr.length === 0) return;  // keep whatever is currently shown rather than blanking the map
+        if (typeof window.mcApplyExperts === 'function') {
+          window.mcApplyExperts(arr);
+        } else if (typeof RESEARCHERS !== 'undefined') {
+          // extremely defensive fallback — should not normally trigger, base loader defines mcApplyExperts
+          console.warn('[meatCODE] mcApplyExperts unavailable — skipping RESEARCHERS update');
+        }
+      })
+      .catch(function (err) {
+        console.warn('[meatCODE] expert filter fetch failed (' + err + ') — keeping current results');
+        setStatus('error');
+      });
+  }
+
+  function debouncedFetch() {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(fetchExperts, 300);
+  }
+
+  function loadFacets() {
+    fetch(API + '/api/expert-facets')
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function (data) {
+        if (!els.country || !data || !Array.isArray(data.countries)) return;
+        var top = data.countries.slice(0, 8);
+        top.forEach(function (c) {
+          var opt = document.createElement('option');
+          opt.value = c.country;
+          opt.textContent = c.country + ' (' + c.count + ')';
+          els.country.appendChild(opt);
+        });
+      })
+      .catch(function (err) {
+        console.warn('[meatCODE] expert-facets unavailable (' + err + ') — country filter shows "All countries" only');
+      });
+  }
+
+  function resetState() {
+    state = { q: '', country: '', sort: 'relevance', topRatedOnly: false };
+    if (els.search) els.search.value = '';
+    if (els.country) els.country.value = '';
+    if (els.topRated) els.topRated.classList.remove('on');
+    if (els.sortGroup) {
+      Array.prototype.forEach.call(els.sortGroup.querySelectorAll('.mc-sort-btn'), function (b) {
+        b.classList.toggle('on', b.getAttribute('data-sort') === 'relevance');
+      });
+    }
+    fetchExperts();
+  }
+
+  function wire() {
+    refs();
+    if (!els.bar) return;  // Map scene filter bar not present — nothing to wire
+
+    if (els.search) {
+      els.search.addEventListener('input', function (e) {
+        state.q = e.target.value.trim();
+        debouncedFetch();
+      });
+    }
+    if (els.country) {
+      els.country.addEventListener('change', function (e) {
+        state.country = e.target.value;
+        fetchExperts();
+      });
+    }
+    if (els.sortGroup) {
+      els.sortGroup.addEventListener('click', function (e) {
+        var btn = e.target.closest && e.target.closest('.mc-sort-btn');
+        if (!btn) return;
+        Array.prototype.forEach.call(els.sortGroup.querySelectorAll('.mc-sort-btn'), function (b) {
+          b.classList.remove('on');
+        });
+        btn.classList.add('on');
+        state.sort = btn.getAttribute('data-sort') || 'relevance';
+        fetchExperts();
+      });
+    }
+    if (els.topRated) {
+      els.topRated.addEventListener('click', function () {
+        els.topRated.classList.toggle('on');
+        state.topRatedOnly = els.topRated.classList.contains('on');
+        fetchExperts();
+      });
+    }
+    if (els.reset) {
+      els.reset.addEventListener('click', resetState);
+    }
+
+    loadFacets();
+    // Note: don't call fetchExperts() on init — the base live-experts loader already
+    // populates RESEARCHERS with the default (unfiltered, relevance-sorted) set on load.
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+  else wire();
+})();
+</script>
+
+<script>
+/* ═══ Prototype navigation wiring ═══
+   The top domain pills (Map/Oracle/Research/Toolbench/Simulate) and the dashboard
+   cards were decorative — real nav was only the hidden dev flow bar. This delegated
+   handler makes them route to the matching scene (via the hash → setScene router). */
+(function () {
+  var SCENES = ['onboarding','onboarding-refine','dashboard','oracle','map','research',
+                'research-sub','research-db','toolbench','toolbench-tools','simulate'];
+  // longest / multi-word phrases first so 'community map' wins over 'map'
+  var ROUTES = [
+    ['community map','map'], ['food oracle','oracle'], ['open database','research-db'],
+    ['navigate map','map'], ['for you','dashboard'], ['guide & tips','dashboard'],
+    ['toolbench','toolbench'], ['simulate','simulate'], ['database','research-db'],
+    ['oracle','oracle'], ['research','research'], ['map','map']
+  ];
+  function destFor(el) {
+    var explicit = el.getAttribute && el.getAttribute('data-goto');
+    if (explicit && SCENES.indexOf(explicit) > -1) return explicit;
+    var txt = (el.textContent || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    if (!txt || txt.length > 60) return null;           // skip big text blobs
+    for (var i = 0; i < ROUTES.length; i++) {
+      if (txt === ROUTES[i][0] || txt.indexOf(ROUTES[i][0]) > -1) return ROUTES[i][1];
+    }
+    return null;
+  }
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest && e.target.closest('.domain, [class*="card"], [data-goto]');
+    if (!el) return;
+    var dest = destFor(el);
+    if (!dest) return;
+    e.preventDefault();
+    if (location.hash !== '#' + dest) location.hash = '#' + dest;
+    else if (typeof setScene === 'function') setScene();
+  }, false);
+  var st = document.createElement('style');
+  st.textContent = '.domain,[class*="dash-card"]{cursor:pointer}';
+  document.head.appendChild(st);
 })();
 </script>
 

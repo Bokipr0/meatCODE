@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MeatCODE · Agent Command Center</title>
+<style>
+:root{
+  color-scheme: light;
+  --bg:#f6f7f5; --surface:#ffffff; --ink:#14201d; --muted:#6b7a75;
+  --line:#e4e8e4; --accent:#127a6b; --accent-soft:#e4f2ef; --accent-ink:#0c5a4e;
+  --amber:#b7791f; --amber-soft:#fbf3e3; --red:#b4443a; --red-soft:#fbe9e7;
+  --blue:#2f6db3; --violet:#6b52a3; --olive:#7a8a3a;
+  --radius:14px; --shadow:0 1px 2px rgba(20,32,29,.05),0 6px 20px rgba(20,32,29,.04);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:22px 20px 60px}
+a{color:var(--accent-ink)}
+h1,h2,h3{margin:0;font-weight:650;letter-spacing:-.01em}
+.muted{color:var(--muted)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
+/* header */
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+.brand{display:flex;gap:12px;align-items:center}
+.logo{width:38px;height:38px;border-radius:10px;background:var(--accent);color:#fff;
+  display:grid;place-items:center;font-weight:800;font-size:16px;letter-spacing:-.03em}
+.brand h1{font-size:19px}
+.brand .sub{font-size:12.5px;color:var(--muted);margin-top:1px}
+.status-pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;
+  padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.dot.live{background:#25a06f}.dot.snap{background:var(--amber)}
+.btn{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);
+  color:var(--ink);padding:8px 13px;border-radius:10px;cursor:pointer;transition:.12s}
+.btn:hover{border-color:#cbd3cd;background:#fbfcfb}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-ink)}
+.btn.ghost{background:transparent}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* kpi */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 15px;box-shadow:var(--shadow)}
+.kpi .k{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+.kpi .v{font-size:23px;font-weight:750;margin-top:4px;letter-spacing:-.02em}
+.kpi .d{font-size:11.5px;color:var(--muted);margin-top:2px}
+
+.section-label{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+  font-weight:700;margin:26px 2px 12px}
+
+/* agent grid */
+.agents{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.agent{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);overflow:hidden;transition:.14s;position:relative}
+.agent.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),var(--shadow)}
+.agent-head{display:flex;gap:12px;padding:15px 16px 12px;cursor:pointer;align-items:flex-start}
+.av{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font-size:20px;flex:none}
+.agent-meta{flex:1;min-width:0}
+.agent-name{font-size:15px;font-weight:680;display:flex;align-items:center;gap:8px}
+.agent-role{font-size:12px;color:var(--muted);margin-top:1px}
+.chk{width:20px;height:20px;border-radius:6px;border:1.6px solid #cdd5cf;flex:none;display:grid;place-items:center;
+  cursor:pointer;transition:.12s;background:#fff;margin-top:2px}
+.chk.on{background:var(--accent);border-color:var(--accent)}
+.chk svg{width:12px;height:12px;stroke:#fff;stroke-width:3;fill:none;opacity:0;transition:.1s}
+.chk.on svg{opacity:1}
+.sdot{width:8px;height:8px;border-radius:50%;flex:none}
+.s-active{background:#25a06f}.s-idle{background:#c9a227}.s-standby{background:#b0b8b2}
+.agent-body{padding:0 16px 15px}
+.hl{font-size:12.5px;margin:2px 0 10px}
+.bar{height:7px;border-radius:99px;background:#eef1ee;overflow:hidden}
+.bar > i{display:block;height:100%;border-radius:99px;background:var(--accent)}
+.bar-row{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin:0 0 4px}
+.last{font-size:11px;color:var(--muted);margin-top:10px;display:flex;align-items:center;gap:6px}
+.goals{border-top:1px solid var(--line);margin-top:13px;padding-top:11px;display:none}
+.agent.open .goals{display:block}
+.goal{display:flex;gap:9px;font-size:12.5px;padding:4px 0;align-items:flex-start}
+.gi{width:15px;height:15px;border-radius:5px;flex:none;margin-top:1px;display:grid;place-items:center;font-size:10px;font-weight:700}
+.g-done{background:var(--accent-soft);color:var(--accent-ink)}
+.g-prog{background:var(--amber-soft);color:var(--amber)}
+.g-todo{background:#eef1ee;color:var(--muted)}
+.g-txt{flex:1}
+.g-txt b{font-weight:640}
+.expand{font-size:11px;color:var(--accent-ink);font-weight:600;cursor:pointer;margin-top:9px;display:inline-block}
+
+/* dispatch */
+.dispatch{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:18px;margin-top:14px}
+.dispatch h2{font-size:15px;margin-bottom:3px}
+.selchips{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
+.selchip{font-size:12px;font-weight:600;padding:5px 10px 5px 8px;border-radius:999px;
+  background:var(--accent-soft);color:var(--accent-ink);display:inline-flex;align-items:center;gap:6px}
+.selchip .x{cursor:pointer;opacity:.6;font-weight:700}.selchip .x:hover{opacity:1}
+.selchip.empty{background:#eef1ee;color:var(--muted)}
+textarea{width:100%;min-height:96px;resize:vertical;font:inherit;padding:12px;border:1px solid var(--line);
+  border-radius:11px;background:#fbfcfb;color:var(--ink);margin-top:2px}
+textarea:focus{outline:none;border-color:var(--accent);background:#fff}
+.ideas-label{font-size:11.5px;color:var(--muted);font-weight:600;margin:14px 0 7px}
+.examples{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0}
+.ex{font-size:11.5px;color:var(--muted);border:1px dashed var(--line);border-radius:8px;padding:5px 9px;cursor:pointer;background:transparent}
+.ex:hover{border-color:var(--accent);color:var(--accent-ink)}
+.optrow{display:flex;align-items:center;gap:9px;margin:14px 0 4px;font-size:12.5px}
+.toggle{width:38px;height:22px;border-radius:999px;background:#d7ddd8;position:relative;cursor:pointer;transition:.15s;flex:none}
+.toggle.on{background:var(--accent)}
+.toggle i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.toggle.on i{left:18px}
+.actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.actions .btn{flex:1;min-width:150px;justify-content:center;display:flex;align-items:center;gap:7px}
+.hint{font-size:11.5px;color:var(--muted);margin-top:11px;line-height:1.55}
+.launchbar{display:none;align-items:center;gap:11px;margin-top:13px;padding:12px 14px;border-radius:11px;
+  background:var(--accent-soft);border:1px solid #bfe0d9;color:var(--accent-ink);font-size:12.5px;line-height:1.5}
+.launchbar.show{display:flex}
+.launchbar.busy{background:#fbf3e3;border-color:#ecd9a8;color:var(--amber)}
+.launchbar.err{background:var(--red-soft);border-color:#eec4bf;color:var(--red)}
+.lb-step{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;
+  display:grid;place-items:center;flex:none;font-size:12px}
+.launchbar.busy .lb-step{background:var(--amber)}
+.launchbar.err .lb-step{background:var(--red)}
+.workflows{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:12px}
+.wf{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:15px;display:flex;flex-direction:column;gap:10px}
+.wf-top{display:flex;gap:11px;align-items:flex-start}
+.wf-emoji{font-size:22px;line-height:1.1;flex:none}
+.wf-name{font-weight:670;font-size:14px;letter-spacing:-.01em}
+.wf-agents{font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.wf-agent{background:#eef1ee;border-radius:99px;padding:2px 8px;white-space:nowrap}
+.wf .btn{margin-top:auto;justify-content:center;display:flex;align-items:center;gap:6px}
+
+/* preview */
+.preview{margin-top:14px;border:1px solid var(--line);border-radius:11px;background:#fbfcfb;display:none}
+.preview.show{display:block}
+.preview-head{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;
+  padding:10px 13px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+.preview pre{margin:0;padding:13px;font-size:12px;line-height:1.55;white-space:pre-wrap;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#2a3a35;max-height:280px;overflow:auto}
+
+/* toast */
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;
+  background:var(--ink);color:#fff;padding:11px 18px;border-radius:11px;font-size:13px;font-weight:600;
+  transition:.22s;pointer-events:none;z-index:50;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.foot{margin-top:26px;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.6}
+@media(max-width:720px){.kpis{grid-template-columns:repeat(2,1fr)}.top{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="brand">
+      <div class="logo">M</div>
+      <div>
+        <h1>Agent Command Center</h1>
+        <div class="sub">MeatCODE · Open Flavor &amp; Aroma Initiative — team orchestration</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:9px;align-items:center">
+      <span class="status-pill" id="dataPill"><span class="dot snap" id="dataDot"></span><span id="dataLbl">snapshot</span></span>
+      <button class="btn ghost" id="refreshBtn">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="k">Asana progress</div><div class="v" id="kpiTasks">8 / 76</div><div class="d" id="kpiTasksD">Phase 1 · foundation build</div></div>
+    <div class="kpi"><div class="k">Literature corpus</div><div class="v">818</div><div class="d">citable · target 1,000–2,000</div></div>
+    <div class="kpi"><div class="k">Experts mapped</div><div class="v">374</div><div class="d">curated · 3,129 raw in Neon</div></div>
+    <div class="kpi"><div class="k">Active agents</div><div class="v" id="kpiAgents">5</div><div class="d">2 active · 2 idle · 1 standby</div></div>
+  </div>
+
+  <!-- ROSTER -->
+  <div class="section-label">Your team — tap a card to see its goals, use the checkbox to enlist it</div>
+  <div class="agents" id="roster"></div>
+
+  <!-- COMPOSE & COPY -->
+  <div class="section-label">Compose &amp; copy — build a multi-agent order, paste it into your chat</div>
+  <div class="dispatch">
+    <h2>Compose a joint task</h2>
+    <div class="muted" style="font-size:12.5px">Pick agents, write or <b>generate</b> the task, then <b>Copy for chat</b> and paste — the agents run in parallel and you watch them work live.</div>
+
+    <div class="selchips" id="selChips"></div>
+
+    <textarea id="prompt" placeholder="Describe the problem or task for the selected agents…&#10;e.g. Improve the expert map: add several clickable buttons wired to the server/database, and log the changes so the whole team knows what was done."></textarea>
+
+    <div class="ideas-label">💡 Prompt ideas — click one to load it (it selects the right agents too)</div>
+    <div class="examples" id="ideas"></div>
+
+    <div class="optrow">
+      <div class="toggle on" id="coordToggle"><i></i></div>
+      <div>End with the <b>Project Coordinator</b> broadcasting the updates so the whole team knows what changed</div>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" id="copyBtn">⧉ Copy for chat</button>
+      <button class="btn" id="genBtn">✨ Suggest a task</button>
+      <button class="btn ghost" id="previewBtn">Preview</button>
+    </div>
+
+    <div class="launchbar" id="launchBar"><div class="lb-step" id="lbIcon">✓</div><div id="lbMsg"></div></div>
+
+    <div class="hint" id="hint">This is a copy-and-paste console. <b>Copy for chat</b> puts the full multi-agent order on your clipboard — paste it (<span class="mono">⌘V</span>) into your Claude chat to launch and watch the agents work live. <b>Suggest a task</b> drafts an idea for the selected agents.</div>
+
+    <div class="preview" id="preview">
+      <div class="preview-head"><span>Composed orchestration prompt</span><span class="mono" id="wordCount"></span></div>
+      <pre id="previewText"></pre>
+    </div>
+  </div>
+
+  <div class="foot" id="foot">
+    Progress is a live pull from your Asana project + the repo’s <span class="mono">AGENT_UPDATE_LOG.md</span> (baked snapshot when opened outside Claude).<br>
+    Command Center v1 · built for Lior · MeatCODE / GFI Israel
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ---------- AGENT MODEL (real status from AGENT_UPDATE_LOG.md + PROJECT_STATE.md, 2026-07-05) ---------- */
+const AGENTS = [
+  {
+    id:"data", name:"Data Engineer", emoji:"🗄️", color:"#2f6db3", soft:"#e8f0f9",
+    role:"Corpus, Neon DB, pipeline, scoring",
+    status:"active", statusTxt:"Active", last:"Jul 5, 18:10 UTC",
+    headline:"Literature corpus → 1,000+ sources", pct:82,
+    goals:[
+      {s:"done", t:"<b>Corpus 496 → 818</b> citable sources, deduped &amp; taxonomy-tagged"},
+      {s:"done", t:"<b>Quality/priority scoring</b> live — all 818 scored, 202 off-topic flagged"},
+      {s:"done", t:"<b>FTS / search_vec</b> applied (496/496) + auto-refresh trigger"},
+      {s:"done", t:"<b>Expert map</b> served live from Neon (374 curated / 3,129)"},
+      {s:"prog", t:"Push corpus deeper toward <b>1,000–2,000</b> (recency-skewed — needs older reviews)"},
+      {s:"todo", t:"Quarantine the 202 low-relevance papers; normalize <span class='mono'>experts.country</span>"}
+    ]
+  },
+  {
+    id:"ui", name:"UI / UX Designer", emoji:"🎨", color:"#6b52a3", soft:"#efeaf7",
+    role:"Mockup, screens, design system",
+    status:"active", statusTxt:"Active", last:"Jul 5, 13:30 UTC",
+    headline:"Product surface polish + new screens", pct:70,
+    goals:[
+      {s:"done", t:"<b>v8 mockup polish</b> — teal consistency, SVG icons, 5-domain dashboard"},
+      {s:"done", t:"<b>4 new hi-fi screens</b> (Home / Map / Oracle / Research) handed off"},
+      {s:"done", t:"Claude Design <b>templates deployable</b> against the live server"},
+      {s:"prog", t:"Awaiting your call: promote v8 → canonical mockup"},
+      {s:"todo", t:"Pick build target for new screens (served HTML vs Next.js)"}
+    ]
+  },
+  {
+    id:"algo", name:"Algorithm Expert", emoji:"🧮", color:"#127a6b", soft:"#e0efec",
+    role:"Oracle retrieval, RAG, eval",
+    status:"idle", statusTxt:"Idle", last:"Jun 30, 12:55 UTC",
+    headline:"Oracle answer-engine build", pct:35,
+    goals:[
+      {s:"done", t:"<b>Architecture decision</b>: single-pass tag-aware hybrid RAG (drop agent-swarm)"},
+      {s:"prog", t:"Awaiting Daniel sign-off to start the build"},
+      {s:"todo", t:"Build the <b>4-step retrieval pipeline</b> + 30–50Q golden eval set"},
+      {s:"todo", t:"<b>Fix Oracle recall bug</b> — <span class='mono'>websearch_to_tsquery</span> ANDs terms → 0 rows"}
+    ]
+  },
+  {
+    id:"advisory", name:"Advisory", emoji:"🧭", color:"#7a8a3a", soft:"#eef1e0",
+    role:"Strategy, architecture, infra, docs",
+    status:"idle", statusTxt:"Idle", last:"Jun 30, 13:05 UTC",
+    headline:"Infra + Phase-0 define docs", pct:75,
+    goals:[
+      {s:"done", t:"<b>Three-homes model</b>: Git = code · Neon = data · Asana = tasks"},
+      {s:"done", t:"Single source-of-truth repo + <b>agent update-log conventions</b>"},
+      {s:"prog", t:"Tagging taxonomy v0.1 + hub architecture v0.1 — <b>awaiting Daniel sign-off</b>"},
+      {s:"todo", t:"Formalize tool-stack + hub-architecture write-up for approval"}
+    ]
+  },
+  {
+    id:"coord", name:"Project Coordinator", emoji:"🗂️", color:"#b7791f", soft:"#fbf3e3",
+    role:"Broadcasts updates, syncs Asana, reports",
+    status:"standby", statusTxt:"Standby", last:"not yet activated",
+    headline:"Keep the team in sync", pct:20,
+    goals:[
+      {s:"prog", t:"Maintain <b>AGENT_UPDATE_LOG.md</b> so every agent knows the latest"},
+      {s:"todo", t:"Sync repo status ↔ <b>Asana</b> (76 tasks, 8 done)"},
+      {s:"todo", t:"Draft status updates for <b>Daniel</b> after each work round"}
+    ]
+  }
+];
+
+/* prompt ideas → click loads the text + selects the right agents into the composer */
+const IDEAS = [
+  {label:"Improve expert map", agents:["data","ui"], text:"Improve the expert map in the MeatCODE app: create several new buttons, make them clickable, and wire them to interact with the database through the server (meatcode_server.py / Neon). Data Engineer owns the API + DB side; UI Designer owns the buttons, states and layout. Work simultaneously, then log everything to AGENT_UPDATE_LOG.md."},
+  {label:"Ship the Oracle engine", agents:["algo","data"], text:"Build the Oracle answer engine per the approved hybrid-RAG decision: Data Engineer embeds citable sources into pgvector and fixes the recall bug (websearch_to_tsquery ANDing terms); Algorithm Expert builds the retrieve→rerank→ground pipeline plus a 30–50 question golden eval set."},
+  {label:"Promote v8 mockup", agents:["ui","advisory"], text:"Promote the v8 polished mockup to the canonical app/meatcode_mockup.html: UI Designer carries the richer treatment into Oracle/Map/Research; Advisory confirms it fits the design-system decision. Log the promotion."},
+  {label:"Weekly team sync", agents:["coord"], text:"Project Coordinator: read AGENT_UPDATE_LOG.md + PROJECT_STATE.md, summarize what every agent did this week, reconcile the MeatCODE Asana task statuses with reality, and draft a short status note for Daniel."},
+  {label:"Corpus → 1,000+", agents:["data"], text:"Data Engineer: expand the literature corpus from 818 toward 1,000–2,000 high-value sources — run the taxonomy-driven ingester deeper (including older foundational reviews), dedupe, tag to canonical topics, and re-score priority."},
+  {label:"Fix Oracle recall bug", agents:["data","algo"], text:"Fix the Oracle recall bug: retrieval uses websearch_to_tsquery which ANDs all terms, so full questions match 0 rows. Data Engineer switches to keyword extraction / OR semantics; Algorithm Expert verifies recall against real questions."},
+  {label:"White-space map", agents:["data","advisory"], text:"Data Engineer + Advisory: analyze the tagged corpus for knowledge gaps / white spaces in meaty process flavor, and produce a first white-space map with the highest-leverage research questions."}
+];
+
+/* ---------- STATE ---------- */
+const selected = new Set();
+let coordOn = true;
+const ASANA_PROJECT = "1215201551726181";
+const ASANA_GET_PROJECT = "mcp__2c2288c1-6b92-456a-84f4-5798cfcc25ae__get_project";
+const DISPATCH_TASK_ID = "meatcode-agent-dispatch";
+const UPDATE_TASK_TOOL = "mcp__scheduled-tasks__update_scheduled_task";
+const LIVE = typeof window !== "undefined" && window.cowork && typeof window.cowork.callMcpTool === "function";
+const CAN_RUN = LIVE && window.cowork && typeof window.cowork.runScheduledTask === "function";
+
+/* ---------- RENDER ROSTER ---------- */
+function statusClass(s){return s==="active"?"s-active":s==="idle"?"s-idle":"s-standby";}
+function goalIcon(s){return s==="done"?"g-done":s==="prog"?"g-prog":"g-todo";}
+function goalMark(s){return s==="done"?"✓":s==="prog"?"◐":"○";}
+
+function renderRoster(){
+  const r = document.getElementById("roster");
+  r.innerHTML = "";
+  AGENTS.forEach(a=>{
+    const el = document.createElement("div");
+    el.className = "agent" + (selected.has(a.id)?" sel":"");
+    el.id = "card-"+a.id;
+    const goalsHtml = a.goals.map(g=>`<div class="goal"><span class="gi ${goalIcon(g.s)}">${goalMark(g.s)}</span><span class="g-txt">${g.t}</span></div>`).join("");
+    el.innerHTML = `
+      <div class="agent-head" data-toggle="${a.id}">
+        <div class="av" style="background:${a.soft}">${a.emoji}</div>
+        <div class="agent-meta">
+          <div class="agent-name">${a.name}<span class="sdot ${statusClass(a.status)}" title="${a.statusTxt}"></span></div>
+          <div class="agent-role">${a.role}</div>
+        </div>
+        <div class="chk ${selected.has(a.id)?"on":""}" data-sel="${a.id}">
+          <svg viewBox="0 0 24 24"><polyline points="4,12 10,18 20,6"></polyline></svg>
+        </div>
+      </div>
+      <div class="agent-body">
+        <div class="bar-row"><span>${a.headline}</span><span>${a.pct}%</span></div>
+        <div class="bar"><i style="width:${a.pct}%;background:${a.color}"></i></div>
+        <div class="last">🕗 Last active: ${a.last}</div>
+        <span class="expand" data-toggle="${a.id}">▾ big goals (${a.goals.length})</span>
+        <div class="goals">${goalsHtml}</div>
+      </div>`;
+    r.appendChild(el);
+  });
+  // wire
+  document.querySelectorAll("[data-sel]").forEach(c=>c.addEventListener("click",e=>{
+    e.stopPropagation(); toggleSelect(c.getAttribute("data-sel"));
+  }));
+  document.querySelectorAll("[data-toggle]").forEach(c=>c.addEventListener("click",e=>{
+    const id = c.getAttribute("data-toggle");
+    document.getElementById("card-"+id).classList.toggle("open");
+  }));
+}
+
+function toggleSelect(id){
+  if(selected.has(id)) selected.delete(id); else selected.add(id);
+  document.getElementById("card-"+id).classList.toggle("sel", selected.has(id));
+  document.querySelector(`[data-sel="${id}"]`).classList.toggle("on", selected.has(id));
+  renderChips(); refreshPreview();
+}
+
+function renderChips(){
+  const c = document.getElementById("selChips"); c.innerHTML="";
+  if(selected.size===0){ c.innerHTML = `<span class="selchip empty">No agents enlisted yet</span>`; return; }
+  AGENTS.filter(a=>selected.has(a.id)).forEach(a=>{
+    const chip = document.createElement("span");
+    chip.className="selchip";
+    chip.innerHTML = `${a.emoji} ${a.name} <span class="x" data-x="${a.id}">✕</span>`;
+    c.appendChild(chip);
+  });
+  c.querySelectorAll("[data-x]").forEach(x=>x.addEventListener("click",()=>toggleSelect(x.getAttribute("data-x"))));
+}
+
+/* ---------- PROMPT IDEAS ---------- */
+function renderIdeas(){
+  const e=document.getElementById("ideas"); e.innerHTML="";
+  IDEAS.forEach(ix=>{
+    const b=document.createElement("button"); b.className="ex"; b.textContent="＋ "+ix.label;
+    b.addEventListener("click",()=>{
+      selected.clear(); ix.agents.forEach(id=>selected.add(id));
+      document.getElementById("prompt").value=ix.text;
+      renderRoster(); renderChips(); refreshPreview();
+      document.getElementById("launchBar").classList.remove("show");
+      document.getElementById("prompt").scrollIntoView({behavior:"smooth",block:"center"});
+    });
+    e.appendChild(b);
+  });
+}
+
+/* ---------- TASK SUGGESTION GENERATOR ---------- */
+async function generateSuggestion(){
+  const bar=document.getElementById("launchBar"), icon=document.getElementById("lbIcon"), msg=document.getElementById("lbMsg");
+  const specialists=[...selected].filter(id=>id!=="coord");
+  if(specialists.length===0){ toast("Select an agent first to get a task idea"); return; }
+  const names=AGENTS.filter(a=>selected.has(a.id)).map(a=>a.name);
+  const btn=document.getElementById("genBtn");
+  const offline=()=>{
+    const match=IDEAS.find(ix=>ix.agents.some(a=>specialists.includes(a)))||IDEAS[0];
+    document.getElementById("prompt").value=match.text; refreshPreview();
+    bar.className="launchbar show"; icon.textContent="✨";
+    msg.innerHTML="Loaded a suggested task for "+names.join(", ")+". Edit it, then <b>Copy for chat</b>.";
+    toast("✨ Suggestion loaded");
+  };
+  if(LIVE && window.cowork && typeof window.cowork.askClaude==="function"){
+    btn.disabled=true;
+    bar.className="launchbar show busy"; icon.textContent="…"; msg.innerHTML="Drafting a task idea for "+names.join(", ")+"…";
+    try{
+      const cur=document.getElementById("prompt").value.trim();
+      const instr="You are helping Lior plan work on MeatCODE — a meaty-flavor research platform (literature DB, molecular/mechanistic DB, expert map, Oracle RAG chatbot, and a product mockup). Propose ONE concrete, high-leverage task these agents can do together, phrased as a crisp instruction naming who owns what (2–4 sentences). Agents: "+names.join(", ")+". "+(cur?("Build on this rough goal: "+cur):"")+" Return ONLY the task instruction text, no preamble.";
+      const res=await window.cowork.askClaude(instr, []);
+      let out=typeof res==="string"?res:(res&&(res.text||res.answer||res.output||(res.content&&res.content[0]&&res.content[0].text)))||"";
+      out=(out||"").trim();
+      if(out){ document.getElementById("prompt").value=out; refreshPreview();
+        bar.className="launchbar show"; icon.textContent="✨";
+        msg.innerHTML="Task idea generated for "+names.join(", ")+". Review, tweak, then <b>Copy for chat</b>.";
+        toast("✨ Idea generated"); }
+      else offline();
+    }catch(e){ offline(); }
+    finally{ btn.disabled=false; }
+  } else offline();
+}
+
+/* ---------- COMPOSE PROMPT ---------- */
+function composePrompt(){
+  const task = document.getElementById("prompt").value.trim();
+  const picked = AGENTS.filter(a=>selected.has(a.id) && a.id!=="coord");
+  const coordPicked = selected.has("coord") || (coordOn);
+  let p = "";
+  p += "You are orchestrating my MeatCODE agent team. Work inside the canonical repo `meatCODE/` "
+     + "(read CLAUDE.md then PROJECT_STATE.md first). Spawn the following specialist agents to work "
+     + "IN PARALLEL on one shared objective, each owning their part:\n\n";
+  picked.forEach(a=>{ p += `  • ${a.name} — ${a.role}\n`; });
+  if(picked.length===0) p += "  • (no specialist selected — pick at least one)\n";
+  p += "\nSHARED OBJECTIVE:\n" + (task || "(describe the task above)") + "\n\n";
+  p += "COORDINATION RULES:\n";
+  p += "  1. Split the work so the agents run simultaneously, not sequentially; state who owns what.\n";
+  p += "  2. Each agent edits only its area in `meatCODE/`, follows the file-stamp convention, and\n";
+  p += "     appends a dated entry to AGENT_UPDATE_LOG.md describing what it changed and why.\n";
+  p += "  3. Keep changes consistent with PROJECT_STATE.md; update it if technical reality changes.\n";
+  if(coordPicked){
+    p += "  4. When the specialists finish, the Project Coordinator consolidates their update-log\n";
+    p += "     entries, syncs the relevant Asana tasks, and drafts a short 'what just shipped' note\n";
+    p += "     for Daniel so the whole team knows the latest.\n";
+  }
+  p += "\nReport back a concise summary of who did what and what's now ready for my review.";
+  return p;
+}
+
+function refreshPreview(){
+  const t = composePrompt();
+  document.getElementById("previewText").textContent = t;
+  document.getElementById("wordCount").textContent = t.split(/\s+/).filter(Boolean).length + " words";
+}
+
+/* ---------- DISPATCH ---------- */
+function validate(){
+  const specialists = [...selected].filter(id=>id!=="coord");
+  const task = document.getElementById("prompt").value.trim();
+  if(specialists.length===0){ toast("Enlist at least one agent first"); return false; }
+  if(!task){ toast("Write the task for your agents"); return false; }
+  return true;
+}
+/* full self-contained prompt for the background dispatcher run */
+function composeRunPrompt(){
+  const task = document.getElementById("prompt").value.trim();
+  const picked = AGENTS.filter(a=>selected.has(a.id) && a.id!=="coord");
+  const coordPicked = selected.has("coord") || coordOn;
+  let p = "You are orchestrating Lior's MeatCODE agent team. Work inside the canonical repo `meatCODE/` "
+        + "(at /Users/lior/Documents/Claude/Projects/Claude Database/meatCODE). Read CLAUDE.md then "
+        + "PROJECT_STATE.md first. Launched on-demand from the Agent Command Center dashboard.\n\n";
+  p += "STEP 0 — record the order: write this entire dispatch verbatim, with a UTC timestamp header, to "
+     + "/Users/lior/Documents/Claude/Projects/Claude Database/meatCODE/app/DISPATCH_ORDER.md (overwrite) "
+     + "so there is a repo-visible record of exactly what was dispatched. Then execute it:\n\n";
+  p += "Spawn these specialist agents to work IN PARALLEL on one shared objective, each owning their part:\n";
+  picked.forEach(a=>{ p += `  • ${a.name} — ${a.role}\n`; });
+  if(picked.length===0) p += "  • (no specialist selected)\n";
+  p += "\n=== DISPATCH ===\n" + (task || "NO TASK SET") + "\n=== END DISPATCH ===\n\n";
+  p += "Coordination rules:\n";
+  p += "  1. Split the work so agents run simultaneously; state who owns what.\n";
+  p += "  2. Each agent edits only its area in `meatCODE/`, follows the file-stamp convention, and appends a dated entry to AGENT_UPDATE_LOG.md.\n";
+  p += "  3. Keep PROJECT_STATE.md current if technical reality changes.\n";
+  if(coordPicked)
+    p += "  4. When specialists finish, the Project Coordinator consolidates their update-log entries, syncs the relevant Asana tasks, and drafts a short 'what just shipped' note for Daniel.\n";
+  p += "\nReport a concise summary of who did what and what's ready for Lior's review.";
+  return p;
+}
+
+function copyAndLaunch(){
+  if(!validate()) return;
+  const text = composePrompt();
+  const done = ()=>{ toast("⧉ Copied — paste into chat to launch");
+    const bar=document.getElementById("launchBar");
+    bar.className="launchbar show"; document.getElementById("lbIcon").textContent="1";
+    document.getElementById("lbMsg").innerHTML="Prompt copied. <b>Paste into your Claude chat</b> (<span class='mono'>⌘V</span>) and press Enter to launch."; };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text,done));
+  } else fallbackCopy(text,done);
+}
+function fallbackCopy(text,done){
+  const ta=document.createElement("textarea"); ta.value=text;
+  ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  let ok=false; try{ ok=document.execCommand("copy"); }catch(e){}
+  ta.remove();
+  if(ok){ done(); }
+  else{ // last resort: reveal the prompt so the user can select+copy manually
+    document.getElementById("preview").classList.add("show");
+    refreshPreview(); toast("Select the prompt below & copy it");
+    document.getElementById("preview").scrollIntoView({behavior:"smooth",block:"center"});
+  }
+}
+
+/* ---------- LIVE ASANA ---------- */
+async function pullLive(){
+  const dot=document.getElementById("dataDot"), lbl=document.getElementById("dataLbl");
+  if(!LIVE){ return; }
+  lbl.textContent="refreshing…";
+  try{
+    const r = await window.cowork.callMcpTool(ASANA_GET_PROJECT, {project_id:ASANA_PROJECT, opt_fields:"num_tasks,num_completed_tasks,num_incomplete_tasks"});
+    const payload = r.structuredContent ?? JSON.parse(r.content[0].text);
+    const d = payload.data || payload;
+    const tc = d.task_counts || {};
+    if(tc.num_tasks!=null){
+      document.getElementById("kpiTasks").textContent = (tc.num_completed_tasks||0)+" / "+tc.num_tasks;
+      const pct = Math.round(100*(tc.num_completed_tasks||0)/tc.num_tasks);
+      document.getElementById("kpiTasksD").textContent = pct+"% complete · Phase 1";
+    }
+    dot.className="dot live"; lbl.textContent="live · Asana";
+  }catch(e){
+    dot.className="dot snap"; lbl.textContent="snapshot";
+  }
+}
+
+/* ---------- TOAST ---------- */
+let toTimer;
+function toast(msg){
+  const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toTimer); toTimer=setTimeout(()=>t.classList.remove("show"),2600);
+}
+
+/* ---------- INIT ---------- */
+renderRoster(); renderChips(); renderIdeas(); refreshPreview();
+document.getElementById("prompt").addEventListener("input", ()=>{ refreshPreview(); document.getElementById("launchBar").classList.remove("show"); });
+document.getElementById("coordToggle").addEventListener("click",function(){
+  coordOn=!coordOn; this.classList.toggle("on",coordOn); refreshPreview();
+});
+document.getElementById("copyBtn").addEventListener("click", copyAndLaunch);
+document.getElementById("genBtn").addEventListener("click", generateSuggestion);
+document.getElementById("previewBtn").addEventListener("click",()=>{
+  const p=document.getElementById("preview"); p.classList.toggle("show");
+  if(p.classList.contains("show")) refreshPreview();
+});
+document.getElementById("refreshBtn").addEventListener("click", pullLive);
+if(LIVE){ document.getElementById("dataDot").className="dot live"; document.getElementById("dataLbl").textContent="live · Asana"; pullLive(); }
+</script>
+</body>
+</html>

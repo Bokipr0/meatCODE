@@ -43,10 +43,11 @@ meatCODE/
     meatcode_mockup.html      ← CANONICAL mockup (Map / Oracle / Research + Protocol library + Prediction)
     expert_network_map.html   ← standalone expert/co-authorship network view
     assets/                   ← logo, chord-diagram SVG, media
-  server/              ← backends
-    meatcode_server.py        ← thin single-file demo server (Anthropic SDK only, no DB) — fast demos / fallback
+  server/              ← backend (single file — reaktzia-mvp/ was removed 2026-07-05)
+    meatcode_server.py        ← THE server: serves the mockup + Oracle (POST /api/ask, SSE) +
+                                 Neon-backed GET /api/experts, /api/experts/{id}, /api/papers/{id}.
+                                 Launch via run_oracle.command (repo root).
     MeatCODE_API_Quickstart.md
-    reaktzia-mvp/             ← full FastAPI + Neon + RAG (real cited papers)
   db/                  ← schema, migrations, seeds (source-controlled SQL)
     taxonomy/                 ← topics hierarchy CSVs
   pipeline/            ← literature pipeline (Dimensions ingester, Layer C/E, migration scripts)
@@ -108,7 +109,7 @@ Two requirements on every working session — this is how Lior tracks who change
 ## Connecting to Neon (data)
 One `.env` at the repo root (`meatCODE/.env`, git-ignored) holds `DATABASE_URL` + `ANTHROPIC_API_KEY`. Copy from `.env.example`.
 - **Agents / scripts:** `from db.connect import get_conn`, or run `python3 db/connect.py` for a live row-count + citable-corpus snapshot. Never hard-code credentials.
-- **The mockup never talks to Neon directly.** It calls the local FastAPI server (`server/reaktzia-mvp/`, port 8000), which reads the same root `.env`. Start it with `server/reaktzia-mvp/run_server.command`; verify at `http://127.0.0.1:8000/api/health` (expects `db_ok: true`, `has_anthropic_key: true`).
+- **The mockup never talks to Neon directly.** It calls `server/meatcode_server.py` (port 8000), which reads the same root `.env`. Double-click `run_oracle.command` (repo root) to start the server AND open the mockup; verify at `http://localhost:8000/api/health` (expects `db: true`). That one server serves the mockup, the Oracle (`/api/ask`), and the Neon-backed `/api/experts`, `/api/experts/{id}`, `/api/papers/{id}`.
 - Neon auto-sleeps; the first query after idle wakes it (a few seconds).
 
 ## Conventions

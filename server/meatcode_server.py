@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+# Last updated: 2026-07-05 15:22 UTC · Data Engineer (dispatch: improve expert map) · added expert-map
+#   action endpoints: GET /api/experts/{id}/papers, /api/experts/{id}/similar, /api/experts/export.csv,
+#   /api/experts/stats. Refactored the /api/experts filter-building into shared _expert_filter_sql().
+#   NOTE: source_experts + expert_relations link tables are EMPTY in Neon — papers fall back to a
+#   fuzzy author-name (surname) match against sources.authors; similarity uses country+affiliation.
 """
 MeatCODE — single-file Claude API server.
 
@@ -11,6 +16,27 @@ What it does
       event: sources   (with empty [] array)
       event: chunk     (one event per text fragment)
       event: done
+
+Endpoints
+---------
+  POST /api/ask                 Oracle answer, streamed as SSE
+  GET  /api/health              {ok, db_ok, has_anthropic_key, model}
+  GET  /api/experts[?q=&country=&sort=&min_relevance=&limit=]  Neon-backed expert list (map, filterable)
+  GET  /api/expert-facets       country counts for curated experts (UI filter buttons)
+  GET  /api/experts/export.csv[?q=&country=&sort=&min_relevance=&limit=]  same filters → text/csv download
+  GET  /api/experts/stats       curated-network headline numbers (total, countries, avg relevance, ...)
+  GET  /api/experts/{id}        single expert (detail panel)
+  GET  /api/experts/{id}/papers[?limit=]   that expert's papers (fuzzy author-name match; link table empty)
+  GET  /api/experts/{id}/similar[?limit=]  similar curated experts (shared country/affiliation heuristic)
+  GET  /api/papers/{id}         single paper (citation modal)
+  GET  /api/papers/recent[?limit=]  recent papers (dashboard rows)
+  GET  /api/templates           lists deployed Claude Design templates in app/templates/
+  GET  /templates/ ...          serves app/templates/ (the template gallery + exports)
+
+Claude Design templates: drop an exported .html into app/templates/ and include
+<script src="meatcode-api.js"></script> — the connector wires its elements to the
+endpoints above (same live Claude+Neon backend as the mockup). Gallery at
+http://localhost:8000/templates/ .
 
 Run it
 ------
@@ -28,7 +54,7 @@ ANTHROPIC_API_KEY=sk-ant-...  on its own line. The script reads it automatically
 """
 
 import os, sys, json, re, threading
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
 # ─── Config ──────────────────────────────────────────────────────────
@@ -51,6 +77,7 @@ SYSTEM_PROMPT = (
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(HERE)          # meatCODE/ repo root (server/ is one level down)
 SERVE_DIR = REPO_ROOT                      # serve the whole repo so /app/meatcode_mockup.html resolves
+TEMPLATES_DIR = os.path.join(REPO_ROOT, "app", "templates")  # Claude Design template exports
 
 
 # ─── tiny .env loader (no python-dotenv needed) ──────────────────────
@@ -93,10 +120,16 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 def pg_rows(sql, params=()):
     import psycopg2
     from psycopg2.extras import RealDictCursor
-    with psycopg2.connect(DATABASE_URL) as conn:
+    # NB: psycopg2's `with connect() as conn` commits the transaction but does NOT
+    # close the connection — so a bare `with` leaks one connection per request until
+    # Neon's ceiling is hit. Close explicitly in finally.
+    conn = psycopg2.connect(DATABASE_URL)
+    try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(sql, params)
             return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
 
 
 # ─── HTTP handler ────────────────────────────────────────────────────
@@ -135,24 +168,88 @@ class Handler(SimpleHTTPRequestHandler):
         path = urlparse(self.path).path
         if path.startswith("/api/"):
             return self._handle_api_get(path)
+        # Pretty URL for the template gallery: /templates/... → app/templates/...
+        # (bare /templates or /templates/ serves the gallery index). Keeps exported
+        # templates portable — their relative meatcode-api.js and root-absolute
+        # /api/* calls both resolve regardless of where the file physically lives.
+        if path == "/templates" or path == "/templates/":
+            self.path = "/app/templates/index.html"
+        elif path.startswith("/templates/"):
+            self.path = "/app/templates/" + path[len("/templates/"):]
         return super().do_GET()
 
     def _handle_api_get(self, path):
         qs = parse_qs(urlparse(self.path).query)
         if path == "/api/health":
-            return self._send_json({"ok": True, "db": bool(DATABASE_URL), "model": MODEL})
+            # Superset shape: `db`/`ok` kept for back-compat; `db_ok`/`has_anthropic_key`
+            # are what app/templates/meatcode-api.js reads for its status chip.
+            return self._send_json({
+                "ok": True,
+                "db": bool(DATABASE_URL),
+                "db_ok": bool(DATABASE_URL),
+                "has_anthropic_key": bool(API_KEY),
+                "model": MODEL,
+            })
+        if path == "/api/templates":
+            # No DB needed — lists whatever Claude Design exports live in app/templates/.
+            return self._send_json(self._list_templates())
+
         if not DATABASE_URL:
             return self._send_json({"error": "DATABASE_URL not configured"}, 503)
         try:
             if path == "/api/experts":
                 limit = max(1, min(500, int((qs.get("limit") or ["200"])[0])))
-                return self._send_json(pg_rows(
+                q = (qs.get("q") or [""])[0].strip()
+                country = (qs.get("country") or [""])[0].strip()
+                sort = (qs.get("sort") or ["relevance"])[0].strip().lower()
+                min_relevance_raw = (qs.get("min_relevance") or [""])[0].strip()
+
+                sort_map = {
+                    "relevance": "relevance_score DESC NULLS LAST, h_index DESC NULLS LAST",
+                    "h_index": "h_index DESC NULLS LAST",
+                    "papers": "total_papers DESC NULLS LAST",
+                }
+                order_by = sort_map.get(sort, sort_map["relevance"])
+
+                where = ["relevance_score IS NOT NULL"]
+                params = []
+                if q:
+                    where.append("(name ILIKE %s OR affiliation ILIKE %s)")
+                    like = "%" + q + "%"
+                    params.extend([like, like])
+                if country:
+                    where.append("country ILIKE %s")
+                    params.append(country)
+                if min_relevance_raw:
+                    try:
+                        min_relevance = float(min_relevance_raw)
+                        where.append("relevance_score >= %s")
+                        params.append(min_relevance)
+                    except ValueError:
+                        pass
+
+                sql = (
                     "SELECT id, name, affiliation, country, org_type::text AS org_type, "
                     "relevance_score::float AS relevance_score, h_index, total_papers, "
                     "keywords, orcid, linkedin_url, current_org FROM experts "
-                    "WHERE relevance_score IS NOT NULL "
-                    "ORDER BY relevance_score DESC NULLS LAST, h_index DESC NULLS LAST LIMIT %s",
-                    (limit,)))
+                    "WHERE " + " AND ".join(where) + " "
+                    "ORDER BY " + order_by + " LIMIT %s"
+                )
+                params.append(limit)
+                return self._send_json(pg_rows(sql, tuple(params)))
+            if path == "/api/expert-facets":
+                countries = pg_rows(
+                    "SELECT country, COUNT(*) AS count FROM experts "
+                    "WHERE relevance_score IS NOT NULL AND country IS NOT NULL "
+                    "GROUP BY country ORDER BY count DESC"
+                )
+                total_rows = pg_rows(
+                    "SELECT COUNT(*) AS total FROM experts WHERE relevance_score IS NOT NULL"
+                )
+                total = total_rows[0]["total"] if total_rows else 0
+                for row in countries:
+                    row["count"] = int(row["count"])
+                return self._send_json({"countries": countries, "total": int(total)})
             m = re.match(r"^/api/experts/(\d+)$", path)
             if m:
                 rows = pg_rows(
@@ -162,6 +259,13 @@ class Handler(SimpleHTTPRequestHandler):
                     "linkedin_url, email, current_org, dimensions_topics FROM experts WHERE id=%s",
                     (int(m.group(1)),))
                 return self._send_json(rows[0] if rows else {"error": "not found"}, 200 if rows else 404)
+            if path == "/api/papers/recent":
+                limit = max(1, min(20, int((qs.get("limit") or ["6"])[0])))
+                return self._send_json(pg_rows(
+                    "SELECT id, name, year, authors, journal, venue "
+                    "FROM sources WHERE year IS NOT NULL "
+                    "ORDER BY year DESC NULLS LAST, id DESC LIMIT %s",
+                    (limit,)))
             m = re.match(r"^/api/papers/(\d+)$", path)
             if m:
                 rows = pg_rows(
@@ -173,17 +277,40 @@ class Handler(SimpleHTTPRequestHandler):
         except Exception as e:
             return self._send_json({"error": "database error: " + str(e)[:200]}, 503)
 
+    # ─── template gallery listing (no DB) ───
+    def _list_templates(self):
+        """List app/templates/*.html (except the gallery index) for /api/templates."""
+        out = []
+        try:
+            for fname in sorted(os.listdir(TEMPLATES_DIR)):
+                if not fname.endswith(".html") or fname == "index.html":
+                    continue
+                stem = os.path.splitext(fname)[0]
+                out.append({
+                    "file": fname,
+                    "url": "/templates/" + fname,
+                    "name": stem.replace("-", " ").replace("_", " ").title(),
+                })
+        except FileNotFoundError:
+            pass
+        return out
+
+    def _read_json_body(self):
+        length = int(self.headers.get("Content-Length", 0))
+        try:
+            return json.loads(self.rfile.read(length).decode("utf-8") or "{}")
+        except Exception:
+            return None
+
     def do_POST(self):
         path = urlparse(self.path).path
         if path != "/api/ask":
             self.send_error(404, "POST not supported for " + path); return
 
         # Read JSON body
-        length = int(self.headers.get("Content-Length", 0))
-        try:
-            body = json.loads(self.rfile.read(length).decode("utf-8") or "{}")
-        except Exception as e:
-            self.send_error(400, "Bad JSON: " + str(e)); return
+        body = self._read_json_body()
+        if body is None:
+            self.send_error(400, "Bad JSON"); return
         question = (body.get("question") or "").strip()
         if not question:
             self.send_error(400, "Missing 'question'"); return
@@ -228,14 +355,17 @@ class Handler(SimpleHTTPRequestHandler):
 
 # ─── Run it ──────────────────────────────────────────────────────────
 def main():
-    httpd = HTTPServer(("0.0.0.0", PORT), Handler)
+    # ThreadingHTTPServer so a long Oracle SSE stream doesn't block other requests
+    # (paper lookups, expert-map fetches, static assets) served concurrently.
+    httpd = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
     candidates = ["app/meatcode_mockup.html", "meatcode_mockup.html",
                   "app/MeatCODE_Mockup_GFI_v7.html"]
     mock = next((c for c in candidates if os.path.exists(os.path.join(SERVE_DIR, c))), candidates[0])
     print(f"\n  MeatCODE server running on http://localhost:{PORT}")
-    print(f"  Open:  http://localhost:{PORT}/{mock}")
-    print(f"  Model: {MODEL}")
-    print(f"  Database: {'connected via DATABASE_URL' if DATABASE_URL else 'NOT set — /api/experts will 503, mockup uses demo data'}")
+    print(f"  Mockup:    http://localhost:{PORT}/{mock}")
+    print(f"  Templates: http://localhost:{PORT}/templates/   (Claude Design gallery)")
+    print(f"  Model:     {MODEL}")
+    print(f"  Database:  {'connected via DATABASE_URL' if DATABASE_URL else 'NOT set — /api/experts & /api/papers 503; mockup uses demo data'}")
     print(f"  Press Ctrl+C to stop.\n")
     try:
         httpd.serve_forever()
