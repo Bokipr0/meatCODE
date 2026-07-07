@@ -7,7 +7,7 @@ services:
     runtime: python
     plan: free                 # free tier sleeps when idle (first visit ~30-50s to wake).
                                # Change to "starter" (~$7/mo) to keep it always awake.
-    branch: master
+    branch: main
     buildCommand: pip install -r requirements.txt
     startCommand: python3 server/meatcode_server.py
     envVars:

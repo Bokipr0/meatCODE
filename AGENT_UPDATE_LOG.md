@@ -1,6 +1,6 @@
 # MeatCODE — Agent Update Log
 
-_Last updated: 2026-07-07 10:56 UTC · Project Coordinator · parallel team run — data-audit loop (selection + judge + design + schedule)_
+_Last updated: 2026-07-07 11:20 UTC · UI/UX Designer · lean v1 mockup — 4-category funnel IA (Home/Oracle/Data/Map)_
 
 > **Every agent appends an entry here at the end of any working session — newest at the top.**
 > This is the detailed audit trail of who changed what, when, and why. The short in-file
@@ -18,6 +18,34 @@ _Last updated: 2026-07-07 10:56 UTC · Project Coordinator · parallel team run 
 ```
 
 ---
+
+## 2026-07-07 11:14 UTC · UI/UX Designer (art director) · Lean v1 mockup — 4-category funnel IA
+- What:    New **less-busy** mockup exploring a 4-category IA — **Home / Oracle / Data / Map** — where each category is a funnel (chooser → refine → detail) that delivers the user to what they want. Single top nav (bottom **dock retired**); **Data** consolidates papers + molecules + protocols + pathways; **Simulate + Prediction dropped** from primary nav. 7 scenes with hash-routing + a dev flow bar (H). Teal v8 tokens, monospace molecule names, and gentle cross-links (Oracle answer entity-chips → molecule detail → "experts on this" → Map profile → "ask Oracle about her work").
+- Files:   `UI-UX Designer/meatcode_lean_v1.html` (new).
+- Why:     Lior wants a simpler, calmer alternative to the (deliberately rich) canonical `app/meatcode_mockup.html`, which stays the "north-star" target. Collapse 5 domains → 4, one screen-flow per category.
+- Result:  Self-contained, browser-openable; verified — 7 scenes, balanced markup (7/7 sections, 105/105 divs), exactly 4 tabs, 0 dock, JS passes `node --check`. NOT yet rendered in a browser (no browser in sandbox; Chrome ext disconnected).
+- Next:    Lior review of the 4-cat direction + confirm Data scope / Simulate handling; then iterate or promote the pattern. Wire real `/api/molecules`,`/api/sources` etc. if it advances. Reconnect Claude-in-Chrome for screenshot verification.
+
+## 2026-07-07 11:20 UTC · data-audit session (scheduled) · first real audit run + judge parallelized
+- What:    Ran the recurring data-audit loop for the first time with the **real Haiku judge** (prior runs were `--mock-judge` verification only, per the 10:56 entry). `python3 pipeline/audit_sources.py --n 20` selected 20 sources by dynamic priority from a 150-source pool (96 untagged), judged each, and wrote **20 rows to `source_audits`** (first real verdicts — table was clean before). Verdicts: **8 keep · 9 review · 3 quarantine**. Report: `docs/audits/2026-07-07_111839.md`.
+- Also:    Made the judge batch **concurrent** in `audit_sources.py` (`ThreadPoolExecutor`, order-preserved via `.map`, sequential fallback, `AUDIT_JUDGE_WORKERS` env, default 8). Judging is 1 Haiku call/source (~3.9s each) = ~78s serial for n=20, which overruns the Cowork **45s-per-bash-call** limit (and backgrounded processes don't survive across calls — each call is a fresh PID namespace with `--die-with-parent`). Concurrency cut wall-clock to **~15s**. Behaviour-preserving: same calls, same verdicts, same DB rows/report as the serial path.
+- Env:     Installed `anthropic` (0.116.0) + `psycopg2-binary` in the sandbox so the real judge + Neon write run here (the 10:56 entry noted the SDK was absent in-sandbox). Not repo changes.
+- Files:   `pipeline/audit_sources.py` (concurrency edit + stamp); `docs/audits/2026-07-07_111839.md` (new report); Neon `source_audits` (+20 rows, run `86e6ae7e`).
+- Why:     Scheduled every-2-days data-audit task (this run).
+- Result:  Loop verified end-to-end against live Neon with the real judge; DB write re-queried and confirmed (20 rows, 3 quarantine: 308/341/380). **Systemic finding: all 20 audited sources are untagged legacy rows** (`Tags: none`, tag-score 50 = "can't assess") — concrete confirmation of the ~40%-tagged / 489-untagged gap; the judge repeatedly flags "no tags stored despite clear relevance." The judge is also **stricter than the stored `relevance_llm` gate** (e.g. #308 relevance_llm 72 → judge 28; #380 62 → 35) — the audit catches off-topic rows the ingest gate let through.
+- Next:    (1) Human decision on the 3 quarantines (listed below / in the report) — do NOT auto-delete. (2) Back-tag the untagged legacy rows the judge flagged (all 17 non-quarantine were on-topic-but-untagged). (3) Ingest-query signal: the `plant-protein` and `off-note` queries surfaced the most off-topic material (analog nutrition/texture; off-flavor *removal*) — candidate for an ingest-string fix. (4) Hand-label `analysis/audit_gold.csv` to measure quarantine precision before enabling any auto-apply.
+
+### ⚠️ Quarantine candidates for Lior (staged, NOT deleted — confirm/reject in the dated report)
+- **#308** *Hemp-Based Meat Analogs: An Updated Review on Extraction Technologies, Nutritional Excellence…* (Foods, 2025, 2 cites, review) — judge relevance **28**. Nutrition/extraction/sustainability focus, not meaty-flavor generation. Ingest query: `off-note`.
+- **#341** *Biopurification using non-growing microorganisms to improve plant protein ingredients* (npj Science of Food, 2024, 15 cites) — judge relevance **35**. About *removing* off-flavors via microbial bioconversion, not *generating* meaty flavor. Ingest query: `plant-protein`.
+- **#380** *Exploring the Role and Functionality of Ingredients in Plant-Based Meat Analogue Burgers* (Foods, 2024, 36 cites, review) — judge relevance **35**. Ingredient functionality / texture engineering, not flavor/aroma chemistry. Ingest query: `plant-protein`.
+
+## 2026-07-07 ~14:30 UTC · Data Engineer (Lior request) · backfilled organizations (companies + NGOs)
+- What:   Seeded the empty `organizations` table with **37 curated ecosystem orgs** (29 `company`, 8 `ngo_gov`) — flavor houses (Givaudan, dsm-firmenich, IFF, Symrise, Kerry, Takasago, Mane…), alt-meat/ingredient/fermentation companies (Beyond, Impossible, Redefine, Aleph, Mosa, UPSIDE, Perfect Day, Novonesis, MycoTechnology…), and NGOs (GFI + 5 regional chapters, ProVeg, New Harvest). Verifiable core fields only (name · org_type · country · website · short factual description) — no fabricated founding years or product claims (trust-first).
+- Files:  `db/migrations/0004_seed_organizations.sql` (new; unique index on lower(name) + ON CONFLICT DO NOTHING → idempotent).
+- Why:    `/api/companies` + the Database→Companies tab returned `[]` (organizations empty; experts.org_type all NULL). Lior: "backfill companies + NGO data first."
+- Result: Applied live to Neon → 37 orgs. Verified over HTTP: `/api/companies` returns 37, filterable (`country=Israel` → Aleph/Believer/Chunk/GFI Israel/Redefine); `/api/db-facets?entity=companies` returns country options. Companies tab is now populated.
+- Next:   Optional enrichment — link experts→organizations (set `experts.org_type` or an org_id FK) so expert cards show a verified affiliation type; expand the seed; add logos/founding once verifiable.
 
 ## 2026-07-07 ~14:05 UTC · Project Coordinator · PARALLEL team run — Database section + map upgrade (consolidated)
 Data Engineer + UI/UX Designer ran simultaneously on one objective (a minimal-IA "Database" section + map upgrades, backend+frontend) against a fixed API contract on disjoint files. A monthly spend limit cut the UI agent off at its final verify step — but both agents' files had already landed complete. Coordinator verified end-to-end and consolidated (specialists' entries folded in here).

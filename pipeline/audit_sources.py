@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Last updated: 2026-07-07 10:32 UTC · Data Engineer (audit loop) · new orchestrator
+# Last updated: 2026-07-07 11:18 UTC · data-audit session · judge batch now concurrent (ThreadPoolExecutor, order-preserved, seq fallback) so --n 20 completes within scheduler time limits
 """Recurring data-authentication loop — SELECTION + ORCHESTRATION layer.
 
 Every run (intended cadence: every 2 days) this script:
@@ -53,6 +53,7 @@ import os
 import re
 import sys
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -89,6 +90,12 @@ from db import taxonomy                   # the governing bible loader
 
 POOL_DEFAULT = 150
 N_DEFAULT = 20
+# The per-source judge call is an independent, exception-safe network round-trip
+# (~4s each), so the batch is judged concurrently. This keeps a full --n 20 run
+# inside tight scheduler/session time limits instead of ~N*4s sequential. Order
+# is restored afterwards so DB rows + report are identical to the serial path.
+# Override with the AUDIT_JUDGE_WORKERS env var; 1 forces fully sequential.
+AUDIT_JUDGE_WORKERS = max(1, int(os.environ.get("AUDIT_JUDGE_WORKERS", "8")))
 
 # ---------------------------------------------------------------------------
 # Candidate dict fields pulled straight from `sources`.
@@ -476,13 +483,30 @@ def main() -> int:
     # --- rank + judge -------------------------------------------------------
     ranked = rank_fn(pool, weights)
     top = ranked[: args.n]
-    judged: list[tuple[dict, dict]] = []
-    for c in top:
+
+    def _judge_one(c: dict) -> tuple[dict, dict]:
         res = judge_fn(c)
         # coerce verdict into the allowed set so DB CHECK never fails
         if res.get("verdict") not in ("keep", "review", "quarantine"):
             res["verdict"] = "review"
-        judged.append((c, res))
+        return (c, res)
+
+    # Judge the batch concurrently (judge_fn is an independent, exception-safe
+    # network call per source). ThreadPoolExecutor.map preserves input order, so
+    # `judged` matches `top` exactly as the sequential path did. Any executor-level
+    # failure falls back to plain sequential judging.
+    workers = min(AUDIT_JUDGE_WORKERS, len(top)) or 1
+    judged: list[tuple[dict, dict]]
+    if workers > 1:
+        print(f"   judging {len(top)} sources with {workers} concurrent workers...")
+        try:
+            with ThreadPoolExecutor(max_workers=workers) as ex:
+                judged = list(ex.map(_judge_one, top))
+        except Exception as e:
+            print(f"   (concurrent judging failed: {e}; falling back to sequential)")
+            judged = [_judge_one(c) for c in top]
+    else:
+        judged = [_judge_one(c) for c in top]
 
     verdicts = {"keep": 0, "review": 0, "quarantine": 0}
     for _c, r in judged:

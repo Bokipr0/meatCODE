@@ -36,8 +36,9 @@ Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-u
   (SheetJS). Map enlarged, defaults to **top-15-by-relevance** experts, country-click expands that area,
   dot→short profile with "View full profile" → routes into the Database. Verified end-to-end (endpoints
   return live Neon rows; mockup serves 268 KB; all 5 inline scripts pass `node --check`). ⚠️ TWO DATA GAPS:
-  (1) **Companies tab is empty** — `organizations` table has 0 rows and `experts.org_type` is NULL for all
-  3,129, so `/api/companies` returns `[]` until backfilled; (2) **Sources `sort=citations` surfaces off-topic
+  (1) **Companies tab — SEEDED (2026-07-07)** — `organizations` was empty; now backfilled with 37 curated
+  orgs (29 companies + 8 NGOs) via `db/migrations/0004_seed_organizations.sql` (applied live); `/api/companies`
+  returns them, filterable by country. (`experts.org_type` still NULL — expert↔org linkage is a separate optional enrichment.) (2) **Sources `sort=citations` surfaces off-topic
   papers** (raw citations favor off-domain reviews) — default the Sources tab to `priority_score`/relevance.
   Data-entry (write-back) intentionally deferred (unsafe unauthenticated writes); browser click-test pending.
 - **Repo established** (`Bokipr0/meatCODE`) as the single source of truth; three-homes model adopted
@@ -117,6 +118,12 @@ Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-u
   `UI-UX Designer/`. Spec flags one gap: molecule API endpoints (`/api/molecules…`) don't exist yet — data-eng follow-up.
 
 ## In flight
+- **Lean v1 mockup — 4-category funnel IA (2026-07-07, art-director):** `UI-UX Designer/meatcode_lean_v1.html`
+  — a less-busy alternative collapsing the 5 domains into **Home / Oracle / Data / Map**, each a
+  chooser→refine→detail funnel; single top nav (dock retired); Data consolidates papers/molecules/protocols/
+  pathways; Simulate + Prediction out of primary nav. 7 scenes, verified (balanced markup, JS `node --check`
+  OK), not yet browser-rendered. The rich canonical `app/meatcode_mockup.html` stays the north-star. Review
+  candidate — awaiting Lior's call on Data scope + Simulate handling.
 - Repo scaffold first push (this session). Pending local copy of two iCloud-only files
   (`analysis/streamlit_dashboard.py`, `app/expert_network_map.html`) — see Open items.
 - Phase 0 closeout items: **tagging taxonomy v0.1** → drafted `docs/TAGGING_TAXONOMY_v0.1.md` (7 faceted
