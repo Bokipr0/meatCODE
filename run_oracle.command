@@ -23,6 +23,19 @@ python3 -c "import anthropic, psycopg2" 2>/dev/null || {
   python3 -m pip install --user anthropic psycopg2-binary || pip3 install anthropic psycopg2-binary
 }
 
+# 2b) Free port 8000 if a previous server is still running
+#     (prevents "OSError: [Errno 48] Address already in use" and stale-key servers)
+OLD=$(lsof -ti tcp:8000 2>/dev/null)
+if [ -n "$OLD" ]; then
+  echo "Stopping a previous server still holding port 8000 (pid $OLD)…"
+  kill $OLD 2>/dev/null; sleep 1
+  STILL=$(lsof -ti tcp:8000 2>/dev/null)
+  [ -n "$STILL" ] && kill -9 $STILL 2>/dev/null
+fi
+
+# 2c) Ignore any stale key exported in this shell — .env is the source of truth
+unset ANTHROPIC_API_KEY
+
 # 3) Open the mockup once the server is up
 ( sleep 2; open "http://localhost:8000/app/meatcode_mockup.html" ) &
 

@@ -88,7 +88,9 @@ def load_dotenv(path):
         if not line or line.startswith("#") or "=" not in line: continue
         k, v = line.split("=", 1)
         k, v = k.strip(), v.strip().strip('"').strip("'")
-        os.environ.setdefault(k, v)
+        # .env is authoritative: overwrite any stale shell export (e.g. an old
+        # ANTHROPIC_API_KEY left over from `export`), which setdefault would keep.
+        os.environ[k] = v
 
 # .env at repo root first (the convention), then next to this script as fallback
 load_dotenv(os.path.join(REPO_ROOT, ".env"))

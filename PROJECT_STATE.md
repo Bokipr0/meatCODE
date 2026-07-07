@@ -4,7 +4,7 @@
 > Asana owns *tasks & priorities*; this file owns *technical reality* — what's built, what's broken,
 > what's in flight. Keep it short and current, not a changelog.
 
-_Last updated: 2026-07-05 by Claude (advisory: corrected the stale "two backends" line to reflect the single `meatcode_server.py`; + Project Coordinator weekly sync — see AGENT_UPDATE_LOG.md and docs/2026-07-05_status_for_daniel.md)_
+_Last updated: 2026-07-05 by Claude (Project Coordinator — parallel UI/UX team run: research screenflow spec + interactive prototype added to UI-UX Designer/; see AGENT_UPDATE_LOG.md)_
 
 ---
 
@@ -80,6 +80,15 @@ Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-u
   annotated source). These are the Claude Design templates the `app/templates/` serving work targets.
   Awaiting Lior's go on build target (deploy-as-served-HTML wired to Claude/Neon vs. Next.js rebuild),
   same review gate as the v8 polish pass.
+- **Research screenflow design (2026-07-05, parallel UI/UX team run):** two specialists on disjoint files —
+  `UI-UX Designer/RESEARCH_SCREENFLOW_SPEC.md` (IA/wireframe spec: Oracle as connective tissue unifying
+  Literature + Molecular + Expert + RAG into ONE entity graph; Research becomes the hub, Map/Oracle become
+  full-screen views over one entity model; 3 cross-jumping journeys; 5 annotated wireframes on the 4-region
+  shell; component inventory; grounded in real corpus counts + honest empty-states) and
+  `UI-UX Designer/research_screenflow_prototype.html` (self-contained interactive prototype, 5 scenes —
+  Workspace / Oracle answer / Molecule / Paper / Expert — linked by color-coded clickable entity chips +
+  breadcrumb; teal v8 tokens + 4-region shell; representative hardcoded data). Both are review candidates in
+  `UI-UX Designer/`. Spec flags one gap: molecule API endpoints (`/api/molecules…`) don't exist yet — data-eng follow-up.
 
 ## In flight
 - Repo scaffold first push (this session). Pending local copy of two iCloud-only files

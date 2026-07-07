@@ -1,6 +1,6 @@
 # MeatCODE — Agent Update Log
 
-_Last updated: 2026-07-05 ~21:20 UTC · Project Coordinator + Advisory · weekly sync + doc-consistency fix_
+_Last updated: 2026-07-05 · Project Coordinator · parallel UI/UX team run — research screenflow spec + prototype_
 
 > **Every agent appends an entry here at the end of any working session — newest at the top.**
 > This is the detailed audit trail of who changed what, when, and why. The short in-file
@@ -18,6 +18,19 @@ _Last updated: 2026-07-05 ~21:20 UTC · Project Coordinator + Advisory · weekly
 ```
 
 ---
+
+## 2026-07-05 · Project Coordinator · PARALLEL team run — Research screenflow design (consolidated)
+UI/UX Designer split into two specialists running SIMULTANEOUSLY on disjoint files against the shared objective (design the research screenflow unifying Literature + Molecular + Expert DBs + Oracle RAG, with the chatbot as the key connective interaction). Coordinator consolidated their entries — specialists returned entries rather than writing this shared log directly, to avoid concurrent-write clobbering (repo can't run git worktrees on the mount).
+
+### UI/UX Designer (screenflow spec) · Research screenflow IA — `UI-UX Designer/RESEARCH_SCREENFLOW_SPEC.md` (new)
+- What:   Unified Research IA fusing Literature/Molecular/Expert/Oracle into one entity graph, Oracle as connective tissue. 5 principles, entity-link map + edge inventory, 3 cross-jumping user journeys, 5 annotated wireframes on the 4-region shell, IA/nav model, 10-component inventory, prototype handoff.
+- Result: Key IA call — Research becomes the hub; Map/Oracle become full-screen views over one entity model; persistent breadcrumb + context-panel RELATED rail carry cross-jumps; an "Entities in this answer" strip + "Ask the Oracle about this" are the connective mechanism. Grounded in real corpus counts; honest empty-states; teal tokens only.
+- Next:   Flags one gap — molecule API endpoints don't exist yet (data-eng follow-up).
+
+### UI/UX Designer (prototype) · Research screenflow prototype — `UI-UX Designer/research_screenflow_prototype.html` (new)
+- What:   Self-contained interactive prototype, 5 scenes (Workspace / Oracle answer / Molecule / Paper / Expert) linked by color-coded clickable entity chips (molecule=teal, paper=coral, expert=olive, pathway=deep-teal) + persistent breadcrumb. Teal v8 tokens + 4-region shell + `.scene` hash-routing + dev flow bar (H).
+- Result: Working browser-openable file; core loop = ask Oracle → click molecule → its papers+experts → click expert → profile → "Ask Oracle about her work" → back to hub. Tag-balance verified (5 scenes, 368/368 divs, 1021 lines). Representative hardcoded data — honest to the phased RAG backend.
+- Next:   Wire real Neon entities; add Simulate/Toolbench cross-link; usability pass now the IA spec has landed.
 
 ## 2026-07-05 ~21:35 UTC · Project Coordinator · PARALLEL team run — corpus white-space analysis (consolidated)
 Data Engineer (empirical) + Advisory (strategic) ran simultaneously on disjoint files against the shared objective, then reported back for the coordinator to consolidate and reconcile.
