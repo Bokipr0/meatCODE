@@ -176,11 +176,27 @@ class Handler(SimpleHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError):
             pass
 
+    # Disable directory listings entirely on the public server.
+    def list_directory(self, path):
+        self.send_error(404, "Not found")
+        return None
+
     # ─── GET: /api/* handled here; everything else = static files ───
     def do_GET(self):
         path = urlparse(self.path).path
         if path.startswith("/api/"):
             return self._handle_api_get(path)
+        # Bare URL → the product mockup, so visitors land on MeatCODE (not a file list).
+        if path in ("/", ""):
+            self.send_response(302)
+            self.send_header("Location", "/app/meatcode_mockup.html")
+            self.end_headers()
+            return
+        # Public-server hygiene: never serve repo internals / secrets / scripts.
+        low = path.lower()
+        if low.startswith("/.") or "/." in low or low.endswith(".command") or low.endswith(".env"):
+            self.send_error(404, "Not found")
+            return
         # Pretty URL for the template gallery: /templates/... → app/templates/...
         # (bare /templates or /templates/ serves the gallery index). Keeps exported
         # templates portable — their relative meatcode-api.js and root-absolute

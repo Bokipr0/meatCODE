@@ -19,6 +19,20 @@ _Last updated: 2026-07-07 11:20 UTC · UI/UX Designer · lean v1 mockup — 4-ca
 
 ---
 
+## 2026-07-07 16:40 UTC · advisory session · Render deploy live + root redirect / listing hardening
+- What:    The Render deploy is **live** (`meatcode-oracle.onrender.com`) — server started, keys set (it would exit otherwise). Bare `/` was showing a public directory listing of the whole repo (incl. `.git/`). Added: `/` → 302 redirect to `/app/meatcode_mockup.html`; `list_directory` overridden to 404 (no directory listings); dotfile/`.git`/`.command`/`.env` paths return 404.
+- Files:   `server/meatcode_server.py` (do_GET redirect + block + list_directory override). Compiles OK.
+- Why:     Lior hit the onrender.com root and saw a file list instead of the platform; repo internals shouldn't be publicly browsable.
+- Result:  After next deploy, the bare Render URL opens MeatCODE directly and internals are hidden. Live platform URL today: `https://meatcode-oracle.onrender.com/app/meatcode_mockup.html`.
+- Next:    Lior runs `deploy.command` to publish the hardening (Render auto-rebuilds ~1-2 min). Optional: password gate; rotate Neon DB password (still pending).
+
+## 2026-07-07 13:40 UTC · data-audit session · xlsx export of the audit run (info + key tags per source)
+- What:    Added `pipeline/export_audit_xlsx.py` — turns any `source_audits` run into a formatted workbook. **Overview** sheet (run meta + verdict COUNTIFs + column legend) and **Audited Sources** sheet: one row per source with its info/metadata, the taxonomy tags ATTACHED via `source_topics`, the judge's verdict + tag/relevance/quality sub-scores, the judge's SUGGESTED tags/issues, and notes (verdict colour-coded, frozen header, autofilter). Generated it for today's run and recalced formulas (0 errors).
+- Files:   `pipeline/export_audit_xlsx.py` (new, stamped); `docs/audits/audit_2026-07-07_86e6ae7e_sources.xlsx` (new — 20 sources).
+- Why:     Lior asked for an xlsx showing each audited source's information + attached key tags, in addition to the Neon verdicts.
+- Result:  20 sources exported (8 keep / 9 review / 3 quarantine). Every row shows "— none (untagged) —" for attached tags, so the sheet doubles as a **back-tagging worksheet** — the Suggested-tags column is the judge's recommendation for what each untagged legacy row should be tagged with. Verified: 2 sheets, 21 cols × 20 data rows, COUNTIFs resolve to 8/9/3.
+- Next:    Optional — invoke this exporter at the end of each scheduled audit run so every run drops an xlsx beside its markdown report (say the word and I'll wire it in).
+
 ## 2026-07-07 11:14 UTC · UI/UX Designer (art director) · Lean v1 mockup — 4-category funnel IA
 - What:    New **less-busy** mockup exploring a 4-category IA — **Home / Oracle / Data / Map** — where each category is a funnel (chooser → refine → detail) that delivers the user to what they want. Single top nav (bottom **dock retired**); **Data** consolidates papers + molecules + protocols + pathways; **Simulate + Prediction dropped** from primary nav. 7 scenes with hash-routing + a dev flow bar (H). Teal v8 tokens, monospace molecule names, and gentle cross-links (Oracle answer entity-chips → molecule detail → "experts on this" → Map profile → "ask Oracle about her work").
 - Files:   `UI-UX Designer/meatcode_lean_v1.html` (new).
