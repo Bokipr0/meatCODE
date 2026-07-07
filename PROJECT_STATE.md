@@ -4,7 +4,7 @@
 > Asana owns *tasks & priorities*; this file owns *technical reality* — what's built, what's broken,
 > what's in flight. Keep it short and current, not a changelog.
 
-_Last updated: 2026-07-05 by Claude (Project Coordinator — parallel UI/UX team run: research screenflow spec + interactive prototype added to UI-UX Designer/; see AGENT_UPDATE_LOG.md)_
+_Last updated: 2026-07-07 by Claude (Project Coordinator — parallel team run: data-audit loop built + verified live on Neon, scheduled every 2 days; see AGENT_UPDATE_LOG.md)_
 
 ---
 
@@ -14,6 +14,32 @@ Roadmap runs in 4 phases to Mar 2027: Phase 0 setup (May–Jun) · Phase 1 found
 Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-up proposal (Jan–Mar).
 
 ## Done
+- **Data-audit loop — BUILT + VERIFIED (2026-07-07, parallel team):** recurring every-2-days source
+  authentication. `pipeline/audit_sources.py` (Data Engineer) selects 20 sources by dynamic priority
+  (importance × staleness × uncertainty), pulls each one's info + tags + connected taxonomy queries, and
+  writes verdicts to the new `source_audits` table (migration `0003`, **applied live to Neon**) + a dated
+  `docs/audits/` report. `pipeline/audit_judge.py` (Algorithm Expert) = Haiku judge (tag/relevance/quality
+  → keep|review|quarantine, safe fallback, never crashes the batch) + `update_weights` self-reweighting.
+  `docs/data_audit_loop.md` (Advisory) = design of record; `analysis/audit_eval.md` = gold-set validation
+  method. Verified end-to-end vs live Neon (150-candidate pull, DB write path OK, table left clean).
+  Registered as a scheduled task (`0 9 */2 * *`) running `--n 20`. Cost ≈20 Haiku judgements/run (cents/mo).
+  Directly targets the corpus-quality risk (40% tagged, 202 flagged <40) + the Asana "validate source
+  quality" task. NOTE: `audit_sources.py` was made self-sufficient (direct psycopg2 fallback) because the
+  local `db/connect.py` **source** is missing (only `.pyc` survived a sync) — do a `git pull` on the Mac.
+  Next: hand-label `analysis/audit_gold.csv` (30–50) to measure quarantine precision before enabling
+  auto-apply; wire quarantines into the dashboard Review Queue tab.
+- **Database section + map upgrade shipped (2026-07-07, parallel team — Data Eng + UI):** Backend
+  (`server/meatcode_server.py`) added read-only `GET /api/molecules`, `/api/sources`, `/api/companies`,
+  `/api/db-facets` (SELECT-only). Frontend (`app/meatcode_mockup.html`): IA made more minimal — **Database**
+  promoted to a top-level domain, **Toolbench moved inside Research**; new `#database` scene with 4 tabs
+  (Molecules/Experts/Companies/Sources), live filter/sort, row-detail modal, and **client-side XLSX export**
+  (SheetJS). Map enlarged, defaults to **top-15-by-relevance** experts, country-click expands that area,
+  dot→short profile with "View full profile" → routes into the Database. Verified end-to-end (endpoints
+  return live Neon rows; mockup serves 268 KB; all 5 inline scripts pass `node --check`). ⚠️ TWO DATA GAPS:
+  (1) **Companies tab is empty** — `organizations` table has 0 rows and `experts.org_type` is NULL for all
+  3,129, so `/api/companies` returns `[]` until backfilled; (2) **Sources `sort=citations` surfaces off-topic
+  papers** (raw citations favor off-domain reviews) — default the Sources tab to `priority_score`/relevance.
+  Data-entry (write-back) intentionally deferred (unsafe unauthenticated writes); browser click-test pending.
 - **Repo established** (`Bokipr0/meatCODE`) as the single source of truth; three-homes model adopted
   (Git = code/docs, Neon = data, Asana = tasks). iCloud retired as shared memory.
 - **Pipeline ↔ Layer C+E wired**: typed extraction (Layer C) + SQLite store (Layer E), `--mock` flag,

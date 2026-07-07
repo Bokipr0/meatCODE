@@ -273,13 +273,12 @@ const AGENTS = [
   },
   {
     id:"coord", name:"Project Coordinator", emoji:"🗂️", color:"#b7791f", soft:"#fbf3e3",
-    role:"Broadcasts updates, syncs Asana, reports",
+    role:"Broadcasts updates & notifies the whole team",
     status:"standby", statusTxt:"Standby", last:"not yet activated",
     headline:"Keep the team in sync", pct:20,
     goals:[
       {s:"prog", t:"Maintain <b>AGENT_UPDATE_LOG.md</b> so every agent knows the latest"},
-      {s:"todo", t:"Sync repo status ↔ <b>Asana</b> (76 tasks, 8 done)"},
-      {s:"todo", t:"Draft status updates for <b>Daniel</b> after each work round"}
+      {s:"prog", t:"<b>Notify all agents</b> of what was just done, so the whole team stays current"}
     ]
   }
 ];
@@ -289,7 +288,7 @@ const IDEAS = [
   {label:"Improve expert map", agents:["data","ui"], text:"Improve the expert map in the MeatCODE app: create several new buttons, make them clickable, and wire them to interact with the database through the server (meatcode_server.py / Neon). Data Engineer owns the API + DB side; UI Designer owns the buttons, states and layout. Work simultaneously, then log everything to AGENT_UPDATE_LOG.md."},
   {label:"Ship the Oracle engine", agents:["algo","data"], text:"Build the Oracle answer engine per the approved hybrid-RAG decision: Data Engineer embeds citable sources into pgvector and fixes the recall bug (websearch_to_tsquery ANDing terms); Algorithm Expert builds the retrieve→rerank→ground pipeline plus a 30–50 question golden eval set."},
   {label:"Promote v8 mockup", agents:["ui","advisory"], text:"Promote the v8 polished mockup to the canonical app/meatcode_mockup.html: UI Designer carries the richer treatment into Oracle/Map/Research; Advisory confirms it fits the design-system decision. Log the promotion."},
-  {label:"Weekly team sync", agents:["coord"], text:"Project Coordinator: read AGENT_UPDATE_LOG.md + PROJECT_STATE.md, summarize what every agent did this week, reconcile the MeatCODE Asana task statuses with reality, and draft a short status note for Daniel."},
+  {label:"Notify the team", agents:["coord"], text:"Project Coordinator: read AGENT_UPDATE_LOG.md + PROJECT_STATE.md, summarize what every agent did recently, and notify all the agents of the latest so the whole team stays current."},
   {label:"Corpus → 1,000+", agents:["data"], text:"Data Engineer: expand the literature corpus from 818 toward 1,000–2,000 high-value sources — run the taxonomy-driven ingester deeper (including older foundational reviews), dedupe, tag to canonical topics, and re-score priority."},
   {label:"Fix Oracle recall bug", agents:["data","algo"], text:"Fix the Oracle recall bug: retrieval uses websearch_to_tsquery which ANDs all terms, so full questions match 0 rows. Data Engineer switches to keyword extraction / OR semantics; Algorithm Expert verifies recall against real questions."},
   {label:"White-space map", agents:["data","advisory"], text:"Data Engineer + Advisory: analyze the tagged corpus for knowledge gaps / white spaces in meaty process flavor, and produce a first white-space map with the highest-leverage research questions."}
@@ -435,8 +434,7 @@ function composePrompt(){
   p += "  3. Keep changes consistent with PROJECT_STATE.md; update it if technical reality changes.\n";
   if(coordPicked){
     p += "  4. When the specialists finish, the Project Coordinator consolidates their update-log\n";
-    p += "     entries, syncs the relevant Asana tasks, and drafts a short 'what just shipped' note\n";
-    p += "     for Daniel so the whole team knows the latest.\n";
+    p += "     entries and notifies all the agents of what was just done, so the whole team stays current.\n";
   }
   p += "\nReport back a concise summary of who did what and what's now ready for my review.";
   return p;

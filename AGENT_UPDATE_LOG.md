@@ -1,6 +1,6 @@
 # MeatCODE — Agent Update Log
 
-_Last updated: 2026-07-05 · Project Coordinator · parallel UI/UX team run — research screenflow spec + prototype_
+_Last updated: 2026-07-07 10:56 UTC · Project Coordinator · parallel team run — data-audit loop (selection + judge + design + schedule)_
 
 > **Every agent appends an entry here at the end of any working session — newest at the top.**
 > This is the detailed audit trail of who changed what, when, and why. The short in-file
@@ -18,6 +18,66 @@ _Last updated: 2026-07-05 · Project Coordinator · parallel UI/UX team run — 
 ```
 
 ---
+
+## 2026-07-07 ~14:05 UTC · Project Coordinator · PARALLEL team run — Database section + map upgrade (consolidated)
+Data Engineer + UI/UX Designer ran simultaneously on one objective (a minimal-IA "Database" section + map upgrades, backend+frontend) against a fixed API contract on disjoint files. A monthly spend limit cut the UI agent off at its final verify step — but both agents' files had already landed complete. Coordinator verified end-to-end and consolidated (specialists' entries folded in here).
+
+### Data Engineer · database-category API — `server/meatcode_server.py`
+- What:   Added read-only `GET /api/molecules` (q/category/sort=name|popularity; popularity = source_molecules count), `GET /api/sources` (q/topic/sort=relevance|citations|year/min_relevance), `GET /api/companies` (q/country/sort), `GET /api/db-facets?entity=` (filter options per entity). SELECT-only, no writes.
+- Result: Verified live vs Neon — molecules & sources return real rows; db-facets returns category/country/topic options. **Finding: `organizations` table is EMPTY (0 rows) and `experts.org_type` is NULL for all 3,129 experts → `/api/companies` returns `[]`** until backfilled (endpoint auto-detects and falls back cleanly). All prior endpoints intact.
+- Next:   Backfill companies (populate `organizations`, or set `experts.org_type`); consider a relevance-first default for the Sources tab.
+
+### UI/UX Designer · Database scene + map upgrade + minimal IA — `app/meatcode_mockup.html`
+- What:   IA made more minimal/product-like: **Database** promoted to a top-level domain; **Toolbench moved to a choice inside the Research scene**. New `#database` scene with 4 tabs (Molecules/Experts/Companies/Sources): live filter + sort controls (from `/api/db-facets`), results table, row-click detail modal, and **client-side XLSX export** (SheetJS from cdnjs) of the filtered rows. Map enlarged; defaults to **top-15 recommended** experts (`/api/experts?sort=relevance&limit=15`); country/area click expands that area's experts (via `window.mcApplyExperts`); dot click → short profile card with **"View full profile" → routes into Database → Experts**.
+- Result: Mockup serves over HTTP (268 KB); `#database` scene + SheetJS + `/api/*` fetches present; **all 5 inline `<script>` blocks pass `node --check`**. Cut off before its own final serve-check + log return (coordinator completed both). Live in-browser click-test still pending.
+- Next:   Browser click-test; make the Sources tab default to relevance; country zoom polish.
+
+### Coordinator · verification + findings
+- Booted the server, hit all new endpoints (200, real rows; companies `[]` as expected), confirmed the mockup loads with the new scene, and syntax-checked every inline script (0 errors). Two data gaps to close: (1) Companies needs `org_type`/`organizations` backfill; (2) `/api/sources?sort=citations` surfaces off-topic high-citation papers — default the tab to `priority_score`/relevance. **Data-entry (write-back) was intentionally deferred** this round (unauthenticated writes to live Neon + subagent test-writes are unsafe; needs a validation/provenance design).
+
+## 2026-07-07 10:56 UTC · Project Coordinator · PARALLEL team run — data-audit loop (consolidated)
+Three specialists (Data Engineer, Algorithm Expert, Advisory) ran SIMULTANEOUSLY on disjoint files against one objective: a recurring **every-2-days source-authentication loop** that selects 20 sources by dynamic priority, surfaces each one's info + tags + connected taxonomy queries, and judges quality/relevance. Built to a shared function contract (`rank_for_audit` / `judge_source` / `update_weights` / `DEFAULT_WEIGHTS`) so the two scripts integrate. Two specialists were cut off mid-run by a spend limit, but their files had already landed complete; the Coordinator finished integration, verified end-to-end against live Neon, applied the migration, and registered the schedule. Specialists returned entries; Coordinator wrote this log (parallel-write safety).
+
+### Data Engineer · selection + schema — `pipeline/audit_sources.py`, `db/migrations/0003_source_audits.sql` (new)
+- What:   Orchestrator: connects to Neon read-only, pulls a ~150-source candidate pool biased to never-/least-recently-audited + higher `priority_score`, assembles each source's info + tags (`source_topics`→`topics`) + connected taxonomy queries (`keywords_topics.json` via `db/taxonomy`), calls the judge, writes verdicts to `source_audits` + a dated `docs/audits/` markdown report. CLI `--n/--dry-run/--mock-judge/--pool`. Migration 0003 creates `source_audits` (additive/idempotent).
+- Files:  `pipeline/audit_sources.py`, `db/migrations/0003_source_audits.sql`.
+- Why:    The DB + selection + orchestration half of the loop.
+- Result: Parses clean; live dry-run pulled 150 real candidates (96 untagged); write path verified. Report shows info·tagging·connected-queries per source exactly as requested — already surfacing untagged sources as a real finding.
+- Next:   (Agent cut off by spend limit before self-verification / its own log entry — Coordinator completed both.)
+
+### Algorithm Expert · judge + dynamic prioritization — `pipeline/audit_judge.py`, `analysis/audit_eval.md` (new)
+- What:   LLM-as-judge (Haiku) scoring tag-correctness / relevance / quality separately → verdict keep|review|quarantine, defensive JSON parsing, safe `review` fallback on any error (never crashes the batch). `rank_for_audit` = importance × staleness × uncertainty; `update_weights` = feedback loop (boost quarantine-heavy branches, decay clean ones, staleness floor + exploration fraction). `audit_eval.md` = gold-set validation method + the prioritization math.
+- Files:  `pipeline/audit_judge.py`; `analysis/audit_eval.md` (Coordinator wrote the eval doc from the module's design — agent was cut off before it).
+- Why:    The intelligence layer — what to check and how to authenticate it.
+- Result: Standalone self-test passes (ranking, weight feedback, safe fallback all verified); interface matches `audit_sources.py` exactly.
+- Next:   Build `analysis/audit_gold.csv` (30–50 hand-labeled sources) to measure quarantine precision before enabling any auto-apply.
+
+### Advisory · design + schedule — `docs/data_audit_loop.md` (new)
+- What:   Full design + operating doc: purpose/fit (Asana source-quality task + corpus risk), script-first architecture with an ASCII data-flow diagram, the importance×staleness×uncertainty prioritization + `update_weights` feedback loop, the every-2-days schedule + cost profile, human-in-the-loop (quarantine queue / Review Queue tab / dated reports; auto-apply vs human-gated), roadmap + risks, and a ready-to-register scheduled-task prompt (§7).
+- Files:  `docs/data_audit_loop.md` (new).
+- Why:    Own the design/strategy tying the two scripts together; answer Lior's real question — automate constant checking with dynamic prioritization, cheaply and reliably.
+- Result: Design of record + interop contract. Recommendation: script-first (deterministic selection/IO + a narrow Haiku judge on 20 rows) over an always-on agent swarm — cheaper, deterministic, reproducible, auditable, bounded blast radius. Staleness defined via audit history (sources has no created_at/updated_at).
+- Next:   Wire verdicts into the dashboard Review Queue tab; Coordinator registers the §7 scheduled task.
+
+### Project Coordinator · integration + verification
+- Made `audit_sources.py` self-sufficient: the `db.connect` import now falls back to a direct psycopg2 connection from `.env` — the local repo is missing `db/connect.py` **source** (only its `.pyc` survived a sync); flagged for a `git pull` on Lior's Mac.
+- Applied migration 0003 to Neon **live** → `source_audits` table created. Verified the full write path with a `--mock-judge --n 3` run (3 rows written, then deleted; table left clean). The real Anthropic judge runs on Lior's Mac (SDK not installed in the sandbox; judge degrades to `review` safely here).
+- Registered the **every-2-days scheduled task** (`0 9 */2 * *`) running `python3 pipeline/audit_sources.py --n 20`. Wrote `analysis/audit_eval.md`. Updated `PROJECT_STATE.md`.
+- Two mock test reports remain in `docs/audits/` (permission-locked from deletion in-sandbox; harmless, stamped "judge: mock").
+
+## 2026-07-07 13:50 UTC · advisory session · Always-on deploy (Render) + tunnel fix
+- What:    Made the server cloud-deployable and set up the edit→publish loop; fixed the tunnel script.
+- Files:   `server/meatcode_server.py` (PORT now `int(os.environ.get("PORT",8000))`), `requirements.txt` (new), `render.yaml` (new Blueprint), `deploy.command` (new — push = publish), `docs/DEPLOY.md` (new guide), `share_oracle.command` (rewritten — removed `set -u`, which caused `line 59: PORT?: unbound variable`).
+- Why:     Lior wants an always-on public site he updates on his own schedule (edit offline → run a deploy script → users see it), plus the quick tunnel working.
+- Result:  Verified — both scripts pass `bash -n`, server compiles. Render reads `render.yaml`; `deploy.command` triggers auto-deploy on push; secrets set in Render dashboard (`sync:false`).
+- Next:    Lior connects the repo to Render (New+ → Blueprint), pastes ANTHROPIC_API_KEY + DATABASE_URL → permanent URL. Optional: password gate; Starter plan avoids cold starts. Neon DB password still un-rotated (advise reset).
+
+## 2026-07-07 13:05 UTC · advisory session · Public sharing via tunnel
+- What:    Added a one-double-click way to put the Oracle on a temporary public https link (Cloudflare quick tunnel).
+- Files:   `share_oracle.command` (new, repo root, chmod +x).
+- Why:     Lior wants others to use the server from any computer without downloading files, easy to enter.
+- Result:  Script auto-installs `cloudflared` (brew or binary download), starts `server/meatcode_server.py` on :8000 if needed, opens the tunnel, and prints the shareable link `https://<rand>.trycloudflare.com/app/meatcode_mockup.html`.
+- Notes:   Temporary link (changes each run); while live, anyone with the link spends the Anthropic key — Ctrl+C to take offline. For an always-on link, deploy to Render later (PORT-from-env + requirements.txt still to add). Neon DB password still un-rotated (appeared in transcripts) — advise reset.
 
 ## 2026-07-05 · Project Coordinator · PARALLEL team run — Research screenflow design (consolidated)
 UI/UX Designer split into two specialists running SIMULTANEOUSLY on disjoint files against the shared objective (design the research screenflow unifying Literature + Molecular + Expert DBs + Oracle RAG, with the chatbot as the key connective interaction). Coordinator consolidated their entries — specialists returned entries rather than writing this shared log directly, to avoid concurrent-write clobbering (repo can't run git worktrees on the mount).
