@@ -4412,7 +4412,7 @@ window.rebuildExpertList = function () {};
    list + globe + detail panel working, and falls back to demo data if the
    server is offline. Needs the DB-backed reaktzia-mvp server on :8000. */
 (function () {
-  var API = (typeof API_BASE !== 'undefined' && API_BASE) ? API_BASE : 'http://127.0.0.1:8000';
+  var API = (typeof API_BASE !== 'undefined') ? API_BASE : 'http://127.0.0.1:8000';
   var CC = {
     'germany':[51.2,10.4],'canada':[56.1,-106.3],'usa':[39.8,-98.6],'united states':[39.8,-98.6],'us':[39.8,-98.6],
     'switzerland':[46.8,8.2],'israel':[31.5,34.8],'china':[35.9,104.2],'cn':[35.9,104.2],
@@ -4480,7 +4480,7 @@ window.rebuildExpertList = function () {};
    so the globe / list / detail panel stay in sync. Purely additive — falls back to whatever
    RESEARCHERS already holds (demo or previously-loaded live data) on any error, never throws. */
 (function () {
-  var API = (typeof API_BASE !== 'undefined' && API_BASE) ? API_BASE : 'http://127.0.0.1:8000';
+  var API = (typeof API_BASE !== 'undefined') ? API_BASE : 'http://127.0.0.1:8000';
   var state = { q: '', country: '', sort: 'relevance', topRatedOnly: false };
   var debounceTimer = null;
 
@@ -4660,7 +4660,7 @@ window.rebuildExpertList = function () {};
 (function () {
   var dbScene = document.getElementById('database');
   if (!dbScene) return;
-  var API = (typeof API_BASE !== 'undefined' && API_BASE) ? API_BASE : 'http://127.0.0.1:8000';
+  var API = (typeof API_BASE !== 'undefined') ? API_BASE : 'http://127.0.0.1:8000';
   var esc = (typeof escapeHtml === 'function') ? escapeHtml : function (s) { return String(s == null ? '' : s); };
 
   var CONFIG = {

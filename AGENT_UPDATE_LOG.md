@@ -19,6 +19,14 @@ _Last updated: 2026-07-07 11:20 UTC · UI/UX Designer · lean v1 mockup — 4-ca
 
 ---
 
+## 2026-07-07 16:55 UTC · advisory session · Fix Database/Experts/Companies "offline" on deployed site
+- What:    On the live Render site the Database tabs showed "offline / can't reach the database" even though the backend was fine. Root cause: those scenes computed their API base as `(API_BASE && API_BASE) ? API_BASE : 'http://127.0.0.1:8000'` — but on HTTPS `API_BASE===''` (same-origin), and `''` is falsy, so they fell back to the visitor's own localhost. Changed the guard to `(typeof API_BASE !== 'undefined')` so an empty-string (same-origin) base is respected. 3 occurrences (Database, Experts, Companies/Map).
+- Files:   `app/meatcode_mockup.html` (3 edits).
+- Evidence: proved backend healthy first — Neon reachable (molecules 799 / sources 818 / experts 3129 / orgs 37), live `/api/health` = `db_ok:true, has_anthropic_key:true`, and live `/api/molecules?limit=3` returns real rows. So the fault was purely the frontend base-URL guard.
+- Why:     Lior wants the DB data to load live when the deployed page opens.
+- Result:  After next deploy, the Database/Experts/Companies tabs fetch same-origin `/api/*` and populate on the live site. (Oracle was already fine — it used `API_BASE` directly.)
+- Next:    Lior runs `deploy.command` (ships this + the root-redirect/listing hardening), waits ~1-2 min, refreshes, opens Database → live data.
+
 ## 2026-07-07 16:40 UTC · advisory session · Render deploy live + root redirect / listing hardening
 - What:    The Render deploy is **live** (`meatcode-oracle.onrender.com`) — server started, keys set (it would exit otherwise). Bare `/` was showing a public directory listing of the whole repo (incl. `.git/`). Added: `/` → 302 redirect to `/app/meatcode_mockup.html`; `list_directory` overridden to 404 (no directory listings); dotfile/`.git`/`.command`/`.env` paths return 404.
 - Files:   `server/meatcode_server.py` (do_GET redirect + block + list_directory override). Compiles OK.
