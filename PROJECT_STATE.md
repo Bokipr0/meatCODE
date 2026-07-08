@@ -38,7 +38,9 @@ Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-u
   return live Neon rows; mockup serves 268 KB; all 5 inline scripts pass `node --check`). ⚠️ TWO DATA GAPS:
   (1) **Companies tab — SEEDED (2026-07-07)** — `organizations` was empty; now backfilled with 37 curated
   orgs (29 companies + 8 NGOs) via `db/migrations/0004_seed_organizations.sql` (applied live); `/api/companies`
-  returns them, filterable by country. (`experts.org_type` still NULL — expert↔org linkage is a separate optional enrichment.) (2) **Sources `sort=citations` surfaces off-topic
+  returns them, filterable by country. (`experts.org_type` still NULL — expert↔org linkage is a separate optional enrichment.)
+- **Per-source tag columns added (2026-07-07, `0005`):** `sources` gained `pathway`, `method`, `sensory_descriptor`, `matrix`, `compound_class` (`TEXT[]`) + `study_type`, `main_claim` (`TEXT`) — all NULL, to be filled later by an LLM extraction/curation pass. ("Min Compound class" read as Main Compound class.)
+- **Relational tagging system live (2026-07-08, `0006`):** unified `tags(category, name, slug)` + `source_tags(source_id, tag_id)` junction for the 5 multi-valued tags (pathway/method/sensory_descriptor/matrix/compound_class); `study_type`+`main_claim` stay columns. `pipeline/promote_tags.py` (re-runnable) promotes the flat `sources.*` arrays → **146 tags / 541 links / 72 sources**. Junctions kept: `source_topics` + `source_molecules` + new `source_tags`; empty legacy junctions (source_reactions/methods/sensory/product_contexts) superseded (left as legacy). How-to-query + retrieval guide: `docs/tagging_relational_guide.md`. ⚠️ Only **72/818 tagged** (Lior's local `tag_sources.py` run didn't land in Neon) — finish tagging, then re-run `promote_tags.py`. ⚠️ **Oracle `/api/ask` still sends `sources: []`** (no live retrieval); `search_vec` populated but unwired — wiring tag+FTS retrieval is the concrete next step. (2) **Sources `sort=citations` surfaces off-topic
   papers** (raw citations favor off-domain reviews) — default the Sources tab to `priority_score`/relevance.
   Data-entry (write-back) intentionally deferred (unsafe unauthenticated writes); browser click-test pending.
 - **Repo established** (`Bokipr0/meatCODE`) as the single source of truth; three-homes model adopted
@@ -118,6 +120,11 @@ Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-u
   `UI-UX Designer/`. Spec flags one gap: molecule API endpoints (`/api/molecules…`) don't exist yet — data-eng follow-up.
 
 ## In flight
+- **v9 mockup — v8 polish on the newer canonical (2026-07-08, art-director):** `UI-UX Designer/MeatCODE_mockup_v9.html`
+  = the deployed `app/meatcode_mockup.html` (Database scene + Simulate engine + Toolbench-in-Research + Oracle
+  history) with the v8 polish forward-ported (teal avatar, SVG bell, 4-audience personas, dashboard
+  accents/stat-strip fronting all 5 domains, teal globe/bubbles). Verified (balanced markup, 5 scripts
+  `node --check` OK), not browser-rendered. Review candidate — promote → `app/meatcode_mockup.html` + redeploy if approved.
 - **Lean v1 mockup — 4-category funnel IA (2026-07-07, art-director):** `UI-UX Designer/meatcode_lean_v1.html`
   — a less-busy alternative collapsing the 5 domains into **Home / Oracle / Data / Map**, each a
   chooser→refine→detail funnel; single top nav (dock retired); Data consolidates papers/molecules/protocols/

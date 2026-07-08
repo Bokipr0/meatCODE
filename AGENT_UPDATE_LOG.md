@@ -1,6 +1,6 @@
 # MeatCODE — Agent Update Log
 
-_Last updated: 2026-07-07 11:20 UTC · UI/UX Designer · lean v1 mockup — 4-category funnel IA (Home/Oracle/Data/Map)_
+_Last updated: 2026-07-08 · UI/UX Designer · v9 mockup — v8 polish forward-ported onto the newer canonical_
 
 > **Every agent appends an entry here at the end of any working session — newest at the top.**
 > This is the detailed audit trail of who changed what, when, and why. The short in-file
@@ -18,6 +18,52 @@ _Last updated: 2026-07-07 11:20 UTC · UI/UX Designer · lean v1 mockup — 4-ca
 ```
 
 ---
+
+## 2026-07-08 ~09:55 UTC · Project Coordinator · team run — relational tagging system (consolidated)
+Objective: turn the 7 requested source tags into a relational system + teach Lior how to connect sources through it. Algorithm Expert (guide) ran as a spawned specialist; the Data Engineer half was executed by the Coordinator directly (reliability on a live-prod migration + earlier spend-limit cutoffs). Built to one fixed schema contract.
+
+### Data Engineer (Coordinator-executed) · relational tag schema + promotion — `db/migrations/0006_relational_tags.sql`, `pipeline/promote_tags.py`
+- What:   ONE unified `tags(id, category, name, slug, UNIQUE(category,slug))` + ONE junction `source_tags(source_id, tag_id)` for the 5 multi-valued tags (pathway/method/sensory_descriptor/matrix/compound_class). `study_type` + `main_claim` stay plain columns on `sources`. `promote_tags.py` = re-runnable set-based promotion from the flat `sources.*` TEXT[] columns (normalize → upsert vocab → populate junction; ON CONFLICT DO NOTHING).
+- Junction decision: KEEP `source_topics` (taxonomy) + `source_molecules`; `source_tags` is the new home for the 5 tag categories; the pre-existing EMPTY junctions (`source_reactions`/`source_methods`/`source_sensory_attributes`/`source_product_contexts`) are SUPERSEDED — left in place as legacy, not dropped.
+- Result: Migration applied live to Neon; promotion run → **146 tags** (method 38, compound_class 35, sensory_descriptor 33, matrix 31, pathway 9), **541 `source_tags` links across 72 sources**. "Connect sources" query verified live (shared-tag ranking returns sensible neighbours). ⚠️ Reflects only the **72/818** sources tagged so far — re-run `promote_tags.py` after tagging completes to pick up the rest.
+- Next:   Complete `tag_sources.py` (only 72/818 in Neon — Lior's local run didn't land); then re-run `promote_tags.py`.
+
+### Algorithm Expert · usage + retrieval guide — `docs/tagging_relational_guide.md`
+- What:   537-line guide: the model (sources↔source_tags↔tags vs source_topics), 7 copy-pasteable SQL recipes (all-tags-on-source, sources-by-tag, the ★"connect sources" shared-tag-count query, tag co-occurrence, per-category faceting, Jaccard similarity, full-profile), and how it should power the Oracle (tag-aware filter/boost, related-source expansion after an FTS hit, a gold-set eval recipe).
+- Result: Guide written to the fixed schema (now applied). **Load-bearing finding:** `POST /api/ask` currently hard-codes `sources: []` — the live Oracle has **zero retrieval** today (not just untuned), and `sources.search_vec` (0001, live in Neon) is populated but queried by no live code path. The guide frames tag+FTS wiring as the concrete fix.
+- Next:   Wire `/api/ask` retrieval starting from the guide's §3.1 hard-filter query; hand-label `analysis/retrieval_gold.csv` to run the eval.
+
+## 2026-07-08 · UI/UX Designer (art director) · v9 mockup — v8 polish forward-ported onto newer canonical
+- What:    Created `UI-UX Designer/MeatCODE_mockup_v9.html` = a copy of the newer canonical `app/meatcode_mockup.html` (5006 lines — the version the Render site serves: Database scene, Simulate/Prediction engine, Toolbench-inside-Research, Oracle history, live company card) with my v8 UI/UX polish **forward-ported** (canonical never received it). Ported: avatar wine→teal (was 18× `#7E2E2E`), bell emoji→SVG (9 topbars), onboarding personas realigned to the 4 real audiences (Academic / Alt-Meat Startup / Flavor-Ingredient Co. / GFI-Funder), dashboard upgrade (hero eyebrow + real-corpus stat strip 818·799·374·5, per-domain color-accented + hover-lift cards now fronting all 5 domains incl. Database & Simulate with hash-routing, accented "For you" cards), globe gradient → teal, research bubbles → teal/coral/olive.
+- Files:   `UI-UX Designer/MeatCODE_mockup_v9.html` (new). Canonical `app/meatcode_mockup.html` untouched.
+- Why:     Lior: the live server runs a newer mockup than my v8 — update v8 → v9 to that newer version, keeping my polish. Confirmed the served file is `app/meatcode_mockup.html` (URL path + web-fetch).
+- Result:  Verified — balanced markup (11/11 sections, 986/986 divs), 0 wine leftovers, teal globe/bubbles, all 5 inline `<script>` blocks pass `node --check` (JS untouched). Stamped. NOT browser-rendered (no sandbox browser; Chrome ext down).
+- Deploy-safety (verified 2026-07-08, before any promote): diffed v9 vs the live canonical — **all 8 `<script>` blocks + every `fetch()`/`API_BASE`/`/api/…` line byte-identical**; no new CDNs; same-origin API_BASE guard fix intact; every diff hunk is cosmetic (CSS + dashboard/persona HTML + per-scene avatar/bell). ⇒ promoting v9 (overwrite `app/meatcode_mockup.html`, same served path) cannot break the server or the API contract. Also updated the design notes (`UI-UX Designer/DESIGN_NOTES_v8.md` → v9 section + deploy-safety record).
+- Next:    Lior review; if approved, promote v9 → `app/meatcode_mockup.html` then redeploy via `deploy.command`. Reconnect Claude-in-Chrome for screenshot verification. (v9 = busy "north-star"; `meatcode_lean_v1.html` = the parallel less-busy 4-category exploration.)
+
+## 2026-07-08 ~08:30 UTC · Data Engineer (Lior request) · built + ran source-tagging LLM pass (partial, resumable)
+- What:   `pipeline/tag_sources.py` — Haiku reads each source's title+abstract and extracts `pathway`/`method`/`sensory_descriptor`/`matrix`/`compound_class` (arrays) + `study_type`/`main_claim` (text) into the 0005 flat columns. Prompt seeded with the project's CANONICAL vocab (`reactions`/`analytical_methods`/`sensory_attributes`/`product_contexts`) so tags stay consistent and are promotable into the junction tables later. Resumable (`WHERE main_claim IS NULL`), batched 8/call, per-batch commit.
+- Files:  `pipeline/tag_sources.py` (new).
+- Why:    Lior: fill the new per-source tag columns. Also explained the existing normalized tagging tables — vocab tables seeded (reactions 8 / methods 13 / sensory 21 / product_contexts 10) but junction tables (`source_methods`/`source_reactions`/`source_sensory_attributes`/`source_product_contexts`) are EMPTY; flat columns are the pragmatic fill, vocab-aligned so they can be promoted later.
+- Result: Validated live — high-quality, on-domain tags (e.g. thiamine/cysteine/xylose Maillard → pathway [Maillard, Strecker, Lipid oxidation], compound_class [Pyrazines, Aldehydes], type experimental). **72/818 tagged so far** (rest pending; resumable).
+- Next:   Finish: `python3 pipeline/tag_sources.py` (resumes the ~746 remaining; ~8 min on Lior's key). Optional: add ThreadPoolExecutor concurrency (like `audit_sources.py`) to speed it; later promote flat tags → `source_reactions`/`source_methods`/… junction tables for the controlled-vocab model.
+
+## 2026-07-08 ~08:15 UTC · Data Engineer (Lior request) · added 7 per-source tag columns (schema only, unfilled)
+- What:   Added tagging columns to `sources`, left NULL (to be filled later): `pathway`, `method`, `sensory_descriptor`, `matrix`, `compound_class` (all `TEXT[]`, multi-valued) + `study_type`, `main_claim` (`TEXT`, single). Column COMMENTs added. "Min Compound class" read as **Main Compound class** → `compound_class`.
+- Files:  `db/migrations/0005_source_tag_columns.sql` (new; `ADD COLUMN IF NOT EXISTS` → idempotent).
+- Why:    Lior: add these tagging query categories to every source now; don't fill yet.
+- Result: Applied live to Neon. All 7 columns present on `sources` (818 rows), verified 100% NULL (0 non-null each), types confirmed (5 array + 2 text).
+- Next:   Populate via an LLM extraction pass (Layer-C style) or curation; agree a controlled vocabulary per tag; optionally surface in the Database→Sources tab + XLSX export.
+
+## 2026-07-08 08:06 UTC · data-audit session (scheduled) · 2nd real audit run
+- What:    Ran the recurring data-audit loop (`python3 pipeline/audit_sources.py --n 20`). Selected 20 sources by dynamic priority from a 150-source pool (90 untagged, 0 previously audited), Haiku judge authenticated each, wrote **20 rows to `source_audits`** (run `b0d8d891`). Verdicts: **10 keep · 9 review · 1 quarantine**. Report: `docs/audits/2026-07-08.md`.
+- Files:   `docs/audits/2026-07-08.md` (new report); Neon `source_audits` (+20 rows). No code changes. (Sandbox needed `pip install anthropic psycopg2-binary` again — ephemeral, not a repo change.)
+- Why:     Scheduled every-2-days data-audit task (this run).
+- Result:  Loop ran clean end-to-end vs live Neon. **1 clean quarantine — #252** (JAFC 2024, EEG/odor-perception + Baijiu): high-quality venue but off-topic — odor *perception* neuroscience, no precursor→reaction→aroma mechanism (tag 50 · rel 35 · qual 72). 9 reviews are borderline-relevance, not junk: taste-not-aroma (#349 umami/kokumi peptides), plant/fish-not-meat framing (#351, #314, #72), or product-dev-over-mechanism (#190, #203, #184, #258, #202). **Systemic finding repeats: all 20 audited sources are untagged legacy rows** (`Tags: none`, tag-score 50 for every row) — the same ~40%-tagged / 489-untagged gap; the judge flags "no tags stored despite clear relevance" on nearly every source. Ingest-query signal again: the generic `off-note` query surfaced the quarantine (#252) + 2 reviews (#258, #249-borderline). No reweighting this run (0 prior audits → `update_weights` had nothing to learn; next weights == current).
+- Next:    (1) Human decision on quarantine **#252** — do NOT auto-delete (staged only). (2) Back-tag the 20 untagged rows the judge surfaced (19 non-quarantine are on-topic-but-untagged; the report's per-source "Tag issues" lists the suggested tags — usable as a back-tagging worksheet). (3) Ingest-string fix candidate: `off-note` keeps surfacing off-topic/perception papers. (4) Still open from 2026-07-07 run: 3 earlier quarantines (308/341/380) + hand-label `analysis/audit_gold.csv` for quarantine precision before any auto-apply.
+
+### ⚠️ Quarantine candidate for Lior (staged, NOT deleted — confirm/reject in `docs/audits/2026-07-08.md`)
+- **#252** — *Study on Interaction of Aromatic Substances and Correlation between Electroencephalogram Correlates of Odor Perception* (J. Agric. Food Chem., 2024, DOI 10.1021/acs.jafc.4c02979). Reason: off-topic — odor-perception neuroscience (EEG, sensory thresholds) on Baijiu aroma; descriptive not mechanistic; no meaty process-flavor precursor→reaction→aroma pathway. Scores: tag 50 · relevance 35 · quality 72 → quarantine.
 
 ## 2026-07-07 16:55 UTC · advisory session · Fix Database/Experts/Companies "offline" on deployed site
 - What:    On the live Render site the Database tabs showed "offline / can't reach the database" even though the backend was fine. Root cause: those scenes computed their API base as `(API_BASE && API_BASE) ? API_BASE : 'http://127.0.0.1:8000'` — but on HTTPS `API_BASE===''` (same-origin), and `''` is falsy, so they fell back to the visitor's own localhost. Changed the guard to `(typeof API_BASE !== 'undefined')` so an empty-string (same-origin) base is respected. 3 occurrences (Database, Experts, Companies/Map).

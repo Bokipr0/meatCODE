@@ -1,6 +1,6 @@
 # UI/UX Design Notes — v8 polish pass
 
-_Art director: Claude · 2026-06-30 (round 1) → 2026-07-01 (round 2, dashboard) · base file: `app/meatcode_mockup.html` (identical copy at pass start)_
+_Art director: Claude · 2026-06-30 (v8 r1) → 2026-07-01 (v8 r2) → 2026-07-07 (lean v1 exploration) → 2026-07-08 (v9 forward-port + deploy-safety check) · base file: `app/meatcode_mockup.html`_
 
 This folder holds design-review iterations of the MeatCODE product UI. The canonical product
 mockup lives at `../app/meatcode_mockup.html`; files here are candidates pending Lior's approval to
@@ -41,4 +41,40 @@ extension was disconnected and the sandbox has no browser. Reconnect it to scree
 - Wire cross-domain links (Oracle answer → open in Database / Map; Map expert → their papers).
 - Roll out a second typeface for body/data (keep Varela Round for brand + headings).
 
-**To promote v8 to canonical:** replace `app/meatcode_mockup.html` with this file (once approved), then push.
+**To promote v8 to canonical:** superseded by v9 below — promote v9 instead.
+
+---
+
+## v9 — `MeatCODE_mockup_v9.html` · v8 polish forward-ported onto the newer canonical (2026-07-08)
+
+Between v8 and now, other sessions advanced the canonical `app/meatcode_mockup.html` well past v8 — it's the
+version the Render site serves, and now includes a **Database** scene (Molecules/Experts/Companies/Sources
+with live filter/sort + XLSX export), a full **Simulate/Prediction** engine, **Toolbench moved inside
+Research**, Oracle history, and a live company card. That file never received the v8 polish. **v9 = a copy of
+the current canonical with the v8 polish re-applied**, adapted to the new IA:
+
+- Avatar wine→teal (18 leftover `#7E2E2E`), bell emoji→SVG (9 topbars), globe → teal, bubbles → teal/coral/olive.
+- Onboarding personas realigned to the 4 real audiences (Academic · Alt-Meat Startup · Flavor/Ingredient Co. · GFI/Funder).
+- Dashboard upgrade — eyebrow + a **real-corpus** stat strip (818 Sources · 799 Molecules · 374 Experts · 5
+  Domains), per-domain color-accented hover-lift cards now fronting **all 5 domains** (Map · Oracle · Research ·
+  **Database** · **Simulate**), each routing on click; accented "For you" cards. (v8's Toolbench/Simulate cards
+  became Database/Simulate here, since Toolbench folded into Research.)
+
+**Deployment-safety verification (2026-07-08) — v9 is safe to promote + deploy:**
+- All **8 `<script>` blocks byte-identical** to canonical → no JS touched.
+- Every **`fetch()` / `API_BASE` / `/api/…` line identical** → frontend↔API contract unchanged; the same-origin
+  `API_BASE` guard fix is intact (Database/Experts/Companies won't fall back to "offline").
+- **No new external dependencies** (same d3 + xlsx CDNs).
+- Every diff hunk is cosmetic (CSS + dashboard/persona HTML + per-scene avatar/bell). Markup balanced
+  (11/11 sections, 986/986 divs); 0 inline-script syntax errors.
+- Promotion = overwrite `app/meatcode_mockup.html` (same served path) → server code, routing and API untouched.
+- Minor cosmetic-only caveat: dashboard icon tints use CSS `color-mix()` (supported in all current browsers;
+  degrades gracefully if not). Not browser-rendered yet — reconnect Claude-in-Chrome to screenshot-verify.
+
+**To promote v9 to canonical + live:** replace `app/meatcode_mockup.html` with `MeatCODE_mockup_v9.html`, then run `deploy.command`.
+
+## Parallel exploration — `meatcode_lean_v1.html` (2026-07-07)
+
+A separate, deliberately **less-busy** direction (not a polish of the canonical): collapses the 5 domains into
+**4 categories — Home / Oracle / Data / Map**, each a chooser→refine→detail funnel, single top nav (dock
+retired). Kept as a design study; **v9 remains the rich "north-star" product.**
