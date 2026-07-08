@@ -72,7 +72,9 @@ def as_list(x):
     return []
 
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument("--limit", type=int, default=0)
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--workers", type=int, default=10, help="concurrent Haiku batches")
     args = ap.parse_args()
     load_env()
     if not os.environ.get("ANTHROPIC_API_KEY"): sys.exit("ANTHROPIC_API_KEY missing in .env")
@@ -87,23 +89,26 @@ def main():
     print(f"tagging {len(todo)} sources in batches of {BATCH} ({MODEL})...")
     upd = ("update sources set pathway=%s, method=%s, sensory_descriptor=%s, matrix=%s, "
            "compound_class=%s, study_type=%s, main_claim=%s where id=%s")
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    batches = [todo[i:i + BATCH] for i in range(0, len(todo), BATCH)]
     done = 0
-    for k in range(0, len(todo), BATCH):
-        batch = todo[k:k + BATCH]
-        try:
-            recs = {int(d["id"]): d for d in extract(client, sysp, batch)}
-        except Exception as e:
-            print(f"  ! batch {k//BATCH+1} failed: {str(e)[:90]}"); continue
-        for sid, name, _ in batch:
-            d = recs.get(sid)
-            if not d: continue
-            cur.execute(upd, (as_list(d.get("pathway")), as_list(d.get("method")),
-                as_list(d.get("sensory_descriptor")), as_list(d.get("matrix")),
-                as_list(d.get("compound_class")), (d.get("study_type") or None),
-                (d.get("main_claim") or None), sid))
-            done += 1
-        cn.commit()
-        print(f"  batch {k//BATCH+1}: tagged {done}/{len(todo)}")
+    with ThreadPoolExecutor(max_workers=args.workers) as ex:   # LLM calls run in parallel
+        futs = [ex.submit(lambda b: (b, extract(client, sysp, b)), b) for b in batches]
+        for i, fut in enumerate(as_completed(futs), 1):
+            try:
+                b, out = fut.result(); recs = {int(d["id"]): d for d in out}
+            except Exception as e:
+                print(f"  ! a batch failed: {str(e)[:90]}"); continue
+            for sid, name, _ in b:                             # DB writes stay in main thread
+                d = recs.get(sid)
+                if not d: continue
+                cur.execute(upd, (as_list(d.get("pathway")), as_list(d.get("method")),
+                    as_list(d.get("sensory_descriptor")), as_list(d.get("matrix")),
+                    as_list(d.get("compound_class")), (d.get("study_type") or None),
+                    (d.get("main_claim") or None), sid))
+                done += 1
+            cn.commit()                                        # commit per finished batch (resumable)
+            if i % 3 == 0 or done >= len(todo): print(f"  ...{done}/{len(todo)} tagged")
     print(f"done. tagged {done} sources.")
     cn.close()
 

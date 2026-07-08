@@ -45,9 +45,9 @@ That's it. From now on, `deploy.command` is your publish button.
 
 ## Good to know
 
-- **Free tier sleeps** after ~15 min with no visitors; the next visit takes ~30–50s to wake it. That's ideal for "don't waste resources." To keep it instant/always-awake, switch the plan to **Starter (~$7/mo)** in the Render dashboard (or in `render.yaml`).
+- **Always-on:** `render.yaml` is now set to the **Starter plan (~$7/mo per service)**, which is always awake — no idle spin-down, no cold-start delay. Enable it in the Render dashboard: **your service → Settings → Instance Type → Starter** (you'll add a payment method there). The free plan sleeps after ~15 min idle (30–60s to wake) and caps at 750 instance-hours/month — fine for casual demos, not for an always-available link.
 - **Secrets live in Render's dashboard**, never in the repo. `.env` stays on your Mac and is gitignored. If you rotate a key, update it in Render → Environment.
-- **Anyone with the URL can use the Oracle** (and spend your Anthropic credits). If you want it gated, add a simple shared password later — ask and I'll wire it in.
+- **Private access (password gate):** the server now supports a shared username + password. Set **`SITE_PASSWORD`** in Render → Environment to a strong password and the whole site (mockup, Oracle, API) requires it — a browser login prompt appears, and only people you give the password to get in. Username defaults to `meatcode` (override with `SITE_USER`). Leave `SITE_PASSWORD` unset and the site is open to anyone with the link. `/api/health` stays open so uptime checks still work. This is enough to keep the public out and protect your Anthropic credits; for a bigger/rotating audience, step up to Cloudflare Access (email-based) later.
 - **Database:** Neon is already in the cloud, so the deployed site reaches it directly. (Neon also auto-sleeps and wakes on first query.)
 - **Custom domain** (e.g. `oracle.meatcode.org`) can be added in Render later if you want a branded address.
 

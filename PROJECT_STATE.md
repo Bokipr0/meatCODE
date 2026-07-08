@@ -4,7 +4,12 @@
 > Asana owns *tasks & priorities*; this file owns *technical reality* — what's built, what's broken,
 > what's in flight. Keep it short and current, not a changelog.
 
-_Last updated: 2026-07-07 by Claude (Project Coordinator — parallel team run: data-audit loop built + verified live on Neon, scheduled every 2 days; see AGENT_UPDATE_LOG.md)_
+_Last updated: 2026-07-08 ~10:10 UTC · Project Coordinator — posted a team broadcast (`TEAM_BROADCAST.md`). Prev: 10:05 UTC Advisory — Render deploy live + DB-tab same-origin fix + grounded-retrieval/relevance-gate workstream; see AGENT_UPDATE_LOG.md_
+
+---
+
+## 📣 Latest team broadcast — 2026-07-08 ~10:10 UTC
+Project Coordinator has notified the team. **Every agent: read [`TEAM_BROADCAST.md`](TEAM_BROADCAST.md)** for what shipped and your next move. Headline: relational tagging is live (146 tags / 541 links, 72/818 sources) · v9 mockup ready to promote · **⚠️ the live Oracle `/api/ask` still returns `sources: []` (zero retrieval) — top priority.**
 
 ---
 
@@ -40,9 +45,17 @@ Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-u
   orgs (29 companies + 8 NGOs) via `db/migrations/0004_seed_organizations.sql` (applied live); `/api/companies`
   returns them, filterable by country. (`experts.org_type` still NULL — expert↔org linkage is a separate optional enrichment.)
 - **Per-source tag columns added (2026-07-07, `0005`):** `sources` gained `pathway`, `method`, `sensory_descriptor`, `matrix`, `compound_class` (`TEXT[]`) + `study_type`, `main_claim` (`TEXT`) — all NULL, to be filled later by an LLM extraction/curation pass. ("Min Compound class" read as Main Compound class.)
-- **Relational tagging system live (2026-07-08, `0006`):** unified `tags(category, name, slug)` + `source_tags(source_id, tag_id)` junction for the 5 multi-valued tags (pathway/method/sensory_descriptor/matrix/compound_class); `study_type`+`main_claim` stay columns. `pipeline/promote_tags.py` (re-runnable) promotes the flat `sources.*` arrays → **146 tags / 541 links / 72 sources**. Junctions kept: `source_topics` + `source_molecules` + new `source_tags`; empty legacy junctions (source_reactions/methods/sensory/product_contexts) superseded (left as legacy). How-to-query + retrieval guide: `docs/tagging_relational_guide.md`. ⚠️ Only **72/818 tagged** (Lior's local `tag_sources.py` run didn't land in Neon) — finish tagging, then re-run `promote_tags.py`. ⚠️ **Oracle `/api/ask` still sends `sources: []`** (no live retrieval); `search_vec` populated but unwired — wiring tag+FTS retrieval is the concrete next step. (2) **Sources `sort=citations` surfaces off-topic
+- **Relational tagging system live (2026-07-08, `0006`):** unified `tags(category, name, slug)` + `source_tags(source_id, tag_id)` junction for the 5 multi-valued tags (pathway/method/sensory_descriptor/matrix/compound_class); `study_type`+`main_claim` stay columns. `pipeline/promote_tags.py` (re-runnable) promotes the flat `sources.*` arrays → **571 tags / 3,457 links across 748 sources** (all 818 tagged 2026-07-08). Junctions kept: `source_topics` + `source_molecules` + new `source_tags`; empty legacy junctions (source_reactions/methods/sensory/product_contexts) superseded (left as legacy). How-to-query + retrieval guide: `docs/tagging_relational_guide.md`. **Tagging complete: 818/818** (`tag_sources.py` gained `--workers` concurrency and was run from the sandbox — Lior's local PyCharm run failed on Python-3.9 `psycopg2` missing). ⚠️ **Oracle `/api/ask` still sends `sources: []`** (no live retrieval); `search_vec` populated but unwired — wiring tag+FTS retrieval is the concrete next step. (2) **Sources `sort=citations` surfaces off-topic
   papers** (raw citations favor off-domain reviews) — default the Sources tab to `priority_score`/relevance.
   Data-entry (write-back) intentionally deferred (unsafe unauthenticated writes); browser click-test pending.
+- **Render deploy LIVE + Database-tab same-origin fix (2026-07-07):** `meatcode-oracle.onrender.com` is
+  running the real server (keys set, `/api/health` OK) — first live public URL for the platform:
+  `https://meatcode-oracle.onrender.com/app/meatcode_mockup.html`. Hardened the bare root (`/` no longer
+  directory-lists the repo — 302s to the mockup; dotfiles/`.git`/`.command`/`.env` blocked). Same day, fixed
+  a same-origin bug that showed Database/Experts/Companies as "offline" on the deployed site: an
+  `API_BASE === ''` (same-origin) guard was falsy and silently fell back to the visitor's own `localhost`;
+  fixed in 3 places in `app/meatcode_mockup.html`. Verified: those tabs now load live Neon data on the
+  deployed URL, not just on localhost.
 - **Repo established** (`Bokipr0/meatCODE`) as the single source of truth; three-homes model adopted
   (Git = code/docs, Neon = data, Asana = tasks). iCloud retired as shared memory.
 - **Pipeline ↔ Layer C+E wired**: typed extraction (Layer C) + SQLite store (Layer E), `--mock` flag,
@@ -120,6 +133,21 @@ Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-u
   `UI-UX Designer/`. Spec flags one gap: molecule API endpoints (`/api/molecules…`) don't exist yet — data-eng follow-up.
 
 ## In flight
+- **Grounded retrieval + relevance verification (2026-07-08, parallel team run — Data Engineer +
+  Algorithm Expert + Advisory):** Closing the Oracle's ungrounded-answer gap — `POST /api/ask` still
+  hard-codes an empty sources list and streams a raw Claude answer with **zero corpus retrieval**
+  (`server/meatcode_server.py`; also flagged in the `0006` Done entry above and in
+  `docs/tagging_relational_guide.md` §3). Algorithm Expert is wiring `/api/ask` to retrieve from
+  `sources.search_vec` (FTS, live since migration `0001`) filtered to `relevance_llm >= 60`, per the
+  four-step design in `docs/DECISION_Oracle_Answer_Engine.docx` (understand → find → rerank top few →
+  write-with-citations-or-refuse). Data Engineer is verifying corpus relevance against the taxonomy bible
+  (`db/taxonomy/keywords_topics.json`) and refreshing the audit-run xlsx Daniel reviews
+  (`pipeline/export_audit_xlsx.py`). Advisory wrote the connecting architecture:
+  `docs/DECISION_grounded_answers_and_relevance.md` (the grounding contract + the relevance gate + how they
+  connect — including a flagged gap: confirmed quarantines don't yet suppress Oracle retrieval) and
+  `docs/daniel_review_workflow.md` (Daniel's keep/quarantine/back-tag sign-off loop, step by step). Not yet
+  landed in code as of this entry — retrieval wiring + the quarantine write-back are still open; see those
+  docs' Open risks for the full list before this is demo-ready for WUR or other external reviewers.
 - **v9 mockup — v8 polish on the newer canonical (2026-07-08, art-director):** `UI-UX Designer/MeatCODE_mockup_v9.html`
   = the deployed `app/meatcode_mockup.html` (Database scene + Simulate engine + Toolbench-in-Research + Oracle
   history) with the v8 polish forward-ported (teal avatar, SVG bell, 4-audience personas, dashboard
@@ -150,6 +178,13 @@ Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-u
    non-null `abstract` + `search_vec`); that's the true size of the citable corpus.
 
 ## Decisions (most recent first)
+- **2026-07-08** — Grounding contract adopted for the Oracle: it may answer ONLY from retrieved sources
+  that are both citable (`search_vec` populated) and score `relevance_llm >= 60`; it must cite what it
+  uses and refuse ("the corpus doesn't cover this") rather than fall back to open/training knowledge. This
+  is the project's front-line mitigation for the AI-reliability/hallucination risk. The recurring audit
+  loop + Daniel's xlsx sign-off is the relevance gate that keeps that contract trustworthy — an
+  ungoverned corpus would just mean confidently-cited garbage. See
+  `docs/DECISION_grounded_answers_and_relevance.md` + `docs/daniel_review_workflow.md`.
 - **2026-06-30** — Design deliverables live in `meatCODE/UI-UX Designer/`. Product brand is unified on
   GFI seaweed-teal (wine/pomegranate retired). v8 polish is a review candidate; promoting it to the
   canonical `app/meatcode_mockup.html` needs Lior's go.
@@ -167,9 +202,13 @@ Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-u
   **3,129 experts** (Dimensions ingest — far above the old 374), 45 claims. The Prediction surface in
   the mockup implies a model this corpus can't yet back — frame as hypothesis-generation, not authority.
   Still short of the 1,000–2,000 source target (Phase 1 crux).
-- **Oracle recall — tune next:** `reaktzia-mvp/retrieval.py` uses `websearch_to_tsquery`, which ANDs all
-  terms, so a full natural-language question often matches **0 rows** and the Oracle silently falls back
-  to no-sources. Switch to keyword extraction or OR/`|` query semantics to lift recall before any expert demo.
+- **Oracle recall / grounding — the live fix in progress:** `POST /api/ask` currently retrieves nothing at
+  all (empty sources list, raw Claude answer — see the in-flight item above); the old
+  `reaktzia-mvp/retrieval.py` this bullet used to point at was deleted 2026-07-05. The fix being wired now
+  uses `sources.search_vec` FTS + `relevance_llm >= 60`, with a tag-based fallback planned for the
+  documented `websearch_to_tsquery` 0-result problem (ANDs every term, so natural-language questions often
+  match nothing). See `docs/DECISION_grounded_answers_and_relevance.md` and
+  `docs/tagging_relational_guide.md` §3.
 - **Neon auto-sleep** will bite concurrent multi-agent access; keep warm or front with `meatcode_server.py`.
 - `__pycache__/` + `.DS_Store` copied into `server/reaktzia-mvp/` are permission-locked; `.gitignore`
   excludes them so they won't be committed.

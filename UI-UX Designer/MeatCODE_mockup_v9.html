@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- v9 = canonical app/meatcode_mockup.html + v8 UI/UX polish forward-ported. Last updated: 2026-07-08 UTC · UI/UX Designer (art director) · avatar/bell/personas/dashboard/globe/bubbles on the newer Database+Simulate build. -->
+<!-- v9 = canonical app/meatcode_mockup.html + v8 UI/UX polish forward-ported. Last updated: 2026-07-08 UTC · UI/UX Designer (art director) · avatar/bell/personas/dashboard/globe/bubbles on the newer Database+Simulate build; Oracle "no matches" note gated DEV-ONLY (?dev=1). -->
 <meta charset="utf-8" />
 <!-- Last updated: 2026-07-07 10:44 UTC · UI/UX Designer (parallel team run) · IA: Database promoted to a top-level domain, Toolbench moved inside Research; new #database scene (Molecules/Experts/Companies/Sources, live-filtered, row-detail modal, XLSX export); Map made bigger + defaults to top-15-by-relevance + country-click filtering + "View full profile" now routes into the Database. -->
 <title>MeatCODE · GFI Israel — flavor & aroma research</title>
@@ -3885,7 +3885,13 @@ function streamSSE(res) {
                    '</div>';
           }).join('');
           if (arr.length === 0) {
-            sourcesEl.innerHTML = '<div class="oracle-cite"><span class="oracle-cite-text">No matches in the database — Claude is responding based on the question alone.</span></div>';
+            // "No matches" note is DEV-ONLY (visit with ?dev=1 to see it); hidden from normal users.
+            if (/[?&]dev=1(?:&|$)/.test(location.search)) {
+              sourcesEl.innerHTML = '<div class="oracle-cite"><span class="oracle-cite-text">No matches in the database — Claude is responding based on the question alone.</span></div>';
+            } else {
+              var __srcBlock = document.getElementById('oracleSources');
+              if (__srcBlock) __srcBlock.style.display = 'none';
+            }
           }
           attachCiteHandlers(sourcesEl);
         } catch (e) { /* ignore malformed */ }

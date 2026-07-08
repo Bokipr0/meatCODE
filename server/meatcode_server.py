@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
-# Last updated: 2026-07-07 10:34 UTC · Data Engineer (parallel team run: database-category API) ·
-#   added read-only GET /api/molecules, /api/sources, /api/companies, /api/db-facets for the new
-#   "Database" section (Molecules/Experts/Companies/Sources). SELECT-only, no writes.
-#   NOTE: organizations table is EMPTY (0 rows) and experts.org_type is NULL for all 3,129 experts
-#   (verified live) — /api/companies auto-detects this per request and falls back to a derived
-#   (org_type-based) query that currently returns [] until org_type gets backfilled; see
-#   PROJECT_STATE.md / this session's AGENT_UPDATE_LOG.md entry for details.
-#   (Previous stamp referenced GET /api/experts/{id}/papers, /api/experts/{id}/similar,
-#   /api/experts/export.csv, /api/experts/stats and a shared _expert_filter_sql() helper — none of
-#   that is actually present in this file; looks like an earlier session's plan that never landed.
-#   Left the /api/experts code as-is per this round's scope; flagging for whoever picks it up next.)
+# Last updated: 2026-07-08 10:20 UTC · Algorithm Expert · POST /api/ask is now grounded RAG: retrieves
+#   the top-6 sources via ts_rank_cd(search_vec, websearch_to_tsquery(...)) filtered to citable +
+#   on-topic (relevance_llm >= 60), streams those REAL rows in the existing `sources` SSE event (was
+#   hardcoded to []), and grounds Claude's system prompt to answer ONLY from those numbered sources
+#   with inline [id] citations (id = the real sources.id, so citation chips still resolve via the
+#   existing GET /api/papers/{id}). Falls back to the prior ungrounded behaviour if DATABASE_URL is
+#   unset or retrieval fails — never crashes the request. See docs/ORACLE_GROUNDED_RETRIEVAL.md and
+#   analysis/oracle_eval/ (retrieval-only sanity check against live Neon).
 """
 MeatCODE — single-file Claude API server.
 
@@ -17,15 +14,18 @@ What it does
 ------------
 - Serves every file in the SAME folder as this script (so it serves
   MeatCODE_Mockup_GFI_v7.html / v6.html, the SVGs, the assets, etc.)
-- Handles POST /api/ask  →  streams Claude's answer back to the Oracle
-  in the exact SSE format the mockup expects:
-      event: sources   (with empty [] array)
+- Handles POST /api/ask  →  grounded RAG over the MeatCODE literature corpus:
+  retrieves the top-6 sources ranked by Postgres full-text relevance
+  (sources.search_vec), grounds Claude's answer in ONLY those sources, and
+  streams it back to the Oracle in the exact SSE format the mockup expects:
+      event: sources   (REAL retrieved rows; [] if DATABASE_URL is unset or
+                         retrieval fails — mockup shows "No matches…")
       event: chunk     (one event per text fragment)
       event: done
 
 Endpoints
 ---------
-  POST /api/ask                 Oracle answer, streamed as SSE
+  POST /api/ask                 Oracle answer — grounded RAG over Neon `sources`, streamed as SSE
   GET  /api/health              {ok, db_ok, has_anthropic_key, model}
   GET  /api/experts[?q=&country=&sort=&min_relevance=&limit=]  Neon-backed expert list (map, filterable)
   GET  /api/expert-facets       country counts for curated experts (UI filter buttons)
@@ -64,7 +64,7 @@ If you'd rather keep the key in a file: drop a `.env` next to this script with
 ANTHROPIC_API_KEY=sk-ant-...  on its own line. The script reads it automatically.
 """
 
-import os, sys, json, re, threading
+import os, sys, json, re, threading, base64, hmac
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
@@ -72,6 +72,8 @@ from urllib.parse import urlparse, parse_qs
 PORT       = int(os.environ.get("PORT", "8000"))  # cloud hosts (Render, etc.) inject $PORT; 8000 locally
 MODEL      = "claude-sonnet-4-6"           # if you get a model-access error, try "claude-opus-4-8" or "claude-haiku-4-5-20251001"
 MAX_TOKENS = 1600
+ORACLE_TOP_K          = 6    # sources retrieved + handed to Claude per question
+ORACLE_MIN_RELEVANCE  = 60   # relevance_llm gate; sources scored below this are off-topic (PROJECT_STATE.md)
 SYSTEM_PROMPT = (
     "You are MeatCODE Oracle — a flavor & aroma research assistant for "
     "GFI Israel. Answer concisely (3–5 short paragraphs max). Focus on "
@@ -145,11 +147,176 @@ def pg_rows(sql, params=()):
         conn.close()
 
 
+# ─── Oracle retrieval (grounded RAG) ──────────────────────────────────
+# RETRIEVE step of docs/DECISION_Oracle_Answer_Engine.docx's phased plan — the
+# keyword/full-text phase (semantic/embedding search + reranking are explicitly
+# "later" in that doc). Ranks the citable + on-topic corpus by Postgres full-text
+# relevance to the question; the GROUND step below hands ONLY those rows to Claude
+# so /api/ask can never silently answer from training data when the DB is up.
+# Full design notes + empirical before/after numbers: docs/ORACLE_GROUNDED_RETRIEVAL.md.
+#
+# The query is exactly the spec'd filter: citable (search_vec IS NOT NULL) +
+# on-topic (relevance_llm IS NULL OR >= ORACLE_MIN_RELEVANCE), ranked by
+# ts_rank_cd. Two deliberate additions on top of that spec, both discovered via
+# live testing while building this feature (see analysis/oracle_eval/results.md):
+#   1. Outer `WHERE rank > 0` — websearch_to_tsquery ANDs bare words, so ts_rank_cd
+#      is provably 0 for any source missing even one query term. Without this
+#      filter, LIMIT pads out with zero-relevance rows in arbitrary order whenever
+#      fewer than ORACLE_TOP_K truly match — handing Claude (and citing to the
+#      user) irrelevant papers instead of honestly returning fewer/zero sources.
+#      A SELECT-list alias can't be referenced in the same query's WHERE, hence
+#      the subquery.
+#   2. An OR-query fallback in _retrieve_sources() below — that same AND-only
+#      behaviour meant a natural multi-word question matched 0 rows 10/14 times
+#      in the eval set even when the corpus clearly had relevant papers (e.g.
+#      "key Maillard reaction products in grilled beef" against a corpus that
+#      contains a Maillard-mechanism review). Retrying with the same words OR'd
+#      together dropped that to 0/14. Still plain FTS keyword search (this
+#      month's phase per the decision doc), not semantic search, and it's PROJECT_
+#      STATE.md's own already-flagged next step ("switch to keyword extraction or
+#      OR/`|` query semantics to lift recall") — not new scope.
+# NOTE: keep in sync with analysis/oracle_eval/run_eval.py, which duplicates this
+# SQL + the fallback (deliberately standalone so the eval never imports/requires
+# the Anthropic client — see that file's header).
+_RETRIEVAL_SQL = """
+    SELECT * FROM (
+        SELECT id, name AS title, year, COALESCE(journal, venue) AS journal, venue,
+               doi, url, abstract,
+               ts_rank_cd(search_vec, websearch_to_tsquery('english', %s)) AS rank
+        FROM sources
+        WHERE search_vec IS NOT NULL
+          AND (relevance_llm IS NULL OR relevance_llm >= %s)
+    ) ranked
+    WHERE rank > 0
+    ORDER BY rank DESC
+    LIMIT %s
+"""
+
+def _retrieve_sources(question, limit=ORACLE_TOP_K):
+    """Rank the corpus by full-text relevance to `question`. Tries a strict
+    AND-match first (precise); if that returns nothing, retries once with the
+    same words OR'd together (recall fallback — see the comment block above).
+    Returns (rows, used_fallback). `rows` may legitimately be [] — that IS the
+    "corpus doesn't cover this" signal, not an error. Raises on DB/connection
+    failure; the caller (do_POST) treats a raised exception as "retrieval
+    unavailable" and degrades to the pre-RAG ungrounded behaviour, distinct from
+    a clean empty result."""
+    rows = pg_rows(_RETRIEVAL_SQL, (question, ORACLE_MIN_RELEVANCE, limit))
+    if rows:
+        return rows, False
+    or_query = " OR ".join(question.split())
+    if not or_query:
+        return [], False
+    return pg_rows(_RETRIEVAL_SQL, (or_query, ORACLE_MIN_RELEVANCE, limit)), True
+
+
+def _public_source_fields(rows):
+    """Trim retrieval rows to what the mockup's `sources` SSE handler reads (s.id /
+    s.title / s.year / s.journal — see askOracle()'s streamSSE in
+    app/meatcode_mockup.html) plus doi/url for future use. `id` here is the REAL
+    sources.id: the mockup uses it both as the citation-chip label ("[id]") and as
+    the GET /api/papers/{id} lookup key when a chip is clicked, so Claude must cite
+    using these same ids (see _grounding_system_prompt below)."""
+    return [{
+        "id": r["id"],
+        "title": r.get("title"),
+        "year": r.get("year"),
+        "journal": r.get("journal"),
+        "doi": r.get("doi"),
+        "url": r.get("url"),
+    } for r in rows]
+
+
+def _format_sources_block(rows):
+    """Render retrieved rows as the numbered reference list injected into Claude's
+    system prompt. Bracket numbers are the real sources.id (not a 1..N position)
+    so an inline [id] citation Claude writes resolves to the correct paper when
+    the mockup's citation chip fetches /api/papers/{id}."""
+    if not rows:
+        return "SOURCES: (none retrieved — the corpus has nothing indexed that matches this question)"
+    parts = []
+    for r in rows:
+        meta = " · ".join(filter(None, [str(r["year"]) if r.get("year") else None, r.get("journal")]))
+        snippet = (r.get("abstract") or "").strip()
+        if len(snippet) > 500:
+            snippet = snippet[:500].rsplit(" ", 1)[0] + "…"
+        parts.append("[%s] %s%s\n%s" % (
+            r["id"],
+            r.get("title") or "(untitled)",
+            (" (" + meta + ")") if meta else "",
+            snippet or "(no abstract on file)",
+        ))
+    return "SOURCES:\n\n" + "\n\n".join(parts)
+
+
+def _grounding_system_prompt(rows, used_fallback=False):
+    """GROUND step: the existing persona/style (SYSTEM_PROMPT, unchanged) plus hard
+    citation rules and the numbered source list, so Claude answers ONLY from the
+    retrieved corpus instead of training knowledge. `used_fallback=True` means
+    these came from the looser OR-query recall fallback (see _retrieve_sources) —
+    add one extra hedge so Claude reads the abstracts critically instead of
+    assuming term-overlap implies relevance."""
+    fallback_note = (
+        "\nNote: these sources were found via a broader, OR-based keyword match "
+        "(the stricter search found nothing), so term overlap doesn't guarantee "
+        "relevance — read each abstract and only rely on ones that actually "
+        "address the question.\n"
+        if used_fallback else ""
+    )
+    return SYSTEM_PROMPT + (
+        "\n\nGROUNDING RULES (MeatCODE closed literature corpus — read carefully):\n"
+        "Answer ONLY using the numbered sources listed below, retrieved live from the "
+        "MeatCODE database for this question. Cite inline using the exact bracket number "
+        "shown immediately before each source (for example, if a source is labeled [123], "
+        "write [123] in your answer — not [1]). Never invent a citation number and never "
+        "cite a source that is not listed below. If the sources below do not adequately "
+        "cover the question — including if none were retrieved — say plainly that the "
+        "MeatCODE corpus doesn't cover this yet. Do NOT fall back to outside or general "
+        "training knowledge to fill the gap." + fallback_note + "\n"
+        + _format_sources_block(rows)
+    )
+
+
 # ─── HTTP handler ────────────────────────────────────────────────────
+# ─── Optional shared-password gate (HTTP Basic Auth) ─────────────────
+# Set SITE_PASSWORD (and optionally SITE_USER, default "meatcode") in the
+# environment / Render dashboard to require a username + password for EVERY
+# request — static files, the Oracle, and the API. Leave SITE_PASSWORD unset
+# (e.g. local dev) and the gate is OFF. Credentials live in env vars, never in
+# the repo. The browser prompts once, then reuses them for all fetches too.
+SITE_USER = os.environ.get("SITE_USER", "meatcode")
+SITE_PASSWORD = os.environ.get("SITE_PASSWORD")   # None/"" → gate disabled
+
+
 class Handler(SimpleHTTPRequestHandler):
     # Serve static files from the folder this script lives in
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=SERVE_DIR, **kw)
+
+    # ─── shared-password gate ───
+    def _authorized(self):
+        """True if the gate is off, or the request carries valid Basic creds."""
+        if not SITE_PASSWORD:
+            return True                       # no password set → gate disabled
+        hdr = self.headers.get("Authorization", "")
+        if hdr.startswith("Basic "):
+            try:
+                user, _, pw = base64.b64decode(hdr[6:]).decode("utf-8").partition(":")
+            except Exception:
+                return False
+            # constant-time compares avoid leaking length/timing info
+            return hmac.compare_digest(user, SITE_USER) and hmac.compare_digest(pw, SITE_PASSWORD)
+        return False
+
+    def _deny(self):
+        self.send_response(401)
+        self.send_header("WWW-Authenticate", 'Basic realm="MeatCODE"')
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.end_headers()
+        try:
+            self.wfile.write(b"Authentication required.")
+        except (BrokenPipeError, ConnectionResetError):
+            pass
 
     def log_message(self, fmt, *args):
         sys.stderr.write("[%s] %s\n" % (self.log_date_time_string(), fmt % args))
@@ -184,6 +351,8 @@ class Handler(SimpleHTTPRequestHandler):
     # ─── GET: /api/* handled here; everything else = static files ───
     def do_GET(self):
         path = urlparse(self.path).path
+        if path != "/api/health" and not self._authorized():
+            return self._deny()                # /api/health stays open for uptime checks
         if path.startswith("/api/"):
             return self._handle_api_get(path)
         # Bare URL → the product mockup, so visitors land on MeatCODE (not a file list).
@@ -518,6 +687,8 @@ class Handler(SimpleHTTPRequestHandler):
             return None
 
     def do_POST(self):
+        if not self._authorized():
+            return self._deny()
         path = urlparse(self.path).path
         if path != "/api/ask":
             self.send_error(404, "POST not supported for " + path); return
@@ -529,6 +700,25 @@ class Handler(SimpleHTTPRequestHandler):
         question = (body.get("question") or "").strip()
         if not question:
             self.send_error(400, "Missing 'question'"); return
+
+        # ─── RETRIEVE — before opening the SSE stream, so the very first event can
+        # carry the real citation set (matches docs/DECISION_Oracle_Answer_Engine.docx:
+        # understand → find → pick top few → write). DATABASE_URL missing → identical
+        # to the pre-RAG behaviour (empty sources, ungrounded answer). Any retrieval
+        # exception (bad connection, Neon asleep/unreachable, psycopg2 missing, etc.)
+        # degrades the same way instead of crashing the request — that is NOT treated
+        # as "corpus doesn't cover this" (misleading if the DB is just unreachable);
+        # only a clean zero-row result earns that message (see _grounding_system_prompt).
+        sources_rows = []
+        used_fallback = False
+        retrieval_ok = True
+        if DATABASE_URL:
+            try:
+                sources_rows, used_fallback = _retrieve_sources(question)
+            except Exception as e:
+                retrieval_ok = False
+                sys.stderr.write("[oracle] retrieval error: %s\n" % str(e)[:300])
+        grounded = bool(DATABASE_URL) and retrieval_ok
 
         # SSE response — start streaming
         self.send_response(200)
@@ -548,17 +738,21 @@ class Handler(SimpleHTTPRequestHandler):
             except (BrokenPipeError, ConnectionResetError):
                 pass
 
-        # 1) sources event — empty array (no RAG in this minimal server).
-        #    The Oracle UI handles empty gracefully and shows
-        #    "No matches in the database — Claude is responding based on the question alone."
-        send_event("sources", "[]")
+        # 1) sources event — the REAL rows retrieved above (grounded RAG; this used
+        #    to be hardcoded "[]"). The Oracle UI still handles an empty array
+        #    gracefully ("No matches in the database…") for the DB-missing /
+        #    retrieval-failed / genuinely-nothing-matched cases.
+        send_event("sources", json.dumps(_public_source_fields(sources_rows), default=str))
 
-        # 2) stream Claude's answer as chunk events
+        # 2) GROUND + stream — Claude's answer as chunk events, grounded in those
+        #    sources when retrieval worked; the untouched original SYSTEM_PROMPT
+        #    otherwise (graceful fallback). Model/config/messages shape unchanged.
+        system_prompt = _grounding_system_prompt(sources_rows, used_fallback) if grounded else SYSTEM_PROMPT
         try:
             with client.messages.stream(
                 model=MODEL,
                 max_tokens=MAX_TOKENS,
-                system=SYSTEM_PROMPT,
+                system=system_prompt,
                 messages=[{"role": "user", "content": question}],
             ) as stream:
                 for text in stream.text_stream:

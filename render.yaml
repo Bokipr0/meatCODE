@@ -5,8 +5,8 @@ services:
   - type: web
     name: meatcode-oracle
     runtime: python
-    plan: free                 # free tier sleeps when idle (first visit ~30-50s to wake).
-                               # Change to "starter" (~$7/mo) to keep it always awake.
+    plan: starter              # ~$7/mo — ALWAYS ON, no idle spin-down / cold starts.
+                               # (Revert to "free" only if you accept ~30-60s wake delays.)
     branch: main
     buildCommand: pip install -r requirements.txt
     startCommand: python3 server/meatcode_server.py
@@ -15,5 +15,9 @@ services:
         sync: false            # you paste the value in the Render dashboard — never in the repo
       - key: DATABASE_URL
         sync: false
+      - key: SITE_PASSWORD      # shared password gate — REQUIRED for the site to be private.
+        sync: false            # paste a strong password in the Render dashboard (not in the repo).
+      - key: SITE_USER          # username people type alongside the password
+        value: meatcode         # not secret; change if you like
       - key: PYTHON_VERSION
         value: 3.12.4

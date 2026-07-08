@@ -1,6 +1,6 @@
 # MeatCODE — Agent Update Log
 
-_Last updated: 2026-07-08 · UI/UX Designer · v9 mockup — v8 polish forward-ported onto the newer canonical_
+_Last updated: 2026-07-08 · Advisory/infra · Render always-on (Starter) + private shared-password gate on the server_
 
 > **Every agent appends an entry here at the end of any working session — newest at the top.**
 > This is the detailed audit trail of who changed what, when, and why. The short in-file
@@ -19,7 +19,61 @@ _Last updated: 2026-07-08 · UI/UX Designer · v9 mockup — v8 polish forward-p
 
 ---
 
-## 2026-07-08 ~09:55 UTC · Project Coordinator · team run — relational tagging system (consolidated)
+## 2026-07-08 · Advisory/infra · Render always-on + private password gate
+- What:    Two infra changes so the Render-hosted site can run constantly AND be private. (1) `render.yaml` plan `free`→`starter` (~$7/mo, no idle spin-down). (2) Added an optional HTTP Basic Auth gate to `server/meatcode_server.py`: if env var `SITE_PASSWORD` is set, EVERY request (static + Oracle + API) requires username (`SITE_USER`, default `meatcode`) + password; browser prompts once and reuses creds for fetches. `/api/health` stays open for uptime checks. Gate is OFF when `SITE_PASSWORD` is unset, so local `run_oracle.command` dev is unchanged. Constant-time credential compare (`hmac.compare_digest`).
+- Files:   `server/meatcode_server.py` (imports + `_authorized`/`_deny` helpers + gate in `do_GET`/`do_POST`), `render.yaml` (starter plan + `SITE_PASSWORD` sync:false + `SITE_USER` env vars), `docs/DEPLOY.md` (updated "always-on" + new "private access" guidance).
+- Why:     Lior asked to keep the Render server always-on and make it private so not just anyone with the link can access it.
+- Result:  Server compiles clean; auth logic unit-tested (no-cred / wrong-user / wrong-pass / garbage → denied; correct → allowed; gate-off → open — all pass). Secrets stay in Render env, never in the repo.
+- Next:    Lior: in Render dashboard set Instance Type → Starter, and add env var `SITE_PASSWORD`; then `deploy.command` (or push) to redeploy. Optional stronger step later: Cloudflare Access (email-based). Neon DB password still flagged for rotation elsewhere.
+
+## 2026-07-08 · UI/UX Designer (art director) · Oracle "no matches" note → dev-only (feature request via screenshot workflow)
+- What:    First run of Lior's screenshot-driven feature-request workflow (folder `UI-UX Designer/Feature requests/`). Request "remove the note no matches in database for the users — Only I will be able to see it": the Oracle answer's *"Sources retrieved · No matches in the database — Claude is responding based on the question alone."* note is now **DEV-ONLY**. In the SSE `sources` handler `arr.length === 0` branch: if URL has `?dev=1` → show the note (for Lior); else → hide the whole Sources-retrieved block so normal users see nothing.
+- Files:   `app/meatcode_mockup.html` (live/deployed) + `UI-UX Designer/MeatCODE_mockup_v9.html` (candidate — kept in sync so a future promote won't regress the fix). Both stamps updated.
+- Why:     Lior's feature request; confirmed exact intent before building (asked mechanism + user-facing behavior; he chose the recommended `?dev=1` flag + hide-whole-block).
+- Result:  Verified — both files' 5 inline `<script>` blocks pass `node --check`; change is self-contained (no `/api/…`, dependency, or other-JS changes — deploy-safe). Applied to the deployed file per Lior; he chooses when to run `deploy.command`. Not browser-rendered (no sandbox browser / Chrome ext down).
+- Next:    Lior deploys when ready → verify live (users see no note; `?dev=1` reveals it). Deferred folder item: "chat oracle topic tagging" (next round).
+
+## 2026-07-08 10:22 UTC · Advisory/Coordinator · scheduled task repurposed → raw Neon snapshot
+- What:    Per Lior, changed what the every-2-days `meatcode-data-audit` scheduled task does: instead of the LLM audit, it now exports a **raw, no-interpretation** snapshot of the live Neon DB. New `pipeline/export_snapshot.py` pulls the NEWEST rows (ORDER BY created_at DESC) into ONE .xlsx with 5 sheets — Sources 50, Experts/Molecules/Odours/Organizations 20 each — **every column exactly as stored** (arrays→comma-joined, jsonb→text, cells capped at 32k). Sheet 1 (Sources) carries a banner: exact date+time taken (UTC + local) + origin (Neon host/db). Saved to `data/snapshots/`. Updated the scheduled-task prompt to run it with ZERO added opinions/summaries (kept cron `0 9 */2 * *`).
+- Files:   `pipeline/export_snapshot.py` (new); scheduled task `meatcode-data-audit` (prompt + description updated).
+- Why:     Lior wants a simple, faithful periodic dump of exactly what's in Neon (no AI commentary) to verify the data and build a better dataset.
+- Result:  Verified live against Neon — produced `data/snapshots/meatcode_snapshot_20260708_1020.xlsx`: 5 sheets, 50/20/20/20/20 rows, 43/26/19/7/8 columns, banner correct, newest-first confirmed (max ids surface). Deterministic, openpyxl-based, SELECT-only (no DB writes).
+- Next:    The audit-loop scripts (`audit_sources.py` / `audit_judge.py` / `source_audits` table) remain in-repo but are no longer what the schedule runs. Lior: click "Run now" on the task once to pre-approve tools. `search_vec` (tsvector) is included as a raw column — say if you'd rather drop it.
+
+## 2026-07-08 10:30 UTC · Project Coordinator · CONSOLIDATED parallel run — grounded Oracle + corpus relevance
+- What:    Orchestrated a 3-agent parallel run (Data Engineer · Algorithm Expert · Advisory) on one shared objective — make the Oracle answer strictly from the closed dataset via `search_vec`, and verify the corpus is relevant (for Daniel's review + against the taxonomy bible). Disjoint file ownership → zero collisions. Verified: `server/meatcode_server.py` compiles; all 8 new artifacts present. Three specialist entries consolidated immediately below.
+- ⚠️ Cross-cutting action (surfaced by Advisory): **confirmed quarantines write only to `source_audits`, NOT to `sources.relevance_llm`** — a source Daniel rejects is not yet actually blocked from Oracle retrieval. Close this write-back before any external/WUR demo.
+- Headline numbers (Data Engineer): 818 sources · 790 citable (96.6%) · 329 tagged (40.2%) · **226 high-confidence off-topic** (doubly-confirmed) · only **319/818 (39%)** pass the `relevance_llm ≥ 60` Oracle gate.
+- Team notified via this consolidated entry + PROJECT_STATE.md. Next for Lior: (1) `deploy.command` to publish the grounded Oracle + DB-tab fix; (2) Daniel reviews `docs/audits/relevance_check_2026-07-08.xlsx`; (3) decide the quarantine→`relevance_llm` write-back.
+
+## 2026-07-08 10:15 UTC · Algorithm Expert · Oracle grounded RAG (retrieval + citations)
+- What:   POST /api/ask no longer answers from training knowledge with an empty sources array. It now (1) RETRIEVEs the top-6 sources via `ts_rank_cd(search_vec, websearch_to_tsquery(...))` filtered to citable + on-topic (`relevance_llm >= 60`), with a two-tier fallback (strict AND, then OR-query if 0 rows — AND-only missed 10/14 sample questions); (2) GROUNDs Claude in ONLY those numbered sources, citing inline by the real `sources.id` (chips resolve via GET /api/papers/{id}), instructed to say "the MeatCODE corpus doesn't cover this" rather than use training; (3) STREAMs the real rows in the existing `sources` SSE event (was hardcoded `[]`), preserving sources→chunk→done, model/config, CORS, and other endpoints. Graceful fallback: DATABASE_URL missing / retrieval error → identical to old ungrounded behaviour, never crashes.
+- Files:  server/meatcode_server.py (do_POST + retrieval helpers); analysis/oracle_eval/{eval_questions.md,run_eval.py,results.md} (new — retrieval-only sanity check vs live Neon); docs/ORACLE_GROUNDED_RETRIEVAL.md (new).
+- Why:    Core objective — Oracle answers from the closed dataset, not training knowledge.
+- Result: Compiles clean. 319/818 (39%) pass relevance_llm≥60. Eval: OR-fallback took 0-source misses from 10/14 → 0/14; 9/14 strong, 3/14 moderate, 2/14 weak (corpus gaps, not bugs).
+- Next:   Browser click-test; add reranking over a wider pool; semantic/embedding search as corpus grows.
+
+## 2026-07-08 10:14 UTC · Data Engineer · corpus relevance check vs taxonomy bible
+- What:   Read-only relevance verification of all 818 sources vs the taxonomy bible (91 keywords/5 branches) + `relevance_llm`. New `pipeline/check_relevance_vs_taxonomy.py` = per-source keyword-overlap signal (via `db.taxonomy.classify()` ∪ `source_topics`) classified on/weak/off-topic, reconciled vs `relevance_llm` into a `recommended_action`. Extended `pipeline/export_audit_xlsx.py` with `--all-sources` (colour-coded, reuses the same `compute_all()`).
+- Files:  pipeline/check_relevance_vs_taxonomy.py (new), pipeline/export_audit_xlsx.py (extended), docs/audits/relevance_check_2026-07-08.xlsx (new, 818 rows), analysis/relevance_check_2026-07-08.md (new). SELECT-only.
+- Why:    Spinoff task — verify DB relevance before Daniel's review; refresh his xlsx.
+- Result: Citable 790/818 (96.6%); tagged 329/untagged 489; relevance_llm <40 = 329; taxonomy off-topic 179; recommended off-topic-high-confidence 226 (27.6%). Finding: 4 audit-staged quarantines (#252/#308/#341/#380) still read "keep" under relevance_llm alone (62-75) vs judge 28-35. `sensory` ingest query 93.2% off-topic (human-olfaction contamination); `off-note` 48.8%. Legacy composite_score/trust_tier fully degenerate (0.0 for all) — unused.
+- Next:   Daniel reviews the xlsx (226 off-topic + 4 quarantine IDs) → decides removals; back-tag 489 untagged; narrow the `sensory`/`off-note` ingest queries.
+
+## 2026-07-08 10:05 UTC · Advisory · grounded-answers + relevance-gate architecture
+- What:    Wrote `docs/DECISION_grounded_answers_and_relevance.md` (grounding contract: answer ONLY from retrieved closed sources, cite, refuse when uncovered; relevance gate: citable AND relevance_llm≥60, fed by taxonomy bible → ingest scoring → audit loop → Daniel's xlsx; how they connect) and `docs/daniel_review_workflow.md`. Flagged the quarantine→relevance_llm write-back gap.
+- Files:   docs/DECISION_grounded_answers_and_relevance.md (new), docs/daniel_review_workflow.md (new), PROJECT_STATE.md (Render live + DB-tab fix → Done; grounded-retrieval workstream → In flight; dated decision; stale Oracle-recall bullet corrected).
+- Why:     Give the two parallel workstreams one shared contract.
+- Result:  A Daniel-readable doc states the rule the Oracle enforces + the human-review loop. PROJECT_STATE reflects Render live.
+- Next:    Close the quarantine→relevance_llm write-back before WUR; publish the citable-corpus count; build the retrieval gold-set eval.
+
+## 2026-07-08 ~10:10 UTC · Project Coordinator · 📣 team broadcast — latest progress to date
+- What:    Posted a standing team notification. Created `TEAM_BROADCAST.md` (repo root) consolidating the latest progress as of 2026-07-08 and each agent's next move; added a "📣 Latest team broadcast" banner + pointer at the top of PROJECT_STATE.md so every agent sees it on read.
+- Files:   `TEAM_BROADCAST.md` (new), `PROJECT_STATE.md` (banner + stamp), this log.
+- Why:     Lior: "update the team on the latest progress to date, update the required files." Coordinator's job is now to notify all agents (Asana-sync + Daniel-drafting were retired from its remit).
+- Result:  Team notified via the two files every agent reads (STATE + broadcast). Broadcast headline: relational tagging live (146 tags / 541 links across 72/818 sources); v9 mockup promote-ready (deploy-safe diff); data-audit loop running (2026-07-08: 10 keep/9 review/1 quarantine); Advisory grounding+relevance decision + Daniel workflow docs added. **Flagged as #1 priority for the whole team: the live Oracle `/api/ask` still returns `sources: []` — zero retrieval — despite `search_vec` being populated.**
+- Next:    Agents pick up their next move from TEAM_BROADCAST.md (Data Engineer: finish tag_sources 72→818 + re-promote; Algorithm Expert: wire `/api/ask` retrieval; UI/UX: hold for Lior's v9 promote go). Lior pushes these repo edits with his usual deploy/sync step.
+
 Objective: turn the 7 requested source tags into a relational system + teach Lior how to connect sources through it. Algorithm Expert (guide) ran as a spawned specialist; the Data Engineer half was executed by the Coordinator directly (reliability on a live-prod migration + earlier spend-limit cutoffs). Built to one fixed schema contract.
 
 ### Data Engineer (Coordinator-executed) · relational tag schema + promotion — `db/migrations/0006_relational_tags.sql`, `pipeline/promote_tags.py`
