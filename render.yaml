@@ -10,6 +10,8 @@ services:
     branch: main
     buildCommand: pip install -r requirements.txt
     startCommand: python3 server/meatcode_server.py
+    healthCheckPath: /api/health   # Render pings this; auto-restarts the service if it stops responding
+                                   # (endpoint stays open even with the password gate on)
     envVars:
       - key: ANTHROPIC_API_KEY
         sync: false            # you paste the value in the Render dashboard — never in the repo
