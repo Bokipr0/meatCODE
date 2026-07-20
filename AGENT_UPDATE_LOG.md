@@ -1,6 +1,6 @@
 # MeatCODE — Agent Update Log
 
-_Last updated: 2026-07-20 12:49 UTC · Project Coordinator · PARALLEL team run — Oracle v11 (dictation · sidebar · status copy)_
+_Last updated: 2026-07-20 ~13:10 UTC · Project Coordinator · team broadcast refreshed (TEAM_BROADCAST.md)_
 
 > **Every agent appends an entry here at the end of any working session — newest at the top.**
 > This is the detailed audit trail of who changed what, when, and why. The short in-file
@@ -18,6 +18,27 @@ _Last updated: 2026-07-20 12:49 UTC · Project Coordinator · PARALLEL team run 
 ```
 
 ---
+
+## 2026-07-20 13:40 UTC · Project Coordinator · Oracle stops narrating its own retrieval
+- What:    Per Lior: the Oracle must never tell users it couldn't find something, never open with a coverage caveat, and never say where information came from — while still showing the sources attached to an answer. Rewrote `_grounding_system_prompt()`: removed "say plainly that the MeatCODE corpus doesn't cover this yet" and "Do NOT fall back to outside or general training knowledge". New rules: answer directly; cite a listed source inline (exact bracket number) where it genuinely supports a point; where the listed sources don't cover part of the question, answer from general flavour/aroma knowledge **uncited and unflagged**; and never mention corpus/database/retrieval/searching/what was or wasn't found, never open with a caveat, never refuse. The `used_fallback` hedge now instructs the model silently ("never mention this matching detail"). `_format_sources_block()`'s empty case no longer says "the corpus has nothing indexed" (the model was echoing that framing). UI label `Sources retrieved` → **`Sources`** in both mockups (0 occurrences left) since "retrieved" implies a search.
+- Files:   `server/meatcode_server.py` (prompt + empty-sources block + stamp), `app/meatcode_mockup.html`, `UI-UX Designer/MeatCODE_mockup_v9.html`.
+- Why:     The Oracle was opening answers with "The MeatCODE corpus doesn't cover this yet… I cannot answer without risking fabrication", which advertises the product's gaps to stakeholders (Daniel/WUR) on every thin query.
+- Result:  `py_compile` clean; both mockups' 5 script blocks each pass `node --check`. Remaining "corpus doesn't cover" strings are code comments/docstrings only — nothing in the text sent to the model.
+- Next:    **Guardrail deliberately kept** (flagged to Lior): citations are still never invented nor attached to claims a source doesn't support — hiding provenance *commentary* is a presentation choice, fabricating *attribution* would be a credibility failure. Net effect: uncited sentences now carry the general-knowledge material silently. Worth a spot-check that answers don't read as more corpus-backed than they are.
+
+## 2026-07-20 13:21 UTC · Project Coordinator · deploy visibility — open /api/version + HTML no-cache
+- What:    Lior deployed but "didn't see it" on the live link. Two additions to `server/meatcode_server.py`: (1) **`GET /api/version`** — OPEN like `/api/health` (added to the auth-gate exemption list), returning `service`, `commit`/`commit_full` + `branch` (from Render's injected `RENDER_GIT_*`), `server_started_utc`, `model`, `password_gate`, and a `features` map (`sse_status_event`, `vendor_neutral_errors`, `html_no_cache`) so you can confirm the NEW build is live, not merely that *something* is live. (2) **`Cache-Control: no-cache, must-revalidate` on HTML** in `end_headers()` (path-scoped to `.html`/`/`; assets keep normal caching) — the browser was serving its cached mockup after deploys, which is the classic "I pushed but the site looks the same".
+- Files:   `server/meatcode_server.py` (imports + build constants + `/api/version` + auth exemption + `end_headers` cache rule). Stamp updated.
+- Why:     Lior asked to always know his live deployment status, and the stale-cache issue was masking a successful deploy.
+- Result:  `py_compile` clean; endpoint payload smoke-tested. Diagnostic value proven immediately: `GET /api/version` against the live site returns **401**, which proves the running build predates this change (it has the password gate but not this route) — exactly the "which build is live?" signal we wanted.
+- Next:    Lior redeploys → then `/api/version` is the one-click deploy check (and I can verify it for him without the site password, since it's open). Also recommended: Render → Settings → Notifications for deploy success/failure alerts.
+
+## 2026-07-20 ~13:10 UTC · Project Coordinator · 📣 team broadcast refreshed — progress to date
+- What:    Refreshed `TEAM_BROADCAST.md` to the true current state (2026-07-20) and updated the pointer banner atop PROJECT_STATE.md. Corrects an earlier broadcast I posted against a wrong clock (the sandbox `date -u` read 2026-07-08, 12 days behind) whose headline — "Oracle returns `sources: []`, zero retrieval" — had since been resolved and would have misdirected the team.
+- Files:   `TEAM_BROADCAST.md` (rewritten), `PROJECT_STATE.md` (banner + stamp), this log.
+- Why:     Lior: "update on the latest progress all agents have been doing." Coordinator's remit is notifying all agents.
+- Result:  Broadcast now reflects: Oracle **v11** (dictation · pinned-above-history sidebar · additive `event: status` phases · zero user-facing model mentions); the 07-08 **grounded retrieval** milestone (0-source misses 10/14→0/14, gate `relevance_llm ≥ 60`); Render Starter always-on + `SITE_PASSWORD` gate; expired-sign-in now plain-language; scheduled task repurposed to a raw Neon snapshot. Numbers restated: 818 sources · 790 citable · 329 tagged · 226 high-confidence off-topic · 319/818 (39%) pass the gate. Carries the **open #1 risk** (quarantine→`relevance_llm` write-back) and the open Lior+Daniel decision on an anonymous question log.
+- Next:    Agents take their next move from TEAM_BROADCAST.md. Lior: `deploy.command` to publish v11 + the sign-in fix. Note for all agents: **trust the repo's own timestamps over the sandbox clock, which can be days behind.**
 
 ## 2026-07-20 12:49 UTC · Project Coordinator · PARALLEL team run — Oracle v11 (consolidated)
 Three specialists dispatched SIMULTANEOUSLY on disjoint files against Lior's four Oracle feature requests (dictation · bigger save icon · dynamic pinned-above-history sidebar · "Digging the MeatCODE database" copy). Split by FILE, not by feature, because all four requests land mostly in the mockup. Shared contract: server emits an ADDITIVE `event: status` (`retrieving`/`answering`); the UI consumes it but works identically if it never arrives — so the two could be built independently. UI/UX and Advisory completed; **the Data Engineer agent was interrupted mid-run, so the Coordinator completed its scope directly.** Specialists returned entries; Coordinator wrote this log (parallel-write safety).

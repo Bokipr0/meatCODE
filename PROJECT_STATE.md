@@ -17,8 +17,8 @@ Open decision for Lior + Daniel: whether to add an anonymous server-side questio
 
 ---
 
-## 📣 Latest team broadcast — 2026-07-08 ~10:10 UTC
-Project Coordinator has notified the team. **Every agent: read [`TEAM_BROADCAST.md`](TEAM_BROADCAST.md)** for what shipped and your next move. Headline: relational tagging is live (146 tags / 541 links, 72/818 sources) · v9 mockup ready to promote · **⚠️ the live Oracle `/api/ask` still returns `sources: []` (zero retrieval) — top priority.**
+## 📣 Latest team broadcast — 2026-07-20 ~13:10 UTC
+Project Coordinator has notified the team. **Every agent: read [`TEAM_BROADCAST.md`](TEAM_BROADCAST.md)** for what shipped and your next move. Headline: **Oracle v11 shipped** (dictation · pinned-above-history sidebar · honest `event: status` phases · zero user-facing model mentions) on top of the **grounded retrieval** milestone; site is always-on + password-gated; expired-sign-in now reported in plain language. **⚠️ Open #1 risk: confirmed quarantines write only to `source_audits`, NOT `sources.relevance_llm` — Daniel-rejected sources remain retrievable. Close before WUR.** Open decision for Lior + Daniel: anonymous server-side question log?
 
 ---
 

@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-# Last updated: 2026-07-20 12:49 UTC · Coordinator (for Data Engineer) · /api/ask now emits an ADDITIVE
+# Last updated: 2026-07-20 13:40 UTC · Coordinator · Oracle no longer narrates its own retrieval: the
+#   grounding prompt was rewritten so answers never mention the corpus/database/search, never open with a
+#   coverage caveat, and never refuse — uncovered parts are answered from general knowledge, UNCITED and
+#   unflagged. Guardrail kept: citations are never invented or attached to unsupporting sources.
+# Prev 2026-07-20 13:21 UTC · Coordinator · added OPEN `GET /api/version` (live deploy identity:
+#   commit/branch/started_at/feature flags — answers "is my push actually live?" without signing in) and
+#   `Cache-Control: no-cache, must-revalidate` on HTML so a fresh deploy is never hidden by browser cache.
+# Prev 2026-07-20 12:49 UTC · Coordinator (for Data Engineer) · /api/ask now emits an ADDITIVE
 #   `event: status` ("retrieving" before the DB query, "answering" before the model streams) so the UI can
 #   honestly show "Digging the MeatCODE database…"; SSE headers moved ahead of retrieval to allow it.
 #   User-facing error text is now vendor-neutral ("The MeatCODE Oracle is unavailable right now…") with the
@@ -69,7 +76,7 @@ If you'd rather keep the key in a file: drop a `.env` next to this script with
 ANTHROPIC_API_KEY=sk-ant-...  on its own line. The script reads it automatically.
 """
 
-import os, sys, json, re, threading, base64, hmac
+import os, sys, json, re, threading, base64, hmac, datetime
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
@@ -238,7 +245,8 @@ def _format_sources_block(rows):
     so an inline [id] citation Claude writes resolves to the correct paper when
     the mockup's citation chip fetches /api/papers/{id}."""
     if not rows:
-        return "SOURCES: (none retrieved — the corpus has nothing indexed that matches this question)"
+        return ("SOURCES: (none listed for this question — answer from your own knowledge, "
+                "uncited, and say nothing about sources or coverage)")
     parts = []
     for r in rows:
         meta = " · ".join(filter(None, [str(r["year"]) if r.get("year") else None, r.get("journal")]))
@@ -255,29 +263,46 @@ def _format_sources_block(rows):
 
 
 def _grounding_system_prompt(rows, used_fallback=False):
-    """GROUND step: the existing persona/style (SYSTEM_PROMPT, unchanged) plus hard
-    citation rules and the numbered source list, so Claude answers ONLY from the
-    retrieved corpus instead of training knowledge. `used_fallback=True` means
-    these came from the looser OR-query recall fallback (see _retrieve_sources) —
-    add one extra hedge so Claude reads the abstracts critically instead of
-    assuming term-overlap implies relevance."""
+    """GROUND step: the existing persona/style (SYSTEM_PROMPT, unchanged) plus the
+    numbered source list and citation rules.
+
+    Product decision (2026-07-20, Lior): the Oracle must NEVER narrate its own
+    retrieval — no "the MeatCODE corpus doesn't cover this", no "the sources
+    retrieved are about X", no refusing to answer. Users get a direct answer with
+    citations attached where a listed source genuinely supports the point.
+
+    The one guardrail deliberately kept: citations must never be invented or
+    attached to claims the source doesn't support. Hiding *provenance commentary*
+    is a presentation choice; fabricating attribution would be a credibility
+    (and scientific) failure. Uncited sentences are how unsupported material is
+    handled — silently, without a disclaimer.
+
+    `used_fallback=True` means rows came from the looser OR-query recall fallback
+    (see _retrieve_sources), so the model is told to read abstracts critically —
+    silently, without surfacing that to the user."""
     fallback_note = (
-        "\nNote: these sources were found via a broader, OR-based keyword match "
-        "(the stricter search found nothing), so term overlap doesn't guarantee "
-        "relevance — read each abstract and only rely on ones that actually "
-        "address the question.\n"
+        "\nSome listed sources were matched loosely, so term overlap does not "
+        "guarantee relevance — read each abstract and only cite ones that actually "
+        "address the question. Never mention this matching detail to the user.\n"
         if used_fallback else ""
     )
     return SYSTEM_PROMPT + (
-        "\n\nGROUNDING RULES (MeatCODE closed literature corpus — read carefully):\n"
-        "Answer ONLY using the numbered sources listed below, retrieved live from the "
-        "MeatCODE database for this question. Cite inline using the exact bracket number "
-        "shown immediately before each source (for example, if a source is labeled [123], "
-        "write [123] in your answer — not [1]). Never invent a citation number and never "
-        "cite a source that is not listed below. If the sources below do not adequately "
-        "cover the question — including if none were retrieved — say plainly that the "
-        "MeatCODE corpus doesn't cover this yet. Do NOT fall back to outside or general "
-        "training knowledge to fill the gap." + fallback_note + "\n"
+        "\n\nANSWERING RULES (read carefully):\n"
+        "Answer the question directly and usefully, in your normal voice.\n"
+        "Numbered sources may be listed below. Where one genuinely supports a point "
+        "you make, cite it inline using the exact bracket number shown immediately "
+        "before that source (for example, if a source is labeled [123], write [123] "
+        "in your answer — not [1]).\n"
+        "NEVER invent a citation number, and NEVER attach a citation to a claim that "
+        "the cited source does not actually support.\n"
+        "Where the listed sources do not cover part of the question, simply answer "
+        "that part from your own knowledge of flavour and aroma chemistry, leaving it "
+        "uncited. Do not flag it, hedge it, or apologise for it.\n"
+        "NEVER describe your own information sources or how you obtained anything. Do "
+        "not mention the corpus, the database, retrieval, searching, what was or was "
+        "not found, or whether something came from the listed sources versus your own "
+        "knowledge. Never open with a caveat about coverage, and never say you cannot "
+        "answer. Just give the answer." + fallback_note + "\n"
         + _format_sources_block(rows)
     )
 
@@ -291,6 +316,14 @@ def _grounding_system_prompt(rows, used_fallback=False):
 # the repo. The browser prompts once, then reuses them for all fetches too.
 SITE_USER = os.environ.get("SITE_USER", "meatcode")
 SITE_PASSWORD = os.environ.get("SITE_PASSWORD")   # None/"" → gate disabled
+
+# ─── Build / deploy identity (powers the open /api/version endpoint) ──
+# Render injects RENDER_GIT_* automatically on every deploy; empty when running locally.
+# This is what makes "is my latest push actually live?" answerable at a glance.
+BUILD_COMMIT  = os.environ.get("RENDER_GIT_COMMIT", "")
+BUILD_BRANCH  = os.environ.get("RENDER_GIT_BRANCH", "")
+BUILD_SERVICE = os.environ.get("RENDER_SERVICE_NAME", "local")
+STARTED_AT    = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -331,6 +364,15 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        # Force HTML to revalidate on every load. Without this the browser happily
+        # serves its cached copy after a deploy — the classic "I pushed but the site
+        # still looks the same". Assets keep their normal caching.
+        try:
+            _p = urlparse(self.path).path
+            if _p.endswith(".html") or _p.endswith("/"):
+                self.send_header("Cache-Control", "no-cache, must-revalidate")
+        except Exception:
+            pass
         super().end_headers()
 
     def do_OPTIONS(self):
@@ -356,8 +398,8 @@ class Handler(SimpleHTTPRequestHandler):
     # ─── GET: /api/* handled here; everything else = static files ───
     def do_GET(self):
         path = urlparse(self.path).path
-        if path != "/api/health" and not self._authorized():
-            return self._deny()                # /api/health stays open for uptime checks
+        if path not in ("/api/health", "/api/version") and not self._authorized():
+            return self._deny()                # health + version stay open (uptime / deploy checks)
         if path.startswith("/api/"):
             return self._handle_api_get(path)
         # Bare URL → the product mockup, so visitors land on MeatCODE (not a file list).
@@ -392,6 +434,24 @@ class Handler(SimpleHTTPRequestHandler):
                 "db_ok": bool(DATABASE_URL),
                 "has_anthropic_key": bool(API_KEY),
                 "model": MODEL,
+            })
+        if path == "/api/version":
+            # OPEN (like /api/health) so deploy status is checkable without signing in.
+            # `commit` tells you exactly which push is live; `features` confirms the NEW
+            # code is running, not just that *something* is running.
+            return self._send_json({
+                "service": BUILD_SERVICE,
+                "commit": (BUILD_COMMIT[:12] or "local"),
+                "commit_full": BUILD_COMMIT,
+                "branch": (BUILD_BRANCH or "local"),
+                "server_started_utc": STARTED_AT,
+                "model": MODEL,
+                "password_gate": bool(SITE_PASSWORD),
+                "features": {
+                    "sse_status_event": True,        # "Digging the MeatCODE database" phase
+                    "vendor_neutral_errors": True,   # no model name in user-facing errors
+                    "html_no_cache": True,           # fresh deploys show immediately
+                },
             })
         if path == "/api/templates":
             # No DB needed — lists whatever Claude Design exports live in app/templates/.
