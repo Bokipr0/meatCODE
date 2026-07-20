@@ -1,6 +1,6 @@
 # MeatCODE — Agent Update Log
 
-_Last updated: 2026-07-08 · Advisory/infra · Render always-on (Starter) + private shared-password gate on the server_
+_Last updated: 2026-07-20 11:57 UTC · advisory session · Oracle surfaces expired sign-in clearly instead of "Load failed"_
 
 > **Every agent appends an entry here at the end of any working session — newest at the top.**
 > This is the detailed audit trail of who changed what, when, and why. The short in-file
@@ -18,6 +18,13 @@ _Last updated: 2026-07-08 · Advisory/infra · Render always-on (Starter) + priv
 ```
 
 ---
+
+## 2026-07-20 11:57 UTC · advisory session · Oracle: expired sign-in now reported clearly (was "Load failed")
+- What:    After ~2 weeks idle, the live Oracle showed a bare **"Load failed"**. Diagnosed end-to-end from outside: server UP (0.49s, Starter always-on working), Neon ALIVE (1.2s connect, 818/818 sources citable), Anthropic key VALID (HTTP 200), model `claude-sonnet-4-6` VALID. Root cause = the **browser's cached Basic Auth login expired** while the page stayed cached, so `POST /api/ask` returned `401 Authentication required` (verified via curl) and Safari rejected the fetch with its generic "Load failed". Fixed the messaging: the Oracle fetch now sends `credentials: 'same-origin'`, throws a distinct `SESSION_EXPIRED` on a 401, and the catch-block maps 401 + network-style failures ("Load failed"/"Failed to fetch"/NetworkError) to a plain-language message telling the user to refresh and re-enter the site password.
+- Files:   `app/meatcode_mockup.html` (live) and `UI-UX Designer/MeatCODE_mockup_v9.html` (candidate — kept in sync so a promote won't regress it). Both stamps updated.
+- Why:     Lior hit it returning from 2 weeks away; "Load failed" reads as "the product is broken" and would damage credibility in front of Daniel/WUR when the real fix is just signing in again.
+- Result:  Both files verified — all 5 inline `<script>` blocks in each pass `node --check`. Nothing was actually wrong with the backend; no server/DB/key changes were needed.
+- Next:    Lior deploys (`deploy.command`) for the new message to reach the live site. Consider a longer-lived session (cookie/token) instead of raw Basic Auth if re-login friction annoys collaborators.
 
 ## 2026-07-08 · Advisory/infra · Render always-on + private password gate
 - What:    Two infra changes so the Render-hosted site can run constantly AND be private. (1) `render.yaml` plan `free`→`starter` (~$7/mo, no idle spin-down). (2) Added an optional HTTP Basic Auth gate to `server/meatcode_server.py`: if env var `SITE_PASSWORD` is set, EVERY request (static + Oracle + API) requires username (`SITE_USER`, default `meatcode`) + password; browser prompts once and reuses creds for fetches. `/api/health` stays open for uptime checks. Gate is OFF when `SITE_PASSWORD` is unset, so local `run_oracle.command` dev is unchanged. Constant-time credential compare (`hmac.compare_digest`).

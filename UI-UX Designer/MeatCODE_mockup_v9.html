@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- v9 = canonical app/meatcode_mockup.html + v8 UI/UX polish forward-ported. Last updated: 2026-07-08 UTC · UI/UX Designer (art director) · avatar/bell/personas/dashboard/globe/bubbles on the newer Database+Simulate build; Oracle "no matches" note gated DEV-ONLY (?dev=1). -->
+<!-- v9 = canonical app/meatcode_mockup.html + v8 UI/UX polish forward-ported. Last updated: 2026-07-20 11:57 UTC · advisory session · kept in sync with the live mockup: Oracle now reports an expired site-password sign-in plainly instead of Safari's raw "Load failed"; fetch sends credentials same-origin. (2026-07-08: avatar/bell/personas/dashboard/globe/bubbles on the newer Database+Simulate build; Oracle "no matches" note gated DEV-ONLY (?dev=1).) -->
 <meta charset="utf-8" />
 <!-- Last updated: 2026-07-07 10:44 UTC · UI/UX Designer (parallel team run) · IA: Database promoted to a top-level domain, Toolbench moved inside Research; new #database scene (Molecules/Experts/Companies/Sources, live-filtered, row-detail modal, XLSX export); Map made bigger + defaults to top-15-by-relevance + country-click filtering + "View full profile" now routes into the Database. -->
 <title>MeatCODE · GFI Israel — flavor & aroma research</title>
@@ -3818,13 +3818,24 @@ function askOracle() {
   // supports GET, so we hand-roll the SSE parsing on POST.
   fetch(API_BASE + '/api/ask', {
     method: 'POST',
+    credentials: 'same-origin',   // send the site password (Basic Auth) along with the request
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ question: q })
   }).then(function (res) {
+    // 401 = the shared site password wasn't accepted. That's almost always an expired
+    // browser sign-in, not a broken Oracle — say so plainly instead of a raw HTTP error.
+    if (res.status === 401) { throw new Error('SESSION_EXPIRED'); }
     if (!res.ok) { return res.text().then(function (t) { throw new Error(t || ('HTTP ' + res.status)); }); }
     return streamSSE(res);
   }).catch(function (e) {
-    setOracleError(String(e && e.message ? e.message : e));
+    var msg = String(e && e.message ? e.message : e);
+    // Safari rejects the fetch outright ("Load failed") when the server returns a password
+    // challenge it can't satisfy, so a network-style error here is usually an expired
+    // sign-in rather than a real outage. Give the user the actual fix.
+    if (msg === 'SESSION_EXPIRED' || /load failed|failed to fetch|networkerror|network error/i.test(msg)) {
+      msg = 'Your sign-in expired. Refresh the page (⌘R) and enter the site password again, then re-ask your question.';
+    }
+    setOracleError(msg);
   }).then(function () {
     oracleAskBtn.disabled = false;
   });

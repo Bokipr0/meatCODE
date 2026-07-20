@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<!-- Last updated: 2026-07-08 UTC · UI/UX Designer (art director) · Oracle "no matches in database" note gated DEV-ONLY (visit with ?dev=1) — hidden from normal users. (2026-07-07: Database promoted to top-level domain, Toolbench→Research, #database scene, map upgrade.) -->
+<!-- Last updated: 2026-07-20 11:57 UTC · advisory session · Oracle now reports an expired site-password sign-in plainly ("Your sign-in expired…") instead of Safari's raw "Load failed"; fetch sends credentials same-origin. (2026-07-08: "no matches in database" note gated DEV-ONLY via ?dev=1. 2026-07-07: Database promoted to top-level domain, Toolbench→Research, #database scene, map upgrade.) -->
 <title>MeatCODE · GFI Israel — flavor & aroma research</title>
 <meta name="viewport" content="width=1440" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -3780,13 +3780,24 @@ function askOracle() {
   // supports GET, so we hand-roll the SSE parsing on POST.
   fetch(API_BASE + '/api/ask', {
     method: 'POST',
+    credentials: 'same-origin',   // send the site password (Basic Auth) along with the request
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ question: q })
   }).then(function (res) {
+    // 401 = the shared site password wasn't accepted. That's almost always an expired
+    // browser sign-in, not a broken Oracle — say so plainly instead of a raw HTTP error.
+    if (res.status === 401) { throw new Error('SESSION_EXPIRED'); }
     if (!res.ok) { return res.text().then(function (t) { throw new Error(t || ('HTTP ' + res.status)); }); }
     return streamSSE(res);
   }).catch(function (e) {
-    setOracleError(String(e && e.message ? e.message : e));
+    var msg = String(e && e.message ? e.message : e);
+    // Safari rejects the fetch outright ("Load failed") when the server returns a password
+    // challenge it can't satisfy, so a network-style error here is usually an expired
+    // sign-in rather than a real outage. Give the user the actual fix.
+    if (msg === 'SESSION_EXPIRED' || /load failed|failed to fetch|networkerror|network error/i.test(msg)) {
+      msg = 'Your sign-in expired. Refresh the page (⌘R) and enter the site password again, then re-ask your question.';
+    }
+    setOracleError(msg);
   }).then(function () {
     oracleAskBtn.disabled = false;
   });
