@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-# Last updated: 2026-07-20 13:40 UTC · Coordinator · Oracle no longer narrates its own retrieval: the
+# Last updated: 2026-07-20 14:52 UTC · Coordinator (for Data Engineer) · GET /api/molecules is now paginated:
+#   `limit` (≤200, default 50) + `offset`, and `meta=1` returns {items,total,limit,offset} so the Molecules
+#   pager can show "X of N". Bare (no-meta) calls unchanged. Verified live vs Neon (50/page, total 799, Fats=10).
+# Prev 2026-07-20 13:40 UTC · Coordinator · Oracle no longer narrates its own retrieval: the
 #   grounding prompt was rewritten so answers never mention the corpus/database/search, never open with a
 #   coverage caveat, and never refuse — uncovered parts are answered from general knowledge, UNCITED and
 #   unflagged. Guardrail kept: citations are never invented or attached to unsupporting sources.
@@ -539,7 +542,12 @@ class Handler(SimpleHTTPRequestHandler):
 
             # ─── Database section: Molecules / Sources / Companies (+ shared facets) ───
             if path == "/api/molecules":
-                limit = max(1, min(1000, int((qs.get("limit") or ["200"])[0])))
+                # Pagination: `limit` (page size, ≤200) + `offset`. `meta=1` returns
+                # {"items":[...], "total":N, "limit":L, "offset":O} for pagers that need
+                # the grand total; without meta it returns the bare list (back-compat).
+                limit = max(1, min(200, int((qs.get("limit") or ["50"])[0])))
+                offset = max(0, int((qs.get("offset") or ["0"])[0]))
+                want_meta = (qs.get("meta") or ["0"])[0].strip() in ("1", "true", "yes")
                 q = (qs.get("q") or [""])[0].strip()
                 category = (qs.get("category") or [""])[0].strip()
                 sort = (qs.get("sort") or ["name"])[0].strip().lower()
@@ -567,10 +575,15 @@ class Handler(SimpleHTTPRequestHandler):
                     "LEFT JOIN (SELECT molecule_id, COUNT(*) AS mentions_count "
                     "FROM source_molecules GROUP BY molecule_id) sm ON sm.molecule_id = m.id" +
                     where_sql +
-                    " ORDER BY " + order_by + ", m.id ASC LIMIT %s"
+                    " ORDER BY " + order_by + ", m.id ASC LIMIT %s OFFSET %s"
                 )
-                params.append(limit)
-                return self._send_json(pg_rows(sql, tuple(params)))
+                rows = pg_rows(sql, tuple(params + [limit, offset]))
+                if not want_meta:
+                    return self._send_json(rows)
+                # total for the SAME filters (no limit/offset) so the pager can show "X of N"
+                total_rows = pg_rows("SELECT COUNT(*) AS total FROM molecules m" + where_sql, tuple(params))
+                total = int(total_rows[0]["total"]) if total_rows else 0
+                return self._send_json({"items": rows, "total": total, "limit": limit, "offset": offset})
 
             if path == "/api/sources":
                 limit = max(1, min(1000, int((qs.get("limit") or ["200"])[0])))

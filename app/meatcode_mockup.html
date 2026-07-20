@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<!-- Last updated: 2026-07-20 12:43 UTC · UI/UX Designer · Oracle v11: voice dictation in the ask box (Web Speech API, hidden where unsupported); bookmark hit-area enlarged inside the Oracle rail only (34px target / 20px glyph); sidebar rebuilt as a dynamic Pinned-above-History list persisted in localStorage (mc_oracle_history_v1); status copy now "Digging the MeatCODE database…" and every user-facing model-name mention removed from the Oracle chrome; consumes the optional SSE `status` event with local fallbacks. (2026-07-20 11:57: expired sign-in message + credentials same-origin — preserved. 2026-07-08: "no matches" note gated DEV-ONLY via ?dev=1. 2026-07-07: Database promoted to top-level domain, Toolbench→Research, #database scene, map upgrade.) -->
+<!-- Last updated: 2026-07-20 14:46 UTC · UI/UX Designer · batch of 8: Database fixes (experts relevance column removed · companies Website links · molecules default to the Fats category, shown as a clearable chip with an “N of 799” count) · molecules pagination 50/page (uses meta=1+offset when the server offers it, client-side slicing otherwise) · Oracle highlight-to-save “Lab Stash” (mc_lab_stash_v1) · Simulate OAV column + Suggested-next-steps removed · Research Saved Queries removed · nav reordered to Oracle·Research·Database·Simulate·Map · topbar bell removed + search widened · Oracle chat rename + the answer pane now scrolls in its own container. -->
 <title>MeatCODE · GFI Israel — flavor & aroma research</title>
 <meta name="viewport" content="width=1440" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -139,17 +139,20 @@ section.scene.active { display: block; }
 
 .topbar-right {
   display: flex; align-items: center; gap: 14px;
-  width: 220px; justify-content: flex-end;
+  width: 260px; justify-content: flex-end;
   color: var(--ink-dim);
 }
+/* 2026-07-20 · bell removed — the search field takes the whole right rail. */
 .topbar-search {
   display: flex; align-items: center; gap: 8px;
-  padding: 8px 14px;
+  flex: 1 1 auto; min-width: 0;
+  padding: 9px 16px;
   background: var(--bg-deep);
   border-radius: 10px;
   font-size: 13px; color: var(--ink-faint);
+  cursor: pointer; transition: 0.13s;
 }
-.topbar-bell { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; background: var(--bg-deep); }
+.topbar-search:hover { background: var(--wine-mist); color: var(--wine); }
 
 /* ── Left context panel ── */
 .context {
@@ -414,7 +417,24 @@ section.scene.active { display: block; }
   border: 1px solid var(--line);
   border-radius: 22px;
   padding: 24px 28px;
+  /* A long answer used to stretch the whole page. The pane is now bounded and
+     scrolls inside itself, so the app shell stays put under the wheel. Sources
+     and follow-ups live inside this box too — nothing is clipped, they just
+     scroll along with the text. */
+  max-height: clamp(300px, 62vh, 760px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
 }
+.oracle-answer::-webkit-scrollbar { width: 11px; }
+.oracle-answer::-webkit-scrollbar-track { background: transparent; }
+.oracle-answer::-webkit-scrollbar-thumb {
+  background: var(--line-strong); border-radius: 100px;
+  border: 3px solid var(--surface);
+}
+.oracle-answer::-webkit-scrollbar-thumb:hover { background: var(--wine-soft); }
+.oracle-answer.empty { max-height: none; overflow: visible; }
 .oracle-answer h3 { font-size: 12px; font-weight: 700; color: var(--wine); letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 12px; }
 .oracle-answer p { font-size: 16px; line-height: 1.7; color: var(--ink); margin: 0 0 12px; }
 .oracle-answer p:last-of-type { margin-bottom: 18px; }
@@ -1234,9 +1254,6 @@ section.scene.active { display: block; }
 .sim-mol-class { font-size: 11px; color: var(--ink-faint); font-weight: 400; }
 .sim-conc { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; font-weight: 700; color: var(--wine-deep); }
 .sim-aroma { color: var(--ink-dim); font-size: 12.5px; }
-.sim-oav { display: inline-block; background: var(--wine); color: var(--surface); border-radius: 100px; padding: 2px 9px; font-size: 11px; font-weight: 700; }
-.sim-oav.med { background: var(--brass); }
-.sim-oav.lo  { background: var(--ink-faint); }
 .sim-cite { font-size: 11.5px; color: var(--ink-faint); }
 .sim-cite b { color: var(--ink-dim); font-weight: 700; }
 
@@ -1722,6 +1739,144 @@ section.scene.active { display: block; }
   align-self: flex-end;
 }
 
+/* ══ 2026-07-20 · Database table extras — website links + pager + active-filter chip ══ */
+.db-link { color: var(--wine); font-weight: 600; text-decoration: none; border-bottom: 1px solid var(--wine-tint); }
+.db-link:hover { color: var(--wine-deep); border-bottom-color: var(--wine); }
+.db-pager {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  padding: 12px 4px 2px;
+}
+.db-page-btn {
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink-dim);
+  border-radius: 9px; padding: 6px 13px; font-size: 12.5px; font-weight: 600;
+  font-family: inherit; cursor: pointer; transition: 0.12s;
+}
+.db-page-btn:hover:not(:disabled) { border-color: var(--wine); color: var(--wine); background: var(--wine-mist); }
+.db-page-btn:disabled { opacity: 0.4; cursor: default; }
+.db-page-info { font-size: 12px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+/* The landing category filter has to look like a filter, never like an empty DB. */
+.mc-active-filter { display: inline-flex; align-items: center; gap: 8px; }
+.mc-active-filter .mc-chip-label {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--wine-mist); color: var(--wine-deep);
+  border: 1px solid var(--wine-tint); border-radius: 100px;
+  padding: 5px 12px; font-size: 12px;
+}
+.mc-active-filter .mc-chip-clear {
+  border: none; background: none; padding: 0; cursor: pointer;
+  font-family: inherit; font-size: 12px; font-weight: 700; color: var(--wine);
+  text-decoration: underline;
+}
+.mc-active-filter .mc-chip-clear:hover { color: var(--wine-deep); }
+.mc-country-select.filtered { border-color: var(--wine); color: var(--wine-deep); background: var(--wine-mist); font-weight: 700; }
+
+/* ══ 2026-07-20 · Oracle chat rename (pencil on hover / double-click the row) ══ */
+#oracle .context-item .ctx-rename {
+  margin-left: 2px;
+  width: 30px; height: 30px; flex-shrink: 0;
+  border: none; background: none; border-radius: 8px;
+  padding: 0; cursor: pointer; color: var(--ink-faint);
+  display: grid; place-items: center;
+  opacity: 0; transition: opacity 0.14s ease, background 0.14s ease;
+  -webkit-appearance: none; appearance: none;
+}
+#oracle .context-item .ctx-rename svg { width: 15px; height: 15px; }
+#oracle .context-item:hover .ctx-rename,
+#oracle .context-item .ctx-rename:focus-visible { opacity: 1; }
+#oracle .context-item .ctx-rename:hover { background: var(--wine-mist); color: var(--wine); }
+#oracle .context-item .ctx-rename:focus-visible { outline: 2px solid var(--wine); outline-offset: -2px; }
+#oracle .context-item .ctx-edit {
+  flex: 1 1 auto; min-width: 0;
+  font: inherit; font-size: 13px; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--wine);
+  border-radius: 7px; padding: 4px 7px;
+}
+#oracle .context-item .ctx-edit:focus { outline: none; box-shadow: 0 0 0 2px var(--wine-mist); }
+#oracle .context-item.renaming { background: var(--surface-2); cursor: default; }
+
+/* ══ 2026-07-20 · Lab Stash — highlight-to-save out of an Oracle answer ══ */
+.mc-stash-mark {
+  background: linear-gradient(transparent 58%, var(--wine-mist) 58%);
+  color: inherit; border-radius: 2px; padding: 0 1px;
+  box-shadow: inset 0 -1px 0 var(--wine-tint);
+}
+.mc-stash-pop {
+  position: fixed; z-index: 9000;
+  display: none; align-items: center; gap: 6px;
+  background: var(--wine); color: #fff;
+  border: none; border-radius: 100px;
+  padding: 7px 14px; font-family: inherit; font-size: 12.5px; font-weight: 700;
+  cursor: pointer; box-shadow: 0 6px 20px rgba(60, 20, 20, 0.28);
+}
+.mc-stash-pop.on { display: inline-flex; }
+.mc-stash-pop:hover { background: var(--wine-deep); }
+.mc-stash-pop svg { width: 13px; height: 13px; }
+.mc-stash-btn {
+  display: flex; align-items: center; gap: 9px; width: 100%;
+  margin-top: auto; margin-bottom: 10px;
+  padding: 10px 12px;
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: 12px; cursor: pointer;
+  font-family: inherit; font-size: 13px; font-weight: 700; color: var(--ink-dim);
+  text-align: left; transition: 0.13s;
+}
+.mc-stash-btn:hover { border-color: var(--wine-soft); color: var(--wine); background: var(--wine-mist); }
+.mc-stash-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.mc-stash-btn .mc-stash-count {
+  margin-left: auto;
+  background: var(--wine); color: #fff;
+  border-radius: 100px; padding: 1px 8px;
+  font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.mc-stash-btn .mc-stash-count.zero { background: var(--line-strong); color: var(--ink-faint); }
+.mc-stash-btn + .user-card { margin-top: 0; }
+.mc-stash-backdrop {
+  position: fixed; inset: 0; z-index: 8800;
+  background: rgba(40, 18, 18, 0.16);
+  display: none;
+}
+.mc-stash-backdrop.on { display: block; }
+.mc-stash-panel {
+  position: fixed; z-index: 8900;
+  left: 18px; bottom: 18px; width: min(400px, calc(100vw - 36px));
+  max-height: min(66vh, 620px);
+  display: none; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 18px; box-shadow: 0 18px 50px rgba(60, 20, 20, 0.22);
+  overflow: hidden;
+}
+.mc-stash-panel.on { display: flex; }
+.mc-stash-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 15px 18px 12px; border-bottom: 1px solid var(--line);
+}
+.mc-stash-head h4 { margin: 0; font-size: 14px; font-weight: 700; color: var(--ink); }
+.mc-stash-head p { margin: 0; font-size: 11.5px; color: var(--ink-faint); }
+.mc-stash-close {
+  margin-left: auto; border: none; background: none; cursor: pointer;
+  font-family: inherit; font-size: 18px; line-height: 1; color: var(--ink-faint);
+  padding: 2px 6px; border-radius: 8px;
+}
+.mc-stash-close:hover { background: var(--surface-2); color: var(--ink); }
+.mc-stash-list { overflow-y: auto; padding: 10px 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.mc-stash-empty { padding: 26px 16px; text-align: center; font-size: 12.5px; line-height: 1.55; color: var(--ink-faint); }
+.mc-stash-item {
+  background: var(--bg-deep); border: 1px solid var(--line);
+  border-radius: 12px; padding: 11px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.mc-stash-item blockquote {
+  margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink);
+  border-left: 3px solid var(--wine-tint); padding-left: 9px;
+}
+.mc-stash-meta { display: flex; align-items: baseline; gap: 8px; font-size: 11px; color: var(--ink-faint); }
+.mc-stash-meta .mc-stash-q { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-stash-remove {
+  align-self: flex-end; border: none; background: none; cursor: pointer;
+  font-family: inherit; font-size: 11.5px; font-weight: 700; color: var(--ink-faint);
+  padding: 2px 4px; border-radius: 6px;
+}
+.mc-stash-remove:hover { color: #8E3030; background: var(--wine-mist); }
 </style>
 </head>
 <body>
@@ -1893,15 +2048,14 @@ section.scene.active { display: block; }
         <div class="brand-name">MeatCODE</div>
       </div>
       <div class="domains">
-        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
         <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
         <div class="topbar-search">⌘K · Search</div>
-        <div class="topbar-bell">🔔</div>
       </div>
     </header>
 
@@ -2022,15 +2176,14 @@ section.scene.active { display: block; }
     <header class="topbar">
       <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
       <div class="domains">
-        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
         <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
         <div class="topbar-search">⌘K · Search</div>
-        <div class="topbar-bell">🔔</div>
       </div>
     </header>
 
@@ -2046,6 +2199,15 @@ section.scene.active { display: block; }
         <div class="context-label">Oracle History</div>
         <div class="context-list" id="oracleHistoryList"></div>
       </div>
+
+      <!-- Lab Stash: highlights saved out of Oracle answers (mc_lab_stash_v1). -->
+      <button class="mc-stash-btn" id="mcStashBtn" type="button" aria-haspopup="dialog" aria-expanded="false">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 2.5h10v11l-5-3.2-5 3.2z"/>
+        </svg>
+        Lab Stash
+        <span class="mc-stash-count zero">0</span>
+      </button>
 
       <div class="user-card">
         <div class="user-avatar">
@@ -2141,15 +2303,14 @@ section.scene.active { display: block; }
     <header class="topbar">
       <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
       <div class="domains">
-        <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
         <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
         <div class="topbar-search">⌘K · Search</div>
-        <div class="topbar-bell">🔔</div>
       </div>
     </header>
 
@@ -2289,25 +2450,18 @@ section.scene.active { display: block; }
     <header class="topbar">
       <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
       <div class="domains">
-        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
         <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
         <div class="topbar-search">⌘K · Search</div>
-        <div class="topbar-bell">🔔</div>
       </div>
     </header>
 
     <aside class="context">
-      <div class="context-section">
-        <div class="context-label">Saved Queries</div>
-        <div class="context-item"><div class="dot" style="background:var(--wine)"></div>Beef volatiles, 2020+</div>
-        <div class="context-item"><div class="dot" style="background:var(--brass)"></div>Maillard at low pH</div>
-        <div class="context-item"><div class="dot" style="background:var(--olive)"></div>Pea-protein masking</div>
-      </div>
       <div class="context-section">
         <div class="context-label">Recent picks</div>
         <div class="context-item"><div class="dot"></div>Aldehydes &amp; lipid oxidation</div>
@@ -2411,15 +2565,14 @@ section.scene.active { display: block; }
     <header class="topbar">
       <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
       <div class="domains">
-        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
         <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
         <div class="topbar-search">⌘K · Search</div>
-        <div class="topbar-bell">🔔</div>
       </div>
     </header>
 
@@ -2531,15 +2684,14 @@ section.scene.active { display: block; }
     <header class="topbar">
       <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
       <div class="domains">
-        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
         <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
         <div class="topbar-search">⌘K · Search</div>
-        <div class="topbar-bell">🔔</div>
       </div>
     </header>
 
@@ -2605,6 +2757,7 @@ section.scene.active { display: block; }
             <select class="mc-country-select" id="db-molecules-select-a">
               <option value="">All categories</option>
             </select>
+            <span class="mc-active-filter" id="db-molecules-chip" hidden></span>
             <div class="mc-sort-group" id="db-molecules-sort">
               <button class="mc-sort-btn on" data-sort="name">Name</button>
               <button class="mc-sort-btn" data-sort="popularity">Popularity</button>
@@ -2619,6 +2772,7 @@ section.scene.active { display: block; }
               <tbody id="db-molecules-tbody"><tr><td class="db-state-cell" colspan="5">Loading…</td></tr></tbody>
             </table>
           </div>
+          <div class="db-pager" id="db-molecules-pager" hidden></div>
         </div>
 
         <!-- Experts -->
@@ -2643,8 +2797,8 @@ section.scene.active { display: block; }
           </div>
           <div class="db-table">
             <table>
-              <thead><tr><th>Expert</th><th>Affiliation</th><th>Country</th><th>H-index</th><th>Papers</th><th>Relevance</th></tr></thead>
-              <tbody id="db-experts-tbody"><tr><td class="db-state-cell" colspan="6">Loading…</td></tr></tbody>
+              <thead><tr><th>Expert</th><th>Affiliation</th><th>Country</th><th>H-index</th><th>Papers</th></tr></thead>
+              <tbody id="db-experts-tbody"><tr><td class="db-state-cell" colspan="5">Loading…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -2669,8 +2823,8 @@ section.scene.active { display: block; }
           </div>
           <div class="db-table">
             <table>
-              <thead><tr><th>Company</th><th>Country</th><th>Type</th></tr></thead>
-              <tbody id="db-companies-tbody"><tr><td class="db-state-cell" colspan="3">Loading…</td></tr></tbody>
+              <thead><tr><th>Company</th><th>Country</th><th>Type</th><th>Website</th></tr></thead>
+              <tbody id="db-companies-tbody"><tr><td class="db-state-cell" colspan="4">Loading…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -2722,15 +2876,14 @@ section.scene.active { display: block; }
     <header class="topbar">
       <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
       <div class="domains">
-        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
         <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
         <div class="topbar-search">⌘K · Search</div>
-        <div class="topbar-bell">🔔</div>
       </div>
     </header>
 
@@ -2831,15 +2984,14 @@ section.scene.active { display: block; }
     <header class="topbar">
       <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
       <div class="domains">
-        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
         <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
         <div class="topbar-search">⌘K · Search</div>
-        <div class="topbar-bell">🔔</div>
       </div>
     </header>
 
@@ -3089,15 +3241,14 @@ section.scene.active { display: block; }
     <header class="topbar">
       <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
       <div class="domains">
-        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
         <div class="domain new active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
         <div class="topbar-search">⌘K · Search</div>
-        <div class="topbar-bell">🔔</div>
       </div>
     </header>
 
@@ -3231,14 +3382,14 @@ section.scene.active { display: block; }
             </div>
 
             <table class="sim-table">
-              <thead><tr><th>Compound</th><th>Concentration</th><th>Aroma</th><th>OAV</th><th>Backing</th></tr></thead>
+              <thead><tr><th>Compound</th><th>Concentration</th><th>Aroma</th><th>Backing</th></tr></thead>
               <tbody>
-                <!--SIM_TBODY--><tr><td><div class="sim-mol">2-Methyl-3-furanthiol</div><div class="sim-mol-class">Thiol · MFT</div></td><td><span class="sim-conc">0.04 ppb</span></td><td class="sim-aroma">Meaty · brothy</td><td><span class="sim-oav">OAV 10</span></td><td class="sim-cite"><b>3</b> benchmarks · 2 calib.</td></tr>
-                <tr><td><div class="sim-mol">Bis(2-furfuryl) disulfide</div><div class="sim-mol-class">Disulfide</div></td><td><span class="sim-conc">0.05 ppb</span></td><td class="sim-aroma">Sulfurous · meaty</td><td><span class="sim-oav">OAV 8.5</span></td><td class="sim-cite"><b>2</b> benchmarks · 4 calib.</td></tr>
-                <tr><td><div class="sim-mol">2-Furfurylthiol</div><div class="sim-mol-class">Thiol</div></td><td><span class="sim-conc">0.018 ppb</span></td><td class="sim-aroma">Coffee · roasted</td><td><span class="sim-oav med">OAV 5.0</span></td><td class="sim-cite"><b>2</b> benchmarks</td></tr>
-                <tr><td><div class="sim-mol">2-Acetyl-1-pyrroline</div><div class="sim-mol-class">Pyrrole</div></td><td><span class="sim-conc">0.030 ppb</span></td><td class="sim-aroma">Popcorn · roasted</td><td><span class="sim-oav med">OAV 1.5</span></td><td class="sim-cite"><b>2</b> benchmarks</td></tr>
-                <tr><td><div class="sim-mol">2-Ethyl-3,5-dimethylpyrazine</div><div class="sim-mol-class">Pyrazine</div></td><td><span class="sim-conc">0.21 ppb</span></td><td class="sim-aroma">Earthy · roasted</td><td><span class="sim-oav lo">OAV 0.8</span></td><td class="sim-cite"><b>1</b> benchmark · 3 calib.</td></tr>
-                <tr><td><div class="sim-mol">Furfural</div><div class="sim-mol-class">Aldehyde</div></td><td><span class="sim-conc">1.4 ppm</span></td><td class="sim-aroma">Almond · sweet</td><td><span class="sim-oav lo">OAV 0.5</span></td><td class="sim-cite"><b>4</b> benchmarks</td></tr>
+                <!--SIM_TBODY--><tr><td><div class="sim-mol">2-Methyl-3-furanthiol</div><div class="sim-mol-class">Thiol · MFT</div></td><td><span class="sim-conc">0.04 ppb</span></td><td class="sim-aroma">Meaty · brothy</td><td class="sim-cite"><b>3</b> benchmarks · 2 calib.</td></tr>
+                <tr><td><div class="sim-mol">Bis(2-furfuryl) disulfide</div><div class="sim-mol-class">Disulfide</div></td><td><span class="sim-conc">0.05 ppb</span></td><td class="sim-aroma">Sulfurous · meaty</td><td class="sim-cite"><b>2</b> benchmarks · 4 calib.</td></tr>
+                <tr><td><div class="sim-mol">2-Furfurylthiol</div><div class="sim-mol-class">Thiol</div></td><td><span class="sim-conc">0.018 ppb</span></td><td class="sim-aroma">Coffee · roasted</td><td class="sim-cite"><b>2</b> benchmarks</td></tr>
+                <tr><td><div class="sim-mol">2-Acetyl-1-pyrroline</div><div class="sim-mol-class">Pyrrole</div></td><td><span class="sim-conc">0.030 ppb</span></td><td class="sim-aroma">Popcorn · roasted</td><td class="sim-cite"><b>2</b> benchmarks</td></tr>
+                <tr><td><div class="sim-mol">2-Ethyl-3,5-dimethylpyrazine</div><div class="sim-mol-class">Pyrazine</div></td><td><span class="sim-conc">0.21 ppb</span></td><td class="sim-aroma">Earthy · roasted</td><td class="sim-cite"><b>1</b> benchmark · 3 calib.</td></tr>
+                <tr><td><div class="sim-mol">Furfural</div><div class="sim-mol-class">Aldehyde</div></td><td><span class="sim-conc">1.4 ppm</span></td><td class="sim-aroma">Almond · sweet</td><td class="sim-cite"><b>4</b> benchmarks</td></tr>
               </tbody>
             </table>
 
@@ -3251,18 +3402,9 @@ section.scene.active { display: block; }
               </div>
             </div>
 
-            <div>
-              <div class="sim-card-title" style="margin-top:14px;margin-bottom:8px;">Suggested next steps</div>
-              <div class="sim-next">
-                <div class="sim-next-card"><span class="nx-eyebrow">Bench test</span><h5>Run the Toolbench protocol · Cys × Ribose @ 110°C</h5><p>3-hour run · validates the MFT and FFT predictions with your own GC-MS.</p></div>
-                <div class="sim-next-card"><span class="nx-eyebrow">Compare matrices</span><h5>Re-simulate in pea-protein isolate</h5><p>Same precursors, different matrix — see how yields shift when proteins compete for cysteine.</p></div>
-                <div class="sim-next-card"><span class="nx-eyebrow">Connect</span><h5>Talk to Hofmann or Schieberle</h5><p>2 of your 5 strongest matches have published in this exact region. MeatCODE can intro you.</p></div>
-                <div class="sim-next-card"><span class="nx-eyebrow">Save preset</span><h5>Pin "Meaty top-note baseline"</h5><p>Re-use this setup as the reference for every plant-protein matrix variant you'll test next.</p></div>
-              </div>
-            </div>
 
             <div class="sim-foot-note">
-              <b>How to read this.</b> Concentrations are <i>order-of-magnitude</i> estimates derived from the literature benchmark set, not first-principles chemistry. Use them to decide whether an experiment is worth running, not to skip the experiment. OAV ≥ 1 means the compound is likely above its odor threshold in this matrix.
+              <b>How to read this.</b> Concentrations are <i>order-of-magnitude</i> estimates derived from the literature benchmark set, not first-principles chemistry. Use them to decide whether an experiment is worth running, not to skip the experiment.
             </div>
           </div>
 
@@ -3894,12 +4036,16 @@ function mcLoadOracleChats() {
     var clean = [];
     parsed.forEach(function (c) {
       if (!c || typeof c.q !== 'string' || !c.q.trim()) return;
-      clean.push({
+      var row = {
         id:     String(c.id || mcOracleId()),
         q:      c.q.trim().slice(0, 300),
         pinned: !!c.pinned,
         ts:     Number(c.ts) || 0
-      });
+      };
+      // Optional display name. `q` always stays the real question so that
+      // click-to-repopulate and the dedupe in mcRecordOracleQuestion keep working.
+      if (typeof c.title === 'string' && c.title.trim()) row.title = c.title.trim().slice(0, 120);
+      clean.push(row);
     });
     return clean.length ? mcCapOracleChats(clean) : mcSeedOracleChats();
   } catch (e) {
@@ -3916,17 +4062,76 @@ function mcFindOracleChat(id) {
   }
   return null;
 }
+function mcOracleLabel(c) {
+  return (c && typeof c.title === 'string' && c.title.trim()) ? c.title : (c ? c.q : '');
+}
 function mcOracleRowHTML(c) {
   var pinLabel = c.pinned ? 'Unpin this chat' : 'Pin this chat';
+  var label    = mcOracleLabel(c);
   return '<div class="context-item' + (c.id === oracleActiveId ? ' active' : '') + '"' +
               ' data-chat-id="' + escapeHtml(c.id) + '" title="' + escapeHtml(c.q) + '">' +
            '<div class="dot"' + (c.pinned ? ' style="background:var(--wine)"' : '') + '></div>' +
-           '<span class="ctx-text">' + escapeHtml(c.q) + '</span>' +
+           '<span class="ctx-text">' + escapeHtml(label) + '</span>' +
+           '<button type="button" class="ctx-rename" data-rename-id="' + escapeHtml(c.id) + '"' +
+                  ' aria-label="Rename this chat" title="Rename (or double-click the row)">' +
+             '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" ' +
+                  'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+               '<path d="M11.2 2.6a1.4 1.4 0 0 1 2 2L6 11.8l-2.7.7.7-2.7z"/><path d="M2.8 14h10.4"/>' +
+             '</svg>' +
+           '</button>' +
            '<button type="button" class="save-ico' + (c.pinned ? ' saved' : '') + '"' +
                   ' data-pin-id="' + escapeHtml(c.id) + '"' +
                   ' aria-pressed="' + (c.pinned ? 'true' : 'false') + '"' +
                   ' aria-label="' + pinLabel + '" title="' + pinLabel + '"></button>' +
          '</div>';
+}
+/* Inline rename. Renaming only sets `title` — `q` (the question that gets
+   re-populated on click, and that pin/unpin + dedupe key off) is untouched. */
+function mcOracleRowEl(id) {
+  var rows = document.querySelectorAll('#oracle .context-item[data-chat-id]');
+  for (var i = 0; i < rows.length; i++) {
+    if (rows[i].getAttribute('data-chat-id') === id) return rows[i];
+  }
+  return null;
+}
+function mcStartRenameOracleChat(id) {
+  var chat = mcFindOracleChat(id);
+  var row  = mcOracleRowEl(id);
+  if (!chat || !row || row.querySelector('.ctx-edit')) return;
+  var textEl = row.querySelector('.ctx-text');
+  if (!textEl) return;
+
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'ctx-edit';
+  input.value = mcOracleLabel(chat);
+  input.maxLength = 120;
+  input.setAttribute('aria-label', 'Chat name');
+  row.classList.add('renaming');
+  textEl.parentNode.replaceChild(input, textEl);
+
+  var done = false;
+  function finish(commit) {
+    if (done) return;
+    done = true;
+    if (commit) {
+      var v = input.value.trim();
+      if (!v || v === chat.q) { delete chat.title; }   // empty / same as the question → no alias
+      else chat.title = v.slice(0, 120);
+      mcSaveOracleChats();
+    }
+    row.classList.remove('renaming');
+    renderOracleSidebar();
+  }
+  input.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter') { ev.preventDefault(); finish(true); }
+    else if (ev.key === 'Escape') { ev.preventDefault(); finish(false); }
+    ev.stopPropagation();
+  });
+  input.addEventListener('blur', function () { finish(true); });
+  input.addEventListener('click', function (ev) { ev.stopPropagation(); });
+  input.addEventListener('dblclick', function (ev) { ev.stopPropagation(); });
+  try { input.focus(); input.select(); } catch (e) {}
 }
 function renderOracleSidebar(highlightId) {
   var pinnedEl = document.getElementById('oraclePinnedList');
@@ -3978,6 +4183,7 @@ function mcOpenOracleChat(id) {
 function mcRecordOracleQuestion(q) {
   q = String(q || '').trim();
   if (!q) return;
+  window.mcOracleLastQuestion = q;      // the Lab Stash files snippets under this
   var lower = q.toLowerCase(), existing = null;
   for (var i = 0; i < oracleChats.length; i++) {
     if (oracleChats[i].q.toLowerCase() === lower) { existing = oracleChats[i]; break; }
@@ -4003,10 +4209,19 @@ function mcWireOracleSidebar() {
     el.addEventListener('click', function (ev) {
       var t = ev.target;
       if (!t || !t.closest) return;
+      if (t.closest('.ctx-edit')) return;                 // typing in the rename field
+      var ren = t.closest('.ctx-rename[data-rename-id]');
+      if (ren) { ev.stopPropagation(); mcStartRenameOracleChat(ren.getAttribute('data-rename-id')); return; }
       var pin = t.closest('.save-ico[data-pin-id]');
       if (pin) { ev.stopPropagation(); mcToggleOracleChatPin(pin.getAttribute('data-pin-id')); return; }
       var row = t.closest('.context-item[data-chat-id]');
-      if (row) mcOpenOracleChat(row.getAttribute('data-chat-id'));
+      if (row && !row.classList.contains('renaming')) mcOpenOracleChat(row.getAttribute('data-chat-id'));
+    });
+    el.addEventListener('dblclick', function (ev) {
+      var t = ev.target;
+      if (!t || !t.closest || t.closest('.ctx-edit') || t.closest('.save-ico')) return;
+      var row = t.closest('.context-item[data-chat-id]');
+      if (row) { ev.preventDefault(); mcStartRenameOracleChat(row.getAttribute('data-chat-id')); }
     });
   });
 }
@@ -4817,6 +5032,235 @@ window.rebuildExpertList = function () {};
   });
 })();
 
+/* ============================================================
+   Lab Stash — highlight a sentence in an Oracle answer and keep it.
+   Dragging a selection inside the answer area raises a small floating Save
+   button next to the cursor; saving marks the passage and files it under the
+   question it came from. Persisted client-side under a versioned key (the site
+   has one shared password, so there is no per-user identity to key on) — same
+   contract and failure-tolerance as mc_oracle_history_v1.
+   ============================================================ */
+(function () {
+  var STASH_KEY = 'mc_lab_stash_v1';
+  var STASH_MAX = 100;
+
+  var answerHost = document.getElementById('oracleAnswerSlot');
+  var stashBtn   = document.getElementById('mcStashBtn');
+  if (!answerHost) return;
+
+  var stash        = loadStash();
+  var pendingRange = null;
+  var popEl, panelEl, listEl, backdropEl, countEl;
+
+  function stashId() { return 'ls-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7); }
+  function esc(s) { return (typeof escapeHtml === 'function') ? escapeHtml(s) : String(s == null ? '' : s); }
+
+  function loadStash() {
+    var raw = null;
+    try { raw = localStorage.getItem(STASH_KEY); } catch (e) { return []; }
+    if (!raw) return [];
+    try {
+      var parsed = JSON.parse(raw);
+      if (!parsed || !Array.isArray(parsed)) return [];
+      var clean = [];
+      parsed.forEach(function (s) {
+        if (!s || typeof s.text !== 'string' || !s.text.trim()) return;
+        clean.push({
+          id:   String(s.id || stashId()),
+          text: s.text.trim().slice(0, 1200),
+          q:    String(s.q || '').slice(0, 300),
+          ts:   Number(s.ts) || 0
+        });
+      });
+      return clean.slice(0, STASH_MAX);
+    } catch (e) { return []; }
+  }
+  function saveStash() {
+    try { localStorage.setItem(STASH_KEY, JSON.stringify(stash.slice(0, STASH_MAX))); }
+    catch (e) { /* private mode: the stash still works for this session */ }
+  }
+  function fmtDate(ts) {
+    if (!ts) return '';
+    try { return new Date(ts).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }); }
+    catch (e) { return ''; }
+  }
+
+  /* ── floating Save button ───────────────────────────────── */
+  function ensurePop() {
+    if (popEl) return popEl;
+    popEl = document.createElement('button');
+    popEl.type = 'button';
+    popEl.className = 'mc-stash-pop';
+    popEl.setAttribute('aria-label', 'Save this highlight to the Lab Stash');
+    popEl.innerHTML =
+      '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M4 2.5h8v11l-4-2.6-4 2.6z"/></svg>Save';
+    popEl.addEventListener('mousedown', function (e) { e.preventDefault(); });  // keep the selection alive
+    popEl.addEventListener('click', function (e) { e.stopPropagation(); commitHighlight(); });
+    document.body.appendChild(popEl);
+    return popEl;
+  }
+  function hidePop() {
+    pendingRange = null;
+    if (popEl) popEl.classList.remove('on');
+  }
+  function showPopAt(range) {
+    var pop = ensurePop();
+    var rects = range.getClientRects();
+    var r = rects.length ? rects[rects.length - 1] : range.getBoundingClientRect();
+    if (!r || (!r.width && !r.height)) { hidePop(); return; }
+    pop.classList.add('on');
+    var w = pop.offsetWidth || 84, h = pop.offsetHeight || 30;
+    var left = r.right + 8;
+    var top  = r.bottom - h - 2;
+    if (left + w > window.innerWidth - 8) left = Math.max(8, window.innerWidth - w - 8);
+    if (top < 8) top = 8;
+    if (top + h > window.innerHeight - 8) top = window.innerHeight - h - 8;
+    pop.style.left = Math.round(left) + 'px';
+    pop.style.top  = Math.round(top) + 'px';
+  }
+
+  /* ── selection ─────────────────────────────────────────── */
+  function selectionInsideAnswer(sel) {
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+    var range = sel.getRangeAt(0);
+    if (!range || range.collapsed) return null;
+    if (!answerHost.contains(range.commonAncestorContainer)) return null;   // answers only
+    if (!String(sel.toString()).trim()) return null;
+    return range;
+  }
+  document.addEventListener('mouseup', function (e) {
+    if (popEl && popEl.contains(e.target)) return;
+    // let the browser settle the selection first
+    setTimeout(function () {
+      var sel = window.getSelection ? window.getSelection() : null;
+      var range = selectionInsideAnswer(sel);
+      if (!range) { hidePop(); return; }
+      pendingRange = range.cloneRange();
+      showPopAt(range);
+    }, 0);
+  }, false);
+
+  document.addEventListener('mousedown', function (e) {
+    if (popEl && popEl.contains(e.target)) return;
+    hidePop();
+  }, true);
+  document.addEventListener('scroll', hidePop, true);
+  window.addEventListener('resize', hidePop);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') hidePop(); });
+
+  function markRange(range) {
+    var mark = document.createElement('mark');
+    mark.className = 'mc-stash-mark';
+    try { range.surroundContents(mark); return true; }
+    catch (e) {
+      // surroundContents refuses ranges that straddle element boundaries
+      try { mark.appendChild(range.extractContents()); range.insertNode(mark); return true; }
+      catch (e2) { return false; }
+    }
+  }
+
+  function commitHighlight() {
+    if (!pendingRange) return;
+    var range = pendingRange;
+    var text  = String(range.toString()).replace(/\s+/g, ' ').trim();
+    if (!text) { hidePop(); return; }
+    markRange(range);
+    stash.unshift({
+      id:   stashId(),
+      text: text.slice(0, 1200),
+      q:    String(window.mcOracleLastQuestion || (typeof oracleTextarea !== 'undefined' && oracleTextarea ? oracleTextarea.value : '') || '').trim().slice(0, 300),
+      ts:   Date.now()
+    });
+    if (stash.length > STASH_MAX) stash.length = STASH_MAX;
+    saveStash();
+    renderCount();
+    hidePop();
+    try { window.getSelection().removeAllRanges(); } catch (e) {}
+    if (stashBtn) { stashBtn.classList.add('mc-pop'); setTimeout(function () { stashBtn.classList.remove('mc-pop'); }, 340); }
+  }
+
+  /* ── panel ─────────────────────────────────────────────── */
+  function ensurePanel() {
+    if (panelEl) return panelEl;
+    backdropEl = document.createElement('div');
+    backdropEl.className = 'mc-stash-backdrop';
+    backdropEl.addEventListener('click', closePanel);
+    document.body.appendChild(backdropEl);
+
+    panelEl = document.createElement('div');
+    panelEl.className = 'mc-stash-panel';
+    panelEl.setAttribute('role', 'dialog');
+    panelEl.setAttribute('aria-label', 'Lab Stash');
+    panelEl.innerHTML =
+      '<div class="mc-stash-head">' +
+        '<div><h4>Lab Stash</h4><p>Highlights you kept from Oracle answers</p></div>' +
+        '<button type="button" class="mc-stash-close" aria-label="Close the Lab Stash">&times;</button>' +
+      '</div>' +
+      '<div class="mc-stash-list"></div>';
+    document.body.appendChild(panelEl);
+    listEl = panelEl.querySelector('.mc-stash-list');
+    panelEl.querySelector('.mc-stash-close').addEventListener('click', closePanel);
+    listEl.addEventListener('click', function (e) {
+      var btn = e.target.closest && e.target.closest('[data-stash-remove]');
+      if (!btn) return;
+      var id = btn.getAttribute('data-stash-remove');
+      stash = stash.filter(function (s) { return s.id !== id; });
+      saveStash();
+      renderList();
+      renderCount();
+    });
+    return panelEl;
+  }
+  function renderList() {
+    if (!listEl) return;
+    if (!stash.length) {
+      listEl.innerHTML =
+        '<div class="mc-stash-empty">Nothing stashed yet.<br>Drag to select any sentence in an Oracle answer, ' +
+        'then hit <b>Save</b> to keep it here.</div>';
+      return;
+    }
+    listEl.innerHTML = stash.map(function (s) {
+      var meta = [fmtDate(s.ts), s.q].filter(Boolean);
+      return '<div class="mc-stash-item">' +
+               '<blockquote>' + esc(s.text) + '</blockquote>' +
+               '<div class="mc-stash-meta">' +
+                 (s.q ? '<span class="mc-stash-q" title="' + esc(s.q) + '">' + esc(s.q) + '</span>' : '<span class="mc-stash-q"></span>') +
+                 (meta.length ? '<span>' + esc(fmtDate(s.ts)) + '</span>' : '') +
+               '</div>' +
+               '<button type="button" class="mc-stash-remove" data-stash-remove="' + esc(s.id) + '">Remove</button>' +
+             '</div>';
+    }).join('');
+  }
+  function openPanel() {
+    ensurePanel();
+    renderList();
+    panelEl.classList.add('on');
+    backdropEl.classList.add('on');
+    if (stashBtn) stashBtn.setAttribute('aria-expanded', 'true');
+  }
+  function closePanel() {
+    if (panelEl) panelEl.classList.remove('on');
+    if (backdropEl) backdropEl.classList.remove('on');
+    if (stashBtn) stashBtn.setAttribute('aria-expanded', 'false');
+  }
+  function renderCount() {
+    if (!countEl && stashBtn) countEl = stashBtn.querySelector('.mc-stash-count');
+    if (!countEl) return;
+    countEl.textContent = stash.length;
+    countEl.classList.toggle('zero', stash.length === 0);
+  }
+
+  if (stashBtn) {
+    stashBtn.addEventListener('click', function () {
+      if (panelEl && panelEl.classList.contains('on')) closePanel();
+      else openPanel();
+    });
+  }
+  renderCount();
+})();
+
 </script>
 
 <script>
@@ -5081,6 +5525,12 @@ window.rebuildExpertList = function () {};
       endpoint: '/api/molecules', singular: 'molecule', plural: 'molecules',
       filterParam: 'category', facetKey: 'categories',
       sorts: [['name', 'Name'], ['popularity', 'Popularity']], defaultSort: 'name', limit: 1000,
+      /* Landing filter. Only ~10 of 799 molecules carry a category today, so this
+         default hides most of the table on purpose — which is why it ships loud:
+         highlighted select + "Category: Fats / Show all" chip + an "N of 799"
+         count, so a short table can never read as "the database is broken". */
+      defaultFilter: 'Fats',
+      pageSize: 50,
       columns: [
         { key: 'name', label: 'Molecule', bold: true },
         { key: 'category', label: 'Category' },
@@ -5100,8 +5550,10 @@ window.rebuildExpertList = function () {};
         { key: 'affiliation', label: 'Affiliation', fallback: ['current_org'] },
         { key: 'country', label: 'Country' },
         { key: 'h_index', label: 'H-index', numeric: true },
-        { key: 'total_papers', label: 'Papers', numeric: true },
-        { key: 'relevance_score', label: 'Relevance', numeric: true, pct: true }
+        { key: 'total_papers', label: 'Papers', numeric: true }
+        /* 2026-07-20 · the relevance column is no longer displayed (the API still
+           returns relevance_score — it drives the sort, the ★ toggle and the row
+           detail modal, it just isn't a table column any more). */
       ],
       xlsxFile: 'meatcode_experts.xlsx'
     },
@@ -5112,7 +5564,8 @@ window.rebuildExpertList = function () {};
       columns: [
         { key: 'name', label: 'Company', bold: true },
         { key: 'country', label: 'Country' },
-        { key: 'type', label: 'Type' }
+        { key: 'type', label: 'Type' },
+        { key: 'website', label: 'Website', link: true }
       ],
       xlsxFile: 'meatcode_companies.xlsx'
     },
@@ -5143,6 +5596,24 @@ window.rebuildExpertList = function () {};
     }
     return v;
   }
+  function bareDomain(v) {
+    return String(v).trim().replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/+$/, '');
+  }
+  /* Link columns render a real anchor, or nothing at all — a blank cell must never
+     print "null"/"—" inside what is supposed to be a clickable domain. */
+  function linkHTML(v) {
+    if (v == null || String(v).trim() === '') return '';
+    var label = bareDomain(v);
+    if (!label) return '';
+    var href = String(v).trim();
+    if (!/^https?:\/\//i.test(href)) href = 'https://' + href.replace(/^\/+/, '');
+    return '<a class="db-link" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + esc(label) + '</a>';
+  }
+  function cellHTML(row, col) {
+    if (col.link) return linkHTML(fieldValue(row, col));
+    var val = displayValue(row, col);
+    return col.bold ? '<div class="db-mol">' + val + '</div>' : val;
+  }
   function displayValue(row, col) {
     var v = fieldValue(row, col);
     if (v == null || v === '') return '—';
@@ -5157,7 +5628,12 @@ window.rebuildExpertList = function () {};
 
   function initEntity(name) {
     var cfg = CONFIG[name];
-    STATE[name] = { q: '', filter: '', sort: cfg.defaultSort, toggleOn: false, rows: [], loaded: false, timer: null };
+    STATE[name] = {
+      q: '', filter: cfg.defaultFilter || '', sort: cfg.defaultSort, toggleOn: false,
+      rows: [], loaded: false, timer: null,
+      page: 0, total: null, grandTotal: null,
+      serverPaged: null   // null = not probed yet, true = server honours offset/meta=1
+    };
 
     var searchEl  = refEl(name, 'search');
     var selectEl  = refEl(name, 'select-a');
@@ -5168,6 +5644,8 @@ window.rebuildExpertList = function () {};
     var statusTxt = refEl(name, 'statustext');
     var xlsxEl    = refEl(name, 'xlsx');
     var tbody     = refEl(name, 'tbody');
+    var pagerEl   = refEl(name, 'pager');
+    var chipEl    = refEl(name, 'chip');
 
     function setStatus(mode, text) {
       if (statusEl) { statusEl.classList.remove('loading', 'error'); if (mode) statusEl.classList.add(mode); }
@@ -5180,10 +5658,13 @@ window.rebuildExpertList = function () {};
         var tr = document.createElement('tr');
         tr.style.cursor = 'pointer';
         tr.innerHTML = cfg.columns.map(function (col) {
-          var val = displayValue(row, col);
-          return '<td>' + (col.bold ? '<div class="db-mol">' + val + '</div>' : val) + '</td>';
+          return '<td>' + cellHTML(row, col) + '</td>';
         }).join('');
-        tr.addEventListener('click', function () { openDbDetail(name, row); });
+        tr.addEventListener('click', function (ev) {
+          // a real link in the row wins over the row-detail modal
+          if (ev.target && ev.target.closest && ev.target.closest('a')) return;
+          openDbDetail(name, row);
+        });
         tbody.appendChild(tr);
       });
     }
@@ -5193,39 +5674,173 @@ window.rebuildExpertList = function () {};
       tbody.innerHTML = '<tr><td class="' + cls + '" colspan="' + cfg.columns.length + '">' + esc(text) + '</td></tr>';
     }
 
-    function buildQuery() {
-      var params = [];
-      if (STATE[name].q) params.push('q=' + encodeURIComponent(STATE[name].q));
-      if (STATE[name].filter && cfg.filterParam) params.push(cfg.filterParam + '=' + encodeURIComponent(STATE[name].filter));
-      params.push('sort=' + encodeURIComponent(STATE[name].sort));
-      if (STATE[name].toggleOn && cfg.toggle) params.push(cfg.toggle.param + '=' + cfg.toggle.value);
-      params.push('limit=' + (cfg.limit || 200));
+    /* Paging contract: entities with cfg.pageSize ask for meta=1.
+       - server answers {items:[...], total:N}  -> real server-side paging (limit+offset)
+       - server answers a plain array           -> we page the fetched array client-side
+       Either way the pager, the counts and the filters behave identically. */
+    function buildQuery(paged) {
+      var st = STATE[name], params = [];
+      if (st.q) params.push('q=' + encodeURIComponent(st.q));
+      if (st.filter && cfg.filterParam) params.push(cfg.filterParam + '=' + encodeURIComponent(st.filter));
+      params.push('sort=' + encodeURIComponent(st.sort));
+      if (st.toggleOn && cfg.toggle) params.push(cfg.toggle.param + '=' + cfg.toggle.value);
+      if (paged) {
+        params.push('limit=' + cfg.pageSize);
+        params.push('offset=' + (st.page * cfg.pageSize));
+      } else {
+        params.push('limit=' + (cfg.limit || 200));
+      }
+      if (cfg.pageSize) params.push('meta=1');
       return params.join('&');
+    }
+    function unwrap(payload) {
+      if (payload && !Array.isArray(payload) && Array.isArray(payload.items)) {
+        return { items: payload.items, total: (typeof payload.total === 'number') ? payload.total : payload.items.length, meta: true };
+      }
+      var arr = Array.isArray(payload) ? payload : [];
+      return { items: arr, total: arr.length, meta: false };
+    }
+
+    function pageCount(total) {
+      if (!cfg.pageSize || !total) return 1;
+      return Math.max(1, Math.ceil(total / cfg.pageSize));
+    }
+    function renderPager(total) {
+      if (!pagerEl) return;
+      if (!cfg.pageSize || !total || total <= cfg.pageSize) { pagerEl.innerHTML = ''; pagerEl.hidden = true; return; }
+      var st = STATE[name], pages = pageCount(total);
+      if (st.page > pages - 1) st.page = pages - 1;
+      var from = st.page * cfg.pageSize + 1;
+      var to   = Math.min(total, (st.page + 1) * cfg.pageSize);
+      pagerEl.hidden = false;
+      pagerEl.innerHTML =
+        '<button type="button" class="db-page-btn" data-page="prev"' + (st.page <= 0 ? ' disabled' : '') + '>&larr; Prev</button>' +
+        '<span class="db-page-info">' + from + '–' + to + ' of ' + total + ' · page ' + (st.page + 1) + ' of ' + pages + '</span>' +
+        '<button type="button" class="db-page-btn" data-page="next"' + (st.page >= pages - 1 ? ' disabled' : '') + '>Next &rarr;</button>';
+    }
+    /* Never hide the corpus size: a filtered view reads "10 of 799 molecules". */
+    function statusText(total) {
+      var st = STATE[name];
+      var noun = (total === 1) ? cfg.singular : cfg.plural;
+      var suffix = (st.grandTotal != null && total !== st.grandTotal) ? ' of ' + st.grandTotal : '';
+      return total + suffix + ' ' + noun;
+    }
+    function emptyMessage() {
+      var st = STATE[name];
+      if (st.filter) {
+        return 'No ' + cfg.plural + ' in “' + st.filter + '”' +
+               (st.grandTotal ? ' — the full table has ' + st.grandTotal + '. Hit “Show all”.'
+                              : ' — clear the filter to see them all.');
+      }
+      return 'No ' + cfg.plural + ' match your filters.';
+    }
+    function renderFilterChip() {
+      var v = STATE[name].filter;
+      if (selectEl) selectEl.classList.toggle('filtered', !!v);
+      if (!chipEl) return;
+      if (!v) { chipEl.innerHTML = ''; chipEl.hidden = true; return; }
+      chipEl.hidden = false;
+      chipEl.innerHTML =
+        '<span class="mc-chip-label">' + esc(titleCase(cfg.filterParam)) + ': <b>' + esc(v) + '</b></span>' +
+        '<button type="button" class="mc-chip-clear" data-clear-filter="1" ' +
+        'title="Clear the filter and show every ' + esc(cfg.singular) + '">Show all ' +
+        (STATE[name].grandTotal != null ? STATE[name].grandTotal + ' ' : '') + esc(cfg.plural) + '</button>';
+    }
+    function syncSelect() {
+      if (!selectEl) return;
+      var want = STATE[name].filter || '';
+      if (want) {
+        var has = false;
+        for (var i = 0; i < selectEl.options.length; i++) {
+          if (selectEl.options[i].value === want) { has = true; break; }
+        }
+        if (!has) {
+          var opt = document.createElement('option');
+          opt.value = want; opt.textContent = want;
+          selectEl.appendChild(opt);
+        }
+      }
+      selectEl.value = want;
+      renderFilterChip();
+    }
+    /* One unfiltered probe so the count line can always say "of <corpus size>". */
+    function probeGrandTotal() {
+      fetch(API + cfg.endpoint + '?sort=' + encodeURIComponent(cfg.defaultSort) + '&limit=' + (cfg.limit || 1000) + '&meta=1')
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+        .then(function (payload) {
+          STATE[name].grandTotal = unwrap(payload).total;
+          if (STATE[name].loaded) setStatus('', statusText(STATE[name].total));
+          renderFilterChip();
+        })
+        .catch(function () { /* the count line simply omits the corpus total */ });
+    }
+
+    /* pagedRequest = the rows in hand are already just this page (server-side
+       offset). Otherwise we hold the whole filtered set and slice it here. */
+    function paint(total, pagedRequest) {
+      var st = STATE[name];
+      var view = pagedRequest
+        ? st.rows
+        : (cfg.pageSize ? st.rows.slice(st.page * cfg.pageSize, (st.page + 1) * cfg.pageSize) : st.rows);
+      setStatus('', statusText(total));
+      if (!total) { renderState('empty', emptyMessage()); renderPager(0); }
+      else { renderRows(view); renderPager(total); }
     }
 
     function fetchRows() {
+      var st = STATE[name];
+      var paged = !!(cfg.pageSize && st.serverPaged === true);
       setStatus('loading', 'Loading…');
       renderState('loading', 'Loading ' + cfg.plural + '…');
+      if (pagerEl) { pagerEl.innerHTML = ''; pagerEl.hidden = true; }
       if (xlsxEl) xlsxEl.disabled = true;
-      fetch(API + cfg.endpoint + '?' + buildQuery())
+      renderFilterChip();
+      if (cfg.defaultFilter && !st._probed) { st._probed = true; probeGrandTotal(); }
+      fetch(API + cfg.endpoint + '?' + buildQuery(paged))
         .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
-        .then(function (list) {
-          var rows = Array.isArray(list) ? list : [];
-          STATE[name].rows = rows;
-          STATE[name].loaded = true;
-          setStatus('', rows.length + ' ' + (rows.length === 1 ? cfg.singular : cfg.plural));
-          if (rows.length === 0) renderState('empty', 'No ' + cfg.plural + ' match your filters.');
-          else { renderRows(rows); maybeFocus(name, rows); }
-          if (xlsxEl) xlsxEl.disabled = rows.length === 0;
+        .then(function (payload) {
+          var res = unwrap(payload);
+          if (cfg.pageSize && st.serverPaged === null) st.serverPaged = res.meta;
+          st.rows   = res.items;
+          st.total  = res.total;
+          st.loaded = true;
+          if (!st.q && !st.filter && !st.toggleOn && !paged) st.grandTotal = res.total;
+          paint(res.total, paged);
+          maybeFocus(name, res.items);
+          if (xlsxEl) xlsxEl.disabled = res.items.length === 0;
         })
         .catch(function () {
           STATE[name].rows = []; STATE[name].loaded = false;
           setStatus('error', 'offline');
           renderState('error', "Can't reach the MeatCODE database right now — make sure the server is running, then try again.");
+          if (pagerEl) { pagerEl.innerHTML = ''; pagerEl.hidden = true; }
           if (xlsxEl) xlsxEl.disabled = true;
         });
     }
     STATE[name]._fetch = fetchRows;
+    /* XLSX must stay "the whole filtered set", not just the visible page. */
+    STATE[name]._fetchAll = function () {
+      return fetch(API + cfg.endpoint + '?' + buildQuery(false))
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+        .then(function (payload) { return unwrap(payload).items; });
+    };
+
+    if (pagerEl) pagerEl.addEventListener('click', function (e) {
+      var btn = e.target.closest && e.target.closest('.db-page-btn');
+      if (!btn || btn.disabled) return;
+      var st = STATE[name], pages = pageCount(st.total);
+      if (btn.getAttribute('data-page') === 'prev') { if (st.page <= 0) return; st.page--; }
+      else { if (st.page >= pages - 1) return; st.page++; }
+      if (st.serverPaged === true) fetchRows();
+      else paint(st.total, false);
+      try { tbody.parentNode.scrollTop = 0; } catch (e2) {}
+    });
+    if (chipEl) chipEl.addEventListener('click', function (e) {
+      if (!e.target.closest || !e.target.closest('[data-clear-filter]')) return;
+      STATE[name].filter = ''; STATE[name].page = 0;
+      if (selectEl) selectEl.value = '';
+      fetchRows();
+    });
 
     function loadFacets() {
       if (!selectEl) return;
@@ -5234,39 +5849,49 @@ window.rebuildExpertList = function () {};
         .then(function (data) {
           if (!data) return;
           var list = data[cfg.facetKey] || [];
+          var seen = {};   // syncSelect() may have pre-injected the default-filter option
+          for (var oi = 0; oi < selectEl.options.length; oi++) { seen[selectEl.options[oi].value] = true; }
           list.forEach(function (item) {
+            var val = cfg.facetIsObject ? item.slug : item;
+            if (seen[val]) return;
+            seen[val] = true;
             var opt = document.createElement('option');
             if (cfg.facetIsObject) { opt.value = item.slug; opt.textContent = item.name; }
             else { opt.value = item; opt.textContent = item; }
             selectEl.appendChild(opt);
           });
+          syncSelect();
         })
-        .catch(function () { /* silent — select just keeps its placeholder-only option */ });
+        .catch(function () { syncSelect(); /* select just keeps its placeholder-only option */ });
     }
 
     if (searchEl) searchEl.addEventListener('input', function (e) {
       STATE[name].q = e.target.value.trim();
+      STATE[name].page = 0;
       clearTimeout(STATE[name].timer);
       STATE[name].timer = setTimeout(fetchRows, 300);
     });
-    if (selectEl) selectEl.addEventListener('change', function (e) { STATE[name].filter = e.target.value; fetchRows(); });
+    if (selectEl) selectEl.addEventListener('change', function (e) { STATE[name].filter = e.target.value; STATE[name].page = 0; fetchRows(); });
     if (sortEl) sortEl.addEventListener('click', function (e) {
       var btn = e.target.closest && e.target.closest('.mc-sort-btn');
       if (!btn) return;
       Array.prototype.forEach.call(sortEl.querySelectorAll('.mc-sort-btn'), function (b) { b.classList.remove('on'); });
       btn.classList.add('on');
       STATE[name].sort = btn.getAttribute('data-sort');
+      STATE[name].page = 0;
       fetchRows();
     });
     if (toggleEl) toggleEl.addEventListener('click', function () {
       toggleEl.classList.toggle('on');
       STATE[name].toggleOn = toggleEl.classList.contains('on');
+      STATE[name].page = 0;
       fetchRows();
     });
     if (resetEl) resetEl.addEventListener('click', function () {
-      STATE[name].q = ''; STATE[name].filter = ''; STATE[name].sort = cfg.defaultSort; STATE[name].toggleOn = false;
+      STATE[name].q = ''; STATE[name].filter = cfg.defaultFilter || '';
+      STATE[name].sort = cfg.defaultSort; STATE[name].toggleOn = false; STATE[name].page = 0;
       if (searchEl) searchEl.value = '';
-      if (selectEl) selectEl.value = '';
+      if (selectEl) selectEl.value = cfg.defaultFilter || '';
       if (toggleEl) toggleEl.classList.remove('on');
       if (sortEl) Array.prototype.forEach.call(sortEl.querySelectorAll('.mc-sort-btn'), function (b) {
         b.classList.toggle('on', b.getAttribute('data-sort') === cfg.defaultSort);
@@ -5275,13 +5900,22 @@ window.rebuildExpertList = function () {};
     });
     if (xlsxEl) xlsxEl.addEventListener('click', function () { exportXlsx(name); });
 
+    syncSelect();       // show the landing filter before the facet list lands
     loadFacets();
   }
 
   function exportXlsx(name) {
+    var st = STATE[name] || {};
+    if (st.serverPaged === true && st._fetchAll) {
+      st._fetchAll().then(function (rows) { writeXlsx(name, rows); })
+                    .catch(function () { writeXlsx(name, st.rows || []); });
+      return;
+    }
+    writeXlsx(name, st.rows || []);
+  }
+  function writeXlsx(name, rows) {
     var cfg = CONFIG[name];
-    var rows = (STATE[name] && STATE[name].rows) || [];
-    if (!rows.length) return;
+    if (!rows || !rows.length) return;
     if (typeof XLSX === 'undefined') { alert('Export library did not load — check your connection and try again.'); return; }
     var plain = rows.map(function (row) {
       var o = {};

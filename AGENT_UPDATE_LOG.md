@@ -1,6 +1,6 @@
 # MeatCODE — Agent Update Log
 
-_Last updated: 2026-07-20 ~13:10 UTC · Project Coordinator · team broadcast refreshed (TEAM_BROADCAST.md)_
+_Last updated: 2026-07-20 14:52 UTC · Project Coordinator · PARALLEL team run — 8-feature platform batch (Oracle/Database/Simulate/nav) + molecules pagination_
 
 > **Every agent appends an entry here at the end of any working session — newest at the top.**
 > This is the detailed audit trail of who changed what, when, and why. The short in-file
@@ -16,6 +16,25 @@ _Last updated: 2026-07-20 ~13:10 UTC · Project Coordinator · team broadcast re
 - Result:  <outcome, what works now>
 - Next:    <follow-ups left open, if any>
 ```
+
+---
+
+## 2026-07-20 14:52 UTC · Project Coordinator · PARALLEL team run — 8-feature platform batch (consolidated)
+Dispatched UI/UX + Data Engineer + Advisory simultaneously on Lior's 8 feature requests. Split by FILE (frontend = one workstream in the mockup; backend = molecules pagination; docs). UI/UX completed all 8 frontend items; **the Data Engineer agent didn't report, so the Coordinator implemented the molecules pagination backend directly** to the exact contract the frontend already expected. Specialists returned entries; Coordinator wrote this log.
+
+### UI/UX Designer · 8 frontend features — `app/meatcode_mockup.html` + `UI-UX Designer/MeatCODE_mockup_v9.html`
+- What:   (1a) Experts table: Relevance **column** removed (kept the relevance sort — still orders/toggles/feeds the modal). (1b) Companies: clickable **Website** column (https-normalized anchor, `target=_blank rel=noopener`, bare-domain label, blank when empty). (1c) Molecules: landing filter defaults to **`Fats`**, surfaced loudly (highlighted select + "Category: Fats / Show all 799" clear-chip + "10 of 799" count) so a 10-row table never reads as broken. (2) Molecules **pagination 50/page** (Prev/Next + "1–50 of 799 · page X of N"), dual-mode: uses server `meta=1`/`offset` when present, else client slice; XLSX still exports full filtered set. (3) **Lab Stash**: drag-select inside an answer → floating Save button by cursor → snippet saved to `mc_lab_stash_v1` (versioned, try/catch, cap 100) + text marked; a Lab Stash button by the profile card opens a panel of snippets (text + question/date), each removable; dismisses on click-away/scroll/Esc. (4) Simulate: **OAV column + "Suggested next steps"** removed (Simulate only; Research OAV sub-card untouched). (5) Research: **Saved Queries** sidebar block removed. (6) Nav reordered to **Oracle · Research · Database · Simulate · Map** across all 9 topbars (hash routing is order-independent). (7) **Alarm bell removed** from all 9 topbars + CSS; **search box widened** (rail 220→260). (8a) **Chat rename** in the Pinned/History rail (hover-pencil / double-click → inline edit, stored as a separate `title` so pin/unpin + repopulate keep working). (8b) **Oracle answer now scrolls in its own container** (`max-height: clamp(300px,62vh,760px)` + `overflow-y:auto` + overscroll-contain) so a long answer no longer stretches the page.
+- Result: All 5 inline `<script>` blocks per file pass `node --check` and are md5-identical across the two files; grep confirms zero `topbar-bell` and zero "Saved Queries" left; nav order correct in all 9 topbars; div/section balance preserved. No regression to: sign-in-expired handling, `credentials:'same-origin'`, the "Digging the MeatCODE database…" phase, the dynamic Pinned-above-History rail, the "Sources" label.
+- Next:   Decide whether to also drop the now-hidden Experts **Relevance sort** button. A throwaway `outputs/mc_batch.py` couldn't be deleted from the sandbox (permission) — Lior can remove it. Orphaned `.sim-next*` CSS left in place (harmless).
+
+### Data Engineer (scope completed by Coordinator) · `/api/molecules` pagination — `server/meatcode_server.py`
+- What:   Added `offset` (default 0) alongside `limit` (now default 50, capped 200), and a `meta=1` mode returning `{"items":[...], "total":N, "limit":L, "offset":O}` (total computed over the SAME filters, no limit) so the pager can show "X of N". Bare calls without `meta` return the plain list exactly as before — backward-compatible. Matches the contract the UI/UX pager already coded against.
+- Result: `py_compile` clean; verified live vs Neon — page 1 and page 2 return distinct 50-row slices, `total`=799, `category=Fats` filter → 10. This removes the client-side "fetch all 799 to show 50" fallback.
+- Next:   Same `offset`/`meta` pattern could be applied to `/api/sources` and `/api/experts` if those tables grow; not needed yet.
+
+### Advisory · Lab Stash + Fats-default risk
+- What:   (Agent didn't return a written doc file this run.) Coordinator carries the two decisions it was scoped for: **Lab Stash** correctly follows the client-side/`localStorage` model (no per-user identity behind the shared password — consistent with `docs/oracle_chat_history_design.md`); and the **Fats-default data gap** — only 10/799 molecules are categorized, so the requested default is honest only because the UI now shows "10 of 799" + a one-click "show all".
+- Next:   Lior + Daniel decision: run an LLM categorization pass to populate `molecules.category` for the 784 NULLs, which would make the Fats default (and category filtering generally) actually representative.
 
 ---
 

@@ -6,6 +6,9 @@
 
 _Last updated: 2026-07-20 12:49 UTC · Project Coordinator — parallel team run: Oracle v11 (dictation · dynamic pinned-above-history sidebar · bigger save icon · "Digging the MeatCODE database" copy + additive SSE `status` event). Prev: 2026-07-08 ~10:10 UTC team broadcast; see AGENT_UPDATE_LOG.md_
 
+## Platform batch v12 — shipped to the repo 2026-07-20 (awaiting deploy)
+8 UI features (parallel run) in `app/meatcode_mockup.html` + v9: Experts relevance **column** removed; Companies **Website** link column; Molecules table defaults to **Fats** (⚠️ only 10/799 categorized — UI shows "10 of 799" + one-click "show all") and is **paginated 50/page**; Oracle **Lab Stash** (highlight→save snippets, `localStorage` `mc_lab_stash_v1`, panel by profile); Simulate **OAV row + Suggested-next-steps deleted**; Research **Saved Queries deleted**; nav reordered **Oracle·Research·Database·Simulate·Map**; **alarm bell removed** + search widened; Oracle **chat rename** + **answer scrolls in its own pane** (no more whole-page stretch). Backend: `GET /api/molecules` gained `offset` + `meta=1` ({items,total}) — verified live (50/page, total 799, Fats=10). All script blocks parse + byte-identical across both mockups; server `py_compile` clean. **Not deployed yet — run `deploy.command`.** Open decision: LLM-categorize the 784 NULL `molecules.category` so the Fats default is representative.
+
 ## Oracle v11 — shipped to the repo 2026-07-20 (awaiting deploy)
 Four user-requested Oracle features, built by a 3-agent parallel run:
 - **Voice dictation** in the ask box (Web Speech API; button hidden where unsupported) — needs a real-browser test.
