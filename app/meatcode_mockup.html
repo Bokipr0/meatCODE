@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<!-- Last updated: 2026-07-20 11:57 UTC · advisory session · Oracle now reports an expired site-password sign-in plainly ("Your sign-in expired…") instead of Safari's raw "Load failed"; fetch sends credentials same-origin. (2026-07-08: "no matches in database" note gated DEV-ONLY via ?dev=1. 2026-07-07: Database promoted to top-level domain, Toolbench→Research, #database scene, map upgrade.) -->
+<!-- Last updated: 2026-07-20 12:43 UTC · UI/UX Designer · Oracle v11: voice dictation in the ask box (Web Speech API, hidden where unsupported); bookmark hit-area enlarged inside the Oracle rail only (34px target / 20px glyph); sidebar rebuilt as a dynamic Pinned-above-History list persisted in localStorage (mc_oracle_history_v1); status copy now "Digging the MeatCODE database…" and every user-facing model-name mention removed from the Oracle chrome; consumes the optional SSE `status` event with local fallbacks. (2026-07-20 11:57: expired sign-in message + credentials same-origin — preserved. 2026-07-08: "no matches" note gated DEV-ONLY via ?dev=1. 2026-07-07: Database promoted to top-level domain, Toolbench→Research, #database scene, map upgrade.) -->
 <title>MeatCODE · GFI Israel — flavor & aroma research</title>
 <meta name="viewport" content="width=1440" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1383,6 +1383,97 @@ section.scene.active { display: block; }
   z-index: 2;
 }
 
+/* v11 · Oracle input — dictation (mic) button.
+   The button ships with the [hidden] attribute set; JS removes it only when the
+   Web Speech API is actually present, so unsupported browsers never see a dead
+   control. */
+.oracle-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.oracle-mic {
+  width: 40px; height: 40px; padding: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-dim);
+  cursor: pointer;
+  display: grid; place-items: center;
+  font-family: var(--round);
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+.oracle-mic[hidden] { display: none; }
+.oracle-mic svg { width: 18px; height: 18px; }
+.oracle-mic:hover { border-color: var(--wine); color: var(--wine); background: var(--wine-mist); }
+.oracle-mic:focus-visible { outline: 2px solid var(--wine); outline-offset: 2px; }
+.oracle-mic.recording {
+  background: var(--wine); border-color: var(--wine); color: var(--surface);
+  animation: oracle-mic-pulse 1.5s ease-out infinite;
+}
+.oracle-mic:disabled { opacity: 0.45; cursor: not-allowed; }
+@keyframes oracle-mic-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(0, 115, 110, 0.38); }
+  70%  { box-shadow: 0 0 0 9px rgba(0, 115, 110, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 115, 110, 0); }
+}
+.oracle-mic-status {
+  display: none;
+  font-size: 12.5px; line-height: 1.4;
+  color: var(--wine-deep);
+  padding: 8px 0 0;
+}
+.oracle-mic-status.on { display: block; }
+.oracle-mic-status.warn { color: #6F2A26; }
+
+/* v11 · Oracle sidebar — pinned chats ABOVE history, both rendered by JS.
+   The save/bookmark hit area is enlarged ONLY inside the Oracle scene; database
+   rows and toolbench cards keep the compact 14/18px icon. */
+#oracle .context { overflow-y: auto; }
+#oracle .context-section { min-height: 0; }
+#oracle .context-list {
+  display: flex; flex-direction: column; gap: 3px;
+  max-height: 216px; overflow-y: auto; overflow-x: hidden;
+  padding-right: 2px;
+}
+#oracle .context-item {
+  padding: 3px 3px 3px 10px;
+  min-height: 40px;
+  gap: 9px;
+}
+#oracle .context-item .ctx-text {
+  flex: 1 1 auto; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+#oracle .context-item .save-ico {
+  margin-left: auto;
+  width: 34px; height: 34px;              /* ≥32px comfortable touch target */
+  border-radius: 9px;
+  flex-shrink: 0;
+  padding: 0;                             /* these rows render it as a <button> */
+  -webkit-appearance: none; appearance: none;
+  transition: background 0.15s ease;
+}
+#oracle .context-item .save-ico::before { inset: 7px; }   /* 20px glyph ≈ 1.4× the old 14px */
+#oracle .context-item .save-ico:hover { background: var(--wine-mist); }
+#oracle .context-item .save-ico:focus-visible { outline: 2px solid var(--wine); outline-offset: -2px; }
+#oracle .context-empty {
+  font-size: 12px; line-height: 1.45; color: var(--ink-faint);
+  padding: 4px 10px 6px;
+}
+#oracle .context-item.mc-ctx-in { animation: mc-ctx-in 0.26s ease both; }
+#oracle .context-item .save-ico.mc-pop::before { animation: mc-save-pop 0.32s ease; }
+@keyframes mc-ctx-in {
+  from { opacity: 0; transform: translateY(-7px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes mc-save-pop {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #oracle .context-item.mc-ctx-in,
+  #oracle .context-item .save-ico.mc-pop::before,
+  .oracle-mic.recording { animation: none; }
+}
+
 /* v4 · toolbench filter screen */
 .tbf-wrap { max-width: 1000px; }
 .tbf-head { margin-bottom: 28px; }
@@ -1944,18 +2035,16 @@ section.scene.active { display: block; }
     </header>
 
     <aside class="context">
+      <!-- v11 · Oracle sidebar is rendered by JS (renderOracleSidebar) from the
+           mc_oracle_history_v1 store: pinned chats on top, history underneath.
+           Both lists start empty here on purpose — never hand-edit rows. -->
       <div class="context-section">
-        <div class="context-label">Oracle History</div>
-        <div class="context-item active"><div class="dot"></div>Peptide-involved Maillard aroma<span class="save-ico saved" title="Saved"></span></div>
-        <div class="context-item"><div class="dot"></div>What is Strecker degradation?<span class="save-ico" title="Save chat"></span></div>
-        <div class="context-item"><div class="dot"></div>Top meaty volatiles by class<span class="save-ico" title="Save chat"></span></div>
-        <div class="context-item"><div class="dot"></div>2-acetyl-1-pyrroline sources<span class="save-ico" title="Save chat"></span></div>
+        <div class="context-label">Pinned Chats</div>
+        <div class="context-list" id="oraclePinnedList"></div>
       </div>
       <div class="context-section">
-        <div class="context-label">Pinned Topics</div>
-        <div class="context-item"><div class="dot" style="background:var(--wine)"></div>Maillard chemistry</div>
-        <div class="context-item"><div class="dot" style="background:var(--brass)"></div>Off-note masking</div>
-        <div class="context-item"><div class="dot" style="background:var(--olive)"></div>Plant-protein flavor</div>
+        <div class="context-label">Oracle History</div>
+        <div class="context-list" id="oracleHistoryList"></div>
       </div>
 
       <div class="user-card">
@@ -1997,8 +2086,25 @@ section.scene.active { display: block; }
             <div class="oracle-chips" id="oracleTopicChips">
               <!-- topic chips from onboarding refinement appear here at runtime -->
             </div>
-            <button class="oracle-ask" id="oracleAskBtn">Ask ↑</button>
+            <div class="oracle-actions">
+              <!-- v11 · dictation. Ships hidden; JS unhides it only where the Web
+                   Speech API exists, so there is never a dead mic on screen. -->
+              <button class="oracle-mic" id="oracleMicBtn" type="button" hidden
+                      aria-pressed="false" aria-label="Dictate your question" title="Dictate your question">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="9" y="2.5" width="6" height="11" rx="3"/>
+                  <path d="M5.5 11a6.5 6.5 0 0 0 13 0"/>
+                  <line x1="12" y1="17.5" x2="12" y2="21"/>
+                  <line x1="8.5" y1="21" x2="15.5" y2="21"/>
+                </svg>
+              </button>
+              <button class="oracle-ask" id="oracleAskBtn">Ask ↑</button>
+            </div>
           </div>
+          <!-- Purely visual: this line repaints on every interim speech result, which would
+               spam a live region. Screen readers get the state from the mic button's
+               aria-pressed / aria-label instead. -->
+          <div class="oracle-mic-status" id="oracleMicStatus" aria-hidden="true"></div>
         </div>
 
         <div class="oracle-starter-row" id="oracleStarterRow">
@@ -2013,7 +2119,7 @@ section.scene.active { display: block; }
           <div class="oracle-answer empty">
             <div class="icon">·</div>
             <div class="title">Waiting on your question</div>
-            <div class="hint">Pick a starter above or type your own. Every answer is generated by Claude over papers retrieved from the MeatCODE database — citations link to the source.</div>
+            <div class="hint">Pick a starter above or type your own. Every answer is built from papers retrieved out of the MeatCODE database — citations link straight to the source.</div>
           </div>
         </div>
       </div>
@@ -3743,15 +3849,288 @@ document.querySelectorAll('.oracle-starter').forEach(function (s) {
   });
 });
 
+/* ============================================================
+   v11 · Oracle sidebar — dynamic "pinned above history" rail.
+   Asking a question pushes it into History (most recent first); the bookmark
+   button promotes that chat up into Pinned and back down again. Persisted in
+   localStorage under a versioned key. Every storage call is wrapped because
+   localStorage throws outright in some privacy modes.
+   ============================================================ */
+var MC_ORACLE_KEY = 'mc_oracle_history_v1';
+var MC_ORACLE_MAX = 25;          // per list, so the store can't grow unbounded
+
+/* Shown on a first visit / empty store so the rail is never blank. */
+var MC_ORACLE_SEED = [
+  { id: 'seed-maillard',  q: 'Peptide-involved Maillard aroma', pinned: true,  ts: 4 },
+  { id: 'seed-strecker',  q: 'What is Strecker degradation?',   pinned: false, ts: 3 },
+  { id: 'seed-volatiles', q: 'Top meaty volatiles by class',    pinned: false, ts: 2 },
+  { id: 'seed-2ap',       q: '2-acetyl-1-pyrroline sources',    pinned: false, ts: 1 }
+];
+
+var oracleChats    = mcLoadOracleChats();
+var oracleActiveId = null;
+
+function mcOracleId() {
+  return 'oq-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+}
+function mcSeedOracleChats() {
+  return MC_ORACLE_SEED.map(function (c) {
+    return { id: c.id, q: c.q, pinned: c.pinned, ts: c.ts };
+  });
+}
+function mcOracleRecent(a, b) { return (b.ts || 0) - (a.ts || 0); }
+function mcCapOracleChats(list) {
+  var pinned = list.filter(function (c) { return c.pinned; }).sort(mcOracleRecent).slice(0, MC_ORACLE_MAX);
+  var hist   = list.filter(function (c) { return !c.pinned; }).sort(mcOracleRecent).slice(0, MC_ORACLE_MAX);
+  return pinned.concat(hist);
+}
+function mcLoadOracleChats() {
+  var raw = null;
+  try { raw = localStorage.getItem(MC_ORACLE_KEY); } catch (e) { raw = null; }
+  if (!raw) return mcSeedOracleChats();
+  try {
+    var parsed = JSON.parse(raw);
+    if (!parsed || !Array.isArray(parsed)) return mcSeedOracleChats();
+    var clean = [];
+    parsed.forEach(function (c) {
+      if (!c || typeof c.q !== 'string' || !c.q.trim()) return;
+      clean.push({
+        id:     String(c.id || mcOracleId()),
+        q:      c.q.trim().slice(0, 300),
+        pinned: !!c.pinned,
+        ts:     Number(c.ts) || 0
+      });
+    });
+    return clean.length ? mcCapOracleChats(clean) : mcSeedOracleChats();
+  } catch (e) {
+    return mcSeedOracleChats();
+  }
+}
+function mcSaveOracleChats() {
+  try { localStorage.setItem(MC_ORACLE_KEY, JSON.stringify(oracleChats)); }
+  catch (e) { /* private mode: the rail still works for this session, just won't persist */ }
+}
+function mcFindOracleChat(id) {
+  for (var i = 0; i < oracleChats.length; i++) {
+    if (oracleChats[i].id === id) return oracleChats[i];
+  }
+  return null;
+}
+function mcOracleRowHTML(c) {
+  var pinLabel = c.pinned ? 'Unpin this chat' : 'Pin this chat';
+  return '<div class="context-item' + (c.id === oracleActiveId ? ' active' : '') + '"' +
+              ' data-chat-id="' + escapeHtml(c.id) + '" title="' + escapeHtml(c.q) + '">' +
+           '<div class="dot"' + (c.pinned ? ' style="background:var(--wine)"' : '') + '></div>' +
+           '<span class="ctx-text">' + escapeHtml(c.q) + '</span>' +
+           '<button type="button" class="save-ico' + (c.pinned ? ' saved' : '') + '"' +
+                  ' data-pin-id="' + escapeHtml(c.id) + '"' +
+                  ' aria-pressed="' + (c.pinned ? 'true' : 'false') + '"' +
+                  ' aria-label="' + pinLabel + '" title="' + pinLabel + '"></button>' +
+         '</div>';
+}
+function renderOracleSidebar(highlightId) {
+  var pinnedEl = document.getElementById('oraclePinnedList');
+  var histEl   = document.getElementById('oracleHistoryList');
+  if (!pinnedEl || !histEl) return;
+  var pinned = oracleChats.filter(function (c) { return c.pinned; }).sort(mcOracleRecent);
+  var hist   = oracleChats.filter(function (c) { return !c.pinned; }).sort(mcOracleRecent);
+  pinnedEl.innerHTML = pinned.length
+    ? pinned.map(mcOracleRowHTML).join('')
+    : '<div class="context-empty">Nothing pinned yet — tap the bookmark on a chat to keep it up here.</div>';
+  histEl.innerHTML = hist.length
+    ? hist.map(mcOracleRowHTML).join('')
+    : '<div class="context-empty">Ask the Oracle and your chats collect here.</div>';
+  if (!highlightId) return;
+  // Animate whichever row just moved / just arrived.
+  [pinnedEl, histEl].forEach(function (listEl) {
+    var rows = listEl.querySelectorAll('.context-item');
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].getAttribute('data-chat-id') !== highlightId) continue;
+      rows[i].classList.add('mc-ctx-in');
+      var ico = rows[i].querySelector('.save-ico');
+      if (ico) ico.classList.add('mc-pop');
+      try { rows[i].scrollIntoView({ block: 'nearest' }); } catch (e) {}
+    }
+  });
+}
+function mcToggleOracleChatPin(id) {
+  var chat = mcFindOracleChat(id);
+  if (!chat) return;
+  chat.pinned = !chat.pinned;
+  chat.ts = Date.now();          // land at the top of whichever list it moved into
+  oracleChats = mcCapOracleChats(oracleChats);
+  mcSaveOracleChats();
+  renderOracleSidebar(id);
+}
+function mcOpenOracleChat(id) {
+  var chat = mcFindOracleChat(id);
+  if (!chat) return;
+  oracleActiveId = id;
+  if (oracleTextarea) {
+    oracleTextarea.value = chat.q;    // re-populate, don't auto-ask
+    try {
+      oracleTextarea.focus();
+      oracleTextarea.selectionStart = oracleTextarea.selectionEnd = oracleTextarea.value.length;
+    } catch (e) {}
+  }
+  renderOracleSidebar();
+}
+function mcRecordOracleQuestion(q) {
+  q = String(q || '').trim();
+  if (!q) return;
+  var lower = q.toLowerCase(), existing = null;
+  for (var i = 0; i < oracleChats.length; i++) {
+    if (oracleChats[i].q.toLowerCase() === lower) { existing = oracleChats[i]; break; }
+  }
+  if (existing) {
+    existing.ts = Date.now();
+    oracleActiveId = existing.id;
+  } else {
+    var chat = { id: mcOracleId(), q: q.slice(0, 300), pinned: false, ts: Date.now() };
+    oracleChats.push(chat);
+    oracleActiveId = chat.id;
+  }
+  oracleChats = mcCapOracleChats(oracleChats);
+  mcSaveOracleChats();
+  renderOracleSidebar(oracleActiveId);
+}
+function mcWireOracleSidebar() {
+  ['oraclePinnedList', 'oracleHistoryList'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (!el || el.getAttribute('data-wired') === '1') return;
+    el.setAttribute('data-wired', '1');
+    // Delegated so rows keep working across every re-render without re-binding.
+    el.addEventListener('click', function (ev) {
+      var t = ev.target;
+      if (!t || !t.closest) return;
+      var pin = t.closest('.save-ico[data-pin-id]');
+      if (pin) { ev.stopPropagation(); mcToggleOracleChatPin(pin.getAttribute('data-pin-id')); return; }
+      var row = t.closest('.context-item[data-chat-id]');
+      if (row) mcOpenOracleChat(row.getAttribute('data-chat-id'));
+    });
+  });
+}
+mcWireOracleSidebar();
+renderOracleSidebar();
+
+/* ============================================================
+   v11 · Oracle dictation — browser Web Speech API.
+   Click to start, click again to stop; finalized phrases are appended to the
+   textarea so the question stays editable before Ask. If the API isn't
+   available the button simply stays [hidden] — no broken control on screen.
+   ============================================================ */
+var oracleMicBtn    = document.getElementById('oracleMicBtn');
+var oracleMicStatus = document.getElementById('oracleMicStatus');
+var oracleRec       = null;
+var oracleRecOn     = false;
+
+function mcSetMicStatus(text, isWarning) {
+  if (!oracleMicStatus) return;
+  oracleMicStatus.textContent = text || '';
+  oracleMicStatus.classList.toggle('on', !!text);
+  oracleMicStatus.classList.toggle('warn', !!isWarning);
+}
+function mcSetMicRecording(on) {
+  oracleRecOn = !!on;
+  if (!oracleMicBtn) return;
+  oracleMicBtn.classList.toggle('recording', oracleRecOn);
+  oracleMicBtn.setAttribute('aria-pressed', oracleRecOn ? 'true' : 'false');
+  var lbl = oracleRecOn ? 'Stop dictating' : 'Dictate your question';
+  oracleMicBtn.setAttribute('aria-label', lbl);
+  oracleMicBtn.setAttribute('title', lbl);
+}
+function mcAppendDictation(text) {
+  if (!oracleTextarea) return;
+  text = String(text || '').trim();
+  if (!text) return;
+  var cur = oracleTextarea.value;
+  oracleTextarea.value = (cur && !/\s$/.test(cur)) ? (cur + ' ' + text) : (cur + text);
+  try { oracleTextarea.selectionStart = oracleTextarea.selectionEnd = oracleTextarea.value.length; } catch (e) {}
+}
+function stopOracleDictation() {
+  if (oracleRec && oracleRecOn) { try { oracleRec.stop(); } catch (e) {} }
+  mcSetMicRecording(false);
+}
+(function initOracleDictation() {
+  if (!oracleMicBtn) return;
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;                      // unsupported browser → leave the mic hidden
+  oracleMicBtn.hidden = false;
+
+  oracleMicBtn.addEventListener('click', function () {
+    if (oracleRecOn) { stopOracleDictation(); return; }
+    if (!oracleRec) {
+      try { oracleRec = new SR(); }
+      catch (e) { oracleMicBtn.hidden = true; return; }
+      oracleRec.lang           = 'en-US';
+      oracleRec.continuous     = true;
+      oracleRec.interimResults = true;
+      oracleRec.onstart = function () {
+        mcSetMicRecording(true);
+        mcSetMicStatus('Listening… click the mic again to stop.');
+      };
+      oracleRec.onresult = function (ev) {
+        var interim = '';
+        for (var i = ev.resultIndex; i < ev.results.length; i++) {
+          var res = ev.results[i];
+          if (res.isFinal) mcAppendDictation(res[0].transcript);
+          else interim += res[0].transcript;
+        }
+        interim = interim.trim();
+        mcSetMicStatus(interim ? ('… ' + interim) : 'Listening… click the mic again to stop.');
+      };
+      oracleRec.onerror = function (ev) {
+        var code = (ev && ev.error) || '';
+        mcSetMicRecording(false);
+        if (code === 'not-allowed' || code === 'service-not-allowed') {
+          mcSetMicStatus('Microphone blocked. Allow mic access for this site, then try again.', true);
+        } else if (code === 'no-speech') {
+          mcSetMicStatus('Didn\'t catch that — try again.', true);
+        } else if (code === 'aborted') {
+          mcSetMicStatus('');
+        } else {
+          mcSetMicStatus('Dictation is unavailable right now — type your question instead.', true);
+        }
+      };
+      oracleRec.onend = function () {
+        mcSetMicRecording(false);
+        // Keep any warning on screen; clear the plain "Listening…" line.
+        if (oracleMicStatus && !oracleMicStatus.classList.contains('warn')) mcSetMicStatus('');
+      };
+    }
+    try { oracleRec.start(); }
+    catch (e) {
+      mcSetMicRecording(false);
+      mcSetMicStatus('Couldn\'t start the microphone. Try again.', true);
+    }
+  });
+})();
+
+/* User-facing phase copy. Kept in one place so the wording stays consistent
+   between the initial loading state and the SSE `status` events. */
+var ORACLE_PHASE_RETRIEVING = 'Digging the MeatCODE database…';
+var ORACLE_PHASE_ANSWERING  = 'Writing your answer…';
+
 function setOracleLoading() {
   oracleSlot.innerHTML =
     '<div class="oracle-answer">' +
       '<h3>Answer</h3>' +
       '<div class="oracle-loading">' +
         '<span class="dot"></span><span class="dot"></span><span class="dot"></span>' +
-        '<span class="label">Searching the database and asking Claude…</span>' +
+        '<span class="label">' + ORACLE_PHASE_RETRIEVING + '</span>' +
       '</div>' +
     '</div>';
+}
+/* Phase line inside the streaming answer skeleton. Driven by the server's
+   additive `status` SSE event when it arrives, and by our own local fallbacks
+   (first `sources`, first `chunk`) when it doesn't. */
+function setOraclePhase(text) {
+  var el = document.getElementById('oraclePhaseLabel');
+  if (el) el.textContent = text;
+}
+function hideOraclePhase() {
+  var el = document.getElementById('oraclePhase');
+  if (el) el.style.display = 'none';
 }
 function setOracleError(msg) {
   oracleSlot.innerHTML =
@@ -3765,7 +4144,7 @@ function setOracleEmpty() {
     '<div class="oracle-answer empty">' +
       '<div class="icon">·</div>' +
       '<div class="title">Waiting on your question</div>' +
-      '<div class="hint">Pick a starter above or type your own. Every answer is generated by Claude over papers retrieved from the MeatCODE database — citations link to the source.</div>' +
+      '<div class="hint">Pick a starter above or type your own. Every answer is built from papers retrieved out of the MeatCODE database — citations link straight to the source.</div>' +
     '</div>';
 }
 
@@ -3773,6 +4152,9 @@ function askOracle() {
   if (!oracleTextarea) return;
   var q = oracleTextarea.value.trim();
   if (!q) { oracleTextarea.focus(); return; }
+  stopOracleDictation();          // asking ends any in-progress dictation
+  mcSetMicStatus('');
+  mcRecordOracleQuestion(q);      // drop it into the sidebar history
   setOracleLoading();
   oracleAskBtn.disabled = true;
 
@@ -3808,6 +4190,10 @@ function streamSSE(res) {
   oracleSlot.innerHTML =
     '<div class="oracle-answer" id="oracleAnswer">' +
       '<h3>Answer</h3>' +
+      '<div class="oracle-loading" id="oraclePhase" style="padding: 4px 0 14px;">' +
+        '<span class="dot"></span><span class="dot"></span><span class="dot"></span>' +
+        '<span class="label" id="oraclePhaseLabel">' + ORACLE_PHASE_RETRIEVING + '</span>' +
+      '</div>' +
       '<div class="oracle-evidence" id="oracleSources" style="border-top: none; padding-top: 0; margin-bottom: 14px;">' +
         '<div class="oracle-evidence-label">Sources retrieved</div>' +
         '<div id="oracleSourcesList"></div>' +
@@ -3843,9 +4229,18 @@ function streamSSE(res) {
       });
       var data = dataLines.join('\n');
       if (event === 'chunk') {
+        // Text is flowing — the phase line has done its job.
+        if (!fullText) hideOraclePhase();
         fullText += data;
         bodyEl.innerHTML = renderAnswerHTML(fullText, citedIds);
+      } else if (event === 'status') {
+        // Additive server event (older server builds simply never send it — the
+        // local fallbacks below cover that case).
+        if (data === 'retrieving')     setOraclePhase(ORACLE_PHASE_RETRIEVING);
+        else if (data === 'answering') setOraclePhase(ORACLE_PHASE_ANSWERING);
       } else if (event === 'sources') {
+        // Local fallback: retrieval is done by the time sources land.
+        setOraclePhase(ORACLE_PHASE_ANSWERING);
         try {
           var arr = JSON.parse(data);
           window.__REAKTZIA_SOURCES = {};
@@ -3860,7 +4255,7 @@ function streamSSE(res) {
           if (arr.length === 0) {
             // "No matches" note is DEV-ONLY (visit with ?dev=1 to see it); hidden from normal users.
             if (/[?&]dev=1(?:&|$)/.test(location.search)) {
-              sourcesEl.innerHTML = '<div class="oracle-cite"><span class="oracle-cite-text">No matches in the database — Claude is responding based on the question alone.</span></div>';
+              sourcesEl.innerHTML = '<div class="oracle-cite"><span class="oracle-cite-text">No matches in the database — answering from the question alone.</span></div>';
             } else {
               var __srcBlock = document.getElementById('oracleSources');
               if (__srcBlock) __srcBlock.style.display = 'none';
@@ -3879,6 +4274,7 @@ function streamSSE(res) {
 }
 
 function finalizeAnswer(fullText, bodyEl, followsEl, citedIds) {
+  hideOraclePhase();
   // Split off "Follow-ups:" line if present
   var match = fullText.match(/\n+\s*Follow-?ups?:\s*([\s\S]+)$/i);
   var mainText = fullText;

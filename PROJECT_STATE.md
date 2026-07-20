@@ -4,7 +4,16 @@
 > Asana owns *tasks & priorities*; this file owns *technical reality* — what's built, what's broken,
 > what's in flight. Keep it short and current, not a changelog.
 
-_Last updated: 2026-07-08 ~10:10 UTC · Project Coordinator — posted a team broadcast (`TEAM_BROADCAST.md`). Prev: 10:05 UTC Advisory — Render deploy live + DB-tab same-origin fix + grounded-retrieval/relevance-gate workstream; see AGENT_UPDATE_LOG.md_
+_Last updated: 2026-07-20 12:49 UTC · Project Coordinator — parallel team run: Oracle v11 (dictation · dynamic pinned-above-history sidebar · bigger save icon · "Digging the MeatCODE database" copy + additive SSE `status` event). Prev: 2026-07-08 ~10:10 UTC team broadcast; see AGENT_UPDATE_LOG.md_
+
+## Oracle v11 — shipped to the repo 2026-07-20 (awaiting deploy)
+Four user-requested Oracle features, built by a 3-agent parallel run:
+- **Voice dictation** in the ask box (Web Speech API; button hidden where unsupported) — needs a real-browser test.
+- **Save/bookmark icon enlarged** to a 34px target, scoped to the Oracle sidebar only.
+- **Sidebar rebuilt as dynamic Pinned-above-History** — asking appends to History, the bookmark promotes a chat to Pinned; persisted in `localStorage` (`mc_oracle_history_v1`, 25/list cap, try/catch throughout). Deliberately client-side: the site is behind ONE shared password, so there is **no per-user identity** to key server-side history to — see `docs/oracle_chat_history_design.md`.
+- **No model name shown to users**: "Searching the database and asking Claude…" → **"Digging the MeatCODE database…"**; server error text is now vendor-neutral (real diagnostic kept in Render logs). `POST /api/ask` gained an **additive** `event: status` (`retrieving`/`answering`) so the phase label is honest; fully backward-compatible.
+Verified: 10/10 inline script blocks parse in both mockups (byte-identical), server `py_compile` clean, SSE order `status→sources→status→chunk→done`. **Not yet deployed — run `deploy.command`.**
+Open decision for Lior + Daniel: whether to add an anonymous server-side question log (no identity) as validation-year evidence.
 
 ---
 

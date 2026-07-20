@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-# Last updated: 2026-07-08 10:20 UTC · Algorithm Expert · POST /api/ask is now grounded RAG: retrieves
+# Last updated: 2026-07-20 12:49 UTC · Coordinator (for Data Engineer) · /api/ask now emits an ADDITIVE
+#   `event: status` ("retrieving" before the DB query, "answering" before the model streams) so the UI can
+#   honestly show "Digging the MeatCODE database…"; SSE headers moved ahead of retrieval to allow it.
+#   User-facing error text is now vendor-neutral ("The MeatCODE Oracle is unavailable right now…") with the
+#   real diagnostic kept in the server log. Also (2026-07-20 earlier): shared-password Basic Auth gate.
+# Previously: 2026-07-08 10:20 UTC · Algorithm Expert · POST /api/ask is now grounded RAG: retrieves
 #   the top-6 sources via ts_rank_cd(search_vec, websearch_to_tsquery(...)) filtered to citable +
 #   on-topic (relevance_llm >= 60), streams those REAL rows in the existing `sources` SSE event (was
 #   hardcoded to []), and grounds Claude's system prompt to answer ONLY from those numbered sources
@@ -712,15 +717,11 @@ class Handler(SimpleHTTPRequestHandler):
         sources_rows = []
         used_fallback = False
         retrieval_ok = True
-        if DATABASE_URL:
-            try:
-                sources_rows, used_fallback = _retrieve_sources(question)
-            except Exception as e:
-                retrieval_ok = False
-                sys.stderr.write("[oracle] retrieval error: %s\n" % str(e)[:300])
-        grounded = bool(DATABASE_URL) and retrieval_ok
 
-        # SSE response — start streaming
+        # SSE response — headers go out BEFORE retrieval runs, so we can emit an
+        # honest "retrieving" phase while the DB query is actually in flight (the UI
+        # shows "Digging the MeatCODE database…" during it). Everything from here on
+        # is a committed 200; retrieval failures degrade gracefully rather than 500.
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
         self.send_header("Cache-Control", "no-cache")
@@ -738,16 +739,29 @@ class Handler(SimpleHTTPRequestHandler):
             except (BrokenPipeError, ConnectionResetError):
                 pass
 
+        # 0) status: retrieving — ADDITIVE and backward-compatible. Clients that
+        #    ignore `status` behave exactly as before (sources → chunk → done).
+        send_event("status", "retrieving")
+
+        if DATABASE_URL:
+            try:
+                sources_rows, used_fallback = _retrieve_sources(question)
+            except Exception as e:
+                retrieval_ok = False
+                sys.stderr.write("[oracle] retrieval error: %s\n" % str(e)[:300])
+        grounded = bool(DATABASE_URL) and retrieval_ok
+
         # 1) sources event — the REAL rows retrieved above (grounded RAG; this used
         #    to be hardcoded "[]"). The Oracle UI still handles an empty array
-        #    gracefully ("No matches in the database…") for the DB-missing /
-        #    retrieval-failed / genuinely-nothing-matched cases.
+        #    gracefully for the DB-missing / retrieval-failed / genuinely-nothing-
+        #    matched cases.
         send_event("sources", json.dumps(_public_source_fields(sources_rows), default=str))
 
-        # 2) GROUND + stream — Claude's answer as chunk events, grounded in those
-        #    sources when retrieval worked; the untouched original SYSTEM_PROMPT
-        #    otherwise (graceful fallback). Model/config/messages shape unchanged.
+        # 2) GROUND + stream — the answer as chunk events, grounded in those sources
+        #    when retrieval worked; the untouched original SYSTEM_PROMPT otherwise
+        #    (graceful fallback). Model/config/messages shape unchanged.
         system_prompt = _grounding_system_prompt(sources_rows, used_fallback) if grounded else SYSTEM_PROMPT
+        send_event("status", "answering")
         try:
             with client.messages.stream(
                 model=MODEL,
@@ -759,7 +773,10 @@ class Handler(SimpleHTTPRequestHandler):
                     if text: send_event("chunk", text)
             send_event("done", "")
         except Exception as e:
-            send_event("error", "Claude API error: " + str(e))
+            # Keep the real diagnostic in the server log (Render → Logs), but show the
+            # user vendor-neutral product language — never name the model provider.
+            sys.stderr.write("[oracle] answer error: %s\n" % str(e)[:300])
+            send_event("error", "The MeatCODE Oracle is unavailable right now. Please try again in a moment.")
 
 
 # ─── Run it ──────────────────────────────────────────────────────────
