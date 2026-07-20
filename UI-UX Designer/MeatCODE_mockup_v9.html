@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- v9 = canonical app/meatcode_mockup.html + v8 UI/UX polish forward-ported. Last updated: 2026-07-20 14:46 UTC · UI/UX Designer · kept in sync with the live mockup — batch of 8 (see the stamp below). Prior: Oracle v11: voice dictation in the ask box (Web Speech API, hidden where unsupported); bookmark hit-area enlarged inside the Oracle rail only (34px target / 20px glyph); sidebar rebuilt as a dynamic Pinned-above-History list persisted in localStorage (mc_oracle_history_v1); status copy now "Digging the MeatCODE database…" and every user-facing model-name mention removed from the Oracle chrome; consumes the optional SSE `status` event with local fallbacks. (2026-07-20 11:57: expired sign-in message + credentials same-origin — preserved. 2026-07-08: avatar/bell/personas/dashboard/globe/bubbles on the newer Database+Simulate build; Oracle "no matches" note gated DEV-ONLY (?dev=1).) -->
+<!-- v9 = canonical app/meatcode_mockup.html + v8 UI/UX polish forward-ported. Last updated: 2026-07-20 16:02 UTC · UI/UX Designer · kept in sync with the live mockup — fixed app-shell viewport (100vh, inner-only scroll) + Oracle default/brand-home + textarea reset + shorter ask box (see the stamp below). Prior: Oracle v11: voice dictation in the ask box (Web Speech API, hidden where unsupported); bookmark hit-area enlarged inside the Oracle rail only (34px target / 20px glyph); sidebar rebuilt as a dynamic Pinned-above-History list persisted in localStorage (mc_oracle_history_v1); status copy now "Digging the MeatCODE database…" and every user-facing model-name mention removed from the Oracle chrome; consumes the optional SSE `status` event with local fallbacks. (2026-07-20 11:57: expired sign-in message + credentials same-origin — preserved. 2026-07-08: avatar/bell/personas/dashboard/globe/bubbles on the newer Database+Simulate build; Oracle "no matches" note gated DEV-ONLY (?dev=1).) -->
 <meta charset="utf-8" />
-<!-- Last updated: 2026-07-20 14:46 UTC · UI/UX Designer · batch of 8: Database fixes (experts relevance column removed · companies Website links · molecules default to the Fats category, shown as a clearable chip with an “N of 799” count) · molecules pagination 50/page (uses meta=1+offset when the server offers it, client-side slicing otherwise) · Oracle highlight-to-save “Lab Stash” (mc_lab_stash_v1) · Simulate OAV column + Suggested-next-steps removed · Research Saved Queries removed · nav reordered to Oracle·Research·Database·Simulate·Map · topbar bell removed + search widened · Oracle chat rename + the answer pane now scrolls in its own container. -->
+<!-- Last updated: 2026-07-20 16:02 UTC · UI/UX Designer · Fixed app-shell viewport: html/body/.app are 100vh + overflow:hidden, so only inner regions scroll (.canvas and the Oracle answer/rail; flex children get min-height:0). Oracle rail is a full-height flex column — Pinned+History scroll in an internal region while the profile card + Lab Stash stay pinned to the bottom. Oracle is now the default landing scene and the brand mark routes to #oracle. Oracle textarea clears after each submit; ask box shortened (padding 14/22/12, min-height 64px, max-height 132px). · Prior — batch of 8: Database fixes (experts relevance column removed · companies Website links · molecules default to the Fats category, shown as a clearable chip with an “N of 799” count) · molecules pagination 50/page (uses meta=1+offset when the server offers it, client-side slicing otherwise) · Oracle highlight-to-save “Lab Stash” (mc_lab_stash_v1) · Simulate OAV column + Suggested-next-steps removed · Research Saved Queries removed · nav reordered to Oracle·Research·Database·Simulate·Map · topbar bell removed + search widened · Oracle chat rename + the answer pane now scrolls in its own container. -->
 <title>MeatCODE · GFI Israel — flavor & aroma research</title>
 <meta name="viewport" content="width=1440" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -69,13 +69,14 @@
 * { box-sizing: border-box; }
 html, body {
   margin: 0; padding: 0;
+  height: 100%;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--round);
   -webkit-font-smoothing: antialiased;
   letter-spacing: 0.005em;
 }
-body { min-height: 100vh; }
+body { height: 100%; }
 section.scene { display: none; }
 section.scene.active { display: block; }
 
@@ -84,7 +85,10 @@ section.scene.active { display: block; }
   display: grid;
   grid-template-rows: 64px 1fr 88px;
   grid-template-columns: 248px 1fr;
-  min-height: 100vh;
+  /* Fixed, app-like viewport: the shell is exactly one screen tall and never
+     scrolls itself — only the inner regions (.canvas, the Oracle rail) do. */
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* ── Top brand header (spans both columns) ── */
@@ -214,6 +218,7 @@ section.scene.active { display: block; }
   grid-column: 2;
   padding: 32px 36px 36px;
   overflow: auto;
+  min-height: 0;   /* lets this grid cell scroll internally instead of stretching the shell */
 }
 
 /* ── Bottom dock (4 persistent tools) ── */
@@ -405,7 +410,7 @@ section.scene.active { display: block; }
   background: var(--surface);
   border: 1.5px solid var(--line);
   border-radius: 22px;
-  padding: 22px 24px 16px;
+  padding: 14px 22px 12px;   /* was 22px 24px 16px — a shorter, tighter ask box */
   margin-bottom: 24px;
   box-shadow: var(--shadow);
 }
@@ -849,7 +854,7 @@ section.scene.active { display: block; }
 
 /* ── Oracle: live input + answer states ── */
 .oracle-textarea {
-  width: 100%; min-height: 64px;
+  width: 100%; min-height: 64px; max-height: 132px; overflow-y: auto;
   resize: none; border: none; outline: none; background: transparent;
   font-family: var(--round); color: var(--ink);
   font-size: 18px; line-height: 1.5;
@@ -1460,7 +1465,18 @@ section.scene.active { display: block; }
 /* v11 · Oracle sidebar — pinned chats ABOVE history, both rendered by JS.
    The save/bookmark hit area is enlarged ONLY inside the Oracle scene; database
    rows and toolbench cards keep the compact 14/18px icon. */
-#oracle .context { overflow-y: auto; }
+/* 2026-07-20 · Fixed shell: the rail is a full-height flex column. The Pinned +
+   History sections live in one internal scroll region (.oracle-rail-scroll) so
+   the profile card + Lab Stash button stay pinned to the bottom, always visible
+   without scrolling the page. */
+#oracle .context { overflow: hidden; }
+#oracle .oracle-rail-scroll {
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overflow-x: hidden;
+  display: flex; flex-direction: column; gap: 18px;
+}
+#oracle .mc-stash-btn { margin-top: 0; }
+#oracle .mc-stash-btn, #oracle .user-card { flex-shrink: 0; }
 #oracle .context-section { min-height: 0; }
 #oracle .context-list {
   display: flex; flex-direction: column; gap: 3px;
@@ -2229,13 +2245,17 @@ section.scene.active { display: block; }
       <!-- v11 · Oracle sidebar is rendered by JS (renderOracleSidebar) from the
            mc_oracle_history_v1 store: pinned chats on top, history underneath.
            Both lists start empty here on purpose — never hand-edit rows. -->
-      <div class="context-section">
-        <div class="context-label">Pinned Chats</div>
-        <div class="context-list" id="oraclePinnedList"></div>
-      </div>
-      <div class="context-section">
-        <div class="context-label">Oracle History</div>
-        <div class="context-list" id="oracleHistoryList"></div>
+      <!-- Pinned + History share one internal scroll region so the profile card
+           and Lab Stash button below stay pinned to the bottom of the rail. -->
+      <div class="oracle-rail-scroll">
+        <div class="context-section">
+          <div class="context-label">Pinned Chats</div>
+          <div class="context-list" id="oraclePinnedList"></div>
+        </div>
+        <div class="context-section">
+          <div class="context-label">Oracle History</div>
+          <div class="context-list" id="oracleHistoryList"></div>
+        </div>
       </div>
 
       <!-- Lab Stash: highlights saved out of Oracle answers (mc_lab_stash_v1). -->
@@ -2824,8 +2844,7 @@ section.scene.active { display: block; }
               <option value="">All countries</option>
             </select>
             <div class="mc-sort-group" id="db-experts-sort">
-              <button class="mc-sort-btn on" data-sort="relevance">Relevance</button>
-              <button class="mc-sort-btn" data-sort="h_index">H-index</button>
+              <button class="mc-sort-btn on" data-sort="h_index">H-index</button>
               <button class="mc-sort-btn" data-sort="papers">Papers</button>
             </div>
             <button class="mc-toggle-chip" id="db-experts-toggle" type="button">★ Top-rated only</button>
@@ -3489,7 +3508,7 @@ section.scene.active { display: block; }
 
 <script>
 function setScene() {
-  var h = location.hash.replace('#', '') || 'dashboard';
+  var h = location.hash.replace('#', '') || 'oracle';
   document.querySelectorAll('section.scene').forEach(function(s){ s.classList.remove('active'); });
   var el = document.getElementById(h);
   if (el) el.classList.add('active');
@@ -3916,6 +3935,19 @@ document.querySelectorAll('section.scene .brand').forEach(function (brand) {
     '<img class="gfi-cobrand-logo" src="' + GFI_LOGO_URL + '" alt="GFI Israel" />' +
     '<div class="gfi-cobrand-text">An initiative by<b>GFI Israel</b></div>';
   brand.appendChild(co);
+});
+
+/* The brand mark (top-left "GFI Israel · MeatCODE") is a home control: clicking
+   it — or hitting Enter/Space when focused — routes to the Oracle scene. */
+document.querySelectorAll('section.scene .brand').forEach(function (brand) {
+  brand.style.cursor = 'pointer';
+  brand.setAttribute('role', 'button');
+  brand.setAttribute('tabindex', '0');
+  brand.setAttribute('title', 'Go to Oracle');
+  brand.addEventListener('click', function () { location.hash = '#oracle'; });
+  brand.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); location.hash = '#oracle'; }
+  });
 });
 
 /* ============================================================
@@ -4408,6 +4440,7 @@ function askOracle() {
   stopOracleDictation();          // asking ends any in-progress dictation
   mcSetMicStatus('');
   mcRecordOracleQuestion(q);      // drop it into the sidebar history
+  oracleTextarea.value = '';      // reset the box for the next question (already captured above)
   setOracleLoading();
   oracleAskBtn.disabled = true;
 
@@ -5581,7 +5614,7 @@ window.rebuildExpertList = function () {};
     experts: {
       endpoint: '/api/experts', singular: 'expert', plural: 'experts',
       filterParam: 'country', facetKey: 'countries',
-      sorts: [['relevance', 'Relevance'], ['h_index', 'H-index'], ['papers', 'Papers']], defaultSort: 'relevance', limit: 500,
+      sorts: [['h_index', 'H-index'], ['papers', 'Papers']], defaultSort: 'h_index', limit: 500,
       toggle: { param: 'min_relevance', value: '0.9', label: '★ Top-rated only' },
       columns: [
         { key: 'name', label: 'Expert', bold: true },

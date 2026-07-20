@@ -1,6 +1,6 @@
 # MeatCODE — Agent Update Log
 
-_Last updated: 2026-07-20 14:52 UTC · Project Coordinator · PARALLEL team run — 8-feature platform batch (Oracle/Database/Simulate/nav) + molecules pagination_
+_Last updated: 2026-07-20 16:09 UTC · Project Coordinator · molecules categorized (799/799) + Experts relevance-sort removed + fixed-viewport Oracle UX_
 
 > **Every agent appends an entry here at the end of any working session — newest at the top.**
 > This is the detailed audit trail of who changed what, when, and why. The short in-file
@@ -16,6 +16,23 @@ _Last updated: 2026-07-20 14:52 UTC · Project Coordinator · PARALLEL team run 
 - Result:  <outcome, what works now>
 - Next:    <follow-ups left open, if any>
 ```
+
+---
+
+## 2026-07-20 16:09 UTC · Project Coordinator · molecule categorization + Experts sort removal + fixed-viewport Oracle (consolidated)
+Follow-up to the 8-feature batch: Lior asked to (a) remove the now-orphaned Experts relevance **sort** button and (b) actually categorize the molecules so the Fats default is representative; then mid-turn added 4 more Oracle/layout fixes. Coordinator did (a)+(b) directly; a UI/UX agent did the 4 layout fixes.
+
+### Coordinator (Data) · molecules.category filled 799/799 — `pipeline/categorize_molecules.py` (new)
+- What:   New re-runnable categorizer classifying molecules into a 15-class meat-flavor chemical taxonomy (Fats · Aldehydes · Ketones · Pyrazines · Sulfur compounds · Furans · Nitrogen compounds · Alcohols · Acids · Esters · Lactones · Terpenes · Phenols · Hydrocarbons · Other). Two modes: `--` (LLM Haiku, batched, JSON) and `--heuristic` (instant, offline, name-based first-match-by-priority). Only touches rows where category IS NULL OR 'Unclassified' (curated Fats/Proteins preserved). Ran it: **40 via LLM + 748 via heuristic (one bulk `UPDATE … FROM VALUES`), 0 left uncategorized.**
+- Files:  `pipeline/categorize_molecules.py`.
+- Why:    Only 10/799 molecules were categorized, so the Molecules **Fats landing default + category filter** were near-empty. Now the filter is meaningful.
+- Result: **All 799 categorized** (verified live). Distribution: Sulfur compounds 210 · Pyrazines 131 · Nitrogen compounds 106 · Furans 59 · Aldehydes 59 · Ketones 48 · Alcohols 40 · Esters 37 · Terpenes 24 · Other 20 · Acids 16 · Phenols 13 · Lactones 13 · **Fats 12** · Hydrocarbons 10 · Proteins 1 — chemically sensible for aroma volatiles; only 2.7% "Other". Perf note: per-row UPDATE over Neon latency hit the sandbox's 45s cap → switched to a single bulk `execute_values` UPDATE (instant).
+- Next:   Heuristic is name-based; a spot-check or an LLM re-pass on the "Other" 20 + any borderline calls would tighten it. `Fats` = 12 now (small but real — most of the corpus is genuinely volatiles, not lipids).
+
+### UI/UX Designer (frontend, coordinator did the sort removal) · Experts sort + fixed viewport — `app/meatcode_mockup.html` + `UI-UX Designer/MeatCODE_mockup_v9.html`
+- What:   (Coordinator) Removed the Experts **Relevance sort** button in both the `#db-experts-sort` markup and the DB-tab config (`sorts` list + `defaultSort` → `h_index`); left the Map scene's own relevance sort untouched (different feature) and the "Top-rated only" filter intact. (UI/UX agent) Then the 4 mid-turn requests: **(1)** fixed 100vh app shell (`html/body height:100%`; `.app` `min-height:100vh`→`height:100vh; overflow:hidden`; `.canvas` `min-height:0`) so only inner regions scroll and a long Oracle answer no longer stretches the page; **(2)** left Oracle rail rebuilt as a full-height flex column — Pinned+History wrapped in `.oracle-rail-scroll` (scrolls internally) with the **profile card + Lab Stash pinned to the bottom, always visible**; **(3)** **Oracle is now the default landing scene** (`setScene` default `dashboard`→`oracle`) and the brand/logo is a keyboard-accessible control routing to `#oracle`; **(4)** `askOracle()` **clears the textarea after submit** so the user can immediately ask again; plus the ask box height was **narrowed** (padding trimmed, textarea min 64 / max 132px).
+- Result: Both files' 5 `<script>` blocks pass `node --check` and are byte-identical; Oracle `<aside>` div balance 13/13; no regression to SESSION_EXPIRED/`credentials:'same-origin'`, the "Digging the MeatCODE database…" phase, `mc_oracle_history_v1` (+ rename/repopulate), `mc_lab_stash_v1`, the `Sources` label, nav order, or the removed bell.
+- Next:   Eyeball the other scenes' inner scroll (Database/Research/Simulate reaching bottom content) and the Map globe on very short windows (<~765px). Not deployed yet — `deploy.command`.
 
 ---
 
