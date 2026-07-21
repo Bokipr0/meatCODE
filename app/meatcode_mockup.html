@@ -1894,6 +1894,13 @@ section.scene.active { display: block; }
 }
 .mc-stash-remove:hover { color: #8E3030; background: var(--wine-mist); }
 </style>
+<style id="mc-fullscreen-overrides">
+  /* Full-scale: remove the bottom dock quick-nav (Open/Navigate/For You/Guide — all scenes)
+     and the dev "show flow bar (H)" tab, so the platform uses the full screen height.
+     .dock lives in the app-shell grid (row 3, auto) → hiding it collapses the row, no gap. */
+  .dock { display: none !important; }
+  .dev-show-tab, .dev-nav { display: none !important; }
+</style>
 </head>
 <body>
 
