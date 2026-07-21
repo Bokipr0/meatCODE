@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<!-- Last updated: 2026-07-21 14:16 UTC · UI/UX Designer · Lean restyle (matches UI-UX Designer/meatcode_lean_v1.html). TASK A — Database molecules/experts/companies to the lean .filterbar + .tbl look: filter bar is now a surface-2 panel with a pill search + right-aligned sort; molecules category filter is live .fchip chips (All · real facets) that drive the hidden <select> so every fetch/pager/XLSX wire is reused; per-tab "Data / <Entity>" breadcrumb; columns reworked through the config-driven engine — Molecules = MOLECULE(mono) · CLASS(category) · SOURCES(mono mentions_count) · RELEVANCE(.db-bar from priority_score, 0–100); Experts = NAME · AFFILIATION · COUNTRY · H-INDEX(.db-bar, dynamic max, NO relevance column); Companies = NAME · COUNTRY · WEBSITE(link); Export moved below each table as a lean ghost "⤓ Export (.xlsx)". 50/page pagination + Toolbench bookmark on molecule rows preserved. TASK B — Oracle centre column to the lean look: ORACLE eyebrow + "Ask the Oracle" + corpus subtitle; ask box → .oracle-box proportions (1.5px line-strong, r20); answer card → .answer (r20, 15.5px/1.7); retrieved papers render as coral .ent.paper-style pills wired to the live SSE sources (no fabricated molecule/expert chips); follow-ups → lean "→" chips from the model's Follow-ups line; left Pinned/History rail, Lab Stash highlight-to-save, streaming + "Digging the MeatCODE database…" status phase, SESSION_EXPIRED + credentials same-origin, and no-page-scroll frame all preserved. Only CSS + HTML markup + the DB config-engine columns/chips changed; the Oracle/Lab-Stash/Toolbench script blocks are byte-identical. NOTE: the on-disk base was the 13:19 commit — the Full-Stack Engineer's 13:34 backup Export/Import (mc-backup / mcStashSnapshot) is NOT in this file and must be re-applied + committed. · Prior 2026-07-21 13:19 UTC · UI/UX Designer · (1+3) Every tab is a centered, fixed-height frame with NO page scroll: the app-shell grid (64px 1fr, 100vh, overflow:hidden) bounds each scene and each scene’s .canvas is the internal scroller (min-height:0 + overflow-y:auto). Map keeps canvas overflow:hidden for the globe. Oracle is now a bounded flex column — heading + ask box + starters stay pinned and ONLY #oracleAnswerSlot scrolls. Content stays horizontally centered via each wrap’s max-width + margin:auto. (2) The topbar search bar was removed on every scene and replaced by a Toolbench wrench button that opens a saved-items drawer with three persisted sections — Saved molecules (mc_saved_molecules_v1; bookmark button added to each Database molecules row), Saved sentences (mc_lab_stash_v1 via a new window.MCStash owner API), and Marked chats (pinned mc_oracle_history_v1). The redundant bottom-left “Lab Stash” button was removed; highlight-to-save still writes mc_lab_stash_v1. All three stores are versioned + try/catch-wrapped; molecules capped at 100. · Prior 2026-07-21: full-screen shell (grid 64px 1fr; dock/flow-bar hidden), bulletproof Ask re-enable (.finally + input-listener), verified caches. · Prior: 401/SESSION_EXPIRED “your sign-in expired” + credentials same-origin; “Digging the MeatCODE database…” status phase; Oracle default landing + brand→#oracle; nav Oracle·Research·Database·Simulate·Map; no topbar bell. -->
+<!-- Last updated: 2026-07-21 14:40 UTC · advisory session · Oracle notes pass (from Lior's annotated screenshot): removed the "ORACLE" eyebrow; subtitle → "Every answer is based on a closed corpus with information you can access"; shorter one-line placeholder; input textarea auto-grows (overflow hidden, min-height 30px) so there's no scrollbar or wasted gap; starter chips are now showcase quick-suggestions (Maillard synthesis route · Mask beany off-notes · Sulfur notes in cooked beef · Boost roasted aroma); answer SOURCES moved BELOW the prose (was above), recolored to a BLUE palette, and collapsed to the first 2 with a "+N more" toggle. · Prior 2026-07-21 14:16 UTC · UI/UX Designer · Lean restyle (matches UI-UX Designer/meatcode_lean_v1.html). TASK A — Database molecules/experts/companies to the lean .filterbar + .tbl look: filter bar is now a surface-2 panel with a pill search + right-aligned sort; molecules category filter is live .fchip chips (All · real facets) that drive the hidden <select> so every fetch/pager/XLSX wire is reused; per-tab "Data / <Entity>" breadcrumb; columns reworked through the config-driven engine — Molecules = MOLECULE(mono) · CLASS(category) · SOURCES(mono mentions_count) · RELEVANCE(.db-bar from priority_score, 0–100); Experts = NAME · AFFILIATION · COUNTRY · H-INDEX(.db-bar, dynamic max, NO relevance column); Companies = NAME · COUNTRY · WEBSITE(link); Export moved below each table as a lean ghost "⤓ Export (.xlsx)". 50/page pagination + Toolbench bookmark on molecule rows preserved. TASK B — Oracle centre column to the lean look: ORACLE eyebrow + "Ask the Oracle" + corpus subtitle; ask box → .oracle-box proportions (1.5px line-strong, r20); answer card → .answer (r20, 15.5px/1.7); retrieved papers render as coral .ent.paper-style pills wired to the live SSE sources (no fabricated molecule/expert chips); follow-ups → lean "→" chips from the model's Follow-ups line; left Pinned/History rail, Lab Stash highlight-to-save, streaming + "Digging the MeatCODE database…" status phase, SESSION_EXPIRED + credentials same-origin, and no-page-scroll frame all preserved. Only CSS + HTML markup + the DB config-engine columns/chips changed; the Oracle/Lab-Stash/Toolbench script blocks are byte-identical. NOTE: the on-disk base was the 13:19 commit — the Full-Stack Engineer's 13:34 backup Export/Import (mc-backup / mcStashSnapshot) is NOT in this file and must be re-applied + committed. · Prior 2026-07-21 13:19 UTC · UI/UX Designer · (1+3) Every tab is a centered, fixed-height frame with NO page scroll: the app-shell grid (64px 1fr, 100vh, overflow:hidden) bounds each scene and each scene’s .canvas is the internal scroller (min-height:0 + overflow-y:auto). Map keeps canvas overflow:hidden for the globe. Oracle is now a bounded flex column — heading + ask box + starters stay pinned and ONLY #oracleAnswerSlot scrolls. Content stays horizontally centered via each wrap’s max-width + margin:auto. (2) The topbar search bar was removed on every scene and replaced by a Toolbench wrench button that opens a saved-items drawer with three persisted sections — Saved molecules (mc_saved_molecules_v1; bookmark button added to each Database molecules row), Saved sentences (mc_lab_stash_v1 via a new window.MCStash owner API), and Marked chats (pinned mc_oracle_history_v1). The redundant bottom-left “Lab Stash” button was removed; highlight-to-save still writes mc_lab_stash_v1. All three stores are versioned + try/catch-wrapped; molecules capped at 100. · Prior 2026-07-21: full-screen shell (grid 64px 1fr; dock/flow-bar hidden), bulletproof Ask re-enable (.finally + input-listener), verified caches. · Prior: 401/SESSION_EXPIRED “your sign-in expired” + credentials same-origin; “Digging the MeatCODE database…” status phase; Oracle default landing + brand→#oracle; nav Oracle·Research·Database·Simulate·Map; no topbar bell. -->
 <title>MeatCODE · GFI Israel — flavor & aroma research</title>
 <meta name="viewport" content="width=1440" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -460,12 +460,13 @@ section.scene.active { display: block; }
 .oracle-evidence-label { font-size: 11px; font-weight: 700; color: var(--ink-faint); letter-spacing: 0.16em; text-transform: uppercase; }
 #oracleSourcesList { display: flex; flex-wrap: wrap; gap: 8px; }
 .oracle-cite { display: flex; align-items: center; gap: 12px; }
-/* In the answer card, retrieved papers render as compact coral pills (lean .ent.paper),
-   the [id] tag stays the clickable target that opens the paper modal. */
+/* In the answer card, retrieved papers render as compact BLUE pills; the [id] tag
+   stays the clickable target that opens the paper modal. Only 2 show by default,
+   with a "+N more" toggle (see streamSSE). */
 #oracleSourcesList .oracle-cite {
   display: inline-flex; align-items: center; gap: 6px;
   max-width: 340px; padding: 6px 13px; border-radius: 100px;
-  background: var(--brass-soft);
+  background: #E3EDF6;
 }
 .oracle-cite-chip {
   padding: 5px 12px; border-radius: 100px;
@@ -473,15 +474,23 @@ section.scene.active { display: block; }
   font-size: 12px; font-weight: 700;
 }
 #oracleSourcesList .oracle-cite-chip {
-  padding: 0; background: none; color: #A5522F;
+  padding: 0; background: none; color: #2A6497;
   font-size: 11.5px; font-weight: 700; border-radius: 0; flex-shrink: 0;
 }
-#oracleSourcesList .oracle-cite-chip:hover { background: none; color: var(--wine); text-decoration: underline; }
+#oracleSourcesList .oracle-cite-chip:hover { background: none; color: #184766; text-decoration: underline; }
 .oracle-cite-text { font-size: 13.5px; color: var(--ink-dim); }
 #oracleSourcesList .oracle-cite-text {
-  font-size: 12.5px; font-weight: 700; color: #A5522F;
+  font-size: 12.5px; font-weight: 700; color: #2A6497;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
 }
+/* the collapsed extra sources + the toggle */
+#oracleSourcesList .oracle-cite-more { display: flex; flex-wrap: wrap; gap: 8px; flex-basis: 100%; }
+.oracle-cite-expand {
+  flex-basis: 100%; margin-top: 2px; padding: 2px 0; text-align: left;
+  background: none; border: none; cursor: pointer;
+  color: #2A6497; font-weight: 700; font-size: 12px; font-family: var(--round);
+}
+.oracle-cite-expand:hover { text-decoration: underline; }
 
 /* ── Community Map (Globe) ── */
 .map-page { /* v4: maximal size · v10: tighter gap frees a bit more room for the globe */ display: flex; flex-direction: column; gap: 10px; height: 100%; min-height: 0; }
@@ -889,7 +898,7 @@ section.scene.active { display: block; }
 
 /* ── Oracle: live input + answer states ── */
 .oracle-textarea {
-  width: 100%; min-height: 46px; max-height: 132px; overflow-y: auto;
+  width: 100%; min-height: 30px; max-height: 132px; overflow-y: hidden;
   resize: none; border: none; outline: none; background: transparent;
   font-family: var(--round); color: var(--ink);
   font-size: 18px; line-height: 1.5;
@@ -2386,15 +2395,14 @@ section.scene.active { display: block; }
     <main class="canvas">
       <div class="oracle-wrap">
         <div class="oracle-heading">
-          <div class="oracle-eyebrow">Oracle</div>
           <h1>Ask the Oracle</h1>
-          <p>Every answer is grounded in the corpus, with sources you can open.</p>
+          <p>Every answer is based on a closed corpus with information you can access.</p>
         </div>
 
         <div class="oracle-input" id="oracleInputBox">
           <textarea
             class="oracle-textarea" id="oracleTextarea"
-            placeholder="Create me a visualization of the Aroma formation in peptide-involved Maillard reaction"
+            placeholder="e.g. What drives roasted notes in plant-based beef?"
             rows="1"></textarea>
           <div class="oracle-input-bottom">
             <div class="oracle-chips" id="oracleTopicChips">
@@ -2422,10 +2430,10 @@ section.scene.active { display: block; }
         </div>
 
         <div class="oracle-starter-row" id="oracleStarterRow">
+          <span class="oracle-starter" data-q="Walk me through the Maillard synthesis route to meaty aroma.">Maillard synthesis route</span>
           <span class="oracle-starter" data-q="How do I mask beany off-notes in pea protein?">Mask beany off-notes</span>
-          <span class="oracle-starter" data-q="What are the key Maillard top-notes for plant-based beef?">Maillard top-notes for beef</span>
-          <span class="oracle-starter" data-q="Which volatiles drive the popcorn aroma of 2-acetyl-1-pyrroline?">2-acetyl-1-pyrroline aroma</span>
-          <span class="oracle-starter" data-q="What does fermentation contribute to meaty aroma profiles?">Fermentation + meat aroma</span>
+          <span class="oracle-starter" data-q="Which sulfur volatiles drive cooked-beef aroma?">Sulfur notes in cooked beef</span>
+          <span class="oracle-starter" data-q="What precursors boost roasted 2-acetyl-1-pyrroline aroma?">Boost roasted aroma</span>
         </div>
 
         <div id="oracleAnswerSlot">
@@ -4180,15 +4188,22 @@ var oracleInputBox = document.getElementById('oracleInputBox');
 var oracleSlot     = document.getElementById('oracleAnswerSlot');
 
 if (oracleTextarea) {
+  // Auto-grow the input to fit its text (never shows a scrollbar, no wasted gap):
+  // 1 line when empty, grows up to 132px, then it would scroll (rare for a question).
+  window.mcAutoGrowOracle = function () {
+    oracleTextarea.style.height = 'auto';
+    oracleTextarea.style.height = Math.min(oracleTextarea.scrollHeight, 132) + 'px';
+  };
   oracleTextarea.addEventListener('focus', function () { oracleInputBox.classList.add('focused'); });
   oracleTextarea.addEventListener('blur',  function () { oracleInputBox.classList.remove('focused'); });
   oracleTextarea.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); askOracle(); }
   });
-  // Safety net: any typing guarantees Ask is enabled, so a hung or errored request
-  // can never permanently strand the button in its disabled state.
+  // Any typing: keep Ask enabled (safety net so a hung request can't strand it) AND
+  // resize the box to fit, so the input never scrolls and leaves no empty gap.
   oracleTextarea.addEventListener('input', function () {
     if (oracleAskBtn && oracleTextarea.value.trim()) oracleAskBtn.disabled = false;
+    window.mcAutoGrowOracle();
   });
 }
 if (oracleAskBtn) oracleAskBtn.addEventListener('click', askOracle);
@@ -4581,6 +4596,7 @@ function askOracle() {
   mcSetMicStatus('');
   mcRecordOracleQuestion(q);      // drop it into the sidebar history
   oracleTextarea.value = '';      // reset the box for the next question (already captured above)
+  if (window.mcAutoGrowOracle) window.mcAutoGrowOracle();   // shrink back to one line
   setOracleLoading();
   oracleAskBtn.disabled = true;
 
@@ -4622,11 +4638,11 @@ function streamSSE(res) {
         '<span class="dot"></span><span class="dot"></span><span class="dot"></span>' +
         '<span class="label" id="oraclePhaseLabel">' + ORACLE_PHASE_RETRIEVING + '</span>' +
       '</div>' +
-      '<div class="oracle-evidence" id="oracleSources" style="border-top: none; padding-top: 0; margin-bottom: 14px;">' +
+      '<div id="oracleBody"></div>' +
+      '<div class="oracle-evidence" id="oracleSources" style="margin-top: 16px;">' +
         '<div class="oracle-evidence-label">Sources</div>' +
         '<div id="oracleSourcesList"></div>' +
       '</div>' +
-      '<div id="oracleBody"></div>' +
       '<div id="oracleFollowups"></div>' +
     '</div>';
   var bodyEl     = document.getElementById('oracleBody');
@@ -4673,13 +4689,26 @@ function streamSSE(res) {
           var arr = JSON.parse(data);
           window.__REAKTZIA_SOURCES = {};
           arr.forEach(function (s) { window.__REAKTZIA_SOURCES[s.id] = s; });
-          sourcesEl.innerHTML = arr.map(function (s) {
+          var citeHTML = function (s) {
             return '<div class="oracle-cite">' +
                      '<span class="oracle-cite-chip" data-paper-id="' + s.id + '">[' + s.id + ']</span>' +
                      '<span class="oracle-cite-text">' + escapeHtml(s.title) + ' — ' + (s.year || '') +
                      (s.journal ? (' · ' + escapeHtml(s.journal)) : '') + '</span>' +
                    '</div>';
-          }).join('');
+          };
+          // Show the first 2 sources; the rest hide behind a "+N more" toggle.
+          var __extra = arr.length - 2;
+          sourcesEl.innerHTML = arr.slice(0, 2).map(citeHTML).join('') +
+            (__extra > 0
+              ? '<div class="oracle-cite-more" id="oracleCiteMore" style="display:none">' + arr.slice(2).map(citeHTML).join('') + '</div>' +
+                '<button type="button" class="oracle-cite-expand" id="oracleCiteExpand">+ ' + __extra + ' more source' + (__extra === 1 ? '' : 's') + '</button>'
+              : '');
+          var __exp = document.getElementById('oracleCiteExpand');
+          if (__exp) __exp.addEventListener('click', function () {
+            var m = document.getElementById('oracleCiteMore');
+            if (m) m.style.display = 'flex';
+            __exp.style.display = 'none';
+          });
           if (arr.length === 0) {
             // "No matches" note is DEV-ONLY (visit with ?dev=1 to see it); hidden from normal users.
             if (/[?&]dev=1(?:&|$)/.test(location.search)) {

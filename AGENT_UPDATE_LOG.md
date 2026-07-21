@@ -1,6 +1,14 @@
 # MeatCODE — Agent Update Log
 
-_Last updated: 2026-07-21 14:25 UTC · Project Coordinator · lean-v1 design ported to Database (3 tables) + Oracle center column_
+_Last updated: 2026-07-21 14:40 UTC · advisory session · Oracle notes pass (annotated-screenshot changes)_
+
+## 2026-07-21 14:40 UTC · advisory session · Oracle notes pass (from Lior's annotated screenshot)
+- What:   Applied the 8 marked-up Oracle edits directly (both mockups, kept identical via cp): (1) removed the "ORACLE" eyebrow above the title; (2) subtitle → "Every answer is based on a closed corpus with information you can access"; (3) shorter one-line placeholder ("e.g. What drives roasted notes in plant-based beef?"); (4) input textarea now **auto-grows** (`window.mcAutoGrowOracle`, overflow hidden, min-height 30px, resets on submit) so there's no scrollbar and no wasted gap — more room for the answer; (5) starter chips are now showcase quick-suggestions (Maillard synthesis route · Mask beany off-notes · Sulfur notes in cooked beef · Boost roasted aroma); (6) answer **SOURCES moved BELOW the prose** (was above); (7) sources recolored to a **blue palette** (#2A6497 / #E3EDF6, was coral); (8) sources **collapsed to the first 2 with a "+N more" toggle** that reveals the rest (all remain clickable to open the paper).
+- Files:  `app/meatcode_mockup.html` + `UI-UX Designer/MeatCODE_mockup_v9.html` (byte-identical).
+- Why:    Lior's annotated screenshot of the Oracle.
+- Result: Both files 5/5 `<script>` blocks pass `node --check`, byte-identical; no regressions (SESSION_EXPIRED, `credentials:'same-origin'`, "Digging the MeatCODE database…" phase, `mc_lab_stash_v1` highlight-to-save, `mc_oracle_history_v1`, `#oracleAnswerSlot` no-page-scroll, XLSX all intact). The moved sources block keeps the `[id]` click-to-open + the live SSE `sources` wiring.
+- Next:   `deploy.command` + hard-refresh. Eyeball: the "+N more" toggle and the blue against the cream card.
+
 
 ## 2026-07-21 14:25 UTC · Project Coordinator · lean-v1 design port (Database + Oracle) — consolidated
 Lior asked to bring the live Database (molecules/experts/companies) and the Oracle center column up to the polished `UI-UX Designer/meatcode_lean_v1.html` reference (the two screenshots). One UI/UX specialist did a **restyle-not-replace** — matched the lean look while keeping every live binding + recent feature.
