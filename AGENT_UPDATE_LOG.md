@@ -1,6 +1,17 @@
 # MeatCODE — Agent Update Log
 
-_Last updated: 2026-07-21 13:27 UTC · Project Coordinator · Toolbench saved-items hub (replaces search) + no-page-scroll centered frames in all tabs_
+_Last updated: 2026-07-21 14:25 UTC · Project Coordinator · lean-v1 design ported to Database (3 tables) + Oracle center column_
+
+## 2026-07-21 14:25 UTC · Project Coordinator · lean-v1 design port (Database + Oracle) — consolidated
+Lior asked to bring the live Database (molecules/experts/companies) and the Oracle center column up to the polished `UI-UX Designer/meatcode_lean_v1.html` reference (the two screenshots). One UI/UX specialist did a **restyle-not-replace** — matched the lean look while keeping every live binding + recent feature.
+
+### UI/UX Designer · lean restyle — `app/meatcode_mockup.html` + `UI-UX Designer/MeatCODE_mockup_v9.html`
+- What:   **Database** — all three entity tabs now use the lean `.filterbar` + `.tbl` pattern: surface-2 filter panel with pill search + `.fchip` category chips (live-wired to `/api/db-facets`) + right-aligned sort, a per-tab `Data / <Entity>` breadcrumb, and Export moved below the table as a lean ghost `⤓ Export (.xlsx)` (same id/handler → XLSX intact). Columns reworked via the config engine: **Molecules** MOLECULE(mono)·CLASS(`category`)·SOURCES(mono)·RELEVANCE(`.db-bar` from `priority_score`); **Experts** NAME·AFFILIATION·COUNTRY·H-INDEX(bar) — deliberately NO relevance column (Lior removed it earlier); **Companies** NAME·COUNTRY·WEBSITE(clickable). Molecules 50/page pagination + Toolbench bookmark preserved. **Oracle center** restyled to lean: centered ORACLE eyebrow + "Ask the Oracle" + corpus subtitle, `.oracle-box` ask box (1.5px line-strong, r20), `.answer` card (r20, 15.5/1.7, mono formulas), real SSE `sources` rendered as coral paper pills (keeps the `[id]` click-to-open), follow-ups as lean "→" chips off the model's `Follow-ups:` line.
+- Result: Both files 5/5 `<script>` blocks pass `node --check`, md5-identical; all live wiring verified intact (pagination, Toolbench `mcDecorateMoleculeRow`, `mc_lab_stash_v1`, `mc_oracle_history_v1`, `event: status`, SESSION_EXPIRED, `credentials:'same-origin'`, `XLSX.writeFile`, `#oracleAnswerSlot` no-page-scroll). Oracle/Toolbench/Lab-Stash JS byte-identical (only CSS + markup + DB config columns/chips changed).
+- Deliberately NOT done: no fabricated Molecule/Expert entity chips in Oracle answers — only real retrieved paper pills (honest provenance); kept the "Sources" wording + `[id]` tags; kept the left history rail (screenshot was cropped). Molecules landing default moved `Fats`→`All` (matches the lean design; trivial revert).
+- ⚠️ Cross-session note: the working file was found at the last committed base (13:19); a parallel session's **uncommitted** Export/Import "backup" WIP (`mcBackupRow`/`mcStashSnapshot`) was not present and is NOT in the delivered file. Nothing dangles (`window.MCStash` intact). If that feature is wanted it must be re-applied + committed. **Root cause = multiple Cowork sessions editing the same mounted file without committing between hand-offs** — commit/push more often.
+- Next:   `deploy.command`. Eyeball: molecules RELEVANCE/CLASS bars depend on `priority_score`+`category` (graceful "—" if sparse); confirm the `All` (was `Fats`) molecules landing is desired.
+
 
 > **Every agent appends an entry here at the end of any working session — newest at the top.**
 > This is the detailed audit trail of who changed what, when, and why. The short in-file

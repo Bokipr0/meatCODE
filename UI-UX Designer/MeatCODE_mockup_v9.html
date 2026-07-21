@@ -1,9 +1,8 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- v9 = canonical app/meatcode_mockup.html + v8 UI/UX polish forward-ported. Last updated: 2026-07-21 13:19 UTC · UI/UX Designer · kept in sync with the live mockup: no-page-scroll frame on every tab (app-shell grid bounds each scene; .canvas scrolls internally; Oracle is a flex column where only #oracleAnswerSlot scrolls), and the topbar search replaced by the Toolbench saved-items drawer (Saved molecules mc_saved_molecules_v1 · Saved sentences mc_lab_stash_v1 · Marked chats mc_oracle_history_v1). The JavaScript blocks are byte-identical to app/meatcode_mockup.html; this file only carries the extra v8 visual polish (dashboard stat strip + accent cards, persona wording, teal avatar). -->
 <meta charset="utf-8" />
-<!-- Last updated: 2026-07-21 13:19 UTC · UI/UX Designer · (1+3) Every tab is a centered, fixed-height frame with NO page scroll: the app-shell grid (64px 1fr, 100vh, overflow:hidden) bounds each scene and each scene’s .canvas is the internal scroller (min-height:0 + overflow-y:auto). Map keeps canvas overflow:hidden for the globe. Oracle is now a bounded flex column — heading + ask box + starters stay pinned and ONLY #oracleAnswerSlot scrolls. Content stays horizontally centered via each wrap’s max-width + margin:auto. (2) The topbar search bar was removed on every scene and replaced by a Toolbench wrench button that opens a saved-items drawer with three persisted sections — Saved molecules (mc_saved_molecules_v1; bookmark button added to each Database molecules row), Saved sentences (mc_lab_stash_v1 via a new window.MCStash owner API), and Marked chats (pinned mc_oracle_history_v1). The redundant bottom-left “Lab Stash” button was removed; highlight-to-save still writes mc_lab_stash_v1. All three stores are versioned + try/catch-wrapped; molecules capped at 100. · Prior 2026-07-21: full-screen shell (grid 64px 1fr; dock/flow-bar hidden), bulletproof Ask re-enable (.finally + input-listener), verified caches. · Prior: 401/SESSION_EXPIRED “your sign-in expired” + credentials same-origin; “Digging the MeatCODE database…” status phase; Oracle default landing + brand→#oracle; nav Oracle·Research·Database·Simulate·Map; no topbar bell. -->
+<!-- Last updated: 2026-07-21 14:16 UTC · UI/UX Designer · Lean restyle (matches UI-UX Designer/meatcode_lean_v1.html). TASK A — Database molecules/experts/companies to the lean .filterbar + .tbl look: filter bar is now a surface-2 panel with a pill search + right-aligned sort; molecules category filter is live .fchip chips (All · real facets) that drive the hidden <select> so every fetch/pager/XLSX wire is reused; per-tab "Data / <Entity>" breadcrumb; columns reworked through the config-driven engine — Molecules = MOLECULE(mono) · CLASS(category) · SOURCES(mono mentions_count) · RELEVANCE(.db-bar from priority_score, 0–100); Experts = NAME · AFFILIATION · COUNTRY · H-INDEX(.db-bar, dynamic max, NO relevance column); Companies = NAME · COUNTRY · WEBSITE(link); Export moved below each table as a lean ghost "⤓ Export (.xlsx)". 50/page pagination + Toolbench bookmark on molecule rows preserved. TASK B — Oracle centre column to the lean look: ORACLE eyebrow + "Ask the Oracle" + corpus subtitle; ask box → .oracle-box proportions (1.5px line-strong, r20); answer card → .answer (r20, 15.5px/1.7); retrieved papers render as coral .ent.paper-style pills wired to the live SSE sources (no fabricated molecule/expert chips); follow-ups → lean "→" chips from the model's Follow-ups line; left Pinned/History rail, Lab Stash highlight-to-save, streaming + "Digging the MeatCODE database…" status phase, SESSION_EXPIRED + credentials same-origin, and no-page-scroll frame all preserved. Only CSS + HTML markup + the DB config-engine columns/chips changed; the Oracle/Lab-Stash/Toolbench script blocks are byte-identical. NOTE: the on-disk base was the 13:19 commit — the Full-Stack Engineer's 13:34 backup Export/Import (mc-backup / mcStashSnapshot) is NOT in this file and must be re-applied + committed. · Prior 2026-07-21 13:19 UTC · UI/UX Designer · (1+3) Every tab is a centered, fixed-height frame with NO page scroll: the app-shell grid (64px 1fr, 100vh, overflow:hidden) bounds each scene and each scene’s .canvas is the internal scroller (min-height:0 + overflow-y:auto). Map keeps canvas overflow:hidden for the globe. Oracle is now a bounded flex column — heading + ask box + starters stay pinned and ONLY #oracleAnswerSlot scrolls. Content stays horizontally centered via each wrap’s max-width + margin:auto. (2) The topbar search bar was removed on every scene and replaced by a Toolbench wrench button that opens a saved-items drawer with three persisted sections — Saved molecules (mc_saved_molecules_v1; bookmark button added to each Database molecules row), Saved sentences (mc_lab_stash_v1 via a new window.MCStash owner API), and Marked chats (pinned mc_oracle_history_v1). The redundant bottom-left “Lab Stash” button was removed; highlight-to-save still writes mc_lab_stash_v1. All three stores are versioned + try/catch-wrapped; molecules capped at 100. · Prior 2026-07-21: full-screen shell (grid 64px 1fr; dock/flow-bar hidden), bulletproof Ask re-enable (.finally + input-listener), verified caches. · Prior: 401/SESSION_EXPIRED “your sign-in expired” + credentials same-origin; “Digging the MeatCODE database…” status phase; Oracle default landing + brand→#oracle; nav Oracle·Research·Database·Simulate·Map; no topbar bell. -->
 <title>MeatCODE · GFI Israel — flavor & aroma research</title>
 <meta name="viewport" content="width=1440" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -36,6 +35,7 @@
   --shadow:       0 4px 16px rgba(0, 67, 64, 0.08);
   --shadow-lg:    0 10px 32px rgba(0, 67, 64, 0.12);
   --round:        "Varela Round", "Heebo", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono:         "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
 }
 
 /* ─── v4 brand: just MeatCODE wordmark, big, no eyebrow ─── */
@@ -361,61 +361,45 @@ section.scene.active { display: block; }
 }
 .btn-ghost { background: transparent; color: var(--ink-dim); padding: 12px 18px; border-radius: 12px; font-weight: 500; font-size: 14px; border: none; cursor: pointer; }
 
-/* ── Dashboard (v9: ported v8 polish — accents, hover, stat strip) ── */
-.dash-hero { display: flex; flex-direction: column; gap: 5px; margin-bottom: 24px; }
-.dash-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--wine); margin-bottom: 2px; }
-.dash-greeting { font-size: 34px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
+/* ── Dashboard ── */
+.dash-hero { display: flex; flex-direction: column; gap: 6px; margin-bottom: 26px; }
+.dash-greeting { font-size: 36px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
 .dash-sub { font-size: 15px; color: var(--ink-dim); }
-.dash-stats { display: flex; align-items: stretch; gap: 22px; margin-top: 16px; padding: 14px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); width: fit-content; }
-.dash-stat { display: flex; flex-direction: column; gap: 1px; }
-.dash-stat b { font-size: 21px; font-weight: 700; color: var(--wine-deep); font-family: "SF Mono","JetBrains Mono",ui-monospace,monospace; line-height: 1.1; }
-.dash-stat span { font-size: 10.5px; color: var(--ink-faint); letter-spacing: 0.08em; text-transform: uppercase; }
-.dash-stat-sep { width: 1px; background: var(--line); }
-.dash-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 26px; }
+.dash-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 22px; }
 .dash-card {
-  --accent: var(--wine);
   background: var(--surface);
   border: 1px solid var(--line);
-  border-left: 4px solid var(--accent);
-  border-radius: 16px;
+  border-radius: 18px;
   padding: 20px 22px;
   cursor: pointer;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
-.dash-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
-.dash-card.d-map      { --accent: var(--wine); }
-.dash-card.d-oracle   { --accent: var(--wine-deep); }
-.dash-card.d-research { --accent: var(--brass); }
-.dash-card.d-data     { --accent: #C77E5F; }
-.dash-card.d-sim      { --accent: #7FA7A1; }
-.dash-card-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 10px; }
-.dash-card-icon { width: 34px; height: 34px; border-radius: 10px; background: color-mix(in srgb, var(--accent) 15%, white); color: var(--accent); display: grid; place-items: center; flex-shrink: 0; }
-.dash-card-icon svg { width: 17px; height: 17px; }
+.dash-card-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 9px; }
+.dash-card-icon { width: 32px; height: 32px; border-radius: 10px; background: var(--wine-mist); color: var(--wine); display: grid; place-items: center; }
+.dash-card-icon svg { width: 16px; height: 16px; }
 .dash-card-desc { font-size: 13px; color: var(--ink-dim); line-height: 1.5; }
 .dash-card-meta { font-size: 11px; color: var(--ink-faint); margin-top: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
 
 .dash-section-title { font-size: 12px; font-weight: 700; letter-spacing: 0.18em; color: var(--ink-faint); text-transform: uppercase; margin: 6px 0 12px; }
 .dash-suggestions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 18px; }
 .dash-sug {
-  background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--brass); border-radius: 14px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
   padding: 16px 18px; display: flex; gap: 12px; align-items: flex-start; cursor: pointer;
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
-.dash-sug:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
 .dash-sug-tag { font-size: 10.5px; font-weight: 700; padding: 3px 9px; border-radius: 8px; background: var(--wine-mist); color: var(--wine); letter-spacing: 0.08em; text-transform: uppercase; }
 .dash-sug h4 { margin: 6px 0 4px; font-size: 14.5px; font-weight: 700; }
 .dash-sug p  { margin: 0; font-size: 12.5px; color: var(--ink-dim); line-height: 1.5; }
 
 /* ── Oracle ── */
-.oracle-wrap { max-width: 860px; margin: 0 auto; }
-.oracle-heading { text-align: center; margin-bottom: 22px; }
-.oracle-heading h1 { font-size: 36px; font-weight: 700; color: var(--ink); margin: 0 0 6px; }
-.oracle-heading p { font-size: 14.5px; color: var(--ink-dim); margin: 0; }
+.oracle-wrap { max-width: 760px; margin: 0 auto; }
+.oracle-heading { text-align: center; margin-bottom: 20px; }
+.oracle-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--wine); margin-bottom: 6px; }
+.oracle-heading h1 { font-size: 32px; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); margin: 0 0 6px; }
+.oracle-heading p { font-size: 15.5px; color: var(--ink-dim); margin: 0; line-height: 1.55; }
 
 .oracle-input {
   background: var(--surface);
-  border: 1.5px solid var(--line);
-  border-radius: 22px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 20px;
   padding: 8px 22px 8px;   /* was 22px 24px 16px → 14/12 → 8/8: trimmed vertical padding for a shorter ask box */
   margin-bottom: 24px;
   box-shadow: var(--shadow);
@@ -444,8 +428,8 @@ section.scene.active { display: block; }
 .oracle-answer {
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 22px;
-  padding: 24px 28px;
+  border-radius: 20px;
+  padding: 24px 26px;
   /* A long answer used to stretch the whole page. The pane is now bounded and
      scrolls inside itself, so the app shell stays put under the wheel. Sources
      and follow-ups live inside this box too — nothing is clipped, they just
@@ -464,21 +448,40 @@ section.scene.active { display: block; }
 }
 .oracle-answer::-webkit-scrollbar-thumb:hover { background: var(--wine-soft); }
 .oracle-answer.empty { max-height: none; overflow: visible; }
-.oracle-answer h3 { font-size: 12px; font-weight: 700; color: var(--wine); letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 12px; }
-.oracle-answer p { font-size: 16px; line-height: 1.7; color: var(--ink); margin: 0 0 12px; }
+.oracle-answer h3 { font-size: 11px; font-weight: 700; color: var(--wine); letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 12px; }
+.oracle-answer p { font-size: 15.5px; line-height: 1.7; color: var(--ink); margin: 0 0 12px; }
 .oracle-answer p:last-of-type { margin-bottom: 18px; }
+.oracle-answer b { font-weight: 700; }
+.oracle-answer .mono { font-family: var(--mono); letter-spacing: -0.01em; }
 .oracle-evidence {
   display: flex; flex-direction: column; gap: 8px;
   padding-top: 18px; border-top: 1px solid var(--line);
 }
 .oracle-evidence-label { font-size: 11px; font-weight: 700; color: var(--ink-faint); letter-spacing: 0.16em; text-transform: uppercase; }
+#oracleSourcesList { display: flex; flex-wrap: wrap; gap: 8px; }
 .oracle-cite { display: flex; align-items: center; gap: 12px; }
+/* In the answer card, retrieved papers render as compact coral pills (lean .ent.paper),
+   the [id] tag stays the clickable target that opens the paper modal. */
+#oracleSourcesList .oracle-cite {
+  display: inline-flex; align-items: center; gap: 6px;
+  max-width: 340px; padding: 6px 13px; border-radius: 100px;
+  background: var(--brass-soft);
+}
 .oracle-cite-chip {
   padding: 5px 12px; border-radius: 100px;
   background: var(--wine-mist); color: var(--wine);
   font-size: 12px; font-weight: 700;
 }
+#oracleSourcesList .oracle-cite-chip {
+  padding: 0; background: none; color: #A5522F;
+  font-size: 11.5px; font-weight: 700; border-radius: 0; flex-shrink: 0;
+}
+#oracleSourcesList .oracle-cite-chip:hover { background: none; color: var(--wine); text-decoration: underline; }
 .oracle-cite-text { font-size: 13.5px; color: var(--ink-dim); }
+#oracleSourcesList .oracle-cite-text {
+  font-size: 12.5px; font-weight: 700; color: #A5522F;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
 
 /* ── Community Map (Globe) ── */
 .map-page { /* v4: maximal size · v10: tighter gap frees a bit more room for the globe */ display: flex; flex-direction: column; gap: 10px; height: 100%; min-height: 0; }
@@ -509,7 +512,7 @@ section.scene.active { display: block; }
      dominant element on the Map scene instead of competing with chrome around it. */
   position: relative;
   flex: 1;
-  background: linear-gradient(135deg, #E6F2F0 0%, #BFE0DB 55%, #93C9C2 100%);
+  background: linear-gradient(135deg, #D8EBEF 0%, #B5D9E2 55%, #97C7D2 100%);
   border: 1px solid var(--line);
   border-radius: 22px;
   display: grid;
@@ -773,11 +776,11 @@ section.scene.active { display: block; }
 .bubble h3 { font-size: 19px; font-weight: 700; margin: 0 0 6px; }
 .bubble p { font-size: 12.5px; opacity: 0.92; margin: 0; line-height: 1.4; }
 .bubble.b1 { background: radial-gradient(circle at 30% 30%, var(--wine-soft), var(--wine)); }
-.bubble.b2 { background: radial-gradient(circle at 30% 30%, var(--brass), #9A5238); }
-.bubble.b3 { background: radial-gradient(circle at 30% 30%, #D8A37E, #B5713F); }
-.bubble.b4 { background: radial-gradient(circle at 30% 30%, #9DAE7E, var(--olive)); }
-.bubble.b5 { background: radial-gradient(circle at 30% 30%, var(--wine-soft), var(--wine-deep)); }
-.bubble.b6 { background: radial-gradient(circle at 30% 30%, #8FB0AB, #4E7873); }
+.bubble.b2 { background: radial-gradient(circle at 30% 30%, #C26B5B, #8E3A28); }
+.bubble.b3 { background: radial-gradient(circle at 30% 30%, var(--brass), #8A6738); }
+.bubble.b4 { background: radial-gradient(circle at 30% 30%, #9D8B5E, var(--olive)); }
+.bubble.b5 { background: radial-gradient(circle at 30% 30%, #B36256, var(--wine-deep)); }
+.bubble.b6 { background: radial-gradient(circle at 30% 30%, #B37B6E, #6E2B26); }
 
 /* ── Sub-topic picker ── */
 .sub-wrap { max-width: 1000px; margin: 0 auto; }
@@ -844,6 +847,32 @@ section.scene.active { display: block; }
 .score-bar { height: 6px; width: 100px; background: var(--bg-deep); border-radius: 100px; overflow: hidden; }
 .score-bar > div { height: 100%; background: var(--wine); border-radius: 100px; }
 
+/* ── 2026-07-21 · Database lean restyle (matches UI-UX Designer/meatcode_lean_v1.html):
+   crumbs breadcrumb, .fchip category chips, mono cells, .db-metric relevance/H-index
+   bar, and a table footer so Export lives below the table (bottom-right). ── */
+.db-crumbs { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-faint); margin-bottom: 14px; }
+.db-crumbs .crumb-root { color: var(--wine); font-weight: 700; }
+.db-crumbs .crumb-here { color: var(--ink-dim); }
+.db-crumbs .sep { color: var(--line-strong); }
+.mc-fchips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.fchip { padding: 7px 14px; border-radius: 100px; font-size: 12px; font-weight: 700; color: var(--ink-dim); background: var(--surface); border: 1px solid var(--line); cursor: pointer; font-family: inherit; }
+.fchip:hover { border-color: var(--wine-tint); color: var(--wine-deep); }
+.fchip.on { background: var(--wine); color: var(--surface); border-color: var(--wine); }
+.db-mono { font-family: var(--mono); letter-spacing: -0.01em; }
+.db-mol.mono { font-family: var(--mono); letter-spacing: -0.01em; }
+.db-metric { display: flex; align-items: center; gap: 10px; }
+.db-bar { height: 6px; width: 96px; background: var(--surface-2); border-radius: 100px; overflow: hidden; flex-shrink: 0; }
+.db-bar > i { display: block; height: 100%; background: var(--wine); border-radius: 100px; }
+.db-metric-n { font-family: var(--mono); font-size: 12px; color: var(--ink-dim); min-width: 20px; font-variant-numeric: tabular-nums; }
+.db-tablefoot { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+.db-tablefoot .db-pager { margin: 0; padding: 4px 0; }
+.db-tablefoot .db-xlsx-btn { margin-left: auto; }
+/* Molecules: the category <select> is replaced by .fchip chips. Keep it in the DOM
+   (it still drives the live filter + loads facets) but hide it, and hide the now-redundant
+   inline "Show all" pill — the "All" chip clears the filter. */
+#db-molecules-select-a { display: none; }
+#db-molecules-chip { display: none; }
+
 /* ── SVG node styling ── */
 .node-acad { fill: var(--wine); }
 .node-ind  { fill: var(--brass); }
@@ -874,8 +903,8 @@ section.scene.active { display: block; }
 .oracle-ask:disabled { opacity: 0.5; cursor: not-allowed; }
 .oracle-starter-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 24px; }
 .oracle-starter {
-  padding: 7px 14px;
-  background: var(--surface); border: 1.5px solid var(--line);
+  padding: 7px 13px;
+  background: var(--surface); border: 1.5px solid var(--line-strong);
   border-radius: 100px; font-size: 12.5px; color: var(--ink-dim);
   cursor: pointer; font-family: var(--round);
 }
@@ -935,11 +964,12 @@ section.scene.active { display: block; }
   letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 8px;
 }
 .oracle-followup {
-  display: inline-block; padding: 8px 14px; margin: 3px 4px 3px 0;
-  background: var(--surface); border: 1.5px solid var(--line);
+  display: inline-block; padding: 7px 13px; margin: 3px 4px 3px 0;
+  background: var(--surface); border: 1.5px solid var(--line-strong);
   border-radius: 100px; font-size: 12.5px; color: var(--ink-dim);
   cursor: pointer; font-family: var(--round);
 }
+.oracle-followup::before { content: "\2192  "; color: var(--wine); font-weight: 700; }
 .oracle-followup:hover { border-color: var(--wine); color: var(--wine); background: var(--wine-mist); }
 
 /* ── Paper detail modal ── */
@@ -1386,14 +1416,15 @@ section.scene.active { display: block; }
    the export button + table loading/empty/offline states are new. */
 .db-pane { display: block; }
 .db-xlsx-btn {
-  padding: 8px 14px; border-radius: 10px;
-  border: 1px solid var(--wine); background: var(--surface);
-  font-weight: 700; font-size: 12px; cursor: pointer;
-  color: var(--wine); font-family: var(--round); white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 11px 20px; border-radius: 12px;
+  border: 1px solid var(--line-strong); background: transparent;
+  font-weight: 700; font-size: 13px; cursor: pointer;
+  color: var(--ink-dim); font-family: var(--round); white-space: nowrap;
 }
-.db-xlsx-btn:hover { background: var(--wine); color: var(--surface); }
+.db-xlsx-btn:hover { background: var(--wine); color: var(--surface); border-color: var(--wine); }
 .db-xlsx-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.db-xlsx-btn:disabled:hover { background: var(--surface); color: var(--wine); }
+.db-xlsx-btn:disabled:hover { background: transparent; color: var(--ink-dim); border-color: var(--line-strong); }
 .db-state-cell { padding: 36px 20px !important; text-align: center; color: var(--ink-faint); font-size: 13.5px; }
 .db-state-cell.err { color: #6F2A26; }
 
@@ -1618,14 +1649,14 @@ section.scene.active { display: block; }
 /* v9 · live expert filter bar (search / country / sort / top-rated / reset) */
 .mc-filterbar {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  background: var(--surface); border: 1px solid var(--line);
-  border-radius: 14px; padding: 10px 12px; margin-bottom: 14px;
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: 14px; padding: 12px 14px; margin-bottom: 14px;
 }
 .mc-search-box {
   display: flex; align-items: center; gap: 8px;
-  background: var(--bg-deep); border: 1px solid var(--line);
-  border-radius: 10px; padding: 8px 12px;
-  min-width: 220px; flex: 1 1 220px; max-width: 320px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 100px; padding: 8px 14px;
+  min-width: 200px; flex: 1 1 220px; max-width: 340px;
 }
 .mc-search-box svg { width: 14px; height: 14px; color: var(--ink-faint); flex-shrink: 0; }
 .mc-search-box input {
@@ -1635,16 +1666,16 @@ section.scene.active { display: block; }
 }
 .mc-search-box input::placeholder { color: var(--ink-faint); }
 .mc-country-select {
-  border: 1px solid var(--line); background: var(--bg-deep);
-  border-radius: 10px; padding: 8px 10px;
-  font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--ink-dim);
-  cursor: pointer; max-width: 190px;
+  border: 1px solid var(--line); background: var(--surface);
+  border-radius: 100px; padding: 8px 14px;
+  font-family: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink-dim);
+  cursor: pointer; max-width: 200px;
 }
-.mc-sort-group { display: flex; gap: 4px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
+.mc-sort-group { display: flex; gap: 4px; margin-left: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 100px; padding: 3px; }
 .mc-sort-btn {
   border: 0; background: transparent; cursor: pointer;
   font-family: inherit; font-size: 11.5px; font-weight: 700;
-  color: var(--ink-dim); padding: 7px 12px; border-radius: 8px;
+  color: var(--ink-dim); padding: 7px 12px; border-radius: 100px;
 }
 .mc-sort-btn.on { background: var(--wine); color: var(--surface); box-shadow: var(--shadow); }
 .mc-toggle-chip {
@@ -1660,7 +1691,7 @@ section.scene.active { display: block; }
 }
 .mc-reset-btn:hover { color: var(--wine-deep); text-decoration: underline; }
 .mc-result-count {
-  margin-left: auto; font-size: 11.5px; font-weight: 700;
+  margin-left: 0; font-size: 11.5px; font-weight: 700;
   color: var(--ink-faint); white-space: nowrap;
   display: flex; align-items: center; gap: 8px;
 }
@@ -2031,21 +2062,21 @@ section.scene.active { display: block; }
             <div class="persona-check"></div>
           </div>
           <div class="persona-card">
-            <div class="persona-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px;"><path d="M9 3h6"/><path d="M10 3v6L4.5 18.5c-.5 1 .2 2.2 1.4 2.2h12.2c1.2 0 1.9-1.2 1.4-2.2L14 9V3"/><path d="M7 14h10"/></svg></div>
-            <div class="persona-title">Alt-Meat Startup</div>
-            <div class="persona-desc">Practical routes to better meaty flavor — what to formulate, benchmark, and fix at product level.</div>
+            <div class="persona-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px;"><path d="M7 13c-2.5 0-4-2-4-4.2 0-2 1.7-3.8 4-3.8.5-1.8 2.2-3 4.5-3S15.5 3.2 16 5c2.3 0 4 1.8 4 3.8 0 2.2-1.5 4.2-4 4.2"/><path d="M7 13v8h10v-8"/><path d="M9 16v3M12 16v3M15 16v3"/></svg></div>
+            <div class="persona-title">Chef / Culinary R&D</div>
+            <div class="persona-desc">Aroma compounds, flavor pairings, and the science behind a dish that works.</div>
             <div class="persona-check"></div>
           </div>
           <div class="persona-card">
             <div class="persona-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px;"><path d="M9 3h6"/><path d="M10 3v5.5l-4.8 9.7c-.55 1.1.27 2.3 1.5 2.3h10.6c1.23 0 2.05-1.2 1.5-2.3L14 8.5V3"/><path d="M7.5 14h9"/><circle cx="11" cy="17.5" r=".8" fill="currentColor"/><circle cx="14" cy="16" r=".6" fill="currentColor"/></svg></div>
-            <div class="persona-title">Flavor / Ingredient Co.</div>
-            <div class="persona-desc">Yeast extracts, hydrolysates, masking and delivery systems — plus supplier and competitive intel.</div>
+            <div class="persona-title">Flavor House</div>
+            <div class="persona-desc">Patentable masking, top-notes, supplier intelligence, and competitive flavor IP.</div>
             <div class="persona-check"></div>
           </div>
           <div class="persona-card">
             <div class="persona-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px;"><path d="M3 21h18"/><path d="M5 18V13M9 18V9M13 18V14M17 18V7"/><path d="M3 8l4-3 4 4 8-6"/><path d="M19 3v3h-3"/></svg></div>
-            <div class="persona-title">GFI / Funder</div>
-            <div class="persona-desc">White-space mapping, project design, and funding prioritization across the field.</div>
+            <div class="persona-title">Strategy / Investor</div>
+            <div class="persona-desc">Where the field is moving, who's publishing, and which gaps are still open.</div>
             <div class="persona-check"></div>
           </div>
         </div>
@@ -2202,7 +2233,7 @@ section.scene.active { display: block; }
             </defs>
             <rect width="44" height="44" fill="url(#bgGradL)"/>
             <!-- shoulders / shirt -->
-            <path d="M4 44 C 6 34, 14 30, 22 30 C 30 30, 38 34, 40 44 Z" fill="#00736E"/>
+            <path d="M4 44 C 6 34, 14 30, 22 30 C 30 30, 38 34, 40 44 Z" fill="#7E2E2E"/>
             <!-- collar -->
             <path d="M18 32 L22 36 L26 32" fill="none" stroke="#FBF4EE" stroke-width="1.2"/>
             <!-- neck -->
@@ -2216,7 +2247,7 @@ section.scene.active { display: block; }
             <circle cx="25" cy="20.5" r="2" fill="none" stroke="#2A1F1F" stroke-width="0.8"/>
             <line x1="21" y1="20.5" x2="23" y2="20.5" stroke="#2A1F1F" stroke-width="0.8"/>
             <!-- smile -->
-            <path d="M20 24 Q 22 25.5, 24 24" stroke="#00736E" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+            <path d="M20 24 Q 22 25.5, 24 24" stroke="#7E2E2E" stroke-width="0.9" fill="none" stroke-linecap="round"/>
           </svg>
         </div>
         <div class="user-meta">
@@ -2229,45 +2260,25 @@ section.scene.active { display: block; }
 
     <main class="canvas">
       <div class="dash-hero">
-        <div class="dash-eyebrow">MeatCODE · your workspace</div>
         <div class="dash-greeting">Back at it, Lior 👋</div>
         <div class="dash-sub">Aroma formation in peptide-involved Maillard reaction.</div>
-        <div class="dash-stats">
-          <div class="dash-stat"><b>818</b><span>Sources</span></div>
-          <div class="dash-stat-sep"></div>
-          <div class="dash-stat"><b>799</b><span>Molecules</span></div>
-          <div class="dash-stat-sep"></div>
-          <div class="dash-stat"><b>374</b><span>Experts</span></div>
-          <div class="dash-stat-sep"></div>
-          <div class="dash-stat"><b>5</b><span>Domains</span></div>
-        </div>
       </div>
 
       <div class="dash-row">
-        <div class="dash-card d-map" onclick="location.hash='#map'">
+        <div class="dash-card">
           <div class="dash-card-title"><div class="dash-card-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg></div>Community Map</div>
           <div class="dash-card-desc">374 researchers and 89 organizations — see who's working on what, and who's open to a chat.</div>
           <div class="dash-card-meta">Updated 2 days ago</div>
         </div>
-        <div class="dash-card d-oracle" onclick="location.hash='#oracle'">
+        <div class="dash-card">
           <div class="dash-card-title"><div class="dash-card-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg></div>Food Oracle</div>
           <div class="dash-card-desc">Ask anything about flavor, aroma, or molecules. Every answer is cite-backed and traceable.</div>
           <div class="dash-card-meta">12 questions this week</div>
         </div>
-        <div class="dash-card d-research" onclick="location.hash='#research'">
+        <div class="dash-card">
           <div class="dash-card-title"><div class="dash-card-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg></div>Research</div>
           <div class="dash-card-desc">Tell us what you're chasing. We'll build the database around your question.</div>
           <div class="dash-card-meta">3 saved queries</div>
-        </div>
-        <div class="dash-card d-data" onclick="location.hash='#database'">
-          <div class="dash-card-title"><div class="dash-card-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="4" rx="5" ry="2"/><path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg></div>Database</div>
-          <div class="dash-card-desc">Molecules, experts, companies and sources — filter, sort and export the whole corpus.</div>
-          <div class="dash-card-meta">799 molecules · 818 sources</div>
-        </div>
-        <div class="dash-card d-sim" onclick="location.hash='#simulate'">
-          <div class="dash-card-title"><div class="dash-card-icon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg></div>Simulate</div>
-          <div class="dash-card-desc">Predict the aroma before you pipette — map precursors onto the benchmark grid.</div>
-          <div class="dash-card-meta">Estimate · not first-principles</div>
         </div>
       </div>
 
@@ -2353,7 +2364,7 @@ section.scene.active { display: block; }
         <div class="user-avatar">
           <svg class="avatar-svg" viewBox="0 0 44 44">
             <rect width="44" height="44" fill="#F4DFDB"/>
-            <path d="M4 44 C 6 34, 14 30, 22 30 C 30 30, 38 34, 40 44 Z" fill="#00736E"/>
+            <path d="M4 44 C 6 34, 14 30, 22 30 C 30 30, 38 34, 40 44 Z" fill="#7E2E2E"/>
             <path d="M18 32 L22 36 L26 32" fill="none" stroke="#FBF4EE" stroke-width="1.2"/>
             <rect x="19" y="26" width="6" height="6" fill="#E8B89A"/>
             <ellipse cx="22" cy="20" rx="8" ry="9" fill="#E8B89A"/>
@@ -2361,7 +2372,7 @@ section.scene.active { display: block; }
             <circle cx="19" cy="20.5" r="2" fill="none" stroke="#2A1F1F" stroke-width="0.8"/>
             <circle cx="25" cy="20.5" r="2" fill="none" stroke="#2A1F1F" stroke-width="0.8"/>
             <line x1="21" y1="20.5" x2="23" y2="20.5" stroke="#2A1F1F" stroke-width="0.8"/>
-            <path d="M20 24 Q 22 25.5, 24 24" stroke="#00736E" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+            <path d="M20 24 Q 22 25.5, 24 24" stroke="#7E2E2E" stroke-width="0.9" fill="none" stroke-linecap="round"/>
           </svg>
         </div>
         <div class="user-meta">
@@ -2375,8 +2386,9 @@ section.scene.active { display: block; }
     <main class="canvas">
       <div class="oracle-wrap">
         <div class="oracle-heading">
-          <h1>Ask the Food Oracle</h1>
-          <p>Cite-backed answers from the flavor and aroma database</p>
+          <div class="oracle-eyebrow">Oracle</div>
+          <h1>Ask the Oracle</h1>
+          <p>Every answer is grounded in the corpus, with sources you can open.</p>
         </div>
 
         <div class="oracle-input" id="oracleInputBox">
@@ -2476,7 +2488,7 @@ section.scene.active { display: block; }
         <div class="user-avatar">
           <svg class="avatar-svg" viewBox="0 0 44 44">
             <rect width="44" height="44" fill="#F4DFDB"/>
-            <path d="M4 44 C 6 34, 14 30, 22 30 C 30 30, 38 34, 40 44 Z" fill="#00736E"/>
+            <path d="M4 44 C 6 34, 14 30, 22 30 C 30 30, 38 34, 40 44 Z" fill="#7E2E2E"/>
             <path d="M18 32 L22 36 L26 32" fill="none" stroke="#FBF4EE" stroke-width="1.2"/>
             <rect x="19" y="26" width="6" height="6" fill="#E8B89A"/>
             <ellipse cx="22" cy="20" rx="8" ry="9" fill="#E8B89A"/>
@@ -2484,7 +2496,7 @@ section.scene.active { display: block; }
             <circle cx="19" cy="20.5" r="2" fill="none" stroke="#2A1F1F" stroke-width="0.8"/>
             <circle cx="25" cy="20.5" r="2" fill="none" stroke="#2A1F1F" stroke-width="0.8"/>
             <line x1="21" y1="20.5" x2="23" y2="20.5" stroke="#2A1F1F" stroke-width="0.8"/>
-            <path d="M20 24 Q 22 25.5, 24 24" stroke="#00736E" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+            <path d="M20 24 Q 22 25.5, 24 24" stroke="#7E2E2E" stroke-width="0.9" fill="none" stroke-linecap="round"/>
           </svg>
         </div>
         <div class="user-meta">
@@ -2621,7 +2633,7 @@ section.scene.active { display: block; }
         <div class="user-avatar">
           <svg class="avatar-svg" viewBox="0 0 44 44">
             <rect width="44" height="44" fill="#F4DFDB"/>
-            <path d="M4 44 C 6 34, 14 30, 22 30 C 30 30, 38 34, 40 44 Z" fill="#00736E"/>
+            <path d="M4 44 C 6 34, 14 30, 22 30 C 30 30, 38 34, 40 44 Z" fill="#7E2E2E"/>
             <path d="M18 32 L22 36 L26 32" fill="none" stroke="#FBF4EE" stroke-width="1.2"/>
             <rect x="19" y="26" width="6" height="6" fill="#E8B89A"/>
             <ellipse cx="22" cy="20" rx="8" ry="9" fill="#E8B89A"/>
@@ -2629,7 +2641,7 @@ section.scene.active { display: block; }
             <circle cx="19" cy="20.5" r="2" fill="none" stroke="#2A1F1F" stroke-width="0.8"/>
             <circle cx="25" cy="20.5" r="2" fill="none" stroke="#2A1F1F" stroke-width="0.8"/>
             <line x1="21" y1="20.5" x2="23" y2="20.5" stroke="#2A1F1F" stroke-width="0.8"/>
-            <path d="M20 24 Q 22 25.5, 24 24" stroke="#00736E" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+            <path d="M20 24 Q 22 25.5, 24 24" stroke="#7E2E2E" stroke-width="0.9" fill="none" stroke-linecap="round"/>
           </svg>
         </div>
         <div class="user-meta">
@@ -2745,7 +2757,7 @@ section.scene.active { display: block; }
         <div class="user-avatar">
           <svg class="avatar-svg" viewBox="0 0 44 44">
             <rect width="44" height="44" fill="#F4DFDB"/>
-            <path d="M4 44 C 6 34, 14 30, 22 30 C 30 30, 38 34, 40 44 Z" fill="#00736E"/>
+            <path d="M4 44 C 6 34, 14 30, 22 30 C 30 30, 38 34, 40 44 Z" fill="#7E2E2E"/>
             <path d="M18 32 L22 36 L26 32" fill="none" stroke="#FBF4EE" stroke-width="1.2"/>
             <rect x="19" y="26" width="6" height="6" fill="#E8B89A"/>
             <ellipse cx="22" cy="20" rx="8" ry="9" fill="#E8B89A"/>
@@ -2753,7 +2765,7 @@ section.scene.active { display: block; }
             <circle cx="19" cy="20.5" r="2" fill="none" stroke="#2A1F1F" stroke-width="0.8"/>
             <circle cx="25" cy="20.5" r="2" fill="none" stroke="#2A1F1F" stroke-width="0.8"/>
             <line x1="21" y1="20.5" x2="23" y2="20.5" stroke="#2A1F1F" stroke-width="0.8"/>
-            <path d="M20 24 Q 22 25.5, 24 24" stroke="#00736E" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+            <path d="M20 24 Q 22 25.5, 24 24" stroke="#7E2E2E" stroke-width="0.9" fill="none" stroke-linecap="round"/>
           </svg>
         </div>
         <div class="user-meta">
@@ -2868,7 +2880,7 @@ section.scene.active { display: block; }
         <div class="user-avatar">
           <svg class="avatar-svg" viewBox="0 0 44 44">
             <rect width="44" height="44" fill="#F4DFDB"/>
-            <path d="M4 44 C 6 34, 14 30, 22 30 C 30 30, 38 34, 40 44 Z" fill="#00736E"/>
+            <path d="M4 44 C 6 34, 14 30, 22 30 C 30 30, 38 34, 40 44 Z" fill="#7E2E2E"/>
             <path d="M18 32 L22 36 L26 32" fill="none" stroke="#FBF4EE" stroke-width="1.2"/>
             <rect x="19" y="26" width="6" height="6" fill="#E8B89A"/>
             <ellipse cx="22" cy="20" rx="8" ry="9" fill="#E8B89A"/>
@@ -2876,7 +2888,7 @@ section.scene.active { display: block; }
             <circle cx="19" cy="20.5" r="2" fill="none" stroke="#2A1F1F" stroke-width="0.8"/>
             <circle cx="25" cy="20.5" r="2" fill="none" stroke="#2A1F1F" stroke-width="0.8"/>
             <line x1="21" y1="20.5" x2="23" y2="20.5" stroke="#2A1F1F" stroke-width="0.8"/>
-            <path d="M20 24 Q 22 25.5, 24 24" stroke="#00736E" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+            <path d="M20 24 Q 22 25.5, 24 24" stroke="#7E2E2E" stroke-width="0.9" fill="none" stroke-linecap="round"/>
           </svg>
         </div>
         <div class="user-meta">
@@ -2905,6 +2917,7 @@ section.scene.active { display: block; }
 
         <!-- Molecules -->
         <div class="db-pane" id="dbPaneMolecules" data-pane="molecules">
+          <div class="db-crumbs"><span class="crumb-root">Data</span><span class="sep">/</span><span class="crumb-here">Molecules</span></div>
           <div class="mc-filterbar">
             <div class="mc-search-box">
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="5"/><line x1="11" y1="11" x2="14" y2="14"/></svg>
@@ -2914,25 +2927,29 @@ section.scene.active { display: block; }
               <option value="">All categories</option>
             </select>
             <span class="mc-active-filter" id="db-molecules-chip" hidden></span>
+            <div class="mc-fchips" id="db-molecules-fchips"></div>
             <div class="mc-sort-group" id="db-molecules-sort">
               <button class="mc-sort-btn on" data-sort="name">Name</button>
               <button class="mc-sort-btn" data-sort="popularity">Popularity</button>
             </div>
             <button class="mc-reset-btn" id="db-molecules-reset" type="button">Reset</button>
             <div class="mc-result-count" id="db-molecules-status"><span class="mc-status-dot"></span><span id="db-molecules-statustext">— molecules</span></div>
-            <button class="db-xlsx-btn" id="db-molecules-xlsx" type="button" disabled>Download XLSX</button>
           </div>
           <div class="db-table">
             <table>
-              <thead><tr><th>Molecule</th><th>Category</th><th>Taste</th><th>Notes</th><th>Mentions</th></tr></thead>
-              <tbody id="db-molecules-tbody"><tr><td class="db-state-cell" colspan="5">Loading…</td></tr></tbody>
+              <thead><tr><th>Molecule</th><th>Class</th><th>Sources</th><th>Relevance</th></tr></thead>
+              <tbody id="db-molecules-tbody"><tr><td class="db-state-cell" colspan="4">Loading…</td></tr></tbody>
             </table>
           </div>
-          <div class="db-pager" id="db-molecules-pager" hidden></div>
+          <div class="db-tablefoot">
+            <div class="db-pager" id="db-molecules-pager" hidden></div>
+            <button class="db-xlsx-btn" id="db-molecules-xlsx" type="button" disabled>⤓ Export (.xlsx)</button>
+          </div>
         </div>
 
         <!-- Experts -->
         <div class="db-pane" id="dbPaneExperts" data-pane="experts" style="display:none;">
+          <div class="db-crumbs"><span class="crumb-root">Data</span><span class="sep">/</span><span class="crumb-here">Experts</span></div>
           <div class="mc-filterbar">
             <div class="mc-search-box">
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="5"/><line x1="11" y1="11" x2="14" y2="14"/></svg>
@@ -2948,18 +2965,21 @@ section.scene.active { display: block; }
             <button class="mc-toggle-chip" id="db-experts-toggle" type="button">★ Top-rated only</button>
             <button class="mc-reset-btn" id="db-experts-reset" type="button">Reset</button>
             <div class="mc-result-count" id="db-experts-status"><span class="mc-status-dot"></span><span id="db-experts-statustext">— experts</span></div>
-            <button class="db-xlsx-btn" id="db-experts-xlsx" type="button" disabled>Download XLSX</button>
           </div>
           <div class="db-table">
             <table>
-              <thead><tr><th>Expert</th><th>Affiliation</th><th>Country</th><th>H-index</th><th>Papers</th></tr></thead>
-              <tbody id="db-experts-tbody"><tr><td class="db-state-cell" colspan="5">Loading…</td></tr></tbody>
+              <thead><tr><th>Name</th><th>Affiliation</th><th>Country</th><th>H-index</th></tr></thead>
+              <tbody id="db-experts-tbody"><tr><td class="db-state-cell" colspan="4">Loading…</td></tr></tbody>
             </table>
+          </div>
+          <div class="db-tablefoot">
+            <button class="db-xlsx-btn" id="db-experts-xlsx" type="button" disabled>⤓ Export (.xlsx)</button>
           </div>
         </div>
 
         <!-- Companies -->
         <div class="db-pane" id="dbPaneCompanies" data-pane="companies" style="display:none;">
+          <div class="db-crumbs"><span class="crumb-root">Data</span><span class="sep">/</span><span class="crumb-here">Companies</span></div>
           <div class="mc-filterbar">
             <div class="mc-search-box">
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="5"/><line x1="11" y1="11" x2="14" y2="14"/></svg>
@@ -2974,18 +2994,21 @@ section.scene.active { display: block; }
             </div>
             <button class="mc-reset-btn" id="db-companies-reset" type="button">Reset</button>
             <div class="mc-result-count" id="db-companies-status"><span class="mc-status-dot"></span><span id="db-companies-statustext">— companies</span></div>
-            <button class="db-xlsx-btn" id="db-companies-xlsx" type="button" disabled>Download XLSX</button>
           </div>
           <div class="db-table">
             <table>
-              <thead><tr><th>Company</th><th>Country</th><th>Type</th><th>Website</th></tr></thead>
-              <tbody id="db-companies-tbody"><tr><td class="db-state-cell" colspan="4">Loading…</td></tr></tbody>
+              <thead><tr><th>Name</th><th>Country</th><th>Website</th></tr></thead>
+              <tbody id="db-companies-tbody"><tr><td class="db-state-cell" colspan="3">Loading…</td></tr></tbody>
             </table>
+          </div>
+          <div class="db-tablefoot">
+            <button class="db-xlsx-btn" id="db-companies-xlsx" type="button" disabled>⤓ Export (.xlsx)</button>
           </div>
         </div>
 
         <!-- Sources -->
         <div class="db-pane" id="dbPaneSources" data-pane="sources" style="display:none;">
+          <div class="db-crumbs"><span class="crumb-root">Data</span><span class="sep">/</span><span class="crumb-here">Sources</span></div>
           <div class="mc-filterbar">
             <div class="mc-search-box">
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="5"/><line x1="11" y1="11" x2="14" y2="14"/></svg>
@@ -3002,13 +3025,15 @@ section.scene.active { display: block; }
             <button class="mc-toggle-chip" id="db-sources-toggle" type="button">★ High relevance only</button>
             <button class="mc-reset-btn" id="db-sources-reset" type="button">Reset</button>
             <div class="mc-result-count" id="db-sources-status"><span class="mc-status-dot"></span><span id="db-sources-statustext">— sources</span></div>
-            <button class="db-xlsx-btn" id="db-sources-xlsx" type="button" disabled>Download XLSX</button>
           </div>
           <div class="db-table">
             <table>
               <thead><tr><th>Source</th><th>Year</th><th>Journal</th><th>Citations</th><th>Score</th></tr></thead>
               <tbody id="db-sources-tbody"><tr><td class="db-state-cell" colspan="5">Loading…</td></tr></tbody>
             </table>
+          </div>
+          <div class="db-tablefoot">
+            <button class="db-xlsx-btn" id="db-sources-xlsx" type="button" disabled>⤓ Export (.xlsx)</button>
           </div>
         </div>
       </div>
@@ -3071,7 +3096,7 @@ section.scene.active { display: block; }
         <div class="user-avatar">
           <svg viewBox="0 0 44 44">
             <rect width="44" height="44" fill="#F4DFDB"/>
-            <path d="M4 44 C 6 34, 14 30, 22 30 C 30 30, 38 34, 40 44 Z" fill="#00736E"/>
+            <path d="M4 44 C 6 34, 14 30, 22 30 C 30 30, 38 34, 40 44 Z" fill="#7E2E2E"/>
             <path d="M18 32 L22 36 L26 32" fill="none" stroke="#FBF4EE" stroke-width="1.2"/>
             <rect x="19" y="26" width="6" height="6" fill="#E8B89A"/>
             <ellipse cx="22" cy="20" rx="8" ry="9" fill="#E8B89A"/>
@@ -3079,7 +3104,7 @@ section.scene.active { display: block; }
             <circle cx="19" cy="20.5" r="2" fill="none" stroke="#2A1F1F" stroke-width="0.8"/>
             <circle cx="25" cy="20.5" r="2" fill="none" stroke="#2A1F1F" stroke-width="0.8"/>
             <line x1="21" y1="20.5" x2="23" y2="20.5" stroke="#2A1F1F" stroke-width="0.8"/>
-            <path d="M20 24 Q 22 25.5, 24 24" stroke="#00736E" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+            <path d="M20 24 Q 22 25.5, 24 24" stroke="#7E2E2E" stroke-width="0.9" fill="none" stroke-linecap="round"/>
           </svg>
         </div>
         <div class="user-meta">
@@ -3183,7 +3208,7 @@ section.scene.active { display: block; }
         <div class="user-avatar">
           <svg viewBox="0 0 44 44">
             <rect width="44" height="44" fill="#F4DFDB"/>
-            <path d="M4 44 C 6 34, 14 30, 22 30 C 30 30, 38 34, 40 44 Z" fill="#00736E"/>
+            <path d="M4 44 C 6 34, 14 30, 22 30 C 30 30, 38 34, 40 44 Z" fill="#7E2E2E"/>
             <path d="M18 32 L22 36 L26 32" fill="none" stroke="#FBF4EE" stroke-width="1.2"/>
             <rect x="19" y="26" width="6" height="6" fill="#E8B89A"/>
             <ellipse cx="22" cy="20" rx="8" ry="9" fill="#E8B89A"/>
@@ -3191,7 +3216,7 @@ section.scene.active { display: block; }
             <circle cx="19" cy="20.5" r="2" fill="none" stroke="#2A1F1F" stroke-width="0.8"/>
             <circle cx="25" cy="20.5" r="2" fill="none" stroke="#2A1F1F" stroke-width="0.8"/>
             <line x1="21" y1="20.5" x2="23" y2="20.5" stroke="#2A1F1F" stroke-width="0.8"/>
-            <path d="M20 24 Q 22 25.5, 24 24" stroke="#00736E" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+            <path d="M20 24 Q 22 25.5, 24 24" stroke="#7E2E2E" stroke-width="0.9" fill="none" stroke-linecap="round"/>
           </svg>
         </div>
         <div class="user-meta">
@@ -3444,7 +3469,7 @@ section.scene.active { display: block; }
         <div class="user-avatar">
           <svg viewBox="0 0 44 44">
             <rect width="44" height="44" fill="#F4DFDB"/>
-            <path d="M4 44 C 6 34, 14 30, 22 30 C 30 30, 38 34, 40 44 Z" fill="#00736E"/>
+            <path d="M4 44 C 6 34, 14 30, 22 30 C 30 30, 38 34, 40 44 Z" fill="#7E2E2E"/>
             <path d="M18 32 L22 36 L26 32" fill="none" stroke="#FBF4EE" stroke-width="1.2"/>
             <rect x="19" y="26" width="6" height="6" fill="#E8B89A"/>
             <ellipse cx="22" cy="20" rx="8" ry="9" fill="#E8B89A"/>
@@ -3452,7 +3477,7 @@ section.scene.active { display: block; }
             <circle cx="19" cy="20.5" r="2" fill="none" stroke="#2A1F1F" stroke-width="0.8"/>
             <circle cx="25" cy="20.5" r="2" fill="none" stroke="#2A1F1F" stroke-width="0.8"/>
             <line x1="21" y1="20.5" x2="23" y2="20.5" stroke="#2A1F1F" stroke-width="0.8"/>
-            <path d="M20 24 Q 22 25.5, 24 24" stroke="#00736E" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+            <path d="M20 24 Q 22 25.5, 24 24" stroke="#7E2E2E" stroke-width="0.9" fill="none" stroke-linecap="round"/>
           </svg>
         </div>
         <div class="user-meta">
@@ -5727,18 +5752,17 @@ window.rebuildExpertList = function () {};
       endpoint: '/api/molecules', singular: 'molecule', plural: 'molecules',
       filterParam: 'category', facetKey: 'categories',
       sorts: [['name', 'Name'], ['popularity', 'Popularity']], defaultSort: 'name', limit: 1000,
-      /* Landing filter. Only ~10 of 799 molecules carry a category today, so this
-         default hides most of the table on purpose — which is why it ships loud:
-         highlighted select + "Category: Fats / Show all" chip + an "N of 799"
-         count, so a short table can never read as "the database is broken". */
-      defaultFilter: 'Fats',
+      /* 2026-07-21 · lean restyle: the category <select> became .fchip chips (All ·
+         Pyrazines · Aldehydes · Sulfur · …), so we now land on "All" instead of the
+         old loud "Fats" default — categories are populated enough that the full table
+         reads fine, and the "N of <corpus>" count still shows on any chip filter. */
+      defaultFilter: '',
       pageSize: 50,
       columns: [
-        { key: 'name', label: 'Molecule', bold: true },
-        { key: 'category', label: 'Category' },
-        { key: 'taste', label: 'Taste' },
-        { key: 'use_notes', label: 'Notes', truncate: 70 },
-        { key: 'mentions_count', label: 'Mentions', numeric: true }
+        { key: 'name', label: 'Molecule', bold: true, mono: true },
+        { key: 'category', label: 'Class' },
+        { key: 'mentions_count', label: 'Sources', numeric: true, mono: true },
+        { key: 'priority_score', label: 'Relevance', bar: true, barMax: 100 }
       ],
       xlsxFile: 'meatcode_molecules.xlsx'
     },
@@ -5748,14 +5772,15 @@ window.rebuildExpertList = function () {};
       sorts: [['h_index', 'H-index'], ['papers', 'Papers']], defaultSort: 'h_index', limit: 500,
       toggle: { param: 'min_relevance', value: '0.9', label: '★ Top-rated only' },
       columns: [
-        { key: 'name', label: 'Expert', bold: true },
+        { key: 'name', label: 'Name', bold: true },
         { key: 'affiliation', label: 'Affiliation', fallback: ['current_org'] },
         { key: 'country', label: 'Country' },
-        { key: 'h_index', label: 'H-index', numeric: true },
-        { key: 'total_papers', label: 'Papers', numeric: true }
+        { key: 'h_index', label: 'H-index', bar: true }
         /* 2026-07-20 · the relevance column is no longer displayed (the API still
            returns relevance_score — it drives the sort, the ★ toggle and the row
-           detail modal, it just isn't a table column any more). */
+           detail modal, it just isn't a table column any more). 2026-07-21 · lean
+           restyle: H-index now renders as a metric bar (dynamic max across the view);
+           the Papers count moved into the row-detail modal only. */
       ],
       xlsxFile: 'meatcode_experts.xlsx'
     },
@@ -5764,9 +5789,8 @@ window.rebuildExpertList = function () {};
       filterParam: 'country', facetKey: 'countries',
       sorts: [['name', 'Name'], ['country', 'Country']], defaultSort: 'name', limit: 1000,
       columns: [
-        { key: 'name', label: 'Company', bold: true },
+        { key: 'name', label: 'Name', bold: true },
         { key: 'country', label: 'Country' },
-        { key: 'type', label: 'Type' },
         { key: 'website', label: 'Website', link: true }
       ],
       xlsxFile: 'meatcode_companies.xlsx'
@@ -5811,10 +5835,26 @@ window.rebuildExpertList = function () {};
     if (!/^https?:\/\//i.test(href)) href = 'https://' + href.replace(/^\/+/, '');
     return '<a class="db-link" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + esc(label) + '</a>';
   }
+  function barHTML(row, col) {
+    var raw = fieldValue(row, col);
+    var num = (raw == null || raw === '') ? null : +raw;
+    if (num == null || isNaN(num)) {
+      return '<div class="db-metric"><span class="db-bar"><i style="width:0"></i></span><span class="db-metric-n">—</span></div>';
+    }
+    var max = col.barMax || col._max || 100;
+    if (!(max > 0)) max = 100;
+    var pct = Math.max(3, Math.min(100, (num / max) * 100));
+    var shown = Math.round(num * 10) / 10;
+    if (shown === Math.round(shown)) shown = Math.round(shown);
+    return '<div class="db-metric"><span class="db-bar"><i style="width:' + pct.toFixed(0) + '%"></i></span><span class="db-metric-n">' + esc(shown) + '</span></div>';
+  }
   function cellHTML(row, col) {
     if (col.link) return linkHTML(fieldValue(row, col));
+    if (col.bar) return barHTML(row, col);
     var val = displayValue(row, col);
-    return col.bold ? '<div class="db-mol">' + val + '</div>' : val;
+    if (col.bold) return '<div class="db-mol' + (col.mono ? ' mono' : '') + '">' + val + '</div>';
+    if (col.mono) return '<span class="db-mono">' + val + '</span>';
+    return val;
   }
   function displayValue(row, col) {
     var v = fieldValue(row, col);
@@ -5856,6 +5896,14 @@ window.rebuildExpertList = function () {};
     function renderRows(rows) {
       if (!tbody) return;
       tbody.innerHTML = '';
+      // Metric bars normalise against the largest value in the current view (unless the
+      // column pins its own barMax, e.g. molecules relevance = 0–100) so bars stay comparable.
+      cfg.columns.forEach(function (col) {
+        if (!col.bar || col.barMax) return;
+        var mx = 0;
+        rows.forEach(function (r) { var n = +fieldValue(r, col); if (!isNaN(n) && n > mx) mx = n; });
+        col._max = mx;
+      });
       rows.forEach(function (row) {
         var tr = document.createElement('tr');
         tr.style.cursor = 'pointer';
@@ -5944,6 +5992,14 @@ window.rebuildExpertList = function () {};
     function renderFilterChip() {
       var v = STATE[name].filter;
       if (selectEl) selectEl.classList.toggle('filtered', !!v);
+      // Keep the lean .fchip category chips (molecules) in sync with the active filter.
+      var fcSync = document.getElementById('db-' + name + '-fchips');
+      if (fcSync) {
+        var cfv = v || '';
+        Array.prototype.forEach.call(fcSync.querySelectorAll('.fchip'), function (x) {
+          x.classList.toggle('on', (x.getAttribute('data-val') || '') === cfv);
+        });
+      }
       if (!chipEl) return;
       if (!v) { chipEl.innerHTML = ''; chipEl.hidden = true; return; }
       chipEl.hidden = false;
@@ -6049,6 +6105,21 @@ window.rebuildExpertList = function () {};
       fetchRows();
     });
 
+    /* Lean category chips (molecules): built from the live facet list, kept as .fchip
+       pills that drive the (hidden) <select> so 100% of the existing filter wiring —
+       fetch, count, pager, XLSX — is reused. No-ops for tabs without a chip container. */
+    function buildFacetChips() {
+      var wrap = document.getElementById('db-' + name + '-fchips');
+      if (!wrap || !selectEl) return;
+      var cur = STATE[name].filter || '';
+      var html = '<button type="button" class="fchip' + (cur === '' ? ' on' : '') + '" data-val="">All</button>';
+      for (var i = 0; i < selectEl.options.length; i++) {
+        var o = selectEl.options[i];
+        if (!o.value) continue;
+        html += '<button type="button" class="fchip' + (o.value === cur ? ' on' : '') + '" data-val="' + esc(o.value) + '">' + esc(o.textContent) + '</button>';
+      }
+      wrap.innerHTML = html;
+    }
     function loadFacets() {
       if (!selectEl) return;
       fetch(API + '/api/db-facets?entity=' + name)
@@ -6068,8 +6139,9 @@ window.rebuildExpertList = function () {};
             selectEl.appendChild(opt);
           });
           syncSelect();
+          buildFacetChips();
         })
-        .catch(function () { syncSelect(); /* select just keeps its placeholder-only option */ });
+        .catch(function () { syncSelect(); buildFacetChips(); /* select just keeps its placeholder-only option */ });
     }
 
     if (searchEl) searchEl.addEventListener('input', function (e) {
@@ -6079,6 +6151,16 @@ window.rebuildExpertList = function () {};
       STATE[name].timer = setTimeout(fetchRows, 300);
     });
     if (selectEl) selectEl.addEventListener('change', function (e) { STATE[name].filter = e.target.value; STATE[name].page = 0; fetchRows(); });
+    var fchipsEl = document.getElementById('db-' + name + '-fchips');
+    if (fchipsEl) fchipsEl.addEventListener('click', function (e) {
+      var b = e.target.closest && e.target.closest('.fchip');
+      if (!b || !selectEl) return;
+      var v = b.getAttribute('data-val') || '';
+      if (v === (STATE[name].filter || '')) return;
+      selectEl.value = v;
+      STATE[name].filter = v; STATE[name].page = 0;
+      fetchRows();
+    });
     if (sortEl) sortEl.addEventListener('click', function (e) {
       var btn = e.target.closest && e.target.closest('.mc-sort-btn');
       if (!btn) return;
@@ -6108,6 +6190,7 @@ window.rebuildExpertList = function () {};
     if (xlsxEl) xlsxEl.addEventListener('click', function () { exportXlsx(name); });
 
     syncSelect();       // show the landing filter before the facet list lands
+    buildFacetChips();  // render the "All" chip immediately; loadFacets refreshes it
     loadFacets();
   }
 

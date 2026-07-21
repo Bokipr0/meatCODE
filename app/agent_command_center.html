@@ -9,166 +9,152 @@
   color-scheme: light;
   --bg:#f6f7f5; --surface:#ffffff; --ink:#14201d; --muted:#6b7a75;
   --line:#e4e8e4; --accent:#127a6b; --accent-soft:#e4f2ef; --accent-ink:#0c5a4e;
-  --amber:#b7791f; --amber-soft:#fbf3e3; --red:#b4443a; --red-soft:#fbe9e7;
-  --radius:14px; --shadow:0 1px 2px rgba(20,32,29,.05),0 6px 20px rgba(20,32,29,.04);
+  --amber:#b7791f; --red:#b4443a; --red-soft:#fbe9e7;
+  --radius:13px; --shadow:0 1px 2px rgba(20,32,29,.05),0 6px 20px rgba(20,32,29,.04);
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);overflow:hidden;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
-.wrap{max-width:1080px;margin:0 auto;padding:22px 20px 60px}
-a{color:var(--accent-ink)}
+.wrap{max-width:1120px;margin:0 auto;height:100vh;padding:14px 20px 16px;
+  display:flex;flex-direction:column;gap:10px;overflow:hidden}
 h1,h2,h3{margin:0;font-weight:650;letter-spacing:-.01em}
 .muted{color:var(--muted)}
 .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 
-/* header */
-.top{display:flex;align-items:center;gap:16px;margin-bottom:8px}
-.brand{display:flex;gap:12px;align-items:center}
-.logo{width:38px;height:38px;border-radius:10px;background:var(--accent);color:#fff;
-  display:grid;place-items:center;font-weight:800;font-size:16px;letter-spacing:-.03em}
-.brand h1{font-size:19px}
-.brand .sub{font-size:12.5px;color:var(--muted);margin-top:1px}
+/* header (compact) */
+.top{display:flex;align-items:center;gap:11px;flex:none}
+.logo{width:32px;height:32px;border-radius:9px;background:var(--accent);color:#fff;
+  display:grid;place-items:center;font-weight:800;font-size:15px;letter-spacing:-.03em;flex:none}
+.top h1{font-size:17px}
+.top .sub{font-size:11.5px;color:var(--muted);margin-top:0}
+
+.section-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+  font-weight:700;flex:none}
+
 .btn{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);
   color:var(--ink);padding:8px 13px;border-radius:10px;cursor:pointer;transition:.12s}
 .btn:hover{border-color:#cbd3cd;background:#fbfcfb}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 .btn.primary:hover{background:var(--accent-ink)}
 .btn.ghost{background:transparent}
+.btn.sm{padding:6px 10px;font-size:12.5px}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 
-.section-label{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
-  font-weight:700;margin:26px 2px 12px}
-
-/* agent grid */
-.agents{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
-.agent{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
-  box-shadow:var(--shadow);overflow:hidden;transition:.14s;position:relative}
+/* compact agent roster */
+.agents{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:9px;flex:none}
+.agent{display:flex;align-items:center;gap:9px;padding:9px 10px;background:var(--surface);
+  border:1px solid var(--line);border-radius:11px;box-shadow:var(--shadow);cursor:pointer;
+  position:relative;transition:.12s}
+.agent:hover{border-color:#cbd3cd}
 .agent.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),var(--shadow)}
-.agent-head{display:flex;gap:12px;padding:15px 16px 12px;cursor:pointer;align-items:flex-start}
-.av{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font-size:20px;flex:none}
+.av{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:16px;flex:none}
 .agent-meta{flex:1;min-width:0}
-.agent-name{font-size:15px;font-weight:680;display:flex;align-items:center;gap:8px}
-.agent-role{font-size:12px;color:var(--muted);margin-top:1px}
-.chk{width:20px;height:20px;border-radius:6px;border:1.6px solid #cdd5cf;flex:none;display:grid;place-items:center;
-  cursor:pointer;transition:.12s;background:#fff;margin-top:2px}
-.chk.on{background:var(--accent);border-color:var(--accent)}
-.chk svg{width:12px;height:12px;stroke:#fff;stroke-width:3;fill:none;opacity:0;transition:.1s}
-.chk.on svg{opacity:1}
-.sdot{width:8px;height:8px;border-radius:50%;flex:none}
+.agent-name{font-size:13px;font-weight:670;display:flex;align-items:center;gap:6px}
+.agent-role{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sdot{width:7px;height:7px;border-radius:50%;flex:none}
 .s-active{background:#25a06f}.s-idle{background:#c9a227}.s-standby{background:#b0b8b2}
-.agent-body{padding:0 16px 15px}
-.trait-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;margin:2px 0 8px}
-.traits{display:flex;flex-wrap:wrap;gap:6px}
-.trait{font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:999px;border:1px solid transparent}
-.last{font-size:11px;color:var(--muted);margin-top:12px;display:flex;align-items:center;gap:6px}
+.pick{width:18px;height:18px;border-radius:6px;border:1.6px solid #cdd5cf;flex:none;display:grid;place-items:center;background:#fff}
+.pick svg{width:11px;height:11px;stroke:#fff;stroke-width:3;fill:none;opacity:0}
+.agent.sel .pick{background:var(--accent);border-color:var(--accent)}
+.agent.sel .pick svg{opacity:1}
+/* traits popover (hidden; shows on hover/focus) */
+.trait-pop{position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:30;display:none;
+  background:var(--surface);border:1px solid var(--line);border-radius:11px;box-shadow:0 10px 30px rgba(20,32,29,.16);
+  padding:11px 12px}
+.agent:hover .trait-pop,.agent.pop .trait-pop{display:block}
+.tp-title{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:7px}
+.traits{display:flex;flex-wrap:wrap;gap:5px}
+.trait{font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px}
 
-/* dispatch */
+/* composer — the tall chat box, high on the screen */
 .dispatch{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
-  box-shadow:var(--shadow);padding:18px;margin-top:14px}
-.dispatch h2{font-size:15px;margin-bottom:3px}
-.selchips{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0}
-.selchip{font-size:12px;font-weight:600;padding:5px 10px 5px 8px;border-radius:999px;
-  background:var(--accent-soft);color:var(--accent-ink);display:inline-flex;align-items:center;gap:6px}
+  box-shadow:var(--shadow);padding:14px 16px;flex:1;min-height:0;display:flex;flex-direction:column;gap:9px;position:relative}
+.disp-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:none}
+.disp-top h2{font-size:14px}
+.selchips{display:flex;flex-wrap:wrap;gap:6px;flex:1;min-width:0}
+.selchip{font-size:11.5px;font-weight:600;padding:4px 9px 4px 8px;border-radius:999px;
+  background:var(--accent-soft);color:var(--accent-ink);display:inline-flex;align-items:center;gap:5px}
 .selchip .x{cursor:pointer;opacity:.6;font-weight:700}.selchip .x:hover{opacity:1}
 .selchip.empty{background:#eef1ee;color:var(--muted)}
-textarea{width:100%;min-height:280px;resize:vertical;font:inherit;font-size:15px;line-height:1.6;
-  padding:16px;border:1px solid var(--line);border-radius:12px;background:#fbfcfb;color:var(--ink);margin-top:2px}
+textarea{flex:1;min-height:0;width:100%;resize:none;font:inherit;font-size:15px;line-height:1.6;
+  padding:16px;border:1px solid var(--line);border-radius:12px;background:#fbfcfb;color:var(--ink)}
 textarea:focus{outline:none;border-color:var(--accent);background:#fff}
-.ideas-label{font-size:11.5px;color:var(--muted);font-weight:600;margin:14px 0 7px}
-.examples{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0}
-.ex{font-size:11.5px;color:var(--muted);border:1px dashed var(--line);border-radius:8px;padding:5px 9px;cursor:pointer;background:transparent}
-.ex:hover{border-color:var(--accent);color:var(--accent-ink)}
-.optrow{display:flex;align-items:center;gap:9px;margin:14px 0 4px;font-size:12.5px}
-.toggle{width:38px;height:22px;border-radius:999px;background:#d7ddd8;position:relative;cursor:pointer;transition:.15s;flex:none}
+
+/* footer action bar */
+.foot-bar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;flex:none;position:relative}
+.coordwrap{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted)}
+.toggle{width:34px;height:20px;border-radius:999px;background:#d7ddd8;position:relative;cursor:pointer;transition:.15s;flex:none}
 .toggle.on{background:var(--accent)}
-.toggle i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
-.toggle.on i{left:18px}
-.actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
-.actions .btn{flex:1;min-width:150px;justify-content:center;display:flex;align-items:center;gap:7px}
-.hint{font-size:11.5px;color:var(--muted);margin-top:11px;line-height:1.55}
-.launchbar{display:none;align-items:center;gap:11px;margin-top:13px;padding:12px 14px;border-radius:11px;
-  background:var(--accent-soft);border:1px solid #bfe0d9;color:var(--accent-ink);font-size:12.5px;line-height:1.5}
-.launchbar.show{display:flex}
-.launchbar.busy{background:#fbf3e3;border-color:#ecd9a8;color:var(--amber)}
-.launchbar.err{background:var(--red-soft);border-color:#eec4bf;color:var(--red)}
-.lb-step{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;
-  display:grid;place-items:center;flex:none;font-size:12px}
-.launchbar.busy .lb-step{background:var(--amber)}
-.launchbar.err .lb-step{background:var(--red)}
+.toggle i{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.toggle.on i{left:16px}
+.spacer{flex:1}
+/* ideas popover */
+.ideas-pop{position:absolute;bottom:calc(100% + 8px);left:0;z-index:40;display:none;
+  background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 34px rgba(20,32,29,.18);
+  padding:11px;width:min(440px,86vw)}
+.ideas-pop.show{display:block}
+.ideas-pop .ip-title{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:8px}
+.ideas-grid{display:flex;flex-wrap:wrap;gap:6px}
+.ex{font-size:12px;color:var(--muted);border:1px dashed var(--line);border-radius:8px;padding:5px 9px;cursor:pointer;background:transparent}
+.ex:hover{border-color:var(--accent);color:var(--accent-ink)}
 
-/* preview */
-.preview{margin-top:14px;border:1px solid var(--line);border-radius:11px;background:#fbfcfb;display:none}
+/* preview overlay (fixed — never affects page flow) */
+.preview{position:fixed;right:20px;bottom:74px;width:min(520px,90vw);max-height:44vh;overflow:auto;z-index:60;
+  border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:0 16px 40px rgba(20,32,29,.22);display:none}
 .preview.show{display:block}
-.preview-head{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;
-  padding:10px 13px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+.preview-head{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;
+  padding:10px 13px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;position:sticky;top:0;background:var(--surface)}
 .preview pre{margin:0;padding:13px;font-size:12px;line-height:1.55;white-space:pre-wrap;
-  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#2a3a35;max-height:280px;overflow:auto}
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#2a3a35}
 
-/* toast */
 #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;
   background:var(--ink);color:#fff;padding:11px 18px;border-radius:11px;font-size:13px;font-weight:600;
-  transition:.22s;pointer-events:none;z-index:50;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+  transition:.22s;pointer-events:none;z-index:80;box-shadow:0 8px 30px rgba(0,0,0,.25)}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-.foot{margin-top:26px;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.6}
-@media(max-width:720px){.top{flex-direction:column;align-items:flex-start}}
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <div class="top">
-    <div class="brand">
-      <div class="logo">M</div>
-      <div>
-        <h1>Agent Command Center</h1>
-        <div class="sub">MeatCODE · Open Flavor &amp; Aroma Initiative — team orchestration</div>
-      </div>
+    <div class="logo">M</div>
+    <div>
+      <h1>Agent Command Center</h1>
+      <div class="sub">MeatCODE · team orchestration — pick agents, compose a task, copy it into your chat</div>
     </div>
   </div>
 
-  <!-- ROSTER -->
-  <div class="section-label">Your team — click an agent (or its checkbox) to enlist it in a task</div>
+  <div class="section-label">Your team — click to enlist · hover a card for its character</div>
   <div class="agents" id="roster"></div>
 
-  <!-- COMPOSE & COPY -->
-  <div class="section-label">Compose &amp; copy — build a multi-agent order, paste it into your chat</div>
   <div class="dispatch">
-    <h2>Compose a joint task</h2>
-    <div class="muted" style="font-size:12.5px">Pick agents, write or <b>generate</b> the task, then <b>Copy for chat</b> and paste — the agents run in parallel and you watch them work live.</div>
-
-    <div class="selchips" id="selChips"></div>
+    <div class="disp-top">
+      <h2>Compose a joint task</h2>
+      <div class="selchips" id="selChips"></div>
+    </div>
 
     <textarea id="prompt" placeholder="Describe the problem or task for the selected agents…&#10;&#10;e.g. Improve the expert map: add several clickable buttons wired to the server/database, and log the changes so the whole team knows what was done."></textarea>
 
-    <div class="ideas-label">💡 Prompt ideas — click one to load it (it selects the right agents too)</div>
-    <div class="examples" id="ideas"></div>
+    <div class="foot-bar">
+      <button class="btn sm" id="ideasBtn">💡 Ideas</button>
+      <div class="coordwrap"><div class="toggle on" id="coordToggle"><i></i></div><span>Coordinator notifies team</span></div>
+      <div class="spacer"></div>
+      <button class="btn sm" id="genBtn">✨ Suggest</button>
+      <button class="btn sm ghost" id="previewBtn">Preview</button>
+      <button class="btn sm primary" id="copyBtn">⧉ Copy for chat</button>
 
-    <div class="optrow">
-      <div class="toggle on" id="coordToggle"><i></i></div>
-      <div>End with the <b>Project Coordinator</b> notifying the whole team of what changed</div>
+      <div class="ideas-pop" id="ideasPop">
+        <div class="ip-title">💡 Prompt ideas — loads the text + selects the agents</div>
+        <div class="ideas-grid" id="ideas"></div>
+      </div>
     </div>
-
-    <div class="actions">
-      <button class="btn primary" id="copyBtn">⧉ Copy for chat</button>
-      <button class="btn" id="genBtn">✨ Suggest a task</button>
-      <button class="btn ghost" id="previewBtn">Preview</button>
-    </div>
-
-    <div class="launchbar" id="launchBar"><div class="lb-step" id="lbIcon">✓</div><div id="lbMsg"></div></div>
-
-    <div class="hint" id="hint">This is a copy-and-paste console. <b>Copy for chat</b> puts the full multi-agent order on your clipboard — paste it (<span class="mono">⌘V</span>) into your Claude chat to launch and watch the agents work live. <b>Suggest a task</b> drafts an idea for the selected agents.</div>
 
     <div class="preview" id="preview">
-      <div class="preview-head"><span>Composed orchestration prompt</span><span class="mono" id="wordCount"></span></div>
+      <div class="preview-head"><span>Composed order</span><span class="mono" id="wordCount"></span></div>
       <pre id="previewText"></pre>
     </div>
-  </div>
-
-  <div class="foot" id="foot">
-    A character-first view of your team — each card shows the role each agent plays, not a task list.<br>
-    Command Center · built for Lior · MeatCODE / GFI Israel
   </div>
 </div>
 
@@ -177,45 +163,26 @@ textarea:focus{outline:none;border-color:var(--accent);background:#fff}
 <script>
 /* ---------- AGENT MODEL — each agent framed by the character of its role ---------- */
 const AGENTS = [
-  {
-    id:"data", name:"Data Engineer", emoji:"🗄️", color:"#2f6db3", soft:"#e8f0f9",
-    role:"Corpus, Neon DB, pipeline, scoring",
-    status:"active", statusTxt:"Active", last:"Active · Jul 20",
-    traits:["Rigorous","Precise","Systematic","Data-driven","Reliable","Detail-obsessed"]
-  },
-  {
-    id:"ui", name:"UI / UX Designer", emoji:"🎨", color:"#6b52a3", soft:"#efeaf7",
-    role:"Mockup, screens, design system",
-    status:"active", statusTxt:"Active", last:"Active · Jul 20",
-    traits:["Creative","User-empathetic","Aesthetic","Brand-consistent","Iterative","Detail-oriented"]
-  },
-  {
-    id:"algo", name:"Algorithm Expert", emoji:"🧮", color:"#127a6b", soft:"#e0efec",
-    role:"Oracle retrieval, RAG, eval",
-    status:"active", statusTxt:"Active", last:"Active · Jul 8",
-    traits:["Cautious","Analytical","Experienced","Problem-solver","Artistic taste","Sense for efficiency"]
-  },
-  {
-    id:"fullstack", name:"Fullstack Engineer", emoji:"🛠️", color:"#2b8ca6", soft:"#e2f0f4",
-    role:"Frontend + backend, deploy, integration",
-    status:"active", statusTxt:"Active", last:"Just joined the team",
-    traits:["Versatile","Resourceful","End-to-end","Ships fast","Pragmatic","Unblocks anything"]
-  },
-  {
-    id:"advisory", name:"Advisory", emoji:"🧭", color:"#7a8a3a", soft:"#eef1e0",
-    role:"Strategy, architecture, infra, docs",
-    status:"active", statusTxt:"Active", last:"Active · Jul 20",
-    traits:["Strategic","Big-picture","Principled","Clear-thinking","Risk-aware","Candid"]
-  },
-  {
-    id:"coord", name:"Project Coordinator", emoji:"🗂️", color:"#b7791f", soft:"#fbf3e3",
-    role:"Broadcasts updates & notifies the whole team",
-    status:"active", statusTxt:"Active", last:"Active · Jul 20",
-    traits:["Organized","Communicative","Dependable","Attentive","Proactive","Diplomatic"]
-  }
+  { id:"data", name:"Data Engineer", emoji:"🗄️", color:"#2f6db3", soft:"#e8f0f9",
+    role:"Corpus, Neon DB, pipeline, scoring", status:"active", statusTxt:"Active",
+    traits:["Rigorous","Precise","Systematic","Data-driven","Reliable","Detail-obsessed"] },
+  { id:"ui", name:"UI / UX Designer", emoji:"🎨", color:"#6b52a3", soft:"#efeaf7",
+    role:"Mockup, screens, design system", status:"active", statusTxt:"Active",
+    traits:["Creative","User-empathetic","Aesthetic","Brand-consistent","Iterative","Detail-oriented"] },
+  { id:"algo", name:"Algorithm Expert", emoji:"🧮", color:"#127a6b", soft:"#e0efec",
+    role:"Oracle retrieval, RAG, eval", status:"active", statusTxt:"Active",
+    traits:["Cautious","Analytical","Experienced","Problem-solver","Artistic taste","Sense for efficiency"] },
+  { id:"fullstack", name:"Fullstack Engineer", emoji:"🛠️", color:"#2b8ca6", soft:"#e2f0f4",
+    role:"Frontend + backend, deploy, integration", status:"active", statusTxt:"Active",
+    traits:["Versatile","Resourceful","End-to-end","Ships fast","Pragmatic","Unblocks anything"] },
+  { id:"advisory", name:"Advisory", emoji:"🧭", color:"#7a8a3a", soft:"#eef1e0",
+    role:"Strategy, architecture, infra, docs", status:"active", statusTxt:"Active",
+    traits:["Strategic","Big-picture","Principled","Clear-thinking","Risk-aware","Candid"] },
+  { id:"coord", name:"Project Coordinator", emoji:"🗂️", color:"#b7791f", soft:"#fbf3e3",
+    role:"Broadcasts updates & notifies the team", status:"active", statusTxt:"Active",
+    traits:["Organized","Communicative","Dependable","Attentive","Proactive","Diplomatic"] }
 ];
 
-/* prompt ideas → click loads the text + selects the right agents into the composer */
 const IDEAS = [
   {label:"Improve expert map", agents:["data","ui"], text:"Improve the expert map in the MeatCODE app: create several new buttons, make them clickable, and wire them to interact with the database through the server (meatcode_server.py / Neon). Data Engineer owns the API + DB side; UI Designer owns the buttons, states and layout. Work simultaneously, then log everything to AGENT_UPDATE_LOG.md."},
   {label:"Deploy the grounded Oracle", agents:["fullstack","algo"], text:"Fullstack Engineer: take the grounded Oracle from working code to reliably deployed — verify /api/ask retrieval + SSE end-to-end on Render, wire any missing env/config, run deploy.command, and confirm the live site. Algorithm Expert: pair on retrieval correctness + the eval so what ships is exactly what was tested."},
@@ -231,46 +198,32 @@ const selected = new Set();
 let coordOn = true;
 const LIVE = typeof window !== "undefined" && window.cowork && typeof window.cowork.askClaude === "function";
 
-/* ---------- RENDER ROSTER ---------- */
 function statusClass(s){return s==="active"?"s-active":s==="idle"?"s-idle":"s-standby";}
 
+/* ---------- ROSTER ---------- */
 function renderRoster(){
-  const r = document.getElementById("roster");
-  r.innerHTML = "";
+  const r = document.getElementById("roster"); r.innerHTML = "";
   AGENTS.forEach(a=>{
     const el = document.createElement("div");
     el.className = "agent" + (selected.has(a.id)?" sel":"");
     el.id = "card-"+a.id;
     const traitsHtml = a.traits.map(t=>`<span class="trait" style="background:${a.soft};color:${a.color}">${t}</span>`).join("");
     el.innerHTML = `
-      <div class="agent-head" data-card="${a.id}">
-        <div class="av" style="background:${a.soft}">${a.emoji}</div>
-        <div class="agent-meta">
-          <div class="agent-name">${a.name}<span class="sdot ${statusClass(a.status)}" title="${a.statusTxt}"></span></div>
-          <div class="agent-role">${a.role}</div>
-        </div>
-        <div class="chk ${selected.has(a.id)?"on":""}" data-sel="${a.id}">
-          <svg viewBox="0 0 24 24"><polyline points="4,12 10,18 20,6"></polyline></svg>
-        </div>
+      <div class="av" style="background:${a.soft}">${a.emoji}</div>
+      <div class="agent-meta">
+        <div class="agent-name">${a.name}<span class="sdot ${statusClass(a.status)}" title="${a.statusTxt}"></span></div>
+        <div class="agent-role">${a.role}</div>
       </div>
-      <div class="agent-body">
-        <div class="trait-label">Character</div>
-        <div class="traits">${traitsHtml}</div>
-        <div class="last">🕗 ${a.last}</div>
-      </div>`;
+      <div class="pick"><svg viewBox="0 0 24 24"><polyline points="4,12 10,18 20,6"></polyline></svg></div>
+      <div class="trait-pop"><div class="tp-title">Character</div><div class="traits">${traitsHtml}</div></div>`;
+    el.addEventListener("click", ()=>toggleSelect(a.id));
     r.appendChild(el);
   });
-  // whole card head toggles selection; checkbox does too (and stops the head handler)
-  document.querySelectorAll("[data-card]").forEach(c=>c.addEventListener("click",()=>toggleSelect(c.getAttribute("data-card"))));
-  document.querySelectorAll("[data-sel]").forEach(c=>c.addEventListener("click",e=>{
-    e.stopPropagation(); toggleSelect(c.getAttribute("data-sel"));
-  }));
 }
 
 function toggleSelect(id){
   if(selected.has(id)) selected.delete(id); else selected.add(id);
   document.getElementById("card-"+id).classList.toggle("sel", selected.has(id));
-  document.querySelector(`[data-sel="${id}"]`).classList.toggle("on", selected.has(id));
   renderChips(); refreshPreview();
 }
 
@@ -278,15 +231,14 @@ function renderChips(){
   const c = document.getElementById("selChips"); c.innerHTML="";
   if(selected.size===0){ c.innerHTML = `<span class="selchip empty">No agents enlisted yet</span>`; return; }
   AGENTS.filter(a=>selected.has(a.id)).forEach(a=>{
-    const chip = document.createElement("span");
-    chip.className="selchip";
+    const chip = document.createElement("span"); chip.className="selchip";
     chip.innerHTML = `${a.emoji} ${a.name} <span class="x" data-x="${a.id}">✕</span>`;
     c.appendChild(chip);
   });
-  c.querySelectorAll("[data-x]").forEach(x=>x.addEventListener("click",()=>toggleSelect(x.getAttribute("data-x"))));
+  c.querySelectorAll("[data-x]").forEach(x=>x.addEventListener("click",e=>{e.stopPropagation();toggleSelect(x.getAttribute("data-x"));}));
 }
 
-/* ---------- PROMPT IDEAS ---------- */
+/* ---------- IDEAS ---------- */
 function renderIdeas(){
   const e=document.getElementById("ideas"); e.innerHTML="";
   IDEAS.forEach(ix=>{
@@ -295,16 +247,14 @@ function renderIdeas(){
       selected.clear(); ix.agents.forEach(id=>selected.add(id));
       document.getElementById("prompt").value=ix.text;
       renderRoster(); renderChips(); refreshPreview();
-      document.getElementById("launchBar").classList.remove("show");
-      document.getElementById("prompt").scrollIntoView({behavior:"smooth",block:"center"});
+      document.getElementById("ideasPop").classList.remove("show");
     });
     e.appendChild(b);
   });
 }
 
-/* ---------- TASK SUGGESTION GENERATOR ---------- */
+/* ---------- SUGGEST (prompt generator) ---------- */
 async function generateSuggestion(){
-  const bar=document.getElementById("launchBar"), icon=document.getElementById("lbIcon"), msg=document.getElementById("lbMsg");
   const specialists=[...selected].filter(id=>id!=="coord");
   if(specialists.length===0){ toast("Select an agent first to get a task idea"); return; }
   const names=AGENTS.filter(a=>selected.has(a.id)).map(a=>a.name);
@@ -312,30 +262,24 @@ async function generateSuggestion(){
   const offline=()=>{
     const match=IDEAS.find(ix=>ix.agents.some(a=>specialists.includes(a)))||IDEAS[0];
     document.getElementById("prompt").value=match.text; refreshPreview();
-    bar.className="launchbar show"; icon.textContent="✨";
-    msg.innerHTML="Loaded a suggested task for "+names.join(", ")+". Edit it, then <b>Copy for chat</b>.";
-    toast("✨ Suggestion loaded");
+    toast("✨ Suggestion loaded — edit, then Copy for chat");
   };
-  if(LIVE && window.cowork && typeof window.cowork.askClaude==="function"){
-    btn.disabled=true;
-    bar.className="launchbar show busy"; icon.textContent="…"; msg.innerHTML="Drafting a task idea for "+names.join(", ")+"…";
+  if(LIVE && typeof window.cowork.askClaude==="function"){
+    btn.disabled=true; const old=btn.textContent; btn.textContent="…";
     try{
       const cur=document.getElementById("prompt").value.trim();
-      const instr="You are helping Lior plan work on MeatCODE — a meaty-flavor research platform (literature DB, molecular/mechanistic DB, expert map, Oracle RAG chatbot, and a product mockup deployed on Render). Propose ONE concrete, high-leverage task these agents can do together, phrased as a crisp instruction naming who owns what (2–4 sentences). Agents: "+names.join(", ")+". "+(cur?("Build on this rough goal: "+cur):"")+" Return ONLY the task instruction text, no preamble.";
+      const instr="You are helping Lior plan work on MeatCODE — a meaty-flavor research platform (literature DB, molecular DB, expert map, Oracle RAG chatbot, product mockup on Render). Propose ONE concrete, high-leverage task these agents can do together, phrased as a crisp instruction naming who owns what (2–4 sentences). Agents: "+names.join(", ")+". "+(cur?("Build on this rough goal: "+cur):"")+" Return ONLY the task instruction text, no preamble.";
       const res=await window.cowork.askClaude(instr, []);
       let out=typeof res==="string"?res:(res&&(res.text||res.answer||res.output||(res.content&&res.content[0]&&res.content[0].text)))||"";
       out=(out||"").trim();
-      if(out){ document.getElementById("prompt").value=out; refreshPreview();
-        bar.className="launchbar show"; icon.textContent="✨";
-        msg.innerHTML="Task idea generated for "+names.join(", ")+". Review, tweak, then <b>Copy for chat</b>.";
-        toast("✨ Idea generated"); }
+      if(out){ document.getElementById("prompt").value=out; refreshPreview(); toast("✨ Idea generated — review, then Copy for chat"); }
       else offline();
     }catch(e){ offline(); }
-    finally{ btn.disabled=false; }
+    finally{ btn.disabled=false; btn.textContent="✨ Suggest"; }
   } else offline();
 }
 
-/* ---------- COMPOSE PROMPT ---------- */
+/* ---------- COMPOSE ---------- */
 function composePrompt(){
   const task = document.getElementById("prompt").value.trim();
   const picked = AGENTS.filter(a=>selected.has(a.id) && a.id!=="coord");
@@ -359,7 +303,6 @@ function composePrompt(){
   p += "\nReport back a concise summary of who did what and what's now ready for my review.";
   return p;
 }
-
 function refreshPreview(){
   const t = composePrompt();
   document.getElementById("previewText").textContent = t;
@@ -374,13 +317,10 @@ function validate(){
   if(!task){ toast("Write the task for your agents"); return false; }
   return true;
 }
-function copyAndLaunch(){
+function copyForChat(){
   if(!validate()) return;
   const text = composePrompt();
-  const done = ()=>{ toast("⧉ Copied — paste into chat to launch");
-    const bar=document.getElementById("launchBar");
-    bar.className="launchbar show"; document.getElementById("lbIcon").textContent="1";
-    document.getElementById("lbMsg").innerHTML="Prompt copied. <b>Paste into your Claude chat</b> (<span class='mono'>⌘V</span>) and press Enter to launch."; };
+  const done = ()=>toast("⧉ Copied — paste (⌘V) into your chat to launch");
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text,done));
   } else fallbackCopy(text,done);
@@ -388,15 +328,10 @@ function copyAndLaunch(){
 function fallbackCopy(text,done){
   const ta=document.createElement("textarea"); ta.value=text;
   ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta);
-  ta.focus(); ta.select();
-  let ok=false; try{ ok=document.execCommand("copy"); }catch(e){}
+  ta.focus(); ta.select(); let ok=false; try{ ok=document.execCommand("copy"); }catch(e){}
   ta.remove();
   if(ok){ done(); }
-  else{
-    document.getElementById("preview").classList.add("show");
-    refreshPreview(); toast("Select the prompt below & copy it");
-    document.getElementById("preview").scrollIntoView({behavior:"smooth",block:"center"});
-  }
+  else{ document.getElementById("preview").classList.add("show"); refreshPreview(); toast("Select the prompt & copy it"); }
 }
 
 /* ---------- TOAST ---------- */
@@ -408,15 +343,21 @@ function toast(msg){
 
 /* ---------- INIT ---------- */
 renderRoster(); renderChips(); renderIdeas(); refreshPreview();
-document.getElementById("prompt").addEventListener("input", ()=>{ refreshPreview(); document.getElementById("launchBar").classList.remove("show"); });
+document.getElementById("prompt").addEventListener("input", refreshPreview);
 document.getElementById("coordToggle").addEventListener("click",function(){
   coordOn=!coordOn; this.classList.toggle("on",coordOn); refreshPreview();
 });
-document.getElementById("copyBtn").addEventListener("click", copyAndLaunch);
+document.getElementById("copyBtn").addEventListener("click", copyForChat);
 document.getElementById("genBtn").addEventListener("click", generateSuggestion);
-document.getElementById("previewBtn").addEventListener("click",()=>{
-  const p=document.getElementById("preview"); p.classList.toggle("show");
-  if(p.classList.contains("show")) refreshPreview();
+document.getElementById("ideasBtn").addEventListener("click", e=>{
+  e.stopPropagation(); document.getElementById("ideasPop").classList.toggle("show");
+});
+document.getElementById("previewBtn").addEventListener("click", e=>{
+  e.stopPropagation(); const p=document.getElementById("preview");
+  p.classList.toggle("show"); if(p.classList.contains("show")) refreshPreview();
+});
+document.addEventListener("click", e=>{
+  if(!e.target.closest("#ideasPop") && e.target.id!=="ideasBtn") document.getElementById("ideasPop").classList.remove("show");
 });
 </script>
 </body>
