@@ -6,6 +6,13 @@
 
 _Last updated: 2026-07-20 12:49 UTC · Project Coordinator — parallel team run: Oracle v11 (dictation · dynamic pinned-above-history sidebar · bigger save icon · "Digging the MeatCODE database" copy + additive SSE `status` event). Prev: 2026-07-08 ~10:10 UTC team broadcast; see AGENT_UPDATE_LOG.md_
 
+## Follow-up v12.2 — shipped to the repo 2026-07-21 (awaiting deploy)
+- **Full-screen shell:** app grid `64px 1fr 88px`→`64px 1fr`; the bottom **dock + dev flow-bar removed** (`display:none`), so the platform uses the whole viewport with no page scroll. (Fixed a sync gap: the hide block was in LIVE but missing from v9 — now matched.)
+- **Ask button now works for every question** (was stuck-disabled after the first): re-enable moved to `.finally()` + an `input` listener that enables Ask on typed text.
+- **Chatbox narrowed** (`rows=2→1`, min-height 64→46px — `rows` was the real lever; no auto-grow JS).
+- **Chats + Lab Stash cache**: already exists in `localStorage` (verified solid). `docs/client_cache_design.md` (new) documents it + the key finding — data "disappearing" is the **Safari Private window** (ephemeral localStorage), not a bug; recommends an Export/Import JSON button for durability, accounts deferred.
+- Verified: 10/10 script blocks parse, both mockups byte-identical. Deployment confirmed current (commit e8e3e2f). **Not deployed yet — run `deploy.command`.**
+
 ## Follow-up v12.1 — shipped to the repo 2026-07-20 (awaiting deploy)
 - **Molecules fully categorized (799/799):** `pipeline/categorize_molecules.py` (new) filled every `molecules.category` into a 15-class meat-flavor chemical taxonomy (LLM Haiku for 40 + offline name-heuristic bulk-UPDATE for 748). Distribution is aroma-sensible (Sulfur 210 · Pyrazines 131 · Nitrogen 106 · Furans/Aldehydes 59 … Fats 12), only 2.7% "Other". The Molecules category filter + Fats default are now meaningful. (`Fats` is legitimately small — the corpus is mostly volatiles.)
 - **Experts Relevance sort removed** (button + config `defaultSort`→`h_index`); Map's relevance sort + "Top-rated only" filter kept.

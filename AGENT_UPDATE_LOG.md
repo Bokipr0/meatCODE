@@ -1,6 +1,6 @@
 # MeatCODE — Agent Update Log
 
-_Last updated: 2026-07-20 16:09 UTC · Project Coordinator · molecules categorized (799/799) + Experts relevance-sort removed + fixed-viewport Oracle UX_
+_Last updated: 2026-07-21 12:20 UTC · Project Coordinator · full-screen shell (dock/flow-bar removed) + always-on Ask + shorter chatbox + cache design note_
 
 > **Every agent appends an entry here at the end of any working session — newest at the top.**
 > This is the detailed audit trail of who changed what, when, and why. The short in-file
@@ -18,6 +18,19 @@ _Last updated: 2026-07-20 16:09 UTC · Project Coordinator · molecules categori
 ```
 
 ---
+
+## 2026-07-21 12:20 UTC · Project Coordinator · PARALLEL run — full-screen shell + Ask fix + cache note (consolidated)
+Lior's 4 follow-ups (full-scale viewport / remove bottom bar · Ask button reusable · chats+stash cache · narrower chatbox). Split: UI/UX (items 1,2,4 + cache verify) ‖ Advisory (item 3 doc). **Data Engineer stood down — these are all frontend/client-cache items with no corpus/Neon/pipeline scope; the cache is client-side by architecture (shared password → no per-user identity), so there was no DB work to assign** (avoids a no-op subagent). First: confirmed via `/api/version` that the latest build IS deployed (commit e8e3e2f, server up 2026-07-21 11:58 UTC) — so reported symptoms were real code issues + likely browser cache on Lior's end, not a stale deploy.
+
+### UI/UX Designer · full-screen shell + always-on Ask + shorter box — `app/meatcode_mockup.html` + `UI-UX Designer/MeatCODE_mockup_v9.html`
+- What:   (1) `.app` grid `64px 1fr 88px`→`64px 1fr` — the leftover 88px track (old dock row) was the wasted bottom band / page-scroll cause; dock + dev **flow-bar** ("show flow bar (H)"/`#devShowTab`) hidden via `display:none !important`. NB the `#mc-fullscreen-overrides` hide block existed in LIVE but was **missing from v9** — added it so v9 matches. (2) Oracle Ask re-enable made bulletproof: trailing `.then`→`.finally` (covers success / error / SESSION_EXPIRED / a throwing catch) **plus** an `input` listener that force-enables Ask on any typed text — so the button is usable for every question, not just the first. (3) Verified chats (`mc_oracle_history_v1`) + Lab Stash (`mc_lab_stash_v1`) caches: versioned keys used consistently, every read/write/parse try/catch-wrapped — no change needed. (4) Chatbox narrowed: `.oracle-textarea` min-height 64→46px and **`rows="2"`→`rows="1"`** (the real height lever — there's no auto-grow JS), `.oracle-input` padding 14/12→8/8.
+- Result: All 5 `<script>` blocks per file pass `node --check` and are md5-identical across both files. No page scroll, no dock/flow-bar. Ask submittable on every path. No regressions (SESSION_EXPIRED + same-origin, "Digging the MeatCODE database…" phase, Sources label, nav order, Oracle default + brand→#oracle, no bell).
+- Next:   With `rows=1`/46px and no auto-grow JS, a long typed question scrolls inside ~1.7 lines; bump min-height or add auto-grow JS if a fuller resting height is wanted. Not deployed yet — `deploy.command`.
+
+### Advisory · client cache design note — `docs/client_cache_design.md` (new)
+- What:   Decision note: the "cache" Lior asked for ALREADY exists (chats + Lab Stash in `localStorage`, versioned, capped 25/list + 100, try/catch-wrapped). Diagnoses the most likely cause of data "disappearing": Lior has been testing in a Safari **Private window** (visible in his screenshots) — private-mode `localStorage` is wiped on window close. Ranks durability options: (a) keep localStorage + a "saved on this device" label [now, recommended], (b) Export/Import JSON button for account-free cross-device durability [near-term], (c) real accounts + server store [defer to a named external/WUR trigger]. Flags an anonymous *shared* server store as wrong here (everyone would see everyone's stash). Consistent with `docs/oracle_chat_history_design.md`.
+- Result: Claims verified against the live mockup. Headline: it's not a bug — use a normal (non-private) window and it persists.
+- Next:   Lior decision: greenlight the Export/Import button?
 
 ## 2026-07-20 16:09 UTC · Project Coordinator · molecule categorization + Experts sort removal + fixed-viewport Oracle (consolidated)
 Follow-up to the 8-feature batch: Lior asked to (a) remove the now-orphaned Experts relevance **sort** button and (b) actually categorize the molecules so the Fats default is representative; then mid-turn added 4 more Oracle/layout fixes. Coordinator did (a)+(b) directly; a UI/UX agent did the 4 layout fixes.

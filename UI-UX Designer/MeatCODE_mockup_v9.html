@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- v9 = canonical app/meatcode_mockup.html + v8 UI/UX polish forward-ported. Last updated: 2026-07-20 16:02 UTC · UI/UX Designer · kept in sync with the live mockup — fixed app-shell viewport (100vh, inner-only scroll) + Oracle default/brand-home + textarea reset + shorter ask box (see the stamp below). Prior: Oracle v11: voice dictation in the ask box (Web Speech API, hidden where unsupported); bookmark hit-area enlarged inside the Oracle rail only (34px target / 20px glyph); sidebar rebuilt as a dynamic Pinned-above-History list persisted in localStorage (mc_oracle_history_v1); status copy now "Digging the MeatCODE database…" and every user-facing model-name mention removed from the Oracle chrome; consumes the optional SSE `status` event with local fallbacks. (2026-07-20 11:57: expired sign-in message + credentials same-origin — preserved. 2026-07-08: avatar/bell/personas/dashboard/globe/bubbles on the newer Database+Simulate build; Oracle "no matches" note gated DEV-ONLY (?dev=1).) -->
+<!-- v9 = canonical app/meatcode_mockup.html + v8 UI/UX polish forward-ported. Last updated: 2026-07-21 12:20 UTC · UI/UX Designer · kept in sync with the live mockup — full-screen shell (grid 64px 1fr + dock/flow-bar hidden, display:none !important), bulletproof Ask re-enable (.finally covers success/error/SESSION_EXPIRED + input-listener net), verified chats (mc_oracle_history_v1) + Lab Stash (mc_lab_stash_v1) caches, shorter ask box (padding 8/8, min-height 46px) — see the stamp below. Prior 2026-07-20: fixed app-shell viewport (100vh, inner-only scroll) + Oracle default/brand-home + textarea reset + shorter ask box. Prior: Oracle v11: voice dictation in the ask box (Web Speech API, hidden where unsupported); bookmark hit-area enlarged inside the Oracle rail only (34px target / 20px glyph); sidebar rebuilt as a dynamic Pinned-above-History list persisted in localStorage (mc_oracle_history_v1); status copy now "Digging the MeatCODE database…" and every user-facing model-name mention removed from the Oracle chrome; consumes the optional SSE `status` event with local fallbacks. (2026-07-20 11:57: expired sign-in message + credentials same-origin — preserved. 2026-07-08: avatar/bell/personas/dashboard/globe/bubbles on the newer Database+Simulate build; Oracle "no matches" note gated DEV-ONLY (?dev=1).) -->
 <meta charset="utf-8" />
-<!-- Last updated: 2026-07-20 16:02 UTC · UI/UX Designer · Fixed app-shell viewport: html/body/.app are 100vh + overflow:hidden, so only inner regions scroll (.canvas and the Oracle answer/rail; flex children get min-height:0). Oracle rail is a full-height flex column — Pinned+History scroll in an internal region while the profile card + Lab Stash stay pinned to the bottom. Oracle is now the default landing scene and the brand mark routes to #oracle. Oracle textarea clears after each submit; ask box shortened (padding 14/22/12, min-height 64px, max-height 132px). · Prior — batch of 8: Database fixes (experts relevance column removed · companies Website links · molecules default to the Fats category, shown as a clearable chip with an “N of 799” count) · molecules pagination 50/page (uses meta=1+offset when the server offers it, client-side slicing otherwise) · Oracle highlight-to-save “Lab Stash” (mc_lab_stash_v1) · Simulate OAV column + Suggested-next-steps removed · Research Saved Queries removed · nav reordered to Oracle·Research·Database·Simulate·Map · topbar bell removed + search widened · Oracle chat rename + the answer pane now scrolls in its own container. -->
+<!-- Last updated: 2026-07-21 12:20 UTC · UI/UX Designer · (1) Full-screen shell — app-shell grid → 64px 1fr and dock/flow-bar hidden (display:none !important) so the app fills the screen with no page scroll or wasted bottom band; (2) Ask re-enable made bulletproof — .finally() covers success/error/SESSION_EXPIRED plus an input-listener net so every question submits, not just the first; (3) chats (mc_oracle_history_v1) + Lab Stash (mc_lab_stash_v1) caches verified — versioned keys, every read/write try/catch-wrapped; (4) ask box narrowed (padding 8/8, min-height 46px). · Prior 2026-07-20: Fixed app-shell viewport: html/body/.app are 100vh + overflow:hidden, so only inner regions scroll (.canvas and the Oracle answer/rail; flex children get min-height:0). Oracle rail is a full-height flex column — Pinned+History scroll in an internal region while the profile card + Lab Stash stay pinned to the bottom. Oracle is now the default landing scene and the brand mark routes to #oracle. Oracle textarea clears after each submit; ask box shortened (now padding 8/8, min-height 46px, max-height 132px). · Prior — batch of 8: Database fixes (experts relevance column removed · companies Website links · molecules default to the Fats category, shown as a clearable chip with an “N of 799” count) · molecules pagination 50/page (uses meta=1+offset when the server offers it, client-side slicing otherwise) · Oracle highlight-to-save “Lab Stash” (mc_lab_stash_v1) · Simulate OAV column + Suggested-next-steps removed · Research Saved Queries removed · nav reordered to Oracle·Research·Database·Simulate·Map · topbar bell removed + search widened · Oracle chat rename + the answer pane now scrolls in its own container. -->
 <title>MeatCODE · GFI Israel — flavor & aroma research</title>
 <meta name="viewport" content="width=1440" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -83,7 +83,7 @@ section.scene.active { display: block; }
 /* ============ APP SHELL ============ */
 .app {
   display: grid;
-  grid-template-rows: 64px 1fr 88px;
+  grid-template-rows: 64px 1fr;   /* topbar + content only — 88px dock row removed so the app fills the screen, no wasted bottom band */
   grid-template-columns: 248px 1fr;
   /* Fixed, app-like viewport: the shell is exactly one screen tall and never
      scrolls itself — only the inner regions (.canvas, the Oracle rail) do. */
@@ -410,7 +410,7 @@ section.scene.active { display: block; }
   background: var(--surface);
   border: 1.5px solid var(--line);
   border-radius: 22px;
-  padding: 14px 22px 12px;   /* was 22px 24px 16px — a shorter, tighter ask box */
+  padding: 8px 22px 8px;   /* was 22px 24px 16px → 14/12 → 8/8: trimmed vertical padding for a shorter ask box */
   margin-bottom: 24px;
   box-shadow: var(--shadow);
 }
@@ -854,7 +854,7 @@ section.scene.active { display: block; }
 
 /* ── Oracle: live input + answer states ── */
 .oracle-textarea {
-  width: 100%; min-height: 64px; max-height: 132px; overflow-y: auto;
+  width: 100%; min-height: 46px; max-height: 132px; overflow-y: auto;
   resize: none; border: none; outline: none; background: transparent;
   font-family: var(--round); color: var(--ink);
   font-size: 18px; line-height: 1.5;
@@ -1912,6 +1912,13 @@ section.scene.active { display: block; }
 }
 .mc-stash-remove:hover { color: #8E3030; background: var(--wine-mist); }
 </style>
+<style id="mc-fullscreen-overrides">
+  /* Full-scale: remove the bottom dock quick-nav (Open/Navigate/For You/Guide — all scenes)
+     and the dev "show flow bar (H)" tab, so the platform uses the full screen height.
+     .dock lives in the app-shell grid (row 3, auto) → hiding it collapses the row, no gap. */
+  .dock { display: none !important; }
+  .dev-show-tab, .dev-nav { display: none !important; }
+</style>
 </head>
 <body>
 
@@ -2301,7 +2308,7 @@ section.scene.active { display: block; }
           <textarea
             class="oracle-textarea" id="oracleTextarea"
             placeholder="Create me a visualization of the Aroma formation in peptide-involved Maillard reaction"
-            rows="2"></textarea>
+            rows="1"></textarea>
           <div class="oracle-input-bottom">
             <div class="oracle-chips" id="oracleTopicChips">
               <!-- topic chips from onboarding refinement appear here at runtime -->
@@ -4050,6 +4057,11 @@ if (oracleTextarea) {
   oracleTextarea.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); askOracle(); }
   });
+  // Safety net: any typing guarantees Ask is enabled, so a hung or errored request
+  // can never permanently strand the button in its disabled state.
+  oracleTextarea.addEventListener('input', function () {
+    if (oracleAskBtn && oracleTextarea.value.trim()) oracleAskBtn.disabled = false;
+  });
 }
 if (oracleAskBtn) oracleAskBtn.addEventListener('click', askOracle);
 
@@ -4466,8 +4478,10 @@ function askOracle() {
       msg = 'Your sign-in expired. Refresh the page (⌘R) and enter the site password again, then re-ask your question.';
     }
     setOracleError(msg);
-  }).then(function () {
-    oracleAskBtn.disabled = false;
+  }).finally(function () {
+    // Bulletproof: .finally() fires on success, on the error / SESSION_EXPIRED path,
+    // and even if the .catch() handler itself throws — no path leaves Ask disabled.
+    if (oracleAskBtn) oracleAskBtn.disabled = false;
   });
 }
 
