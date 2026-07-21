@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<!-- Last updated: 2026-07-21 12:20 UTC · UI/UX Designer · (1) Full-screen shell — app-shell grid → 64px 1fr and dock/flow-bar hidden (display:none !important) so the app fills the screen with no page scroll or wasted bottom band; (2) Ask re-enable made bulletproof — .finally() covers success/error/SESSION_EXPIRED plus an input-listener net so every question submits, not just the first; (3) chats (mc_oracle_history_v1) + Lab Stash (mc_lab_stash_v1) caches verified — versioned keys, every read/write try/catch-wrapped; (4) ask box narrowed (padding 8/8, min-height 46px). · Prior 2026-07-20: Fixed app-shell viewport: html/body/.app are 100vh + overflow:hidden, so only inner regions scroll (.canvas and the Oracle answer/rail; flex children get min-height:0). Oracle rail is a full-height flex column — Pinned+History scroll in an internal region while the profile card + Lab Stash stay pinned to the bottom. Oracle is now the default landing scene and the brand mark routes to #oracle. Oracle textarea clears after each submit; ask box shortened (now padding 8/8, min-height 46px, max-height 132px). · Prior — batch of 8: Database fixes (experts relevance column removed · companies Website links · molecules default to the Fats category, shown as a clearable chip with an “N of 799” count) · molecules pagination 50/page (uses meta=1+offset when the server offers it, client-side slicing otherwise) · Oracle highlight-to-save “Lab Stash” (mc_lab_stash_v1) · Simulate OAV column + Suggested-next-steps removed · Research Saved Queries removed · nav reordered to Oracle·Research·Database·Simulate·Map · topbar bell removed + search widened · Oracle chat rename + the answer pane now scrolls in its own container. -->
+<!-- Last updated: 2026-07-21 13:19 UTC · UI/UX Designer · (1+3) Every tab is a centered, fixed-height frame with NO page scroll: the app-shell grid (64px 1fr, 100vh, overflow:hidden) bounds each scene and each scene’s .canvas is the internal scroller (min-height:0 + overflow-y:auto). Map keeps canvas overflow:hidden for the globe. Oracle is now a bounded flex column — heading + ask box + starters stay pinned and ONLY #oracleAnswerSlot scrolls. Content stays horizontally centered via each wrap’s max-width + margin:auto. (2) The topbar search bar was removed on every scene and replaced by a Toolbench wrench button that opens a saved-items drawer with three persisted sections — Saved molecules (mc_saved_molecules_v1; bookmark button added to each Database molecules row), Saved sentences (mc_lab_stash_v1 via a new window.MCStash owner API), and Marked chats (pinned mc_oracle_history_v1). The redundant bottom-left “Lab Stash” button was removed; highlight-to-save still writes mc_lab_stash_v1. All three stores are versioned + try/catch-wrapped; molecules capped at 100. · Prior 2026-07-21: full-screen shell (grid 64px 1fr; dock/flow-bar hidden), bulletproof Ask re-enable (.finally + input-listener), verified caches. · Prior: 401/SESSION_EXPIRED “your sign-in expired” + credentials same-origin; “Digging the MeatCODE database…” status phase; Oracle default landing + brand→#oracle; nav Oracle·Research·Database·Simulate·Map; no topbar bell. -->
 <title>MeatCODE · GFI Israel — flavor & aroma research</title>
 <meta name="viewport" content="width=1440" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -146,17 +146,23 @@ section.scene.active { display: block; }
   width: 260px; justify-content: flex-end;
   color: var(--ink-dim);
 }
-/* 2026-07-20 · bell removed — the search field takes the whole right rail. */
-.topbar-search {
-  display: flex; align-items: center; gap: 8px;
-  flex: 1 1 auto; min-width: 0;
-  padding: 9px 16px;
-  background: var(--bg-deep);
+/* 2026-07-21 · search field replaced by the Toolbench button (your saved items). */
+.mc-toolbench-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-left: auto;
+  padding: 8px 14px;
+  background: var(--bg-deep); border: 1px solid transparent;
   border-radius: 10px;
-  font-size: 13px; color: var(--ink-faint);
+  font-family: inherit; font-size: 13px; font-weight: 700; color: var(--ink-dim);
   cursor: pointer; transition: 0.13s;
 }
-.topbar-search:hover { background: var(--wine-mist); color: var(--wine); }
+.mc-toolbench-btn:hover { background: var(--wine-mist); color: var(--wine); border-color: var(--wine-tint); }
+.mc-toolbench-btn.on { background: var(--wine-mist); color: var(--wine); border-color: var(--wine-soft); }
+.mc-toolbench-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+.mc-toolbench-btn .mc-tb-count {
+  background: var(--wine); color: #fff; border-radius: 100px;
+  padding: 1px 7px; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
 
 /* ── Left context panel ── */
 .context {
@@ -1152,7 +1158,7 @@ section.scene.active { display: block; }
 .tool-open:hover { background: var(--wine); color: var(--surface); }
 
 /* ============ Simulate ============ */
-.sim-wrap { max-width: 1240px; }
+.sim-wrap { max-width: 1240px; margin: 0 auto; }
 .sim-head { display: flex; flex-direction: column; gap: 6px; margin-bottom: 22px; }
 .sim-head .eyebrow {
   font-size: 11px; font-weight: 700; color: var(--wine);
@@ -1893,6 +1899,64 @@ section.scene.active { display: block; }
   padding: 2px 4px; border-radius: 6px;
 }
 .mc-stash-remove:hover { color: #8E3030; background: var(--wine-mist); }
+
+/* ══ 2026-07-21 · Toolbench — saved-items hub (molecules · sentences · marked chats) ══
+   One fixed, body-level drawer shared across every scene; opened by the topbar
+   .mc-toolbench-btn. Reuses the Lab Stash panel look, top-right instead of bottom-left. */
+.mc-tb-backdrop { position: fixed; inset: 0; z-index: 8800; background: rgba(40, 18, 18, 0.16); display: none; }
+.mc-tb-backdrop.on { display: block; }
+.mc-tb-panel {
+  position: fixed; z-index: 8900; top: 72px; right: 18px;
+  width: min(410px, calc(100vw - 36px)); max-height: min(78vh, 700px);
+  display: none; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 18px; box-shadow: 0 18px 50px rgba(60, 20, 20, 0.22);
+  overflow: hidden;
+}
+.mc-tb-panel.on { display: flex; }
+.mc-tb-head { display: flex; align-items: center; gap: 10px; padding: 15px 18px 12px; border-bottom: 1px solid var(--line); }
+.mc-tb-head h4 { margin: 0; font-size: 14px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+.mc-tb-head h4 svg { width: 16px; height: 16px; color: var(--wine); }
+.mc-tb-head p { margin: 2px 0 0; font-size: 11.5px; color: var(--ink-faint); }
+.mc-tb-close { margin-left: auto; border: none; background: none; cursor: pointer; font-family: inherit; font-size: 18px; line-height: 1; color: var(--ink-faint); padding: 2px 6px; border-radius: 8px; }
+.mc-tb-close:hover { background: var(--surface-2); color: var(--ink); }
+.mc-tb-body { overflow-y: auto; padding: 6px 12px 14px; display: flex; flex-direction: column; gap: 4px; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+.mc-tb-section { display: flex; flex-direction: column; gap: 6px; padding: 10px 0 4px; }
+.mc-tb-section-label { display: flex; align-items: center; gap: 8px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); padding: 2px 4px; }
+.mc-tb-section-label .mc-tb-n { margin-left: auto; background: var(--surface-2); color: var(--ink-dim); border-radius: 100px; padding: 1px 8px; font-size: 10px; font-variant-numeric: tabular-nums; letter-spacing: 0; }
+.mc-tb-item { background: var(--bg-deep); border: 1px solid var(--line); border-radius: 12px; padding: 9px 11px; display: flex; align-items: flex-start; gap: 9px; }
+.mc-tb-item.click { cursor: pointer; }
+.mc-tb-item.click:hover { border-color: var(--wine-soft); background: var(--wine-mist); }
+.mc-tb-ico { width: 15px; height: 15px; flex-shrink: 0; color: var(--wine); margin-top: 2px; }
+.mc-tb-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.mc-tb-name { font-size: 13px; font-weight: 700; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-tb-item blockquote { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink); border-left: 3px solid var(--wine-tint); padding-left: 9px; }
+.mc-tb-sub { font-size: 10.5px; color: var(--ink-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-tb-remove { border: none; background: none; cursor: pointer; font-family: inherit; font-size: 15px; line-height: 1; color: var(--ink-faint); padding: 2px 5px; border-radius: 7px; flex-shrink: 0; align-self: center; }
+.mc-tb-remove:hover { color: #8E3030; background: var(--wine-mist); }
+.mc-tb-empty { padding: 12px; text-align: center; font-size: 11.5px; line-height: 1.5; color: var(--ink-faint); background: var(--bg-deep); border: 1px dashed var(--line); border-radius: 12px; }
+
+/* Bookmark/save button injected into each Database molecules row (writes mc_saved_molecules_v1). */
+.db-mol-cell { display: flex; align-items: center; gap: 8px; }
+.db-mol-save { flex-shrink: 0; width: 24px; height: 24px; border-radius: 7px; border: none; background: none; cursor: pointer; padding: 0; display: inline-grid; place-items: center; color: var(--ink-faint); transition: 0.13s; -webkit-appearance: none; appearance: none; }
+.db-mol-save svg { width: 15px; height: 15px; }
+.db-mol-save:hover { background: var(--wine-mist); color: var(--wine); }
+.db-mol-save.saved { color: var(--wine); }
+.db-mol-save.saved svg { fill: var(--wine); }
+.db-mol-save:focus-visible { outline: 2px solid var(--wine); outline-offset: -2px; }
+
+/* ── 2026-07-21 · Oracle as a bounded flex column: heading + ask box + starters stay
+   fixed and ONLY the answer region (#oracleAnswerSlot) scrolls, so the page never grows. */
+#oracle .canvas { overflow: hidden; display: flex; flex-direction: column; }
+#oracle .oracle-wrap { display: flex; flex-direction: column; height: 100%; min-height: 0; width: 100%; }
+#oracle .oracle-heading, #oracle .oracle-input, #oracle .oracle-starter-row { flex: 0 0 auto; }
+#oracle #oracleAnswerSlot {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent;
+}
+#oracle #oracleAnswerSlot::-webkit-scrollbar { width: 11px; }
+#oracle #oracleAnswerSlot::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 100px; border: 3px solid var(--surface); }
+#oracle .oracle-answer { max-height: none; }
 </style>
 <style id="mc-fullscreen-overrides">
   /* Full-scale: remove the bottom dock quick-nav (Open/Navigate/For You/Guide — all scenes)
@@ -1921,7 +1985,11 @@ section.scene.active { display: block; }
         <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
       </div>
       <div class="topbar-right">
-        <div class="topbar-search" style="visibility:hidden">Search</div>
+        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Toolbench — your saved items" title="Toolbench — your saved items">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span>Toolbench</span>
+          <span class="mc-tb-count" hidden>0</span>
+        </button>
       </div>
     </header>
 
@@ -1997,7 +2065,11 @@ section.scene.active { display: block; }
         <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
       </div>
       <div class="topbar-right">
-        <div class="topbar-search" style="visibility:hidden">Search</div>
+        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Toolbench — your saved items" title="Toolbench — your saved items">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span>Toolbench</span>
+          <span class="mc-tb-count" hidden>0</span>
+        </button>
       </div>
     </header>
 
@@ -2078,7 +2150,11 @@ section.scene.active { display: block; }
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
-        <div class="topbar-search">⌘K · Search</div>
+        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Toolbench — your saved items" title="Toolbench — your saved items">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span>Toolbench</span>
+          <span class="mc-tb-count" hidden>0</span>
+        </button>
       </div>
     </header>
 
@@ -2206,7 +2282,11 @@ section.scene.active { display: block; }
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
-        <div class="topbar-search">⌘K · Search</div>
+        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Toolbench — your saved items" title="Toolbench — your saved items">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span>Toolbench</span>
+          <span class="mc-tb-count" hidden>0</span>
+        </button>
       </div>
     </header>
 
@@ -2227,14 +2307,9 @@ section.scene.active { display: block; }
         </div>
       </div>
 
-      <!-- Lab Stash: highlights saved out of Oracle answers (mc_lab_stash_v1). -->
-      <button class="mc-stash-btn" id="mcStashBtn" type="button" aria-haspopup="dialog" aria-expanded="false">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M3 2.5h10v11l-5-3.2-5 3.2z"/>
-        </svg>
-        Lab Stash
-        <span class="mc-stash-count zero">0</span>
-      </button>
+      <!-- 2026-07-21 · The bottom-left Lab Stash button was removed — highlight-to-save
+           still writes mc_lab_stash_v1, and saved sentences now live in the Toolbench
+           (topbar) alongside saved molecules and marked chats. No duplicate door. -->
 
       <div class="user-card">
         <div class="user-avatar">
@@ -2337,7 +2412,11 @@ section.scene.active { display: block; }
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
-        <div class="topbar-search">⌘K · Search</div>
+        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Toolbench — your saved items" title="Toolbench — your saved items">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span>Toolbench</span>
+          <span class="mc-tb-count" hidden>0</span>
+        </button>
       </div>
     </header>
 
@@ -2484,7 +2563,11 @@ section.scene.active { display: block; }
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
-        <div class="topbar-search">⌘K · Search</div>
+        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Toolbench — your saved items" title="Toolbench — your saved items">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span>Toolbench</span>
+          <span class="mc-tb-count" hidden>0</span>
+        </button>
       </div>
     </header>
 
@@ -2599,7 +2682,11 @@ section.scene.active { display: block; }
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
-        <div class="topbar-search">⌘K · Search</div>
+        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Toolbench — your saved items" title="Toolbench — your saved items">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span>Toolbench</span>
+          <span class="mc-tb-count" hidden>0</span>
+        </button>
       </div>
     </header>
 
@@ -2718,7 +2805,11 @@ section.scene.active { display: block; }
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
-        <div class="topbar-search">⌘K · Search</div>
+        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Toolbench — your saved items" title="Toolbench — your saved items">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span>Toolbench</span>
+          <span class="mc-tb-count" hidden>0</span>
+        </button>
       </div>
     </header>
 
@@ -2909,7 +3000,11 @@ section.scene.active { display: block; }
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
-        <div class="topbar-search">⌘K · Search</div>
+        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Toolbench — your saved items" title="Toolbench — your saved items">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span>Toolbench</span>
+          <span class="mc-tb-count" hidden>0</span>
+        </button>
       </div>
     </header>
 
@@ -3017,7 +3112,11 @@ section.scene.active { display: block; }
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
-        <div class="topbar-search">⌘K · Search</div>
+        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Toolbench — your saved items" title="Toolbench — your saved items">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span>Toolbench</span>
+          <span class="mc-tb-count" hidden>0</span>
+        </button>
       </div>
     </header>
 
@@ -3274,7 +3373,11 @@ section.scene.active { display: block; }
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
-        <div class="topbar-search">⌘K · Search</div>
+        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Toolbench — your saved items" title="Toolbench — your saved items">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span>Toolbench</span>
+          <span class="mc-tb-count" hidden>0</span>
+        </button>
       </div>
     </header>
 
@@ -5223,6 +5326,7 @@ window.rebuildExpertList = function () {};
     if (stash.length > STASH_MAX) stash.length = STASH_MAX;
     saveStash();
     renderCount();
+    if (window.mcToolbenchRefresh) window.mcToolbenchRefresh();   // live-update an open Toolbench
     hidePop();
     try { window.getSelection().removeAllRanges(); } catch (e) {}
     if (stashBtn) { stashBtn.classList.add('mc-pop'); setTimeout(function () { stashBtn.classList.remove('mc-pop'); }, 340); }
@@ -5306,6 +5410,19 @@ window.rebuildExpertList = function () {};
     });
   }
   renderCount();
+
+  /* Single owner of mc_lab_stash_v1. The Toolbench reads/removes saved sentences
+     through this API so the in-memory array and localStorage never drift apart. */
+  window.MCStash = {
+    list:   function () { return stash.slice(); },
+    count:  function () { return stash.length; },
+    remove: function (id) {
+      stash = stash.filter(function (s) { return s.id !== id; });
+      saveStash();
+      renderCount();
+      if (window.mcToolbenchRefresh) window.mcToolbenchRefresh();
+    }
+  };
 })();
 
 </script>
@@ -5707,9 +5824,14 @@ window.rebuildExpertList = function () {};
         tr.innerHTML = cfg.columns.map(function (col) {
           return '<td>' + cellHTML(row, col) + '</td>';
         }).join('');
+        // Toolbench · add the save/bookmark control to molecule rows (mc_saved_molecules_v1).
+        if (name === 'molecules' && typeof window.mcDecorateMoleculeRow === 'function') {
+          window.mcDecorateMoleculeRow(tr, row);
+        }
         tr.addEventListener('click', function (ev) {
           // a real link in the row wins over the row-detail modal
           if (ev.target && ev.target.closest && ev.target.closest('a')) return;
+          if (ev.target && ev.target.closest && ev.target.closest('.db-mol-save')) return;
           openDbDetail(name, row);
         });
         tbody.appendChild(tr);
@@ -6051,6 +6173,272 @@ window.rebuildExpertList = function () {};
   window.addEventListener('hashchange', enter);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', enter);
   else enter();
+})();
+
+/* ═══ 2026-07-21 · Toolbench — saved-items hub ═══════════════════════════════════
+   One body-level drawer, opened from every scene's topbar wrench button, holding
+   three persisted sections:
+     • Saved molecules  — mc_saved_molecules_v1 (bookmark button on Database rows)
+     • Saved sentences  — mc_lab_stash_v1 via window.MCStash (highlight-to-save)
+     • Marked chats     — pinned entries of mc_oracle_history_v1 (the oracleChats rail)
+   Every localStorage read/write is try/catch-wrapped; keys are versioned; the
+   molecules store is capped at 100. Replaces the old topbar search + Lab Stash button. */
+(function () {
+  var MOL_KEY = 'mc_saved_molecules_v1';
+  var MOL_MAX = 100;
+  var esc = (typeof escapeHtml === 'function') ? escapeHtml : function (s) { return String(s == null ? '' : s); };
+
+  var savedMolecules = loadMolecules();
+  var panelEl, backdropEl, bodyEl;
+
+  function loadMolecules() {
+    var raw = null;
+    try { raw = localStorage.getItem(MOL_KEY); } catch (e) { return []; }
+    if (!raw) return [];
+    try {
+      var parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      var clean = [];
+      parsed.forEach(function (m) {
+        if (!m) return;
+        var id = (m.id != null && m.id !== '') ? String(m.id) : String(m.name || '');
+        var name = String(m.name || '').trim();
+        if (!id || !name) return;
+        clean.push({ id: id, name: name.slice(0, 200) });
+      });
+      return clean.slice(0, MOL_MAX);
+    } catch (e) { return []; }
+  }
+  function saveMolecules() {
+    try { localStorage.setItem(MOL_KEY, JSON.stringify(savedMolecules.slice(0, MOL_MAX))); }
+    catch (e) { /* private mode: still works for this session, just won't persist */ }
+  }
+  function molId(row) {
+    return (row && row.id != null && row.id !== '') ? String(row.id) : String((row && row.name) || '');
+  }
+  function isMolSaved(id) {
+    for (var i = 0; i < savedMolecules.length; i++) { if (savedMolecules[i].id === id) return true; }
+    return false;
+  }
+  function toggleMol(row) {
+    var id = molId(row); if (!id) return;
+    if (isMolSaved(id)) {
+      savedMolecules = savedMolecules.filter(function (m) { return m.id !== id; });
+    } else {
+      savedMolecules.unshift({ id: id, name: String((row && row.name) || id).slice(0, 200) });
+      if (savedMolecules.length > MOL_MAX) savedMolecules.length = MOL_MAX;
+    }
+    saveMolecules();
+    refresh();
+  }
+
+  /* ── bookmark control injected into every Database molecules row ── */
+  var BOOKMARK_SVG =
+    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M3.5 2.5h9v11l-4.5-2.9-4.5 2.9z"/></svg>';
+  window.mcDecorateMoleculeRow = function (tr, row) {
+    if (!tr) return;
+    var firstCell = tr.querySelector('td');
+    if (!firstCell) return;
+    var id = molId(row);
+    var wrap = document.createElement('div');
+    wrap.className = 'db-mol-cell';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'db-mol-save' + (isMolSaved(id) ? ' saved' : '');
+    btn.setAttribute('data-mol-id', id);
+    btn.innerHTML = BOOKMARK_SVG;
+    syncSaveBtn(btn, isMolSaved(id));
+    btn.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      toggleMol(row);   // refresh() re-syncs every visible bookmark + the counts
+    });
+    wrap.appendChild(btn);
+    var nameHost = document.createElement('span');
+    nameHost.style.cssText = 'flex:1 1 auto;min-width:0;';
+    while (firstCell.firstChild) nameHost.appendChild(firstCell.firstChild);
+    wrap.appendChild(nameHost);
+    firstCell.appendChild(wrap);
+  };
+  function syncSaveBtn(btn, on) {
+    btn.classList.toggle('saved', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    var l = on ? 'Remove from Toolbench' : 'Save to Toolbench';
+    btn.setAttribute('aria-label', l); btn.title = l;
+  }
+
+  /* ── marked chats (pinned Oracle chats) ── */
+  function markedChats() {
+    try {
+      if (typeof oracleChats !== 'undefined' && Array.isArray(oracleChats)) {
+        return oracleChats.filter(function (c) { return c && c.pinned; })
+                          .sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+      }
+    } catch (e) {}
+    try {
+      var raw = localStorage.getItem('mc_oracle_history_v1');
+      var arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr.filter(function (c) { return c && c.pinned; }) : [];
+    } catch (e) { return []; }
+  }
+  function chatLabel(c) {
+    if (typeof mcOracleLabel === 'function') return mcOracleLabel(c);
+    return (c && c.title) ? c.title : (c ? c.q : '');
+  }
+
+  /* ── panel ── */
+  function ensurePanel() {
+    if (panelEl) return panelEl;
+    backdropEl = document.createElement('div');
+    backdropEl.className = 'mc-tb-backdrop';
+    backdropEl.addEventListener('click', closePanel);
+    document.body.appendChild(backdropEl);
+
+    panelEl = document.createElement('div');
+    panelEl.className = 'mc-tb-panel';
+    panelEl.setAttribute('role', 'dialog');
+    panelEl.setAttribute('aria-label', 'Toolbench — your saved items');
+    panelEl.innerHTML =
+      '<div class="mc-tb-head">' +
+        '<div>' +
+          '<h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Toolbench</h4>' +
+          '<p>Everything you saved — molecules, sentences and marked chats</p>' +
+        '</div>' +
+        '<button type="button" class="mc-tb-close" aria-label="Close the Toolbench">&times;</button>' +
+      '</div>' +
+      '<div class="mc-tb-body"></div>';
+    document.body.appendChild(panelEl);
+    bodyEl = panelEl.querySelector('.mc-tb-body');
+    panelEl.querySelector('.mc-tb-close').addEventListener('click', closePanel);
+
+    bodyEl.addEventListener('click', function (ev) {
+      var t = ev.target;
+      if (!t || !t.closest) return;
+      var rm = t.closest('[data-tb-remove]');
+      if (rm) {
+        ev.stopPropagation();
+        var kind = rm.getAttribute('data-tb-kind');
+        var rid  = rm.getAttribute('data-tb-remove');
+        if (kind === 'mol') { savedMolecules = savedMolecules.filter(function (m) { return m.id !== rid; }); saveMolecules(); refresh(); }
+        else if (kind === 'sent' && window.MCStash) { window.MCStash.remove(rid); }   // MCStash calls back into refresh()
+        else if (kind === 'chat' && typeof mcToggleOracleChatPin === 'function') { mcToggleOracleChatPin(rid); refresh(); }
+        return;
+      }
+      var item = t.closest('[data-tb-open]');
+      if (!item) return;
+      var okind = item.getAttribute('data-tb-kind');
+      var oid   = item.getAttribute('data-tb-open');
+      if (okind === 'mol') openMolecule(oid);
+      else if (okind === 'chat') openChat(oid);
+    });
+    return panelEl;
+  }
+
+  function itemMol(m) {
+    return '<div class="mc-tb-item click" data-tb-open="' + esc(m.id) + '" data-tb-kind="mol" title="Open in the Database">' +
+             '<span class="mc-tb-ico"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="4.5" cy="8" r="2"/><circle cx="11.5" cy="4.5" r="1.6"/><circle cx="11.5" cy="11.5" r="1.6"/><path d="M6.3 7l3.7-2M6.3 9l3.7 2"/></svg></span>' +
+             '<div class="mc-tb-main"><div class="mc-tb-name">' + esc(m.name) + '</div><div class="mc-tb-sub">Molecule · open in Database</div></div>' +
+             '<button type="button" class="mc-tb-remove" data-tb-remove="' + esc(m.id) + '" data-tb-kind="mol" aria-label="Remove ' + esc(m.name) + '">&times;</button>' +
+           '</div>';
+  }
+  function itemSent(s) {
+    return '<div class="mc-tb-item" data-tb-kind="sent">' +
+             '<span class="mc-tb-ico"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h6"/></svg></span>' +
+             '<div class="mc-tb-main"><blockquote>' + esc(s.text) + '</blockquote>' + (s.q ? '<div class="mc-tb-sub" title="' + esc(s.q) + '">from: ' + esc(s.q) + '</div>' : '') + '</div>' +
+             '<button type="button" class="mc-tb-remove" data-tb-remove="' + esc(s.id) + '" data-tb-kind="sent" aria-label="Remove sentence">&times;</button>' +
+           '</div>';
+  }
+  function itemChat(c) {
+    return '<div class="mc-tb-item click" data-tb-open="' + esc(c.id) + '" data-tb-kind="chat" title="Load in the Oracle">' +
+             '<span class="mc-tb-ico"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg></span>' +
+             '<div class="mc-tb-main"><div class="mc-tb-name">' + esc(chatLabel(c)) + '</div><div class="mc-tb-sub">Marked chat · load in Oracle</div></div>' +
+             '<button type="button" class="mc-tb-remove" data-tb-remove="' + esc(c.id) + '" data-tb-kind="chat" aria-label="Unpin this chat">&times;</button>' +
+           '</div>';
+  }
+  function section(label, count, itemsHtml, emptyMsg) {
+    return '<div class="mc-tb-section">' +
+             '<div class="mc-tb-section-label">' + esc(label) + '<span class="mc-tb-n">' + count + '</span></div>' +
+             (count ? itemsHtml : '<div class="mc-tb-empty">' + emptyMsg + '</div>') +
+           '</div>';
+  }
+  function renderBody() {
+    if (!bodyEl) return;
+    var mols  = savedMolecules;
+    var sents = (window.MCStash && window.MCStash.list) ? window.MCStash.list() : [];
+    var chats = markedChats();
+    bodyEl.innerHTML =
+      section('Saved molecules', mols.length, mols.map(itemMol).join(''),
+        'Bookmark a molecule in the Database table to keep it here.') +
+      section('Saved sentences', sents.length, sents.map(itemSent).join(''),
+        'Highlight any sentence in an Oracle answer, then hit Save.') +
+      section('Marked chats', chats.length, chats.map(itemChat).join(''),
+        'Pin an Oracle chat (tap its bookmark) to keep it here.');
+  }
+
+  function totalCount() {
+    var s = (window.MCStash && window.MCStash.count) ? window.MCStash.count() : 0;
+    return savedMolecules.length + s + markedChats().length;
+  }
+  function updateCounts() {
+    var n = totalCount();
+    document.querySelectorAll('.mc-tb-count').forEach(function (el) {
+      el.textContent = n;
+      if (n > 0) el.removeAttribute('hidden'); else el.setAttribute('hidden', '');
+    });
+  }
+  function refresh() {
+    if (panelEl && panelEl.classList.contains('on')) renderBody();
+    updateCounts();
+    // keep any bookmarks currently on screen in the Database table in sync
+    document.querySelectorAll('.db-mol-save[data-mol-id]').forEach(function (b) {
+      syncSaveBtn(b, isMolSaved(b.getAttribute('data-mol-id')));
+    });
+  }
+  window.mcToolbenchRefresh = refresh;
+
+  function openPanel() {
+    ensurePanel();
+    renderBody();
+    panelEl.classList.add('on');
+    backdropEl.classList.add('on');
+    document.querySelectorAll('.mc-toolbench-btn').forEach(function (b) { b.classList.add('on'); b.setAttribute('aria-expanded', 'true'); });
+  }
+  function closePanel() {
+    if (panelEl) panelEl.classList.remove('on');
+    if (backdropEl) backdropEl.classList.remove('on');
+    document.querySelectorAll('.mc-toolbench-btn').forEach(function (b) { b.classList.remove('on'); b.setAttribute('aria-expanded', 'false'); });
+  }
+  function togglePanel() {
+    if (panelEl && panelEl.classList.contains('on')) closePanel();
+    else openPanel();
+  }
+
+  function openMolecule(id) {
+    var m = null;
+    for (var i = 0; i < savedMolecules.length; i++) { if (savedMolecules[i].id === id) { m = savedMolecules[i]; break; } }
+    try {
+      localStorage.setItem('mc_db_tab', 'molecules');
+      if (m) localStorage.setItem('mc_db_focus_name', m.name);
+    } catch (e) {}
+    closePanel();
+    location.hash = '#database';
+  }
+  function openChat(id) {
+    closePanel();
+    location.hash = '#oracle';
+    if (typeof mcOpenOracleChat === 'function') {
+      setTimeout(function () { try { mcOpenOracleChat(id); } catch (e) {} }, 0);
+    }
+  }
+
+  document.addEventListener('click', function (ev) {
+    var btn = ev.target && ev.target.closest ? ev.target.closest('.mc-toolbench-btn') : null;
+    if (btn) { ev.preventDefault(); togglePanel(); }
+  });
+  document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') closePanel(); });
+
+  updateCounts();
 })();
 </script>
 

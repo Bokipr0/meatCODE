@@ -1,6 +1,6 @@
 # MeatCODE — Agent Update Log
 
-_Last updated: 2026-07-21 12:20 UTC · Project Coordinator · full-screen shell (dock/flow-bar removed) + always-on Ask + shorter chatbox + cache design note_
+_Last updated: 2026-07-21 13:27 UTC · Project Coordinator · Toolbench saved-items hub (replaces search) + no-page-scroll centered frames in all tabs_
 
 > **Every agent appends an entry here at the end of any working session — newest at the top.**
 > This is the detailed audit trail of who changed what, when, and why. The short in-file
@@ -18,6 +18,14 @@ _Last updated: 2026-07-21 12:20 UTC · Project Coordinator · full-screen shell 
 ```
 
 ---
+
+## 2026-07-21 13:27 UTC · Project Coordinator · Toolbench hub + no-page-scroll centered frames (consolidated)
+Lior's 3 follow-ups (centered fixed-height frames in every tab · Toolbench icon replacing search that holds all saved items · confirm no page-scroll like his reference screenshot). All frontend/one-file → one UI/UX specialist (no Data/Advisory scope this round). First confirmed the fixed shell was already in place, so the page-scroll was a per-scene overflow leak, and there was no molecule-save affordance yet.
+
+### UI/UX Designer · Toolbench + fixed frames — `app/meatcode_mockup.html` + `UI-UX Designer/MeatCODE_mockup_v9.html`
+- What:   **(1+3) No page scroll, centered frames in Oracle/Research/Database/Simulate.** Each `section.scene` `.app` is grid `64px 1fr` / 100vh / `overflow:hidden`, so the `1fr` row is a definite track; the base `.canvas` (`min-height:0`+`overflow:auto`) is the bounded internal scroller for Research/Database/Simulate. Oracle rebuilt as a bounded flex column — `#oracle .canvas` flex/overflow-hidden → `.oracle-wrap` height:100%/min-height:0 → heading+ask-box+starters `flex:0 0 auto`, **`#oracleAnswerSlot` is the sole scroller** (`flex:1;min-height:0;overflow-y:auto`; `.oracle-answer max-height:none` to avoid a double scrollbar). Added `margin:0 auto` to `.sim-wrap` (was left-jammed). Map untouched. Page scroll is now structurally impossible in all four tabs (only the inner answer/table area scrolls). **(2) Toolbench replaces search.** Deleted `.topbar-search` (CSS + all 11 topbar instances; kept the in-table `#db-molecules-search`); added an `.mc-toolbench-btn` (wrench + live count) to every topbar opening one body-level `.mc-tb-panel` drawer with 3 persisted sections: **Saved molecules** (new `mc_saved_molecules_v1`, cap 100, a bookmark button injected into each Database molecules row via `window.mcDecorateMoleculeRow`, click routes to the Database tab), **Saved sentences** (`mc_lab_stash_v1` via a new single-owner `window.MCStash` API so memory/localStorage can't drift), **Marked chats** (pinned `mc_oracle_history_v1`, click repopulates Oracle). Removed the redundant bottom-left Lab Stash button (its data is now in the Toolbench); highlight-to-save still writes `mc_lab_stash_v1`.
+- Result: Both files' 5 `<script>` blocks pass `node --check` and are md5-identical; `topbar-search`=0 (in-table search kept); 20 Toolbench markers/file; `mc_saved_molecules_v1` + `MCStash` + `oracleAnswerSlot` present. No regressions (SESSION_EXPIRED + same-origin, "Digging…" phase, `mc_oracle_history_v1` + Ask `.finally()`, Sources label, nav order, Oracle default, no bell, 64px/1fr grid).
+- Next:   Not deployed — `deploy.command`. Eyeball items: Database scrolls the whole canvas (tabs+filter+table) not just rows — fine for "no page scroll" but a sticky filter bar is a possible follow-up; Oracle short/empty answer sits at top of the tall answer slot (cosmetic). Molecule-save button is new UI worth a click-test.
 
 ## 2026-07-21 12:20 UTC · Project Coordinator · PARALLEL run — full-screen shell + Ask fix + cache note (consolidated)
 Lior's 4 follow-ups (full-scale viewport / remove bottom bar · Ask button reusable · chats+stash cache · narrower chatbox). Split: UI/UX (items 1,2,4 + cache verify) ‖ Advisory (item 3 doc). **Data Engineer stood down — these are all frontend/client-cache items with no corpus/Neon/pipeline scope; the cache is client-side by architecture (shared password → no per-user identity), so there was no DB work to assign** (avoids a no-op subagent). First: confirmed via `/api/version` that the latest build IS deployed (commit e8e3e2f, server up 2026-07-21 11:58 UTC) — so reported symptoms were real code issues + likely browser cache on Lior's end, not a stale deploy.

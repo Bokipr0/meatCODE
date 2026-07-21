@@ -10,7 +10,6 @@
   --bg:#f6f7f5; --surface:#ffffff; --ink:#14201d; --muted:#6b7a75;
   --line:#e4e8e4; --accent:#127a6b; --accent-soft:#e4f2ef; --accent-ink:#0c5a4e;
   --amber:#b7791f; --amber-soft:#fbf3e3; --red:#b4443a; --red-soft:#fbe9e7;
-  --blue:#2f6db3; --violet:#6b52a3; --olive:#7a8a3a;
   --radius:14px; --shadow:0 1px 2px rgba(20,32,29,.05),0 6px 20px rgba(20,32,29,.04);
 }
 *{box-sizing:border-box}
@@ -24,16 +23,12 @@ h1,h2,h3{margin:0;font-weight:650;letter-spacing:-.01em}
 .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 
 /* header */
-.top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+.top{display:flex;align-items:center;gap:16px;margin-bottom:8px}
 .brand{display:flex;gap:12px;align-items:center}
 .logo{width:38px;height:38px;border-radius:10px;background:var(--accent);color:#fff;
   display:grid;place-items:center;font-weight:800;font-size:16px;letter-spacing:-.03em}
 .brand h1{font-size:19px}
 .brand .sub{font-size:12.5px;color:var(--muted);margin-top:1px}
-.status-pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;
-  padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted)}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
-.dot.live{background:#25a06f}.dot.snap{background:var(--amber)}
 .btn{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);
   color:var(--ink);padding:8px 13px;border-radius:10px;cursor:pointer;transition:.12s}
 .btn:hover{border-color:#cbd3cd;background:#fbfcfb}
@@ -41,13 +36,6 @@ h1,h2,h3{margin:0;font-weight:650;letter-spacing:-.01em}
 .btn.primary:hover{background:var(--accent-ink)}
 .btn.ghost{background:transparent}
 .btn:disabled{opacity:.45;cursor:not-allowed}
-
-/* kpi */
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 15px;box-shadow:var(--shadow)}
-.kpi .k{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
-.kpi .v{font-size:23px;font-weight:750;margin-top:4px;letter-spacing:-.02em}
-.kpi .d{font-size:11.5px;color:var(--muted);margin-top:2px}
 
 .section-label{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
   font-weight:700;margin:26px 2px 12px}
@@ -70,21 +58,10 @@ h1,h2,h3{margin:0;font-weight:650;letter-spacing:-.01em}
 .sdot{width:8px;height:8px;border-radius:50%;flex:none}
 .s-active{background:#25a06f}.s-idle{background:#c9a227}.s-standby{background:#b0b8b2}
 .agent-body{padding:0 16px 15px}
-.hl{font-size:12.5px;margin:2px 0 10px}
-.bar{height:7px;border-radius:99px;background:#eef1ee;overflow:hidden}
-.bar > i{display:block;height:100%;border-radius:99px;background:var(--accent)}
-.bar-row{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin:0 0 4px}
-.last{font-size:11px;color:var(--muted);margin-top:10px;display:flex;align-items:center;gap:6px}
-.goals{border-top:1px solid var(--line);margin-top:13px;padding-top:11px;display:none}
-.agent.open .goals{display:block}
-.goal{display:flex;gap:9px;font-size:12.5px;padding:4px 0;align-items:flex-start}
-.gi{width:15px;height:15px;border-radius:5px;flex:none;margin-top:1px;display:grid;place-items:center;font-size:10px;font-weight:700}
-.g-done{background:var(--accent-soft);color:var(--accent-ink)}
-.g-prog{background:var(--amber-soft);color:var(--amber)}
-.g-todo{background:#eef1ee;color:var(--muted)}
-.g-txt{flex:1}
-.g-txt b{font-weight:640}
-.expand{font-size:11px;color:var(--accent-ink);font-weight:600;cursor:pointer;margin-top:9px;display:inline-block}
+.trait-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;margin:2px 0 8px}
+.traits{display:flex;flex-wrap:wrap;gap:6px}
+.trait{font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:999px;border:1px solid transparent}
+.last{font-size:11px;color:var(--muted);margin-top:12px;display:flex;align-items:center;gap:6px}
 
 /* dispatch */
 .dispatch{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
@@ -95,8 +72,8 @@ h1,h2,h3{margin:0;font-weight:650;letter-spacing:-.01em}
   background:var(--accent-soft);color:var(--accent-ink);display:inline-flex;align-items:center;gap:6px}
 .selchip .x{cursor:pointer;opacity:.6;font-weight:700}.selchip .x:hover{opacity:1}
 .selchip.empty{background:#eef1ee;color:var(--muted)}
-textarea{width:100%;min-height:96px;resize:vertical;font:inherit;padding:12px;border:1px solid var(--line);
-  border-radius:11px;background:#fbfcfb;color:var(--ink);margin-top:2px}
+textarea{width:100%;min-height:280px;resize:vertical;font:inherit;font-size:15px;line-height:1.6;
+  padding:16px;border:1px solid var(--line);border-radius:12px;background:#fbfcfb;color:var(--ink);margin-top:2px}
 textarea:focus{outline:none;border-color:var(--accent);background:#fff}
 .ideas-label{font-size:11.5px;color:var(--muted);font-weight:600;margin:14px 0 7px}
 .examples{display:flex;flex-wrap:wrap;gap:7px;margin:2px 0}
@@ -119,15 +96,6 @@ textarea:focus{outline:none;border-color:var(--accent);background:#fff}
   display:grid;place-items:center;flex:none;font-size:12px}
 .launchbar.busy .lb-step{background:var(--amber)}
 .launchbar.err .lb-step{background:var(--red)}
-.workflows{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:12px}
-.wf{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
-  padding:15px;display:flex;flex-direction:column;gap:10px}
-.wf-top{display:flex;gap:11px;align-items:flex-start}
-.wf-emoji{font-size:22px;line-height:1.1;flex:none}
-.wf-name{font-weight:670;font-size:14px;letter-spacing:-.01em}
-.wf-agents{font-size:11px;color:var(--muted);display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
-.wf-agent{background:#eef1ee;border-radius:99px;padding:2px 8px;white-space:nowrap}
-.wf .btn{margin-top:auto;justify-content:center;display:flex;align-items:center;gap:6px}
 
 /* preview */
 .preview{margin-top:14px;border:1px solid var(--line);border-radius:11px;background:#fbfcfb;display:none}
@@ -144,7 +112,7 @@ textarea:focus{outline:none;border-color:var(--accent);background:#fff}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 .foot{margin-top:26px;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.6}
-@media(max-width:720px){.kpis{grid-template-columns:repeat(2,1fr)}.top{flex-direction:column}}
+@media(max-width:720px){.top{flex-direction:column;align-items:flex-start}}
 </style>
 </head>
 <body>
@@ -158,21 +126,10 @@ textarea:focus{outline:none;border-color:var(--accent);background:#fff}
         <div class="sub">MeatCODE · Open Flavor &amp; Aroma Initiative — team orchestration</div>
       </div>
     </div>
-    <div style="display:flex;gap:9px;align-items:center">
-      <span class="status-pill" id="dataPill"><span class="dot snap" id="dataDot"></span><span id="dataLbl">snapshot</span></span>
-      <button class="btn ghost" id="refreshBtn">↻ Refresh</button>
-    </div>
-  </div>
-
-  <div class="kpis">
-    <div class="kpi"><div class="k">Asana progress</div><div class="v" id="kpiTasks">8 / 76</div><div class="d" id="kpiTasksD">Phase 1 · foundation build</div></div>
-    <div class="kpi"><div class="k">Literature corpus</div><div class="v">818</div><div class="d">citable · target 1,000–2,000</div></div>
-    <div class="kpi"><div class="k">Experts mapped</div><div class="v">374</div><div class="d">curated · 3,129 raw in Neon</div></div>
-    <div class="kpi"><div class="k">Active agents</div><div class="v" id="kpiAgents">5</div><div class="d">2 active · 2 idle · 1 standby</div></div>
   </div>
 
   <!-- ROSTER -->
-  <div class="section-label">Your team — tap a card to see its goals, use the checkbox to enlist it</div>
+  <div class="section-label">Your team — click an agent (or its checkbox) to enlist it in a task</div>
   <div class="agents" id="roster"></div>
 
   <!-- COMPOSE & COPY -->
@@ -183,14 +140,14 @@ textarea:focus{outline:none;border-color:var(--accent);background:#fff}
 
     <div class="selchips" id="selChips"></div>
 
-    <textarea id="prompt" placeholder="Describe the problem or task for the selected agents…&#10;e.g. Improve the expert map: add several clickable buttons wired to the server/database, and log the changes so the whole team knows what was done."></textarea>
+    <textarea id="prompt" placeholder="Describe the problem or task for the selected agents…&#10;&#10;e.g. Improve the expert map: add several clickable buttons wired to the server/database, and log the changes so the whole team knows what was done."></textarea>
 
     <div class="ideas-label">💡 Prompt ideas — click one to load it (it selects the right agents too)</div>
     <div class="examples" id="ideas"></div>
 
     <div class="optrow">
       <div class="toggle on" id="coordToggle"><i></i></div>
-      <div>End with the <b>Project Coordinator</b> broadcasting the updates so the whole team knows what changed</div>
+      <div>End with the <b>Project Coordinator</b> notifying the whole team of what changed</div>
     </div>
 
     <div class="actions">
@@ -210,104 +167,72 @@ textarea:focus{outline:none;border-color:var(--accent);background:#fff}
   </div>
 
   <div class="foot" id="foot">
-    Progress is a live pull from your Asana project + the repo’s <span class="mono">AGENT_UPDATE_LOG.md</span> (baked snapshot when opened outside Claude).<br>
-    Command Center v1 · built for Lior · MeatCODE / GFI Israel
+    A character-first view of your team — each card shows the role each agent plays, not a task list.<br>
+    Command Center · built for Lior · MeatCODE / GFI Israel
   </div>
 </div>
 
 <div id="toast"></div>
 
 <script>
-/* ---------- AGENT MODEL (real status from AGENT_UPDATE_LOG.md + PROJECT_STATE.md, 2026-07-05) ---------- */
+/* ---------- AGENT MODEL — each agent framed by the character of its role ---------- */
 const AGENTS = [
   {
     id:"data", name:"Data Engineer", emoji:"🗄️", color:"#2f6db3", soft:"#e8f0f9",
     role:"Corpus, Neon DB, pipeline, scoring",
-    status:"active", statusTxt:"Active", last:"Jul 5, 18:10 UTC",
-    headline:"Literature corpus → 1,000+ sources", pct:82,
-    goals:[
-      {s:"done", t:"<b>Corpus 496 → 818</b> citable sources, deduped &amp; taxonomy-tagged"},
-      {s:"done", t:"<b>Quality/priority scoring</b> live — all 818 scored, 202 off-topic flagged"},
-      {s:"done", t:"<b>FTS / search_vec</b> applied (496/496) + auto-refresh trigger"},
-      {s:"done", t:"<b>Expert map</b> served live from Neon (374 curated / 3,129)"},
-      {s:"prog", t:"Push corpus deeper toward <b>1,000–2,000</b> (recency-skewed — needs older reviews)"},
-      {s:"todo", t:"Quarantine the 202 low-relevance papers; normalize <span class='mono'>experts.country</span>"}
-    ]
+    status:"active", statusTxt:"Active", last:"Active · Jul 20",
+    traits:["Rigorous","Precise","Systematic","Data-driven","Reliable","Detail-obsessed"]
   },
   {
     id:"ui", name:"UI / UX Designer", emoji:"🎨", color:"#6b52a3", soft:"#efeaf7",
     role:"Mockup, screens, design system",
-    status:"active", statusTxt:"Active", last:"Jul 5, 13:30 UTC",
-    headline:"Product surface polish + new screens", pct:70,
-    goals:[
-      {s:"done", t:"<b>v8 mockup polish</b> — teal consistency, SVG icons, 5-domain dashboard"},
-      {s:"done", t:"<b>4 new hi-fi screens</b> (Home / Map / Oracle / Research) handed off"},
-      {s:"done", t:"Claude Design <b>templates deployable</b> against the live server"},
-      {s:"prog", t:"Awaiting your call: promote v8 → canonical mockup"},
-      {s:"todo", t:"Pick build target for new screens (served HTML vs Next.js)"}
-    ]
+    status:"active", statusTxt:"Active", last:"Active · Jul 20",
+    traits:["Creative","User-empathetic","Aesthetic","Brand-consistent","Iterative","Detail-oriented"]
   },
   {
     id:"algo", name:"Algorithm Expert", emoji:"🧮", color:"#127a6b", soft:"#e0efec",
     role:"Oracle retrieval, RAG, eval",
-    status:"idle", statusTxt:"Idle", last:"Jun 30, 12:55 UTC",
-    headline:"Oracle answer-engine build", pct:35,
-    goals:[
-      {s:"done", t:"<b>Architecture decision</b>: single-pass tag-aware hybrid RAG (drop agent-swarm)"},
-      {s:"prog", t:"Awaiting Daniel sign-off to start the build"},
-      {s:"todo", t:"Build the <b>4-step retrieval pipeline</b> + 30–50Q golden eval set"},
-      {s:"todo", t:"<b>Fix Oracle recall bug</b> — <span class='mono'>websearch_to_tsquery</span> ANDs terms → 0 rows"}
-    ]
+    status:"active", statusTxt:"Active", last:"Active · Jul 8",
+    traits:["Cautious","Analytical","Experienced","Problem-solver","Artistic taste","Sense for efficiency"]
+  },
+  {
+    id:"fullstack", name:"Fullstack Engineer", emoji:"🛠️", color:"#2b8ca6", soft:"#e2f0f4",
+    role:"Frontend + backend, deploy, integration",
+    status:"active", statusTxt:"Active", last:"Just joined the team",
+    traits:["Versatile","Resourceful","End-to-end","Ships fast","Pragmatic","Unblocks anything"]
   },
   {
     id:"advisory", name:"Advisory", emoji:"🧭", color:"#7a8a3a", soft:"#eef1e0",
     role:"Strategy, architecture, infra, docs",
-    status:"idle", statusTxt:"Idle", last:"Jun 30, 13:05 UTC",
-    headline:"Infra + Phase-0 define docs", pct:75,
-    goals:[
-      {s:"done", t:"<b>Three-homes model</b>: Git = code · Neon = data · Asana = tasks"},
-      {s:"done", t:"Single source-of-truth repo + <b>agent update-log conventions</b>"},
-      {s:"prog", t:"Tagging taxonomy v0.1 + hub architecture v0.1 — <b>awaiting Daniel sign-off</b>"},
-      {s:"todo", t:"Formalize tool-stack + hub-architecture write-up for approval"}
-    ]
+    status:"active", statusTxt:"Active", last:"Active · Jul 20",
+    traits:["Strategic","Big-picture","Principled","Clear-thinking","Risk-aware","Candid"]
   },
   {
     id:"coord", name:"Project Coordinator", emoji:"🗂️", color:"#b7791f", soft:"#fbf3e3",
     role:"Broadcasts updates & notifies the whole team",
-    status:"standby", statusTxt:"Standby", last:"not yet activated",
-    headline:"Keep the team in sync", pct:20,
-    goals:[
-      {s:"prog", t:"Maintain <b>AGENT_UPDATE_LOG.md</b> so every agent knows the latest"},
-      {s:"prog", t:"<b>Notify all agents</b> of what was just done, so the whole team stays current"}
-    ]
+    status:"active", statusTxt:"Active", last:"Active · Jul 20",
+    traits:["Organized","Communicative","Dependable","Attentive","Proactive","Diplomatic"]
   }
 ];
 
 /* prompt ideas → click loads the text + selects the right agents into the composer */
 const IDEAS = [
   {label:"Improve expert map", agents:["data","ui"], text:"Improve the expert map in the MeatCODE app: create several new buttons, make them clickable, and wire them to interact with the database through the server (meatcode_server.py / Neon). Data Engineer owns the API + DB side; UI Designer owns the buttons, states and layout. Work simultaneously, then log everything to AGENT_UPDATE_LOG.md."},
-  {label:"Ship the Oracle engine", agents:["algo","data"], text:"Build the Oracle answer engine per the approved hybrid-RAG decision: Data Engineer embeds citable sources into pgvector and fixes the recall bug (websearch_to_tsquery ANDing terms); Algorithm Expert builds the retrieve→rerank→ground pipeline plus a 30–50 question golden eval set."},
-  {label:"Promote v8 mockup", agents:["ui","advisory"], text:"Promote the v8 polished mockup to the canonical app/meatcode_mockup.html: UI Designer carries the richer treatment into Oracle/Map/Research; Advisory confirms it fits the design-system decision. Log the promotion."},
+  {label:"Deploy the grounded Oracle", agents:["fullstack","algo"], text:"Fullstack Engineer: take the grounded Oracle from working code to reliably deployed — verify /api/ask retrieval + SSE end-to-end on Render, wire any missing env/config, run deploy.command, and confirm the live site. Algorithm Expert: pair on retrieval correctness + the eval so what ships is exactly what was tested."},
+  {label:"Ship a feature end-to-end", agents:["fullstack","ui"], text:"Fullstack Engineer + UI Designer: build a new feature end-to-end — UI in the mockup, backend endpoint in meatcode_server.py, wired together with loading/empty/error states, then deployed and verified live."},
+  {label:"Promote v9 mockup", agents:["ui","advisory"], text:"Promote the v9 polished mockup to the canonical app/meatcode_mockup.html: UI Designer carries the richer treatment across scenes and promotes the file; Advisory confirms it fits the design-system decision and updates PROJECT_STATE. Log the promotion."},
   {label:"Notify the team", agents:["coord"], text:"Project Coordinator: read AGENT_UPDATE_LOG.md + PROJECT_STATE.md, summarize what every agent did recently, and notify all the agents of the latest so the whole team stays current."},
   {label:"Corpus → 1,000+", agents:["data"], text:"Data Engineer: expand the literature corpus from 818 toward 1,000–2,000 high-value sources — run the taxonomy-driven ingester deeper (including older foundational reviews), dedupe, tag to canonical topics, and re-score priority."},
-  {label:"Fix Oracle recall bug", agents:["data","algo"], text:"Fix the Oracle recall bug: retrieval uses websearch_to_tsquery which ANDs all terms, so full questions match 0 rows. Data Engineer switches to keyword extraction / OR semantics; Algorithm Expert verifies recall against real questions."},
-  {label:"White-space map", agents:["data","advisory"], text:"Data Engineer + Advisory: analyze the tagged corpus for knowledge gaps / white spaces in meaty process flavor, and produce a first white-space map with the highest-leverage research questions."}
+  {label:"Close quarantine write-back", agents:["data","algo"], text:"Data Engineer + Algorithm Expert: close the quarantine→relevance_llm write-back so Daniel-rejected sources are actually blocked from Oracle retrieval, not just recorded in source_audits. Verify a quarantined source no longer appears in /api/ask results."}
 ];
 
 /* ---------- STATE ---------- */
 const selected = new Set();
 let coordOn = true;
-const ASANA_PROJECT = "1215201551726181";
-const ASANA_GET_PROJECT = "mcp__2c2288c1-6b92-456a-84f4-5798cfcc25ae__get_project";
-const DISPATCH_TASK_ID = "meatcode-agent-dispatch";
-const UPDATE_TASK_TOOL = "mcp__scheduled-tasks__update_scheduled_task";
-const LIVE = typeof window !== "undefined" && window.cowork && typeof window.cowork.callMcpTool === "function";
-const CAN_RUN = LIVE && window.cowork && typeof window.cowork.runScheduledTask === "function";
+const LIVE = typeof window !== "undefined" && window.cowork && typeof window.cowork.askClaude === "function";
 
 /* ---------- RENDER ROSTER ---------- */
 function statusClass(s){return s==="active"?"s-active":s==="idle"?"s-idle":"s-standby";}
-function goalIcon(s){return s==="done"?"g-done":s==="prog"?"g-prog":"g-todo";}
-function goalMark(s){return s==="done"?"✓":s==="prog"?"◐":"○";}
 
 function renderRoster(){
   const r = document.getElementById("roster");
@@ -316,9 +241,9 @@ function renderRoster(){
     const el = document.createElement("div");
     el.className = "agent" + (selected.has(a.id)?" sel":"");
     el.id = "card-"+a.id;
-    const goalsHtml = a.goals.map(g=>`<div class="goal"><span class="gi ${goalIcon(g.s)}">${goalMark(g.s)}</span><span class="g-txt">${g.t}</span></div>`).join("");
+    const traitsHtml = a.traits.map(t=>`<span class="trait" style="background:${a.soft};color:${a.color}">${t}</span>`).join("");
     el.innerHTML = `
-      <div class="agent-head" data-toggle="${a.id}">
+      <div class="agent-head" data-card="${a.id}">
         <div class="av" style="background:${a.soft}">${a.emoji}</div>
         <div class="agent-meta">
           <div class="agent-name">${a.name}<span class="sdot ${statusClass(a.status)}" title="${a.statusTxt}"></span></div>
@@ -329,21 +254,16 @@ function renderRoster(){
         </div>
       </div>
       <div class="agent-body">
-        <div class="bar-row"><span>${a.headline}</span><span>${a.pct}%</span></div>
-        <div class="bar"><i style="width:${a.pct}%;background:${a.color}"></i></div>
-        <div class="last">🕗 Last active: ${a.last}</div>
-        <span class="expand" data-toggle="${a.id}">▾ big goals (${a.goals.length})</span>
-        <div class="goals">${goalsHtml}</div>
+        <div class="trait-label">Character</div>
+        <div class="traits">${traitsHtml}</div>
+        <div class="last">🕗 ${a.last}</div>
       </div>`;
     r.appendChild(el);
   });
-  // wire
+  // whole card head toggles selection; checkbox does too (and stops the head handler)
+  document.querySelectorAll("[data-card]").forEach(c=>c.addEventListener("click",()=>toggleSelect(c.getAttribute("data-card"))));
   document.querySelectorAll("[data-sel]").forEach(c=>c.addEventListener("click",e=>{
     e.stopPropagation(); toggleSelect(c.getAttribute("data-sel"));
-  }));
-  document.querySelectorAll("[data-toggle]").forEach(c=>c.addEventListener("click",e=>{
-    const id = c.getAttribute("data-toggle");
-    document.getElementById("card-"+id).classList.toggle("open");
   }));
 }
 
@@ -401,7 +321,7 @@ async function generateSuggestion(){
     bar.className="launchbar show busy"; icon.textContent="…"; msg.innerHTML="Drafting a task idea for "+names.join(", ")+"…";
     try{
       const cur=document.getElementById("prompt").value.trim();
-      const instr="You are helping Lior plan work on MeatCODE — a meaty-flavor research platform (literature DB, molecular/mechanistic DB, expert map, Oracle RAG chatbot, and a product mockup). Propose ONE concrete, high-leverage task these agents can do together, phrased as a crisp instruction naming who owns what (2–4 sentences). Agents: "+names.join(", ")+". "+(cur?("Build on this rough goal: "+cur):"")+" Return ONLY the task instruction text, no preamble.";
+      const instr="You are helping Lior plan work on MeatCODE — a meaty-flavor research platform (literature DB, molecular/mechanistic DB, expert map, Oracle RAG chatbot, and a product mockup deployed on Render). Propose ONE concrete, high-leverage task these agents can do together, phrased as a crisp instruction naming who owns what (2–4 sentences). Agents: "+names.join(", ")+". "+(cur?("Build on this rough goal: "+cur):"")+" Return ONLY the task instruction text, no preamble.";
       const res=await window.cowork.askClaude(instr, []);
       let out=typeof res==="string"?res:(res&&(res.text||res.answer||res.output||(res.content&&res.content[0]&&res.content[0].text)))||"";
       out=(out||"").trim();
@@ -446,7 +366,7 @@ function refreshPreview(){
   document.getElementById("wordCount").textContent = t.split(/\s+/).filter(Boolean).length + " words";
 }
 
-/* ---------- DISPATCH ---------- */
+/* ---------- COPY ---------- */
 function validate(){
   const specialists = [...selected].filter(id=>id!=="coord");
   const task = document.getElementById("prompt").value.trim();
@@ -454,31 +374,6 @@ function validate(){
   if(!task){ toast("Write the task for your agents"); return false; }
   return true;
 }
-/* full self-contained prompt for the background dispatcher run */
-function composeRunPrompt(){
-  const task = document.getElementById("prompt").value.trim();
-  const picked = AGENTS.filter(a=>selected.has(a.id) && a.id!=="coord");
-  const coordPicked = selected.has("coord") || coordOn;
-  let p = "You are orchestrating Lior's MeatCODE agent team. Work inside the canonical repo `meatCODE/` "
-        + "(at /Users/lior/Documents/Claude/Projects/Claude Database/meatCODE). Read CLAUDE.md then "
-        + "PROJECT_STATE.md first. Launched on-demand from the Agent Command Center dashboard.\n\n";
-  p += "STEP 0 — record the order: write this entire dispatch verbatim, with a UTC timestamp header, to "
-     + "/Users/lior/Documents/Claude/Projects/Claude Database/meatCODE/app/DISPATCH_ORDER.md (overwrite) "
-     + "so there is a repo-visible record of exactly what was dispatched. Then execute it:\n\n";
-  p += "Spawn these specialist agents to work IN PARALLEL on one shared objective, each owning their part:\n";
-  picked.forEach(a=>{ p += `  • ${a.name} — ${a.role}\n`; });
-  if(picked.length===0) p += "  • (no specialist selected)\n";
-  p += "\n=== DISPATCH ===\n" + (task || "NO TASK SET") + "\n=== END DISPATCH ===\n\n";
-  p += "Coordination rules:\n";
-  p += "  1. Split the work so agents run simultaneously; state who owns what.\n";
-  p += "  2. Each agent edits only its area in `meatCODE/`, follows the file-stamp convention, and appends a dated entry to AGENT_UPDATE_LOG.md.\n";
-  p += "  3. Keep PROJECT_STATE.md current if technical reality changes.\n";
-  if(coordPicked)
-    p += "  4. When specialists finish, the Project Coordinator consolidates their update-log entries, syncs the relevant Asana tasks, and drafts a short 'what just shipped' note for Daniel.\n";
-  p += "\nReport a concise summary of who did what and what's ready for Lior's review.";
-  return p;
-}
-
 function copyAndLaunch(){
   if(!validate()) return;
   const text = composePrompt();
@@ -497,31 +392,10 @@ function fallbackCopy(text,done){
   let ok=false; try{ ok=document.execCommand("copy"); }catch(e){}
   ta.remove();
   if(ok){ done(); }
-  else{ // last resort: reveal the prompt so the user can select+copy manually
+  else{
     document.getElementById("preview").classList.add("show");
     refreshPreview(); toast("Select the prompt below & copy it");
     document.getElementById("preview").scrollIntoView({behavior:"smooth",block:"center"});
-  }
-}
-
-/* ---------- LIVE ASANA ---------- */
-async function pullLive(){
-  const dot=document.getElementById("dataDot"), lbl=document.getElementById("dataLbl");
-  if(!LIVE){ return; }
-  lbl.textContent="refreshing…";
-  try{
-    const r = await window.cowork.callMcpTool(ASANA_GET_PROJECT, {project_id:ASANA_PROJECT, opt_fields:"num_tasks,num_completed_tasks,num_incomplete_tasks"});
-    const payload = r.structuredContent ?? JSON.parse(r.content[0].text);
-    const d = payload.data || payload;
-    const tc = d.task_counts || {};
-    if(tc.num_tasks!=null){
-      document.getElementById("kpiTasks").textContent = (tc.num_completed_tasks||0)+" / "+tc.num_tasks;
-      const pct = Math.round(100*(tc.num_completed_tasks||0)/tc.num_tasks);
-      document.getElementById("kpiTasksD").textContent = pct+"% complete · Phase 1";
-    }
-    dot.className="dot live"; lbl.textContent="live · Asana";
-  }catch(e){
-    dot.className="dot snap"; lbl.textContent="snapshot";
   }
 }
 
@@ -544,8 +418,6 @@ document.getElementById("previewBtn").addEventListener("click",()=>{
   const p=document.getElementById("preview"); p.classList.toggle("show");
   if(p.classList.contains("show")) refreshPreview();
 });
-document.getElementById("refreshBtn").addEventListener("click", pullLive);
-if(LIVE){ document.getElementById("dataDot").className="dot live"; document.getElementById("dataLbl").textContent="live · Asana"; pullLive(); }
 </script>
 </body>
 </html>

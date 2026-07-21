@@ -6,6 +6,11 @@
 
 _Last updated: 2026-07-20 12:49 UTC · Project Coordinator — parallel team run: Oracle v11 (dictation · dynamic pinned-above-history sidebar · bigger save icon · "Digging the MeatCODE database" copy + additive SSE `status` event). Prev: 2026-07-08 ~10:10 UTC team broadcast; see AGENT_UPDATE_LOG.md_
 
+## Follow-up v12.3 — shipped to the repo 2026-07-21 (awaiting deploy)
+- **No page-scroll, centered frames in every tab** (Oracle/Research/Database/Simulate): each scene's `.canvas` is the bounded internal scroller (`min-height:0`+`overflow:auto`) inside the fixed `64px 1fr`/100vh shell; Oracle rebuilt so `#oracleAnswerSlot` is the sole scroller. Page scroll is now structurally impossible — only inner answer/table areas scroll. `.sim-wrap` centered (was left-jammed).
+- **Toolbench replaces the search bar:** `.topbar-search` deleted everywhere (in-table molecule search kept); a wrench "Toolbench" button on every topbar opens one drawer with 3 persisted sections — **Saved molecules** (new `mc_saved_molecules_v1` + a bookmark button on each molecules row), **Saved sentences** (`mc_lab_stash_v1`, now via a single-owner `window.MCStash`), **Marked chats** (pinned `mc_oracle_history_v1`). Redundant bottom-left Lab Stash button removed; highlight-to-save unchanged.
+- Verified: 10/10 script blocks parse, both mockups byte-identical. **Not deployed — run `deploy.command`.**
+
 ## Follow-up v12.2 — shipped to the repo 2026-07-21 (awaiting deploy)
 - **Full-screen shell:** app grid `64px 1fr 88px`→`64px 1fr`; the bottom **dock + dev flow-bar removed** (`display:none`), so the platform uses the whole viewport with no page scroll. (Fixed a sync gap: the hide block was in LIVE but missing from v9 — now matched.)
 - **Ask button now works for every question** (was stuck-disabled after the first): re-enable moved to `.finally()` + an `input` listener that enables Ask on typed text.
