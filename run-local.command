@@ -8,7 +8,11 @@
 # Stop it with Ctrl+C in the Terminal window.
 # ============================================================================
 set -o pipefail
-cd "$(dirname "$0")" || exit 1            # = meatCODE/ repo root
+# Always work on the real repo, wherever this file is double-clicked from.
+# If you ever MOVE the meatCODE folder, update this one path.
+REPO="/Users/lior/Documents/Claude/Projects/Claude Database/meatCODE"
+[ -d "$REPO/.git" ] || REPO="$(dirname "$0")"
+cd "$REPO" || exit 1            # = meatCODE/ repo root
 
 # First run: make a .env.dev for you to fill in (it is gitignored — never committed).
 if [ ! -f .env.dev ]; then

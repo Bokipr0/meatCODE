@@ -8,7 +8,11 @@
 # Your 'dev' branch is untouched — fix things there, then promote again.
 # ============================================================================
 set -o pipefail
-cd "$(dirname "$0")" || exit 1            # = meatCODE/ repo root
+# Always work on the real repo, wherever this file is double-clicked from.
+# If you ever MOVE the meatCODE folder, update this one path.
+REPO="/Users/lior/Documents/Claude/Projects/Claude Database/meatCODE"
+[ -d "$REPO/.git" ] || REPO="$(dirname "$0")"
+cd "$REPO" || exit 1            # = meatCODE/ repo root
 [ -f .git/index.lock ] && { echo "Clearing a stale git lock…"; rm -f .git/index.lock; }
 
 PROD="main"
