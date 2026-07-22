@@ -23,6 +23,12 @@ You can also press **H** anywhere inside the dev app to slide the Release Center
 
 Nothing reaches users until you Promote.
 
+## Roll back a bad release
+
+Open the Release Center (locally) and scroll to **Version history**. Every promotion is a saved snapshot, listed newest-first, with the one that's currently live marked. Click **Roll back to this** on any earlier snapshot, confirm, and production redeploys that exact version (~1–2 min). You can roll forward again the same way — nothing is lost. Only real snapshots can be targeted (the server rejects anything that isn't a `prod-…` tag), and it's available on your local cockpit only, since rolling back drives git.
+
+The list is empty until you've promoted at least once — each Promote creates a snapshot.
+
 ## How it works (so you can trust it)
 
 - **`features.json`** (committed, at the repo root) holds every flag with a `dev` and a `prod` boolean. One file, both environments — each server reads only its own column based on `APP_ENV`.

@@ -16,5 +16,6 @@ if [ ! -f .env.dev ]; then
 fi
 
 echo "Starting MeatCODE DEV on http://localhost:8000  —  Ctrl+C to stop."
+echo "(Full local control — press H in the app to open the Release Center.)"
 ( sleep 2; open "http://localhost:8000/app/meatcode_mockup.html" 2>/dev/null ) &
-APP_ENV=dev python3 server/meatcode_server.py
+APP_ENV=dev RELEASE_CENTER=1 python3 server/meatcode_server.py

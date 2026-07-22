@@ -57,6 +57,14 @@
    dropped in, this visibly restyles the wordmark so the switch is testable. */
 body.ff-new-logo .brand-logo{ background:linear-gradient(135deg, var(--brass,#b5651d), var(--wine,#6d2a3a)); color:#fff; }
 body.ff-new-logo .brand-name::after{ content:"new"; margin-left:6px; padding:1px 6px; font-size:9px; font-weight:700; letter-spacing:.04em; color:#fff; background:var(--brass,#b5651d); border-radius:999px; vertical-align:middle; text-transform:uppercase; }
+/* ── Feature flag: dev_banner — fixed "DEV" ribbon so staging is never mistaken for prod ── */
+#ffDevBanner{ display:none; position:fixed; top:8px; left:50%; transform:translateX(-50%); z-index:100000;
+  background:var(--brass,#b5651d); color:#fff; font:700 11px -apple-system,BlinkMacSystemFont,sans-serif;
+  letter-spacing:.08em; text-transform:uppercase; padding:4px 12px; border-radius:999px;
+  box-shadow:0 2px 8px rgba(0,0,0,.2); pointer-events:none; }
+body.ff-dev_banner #ffDevBanner{ display:block; }
+/* ── Feature flag: highlight_inventory — draw attention to the Inventory button ── */
+body.ff-highlight_inventory .mc-toolbench-btn{ box-shadow:0 0 0 2px var(--brass,#b5651d); background:rgba(181,101,29,.12); }
 /* GFI co-brand: lift the logo before everything and make it the visual anchor */
 .gfi-cobrand {
   order: -1;
@@ -7652,6 +7660,7 @@ window.rebuildExpertList = function () {};
   #rcFrame{ flex:1; border:none; width:100%; }
 </style>
 <div id="rcHint">Press H · Release Center</div>
+<div id="ffDevBanner">DEV · staging</div>
 <div id="rcOverlay" aria-hidden="true">
   <div id="rcPanel" role="dialog" aria-label="Release Center">
     <div id="rcBar"><span>MeatCODE · Release Center</span><button type="button" id="rcClose">Close (H / Esc)</button></div>

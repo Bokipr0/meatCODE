@@ -1,0 +1,22 @@
+{
+  "flags": {
+    "new_logo": {
+      "label": "New logo",
+      "description": "Updated GFI / MeatCODE logo in the top bar.",
+      "dev": true,
+      "prod": false
+    },
+    "dev_banner": {
+      "label": "Dev banner",
+      "description": "Show a 'DEV · staging' ribbon so you never mistake staging for production.",
+      "dev": true,
+      "prod": false
+    },
+    "highlight_inventory": {
+      "label": "Highlight Inventory",
+      "description": "Give the Inventory button a colored glow to draw attention to it.",
+      "dev": true,
+      "prod": false
+    }
+  }
+}

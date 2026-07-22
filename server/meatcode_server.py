@@ -98,7 +98,7 @@ If you'd rather keep the key in a file: drop a `.env` next to this script with
 ANTHROPIC_API_KEY=sk-ant-...  on its own line. The script reads it automatically.
 """
 
-import os, sys, json, re, threading, base64, hmac, datetime, subprocess
+import os, sys, json, re, threading, base64, hmac, datetime, subprocess, glob
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
@@ -157,18 +157,32 @@ if APP_ENV == "dev":
 # ─── Feature flags (Release Center) ──────────────────────────────────
 # features.json is committed (it is config, not a secret): each flag holds a dev + a prod
 # boolean, so ONE file drives both environments and each server reads only its own column.
-FLAGS_PATH = os.path.join(REPO_ROOT, "features.json")
+# Reorg-proof file finding: look at the repo root first, else ANYWHERE under it — so
+# moving features.json / the .command scripts into a folder like "Release Center" never
+# breaks anything. Cached; only re-globs if the remembered path disappears.
+_resolve_cache = {}
+def _resolve_repo_file(name):
+    hit = _resolve_cache.get(name)
+    if hit and os.path.exists(hit):
+        return hit
+    direct = os.path.join(REPO_ROOT, name)
+    if os.path.exists(direct):
+        _resolve_cache[name] = direct; return direct
+    found = glob.glob(os.path.join(REPO_ROOT, "**", name), recursive=True)
+    hit = found[0] if found else direct
+    _resolve_cache[name] = hit
+    return hit
 
 def load_flags():
     try:
-        with open(FLAGS_PATH, encoding="utf-8") as _f:
+        with open(_resolve_repo_file("features.json"), encoding="utf-8") as _f:
             data = json.load(_f)
         return data.get("flags", {}) if isinstance(data, dict) else {}
     except Exception:
         return {}
 
 def save_flags(flags):
-    with open(FLAGS_PATH, "w", encoding="utf-8") as _f:
+    with open(_resolve_repo_file("features.json"), "w", encoding="utf-8") as _f:
         json.dump({"flags": flags}, _f, indent=2, ensure_ascii=False)
         _f.write("\n")
 API_KEY = os.environ.get("ANTHROPIC_API_KEY")
@@ -486,6 +500,10 @@ class Handler(SimpleHTTPRequestHandler):
             self.path = "/app/templates/index.html"
         elif path.startswith("/templates/"):
             self.path = "/app/templates/" + path[len("/templates/"):]
+        # Pretty URL for the internal Agent Command Center dashboard (served over https so
+        # its microphone dictation works — browsers block the mic on file:// / sandboxed panels).
+        if path in ("/command-center", "/command-center/"):
+            self.path = "/app/agent_command_center.html"
         return super().do_GET()
 
     def _handle_api_get(self, path):
@@ -507,6 +525,11 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/flags/all":
             # Full dev+prod matrix — powers the Release Center dashboard.
             return self._send_json({"env": APP_ENV, "admin": self._local_admin_ok(), "flags": load_flags()})
+        if path == "/api/release/history":
+            # Promoted snapshots + which is live. Local cockpit only (needs git).
+            if not self._local_admin_ok():
+                return self._send_json({"error": "not found"}, 404)
+            return self._release_history()
         if path == "/api/version":
             # OPEN (like /api/health) so deploy status is checkable without signing in.
             # `commit` tells you exactly which push is live; `features` confirms the NEW
@@ -920,6 +943,27 @@ class Handler(SimpleHTTPRequestHandler):
         except Exception:
             return None
 
+    def _release_history(self):
+        """List promoted snapshots (prod-* tags) newest-first + which one is live."""
+        try:
+            subprocess.run(["git", "-C", REPO_ROOT, "fetch", "origin", "--tags", "--quiet"],
+                           capture_output=True, text=True, timeout=25)
+        except Exception:
+            pass
+        fmt = "%(refname:short)\t%(creatordate:format:%Y-%m-%d %H:%M)\t%(objectname:short)\t%(subject)"
+        r = subprocess.run(["git", "-C", REPO_ROOT, "for-each-ref", "--sort=-creatordate",
+                            "--format", fmt, "refs/tags/prod-*"], capture_output=True, text=True)
+        versions = []
+        for line in r.stdout.splitlines():
+            p = line.split("\t")
+            if len(p) >= 3:
+                versions.append({"tag": p[0], "date": p[1], "commit": p[2],
+                                 "subject": (p[3] if len(p) > 3 else "")})
+        cur = subprocess.run(["git", "-C", REPO_ROOT, "rev-parse", "--short", "origin/main"],
+                             capture_output=True, text=True).stdout.strip()
+        current_tag = next((v["tag"] for v in versions if v["commit"] == cur), None)
+        return self._send_json({"current": current_tag, "current_commit": cur, "versions": versions})
+
     def _handle_admin_post(self, path):
         """Release Center actions — reachable only after _local_admin_ok() passes."""
         if path == "/api/flags/set":
@@ -935,7 +979,7 @@ class Handler(SimpleHTTPRequestHandler):
             return self._send_json({"ok": True, "flags": flags})
         if path in ("/api/release/deploy-dev", "/api/release/promote"):
             script = "deploy-dev.command" if path.endswith("deploy-dev") else "promote-to-prod.command"
-            target = os.path.join(REPO_ROOT, script)
+            target = _resolve_repo_file(script)
             if not os.path.exists(target):
                 return self._send_json({"error": script + " not found"}, 404)
             try:
@@ -944,13 +988,28 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception as e:
                 return self._send_json({"error": str(e)}, 500)
             return self._send_json({"ok": True, "launched": script})
+        if path == "/api/release/rollback":
+            body = self._read_json_body() or {}
+            tag = str(body.get("tag", "")).strip()
+            # Only real prod-* snapshots — never an arbitrary ref.
+            if not re.match(r"^prod-[0-9-]+$", tag):
+                return self._send_json({"error": "bad snapshot name"}, 400)
+            chk = subprocess.run(["git", "-C", REPO_ROOT, "rev-parse", "--verify", "--quiet", tag + "^{commit}"],
+                                 capture_output=True, text=True)
+            if chk.returncode != 0:
+                return self._send_json({"error": "unknown snapshot"}, 404)
+            push = subprocess.run(["git", "-C", REPO_ROOT, "push", "origin", tag + "^{commit}:main",
+                                   "--force-with-lease"], capture_output=True, text=True)
+            if push.returncode != 0:
+                return self._send_json({"error": (push.stderr or push.stdout or "rollback failed").strip()}, 500)
+            return self._send_json({"ok": True, "rolled_back_to": tag})
         return self._send_json({"error": "not found"}, 404)
 
     def do_POST(self):
         path = urlparse(self.path).path
         # ── Local Release Center admin — exists ONLY on the local cockpit (RELEASE_CENTER=1
         #    + loopback); returns 404 anywhere else, so a hosted server can never be driven. ──
-        if path in ("/api/flags/set", "/api/release/deploy-dev", "/api/release/promote"):
+        if path in ("/api/flags/set", "/api/release/deploy-dev", "/api/release/promote", "/api/release/rollback"):
             if not self._local_admin_ok():
                 self.send_error(404, "Not found"); return
             return self._handle_admin_post(path)
