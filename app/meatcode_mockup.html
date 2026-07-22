@@ -52,6 +52,11 @@
   line-height: 1.1;
 }
 .brand-name::before { content: none; display: none; }
+/* ── Feature flag: new_logo (placeholder treatment) ──────────────────────────
+   The Release Center toggles body.ff-new-logo. Until the real new-logo asset is
+   dropped in, this visibly restyles the wordmark so the switch is testable. */
+body.ff-new-logo .brand-logo{ background:linear-gradient(135deg, var(--brass,#b5651d), var(--wine,#6d2a3a)); color:#fff; }
+body.ff-new-logo .brand-name::after{ content:"new"; margin-left:6px; padding:1px 6px; font-size:9px; font-weight:700; letter-spacing:.04em; color:#fff; background:var(--brass,#b5651d); border-radius:999px; vertical-align:middle; text-transform:uppercase; }
 /* GFI co-brand: lift the logo before everything and make it the visual anchor */
 .gfi-cobrand {
   order: -1;
@@ -7615,5 +7620,69 @@ window.rebuildExpertList = function () {};
 })();
 </script>
 
+<script>
+/* Feature flags (Release Center): light up any flag that is ON for THIS environment.
+   Each on-flag becomes a body class  ff-<key>  that CSS or JS can react to. Fails silent. */
+(function(){
+  try{
+    fetch('/api/flags', { credentials:'same-origin' })
+      .then(function(r){ return r.ok ? r.json() : {}; })
+      .then(function(flags){
+        Object.keys(flags||{}).forEach(function(k){
+          if(flags[k]) document.body.classList.add('ff-'+k);
+        });
+      })
+      .catch(function(){});
+  }catch(e){}
+})();
+</script>
+<style>
+  /* Release Center in-app overlay — only wired on dev environments. */
+  #rcHint{ position:fixed; bottom:14px; left:14px; z-index:99998; background:rgba(20,14,16,.82); color:#fff;
+           font:600 12px -apple-system,BlinkMacSystemFont,sans-serif; padding:6px 11px; border-radius:999px; display:none; }
+  body.rc-dev #rcHint{ display:block; }
+  #rcOverlay{ position:fixed; inset:0; z-index:99999; display:none; background:rgba(20,14,16,.5); }
+  #rcOverlay.open{ display:block; }
+  #rcPanel{ position:absolute; top:0; right:0; bottom:0; width:min(880px,96vw); background:#fff;
+            box-shadow:-8px 0 40px rgba(0,0,0,.3); display:flex; flex-direction:column; animation:rcIn .18s ease; }
+  @keyframes rcIn{ from{ transform:translateX(34px); opacity:.5 } to{ transform:none; opacity:1 } }
+  #rcBar{ display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid #eadfe0;
+          font:600 14px -apple-system,BlinkMacSystemFont,sans-serif; color:#7a2d3d; }
+  #rcBar button{ border:none; background:#f0e9ea; border-radius:8px; padding:6px 11px; cursor:pointer; font-size:13px; color:#5c2130; }
+  #rcFrame{ flex:1; border:none; width:100%; }
+</style>
+<div id="rcHint">Press H · Release Center</div>
+<div id="rcOverlay" aria-hidden="true">
+  <div id="rcPanel" role="dialog" aria-label="Release Center">
+    <div id="rcBar"><span>MeatCODE · Release Center</span><button type="button" id="rcClose">Close (H / Esc)</button></div>
+    <iframe id="rcFrame" title="Release Center"></iframe>
+  </div>
+</div>
+<script>
+/* In-app Release Center: press H (on dev only) to open/close the control panel as an overlay. */
+(function(){
+  function enable(){
+    document.body.classList.add('rc-dev');
+    var ov=document.getElementById('rcOverlay'), fr=document.getElementById('rcFrame'), loaded=false;
+    function open(){ if(!loaded){ fr.src='/app/release-center.html'; loaded=true; } ov.classList.add('open'); ov.setAttribute('aria-hidden','false'); }
+    function close(){ ov.classList.remove('open'); ov.setAttribute('aria-hidden','true'); }
+    function toggle(){ ov.classList.contains('open') ? close() : open(); }
+    document.getElementById('rcClose').addEventListener('click', close);
+    ov.addEventListener('click', function(e){ if(e.target===ov) close(); });
+    document.addEventListener('keydown', function(e){
+      if(e.key==='Escape'){ close(); return; }
+      var t=e.target, tag=(t&&t.tagName||'').toLowerCase();
+      var typing = tag==='input'||tag==='textarea'||(t&&t.isContentEditable);
+      if((e.key==='h'||e.key==='H') && !typing && !e.metaKey && !e.ctrlKey && !e.altKey){ e.preventDefault(); toggle(); }
+    });
+  }
+  try{
+    fetch('/api/version',{credentials:'same-origin'})
+      .then(function(r){ return r.ok ? r.json() : {}; })
+      .then(function(v){ var env=(v&&v.env)||'prod'; if(env==='dev'||env==='local') enable(); })
+      .catch(function(){});
+  }catch(e){}
+})();
+</script>
 </body>
 </html>

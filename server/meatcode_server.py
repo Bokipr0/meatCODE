@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-# Last updated: 2026-07-22 13:55 UTC · Full-Stack Engineer · added GET /api/molecules/{id} — single-molecule
+# Last updated: 2026-07-23 · Advisory · Feature flags + Release Center. GET /api/flags (per-env booleans
+#   from features.json) & /api/flags/all (full dev+prod matrix). Local-only admin: POST /api/flags/set +
+#   /api/release/{deploy-dev,promote}, gated by RELEASE_CENTER=1 AND loopback (404 anywhere else); the
+#   admin page app/release-center.html is served only under the same gate. APP_ENV picks each flag's column.
+# Prev 2026-07-22 13:55 UTC · Full-Stack Engineer · added GET /api/molecules/{id} — single-molecule
 #   detail endpoint powering the new molecule detail PAGE. Returns the molecule row (id/name/category/taste/
 #   use_notes) + mentions_count (COUNT from source_molecules, same signal as /api/molecules) + up to 10 linked
 #   `papers` (source_molecules → sources, ORDER BY priority_score DESC NULLS LAST, year DESC NULLS LAST),
@@ -94,7 +98,7 @@ If you'd rather keep the key in a file: drop a `.env` next to this script with
 ANTHROPIC_API_KEY=sk-ant-...  on its own line. The script reads it automatically.
 """
 
-import os, sys, json, re, threading, base64, hmac, datetime
+import os, sys, json, re, threading, base64, hmac, datetime, subprocess
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
@@ -124,13 +128,16 @@ TEMPLATES_DIR = os.path.join(REPO_ROOT, "app", "templates")  # Claude Design tem
 
 
 # ─── tiny .env loader (no python-dotenv needed) ──────────────────────
-def load_dotenv(path):
+def load_dotenv(path, skip_empty=False):
     if not path or not os.path.exists(path): return
     for line in open(path, encoding="utf-8"):
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line: continue
         k, v = line.split("=", 1)
         k, v = k.strip(), v.strip().strip('"').strip("'")
+        # A blank value in an OVERLAY file (e.g. an empty ANTHROPIC_API_KEY= in
+        # .env.dev) must never wipe a real value already loaded from .env.
+        if skip_empty and v == "": continue
         # .env is authoritative: overwrite any stale shell export (e.g. an old
         # ANTHROPIC_API_KEY left over from `export`), which setdefault would keep.
         os.environ[k] = v
@@ -145,7 +152,25 @@ load_dotenv(os.path.join(HERE, ".env"))
 # vars are used instead, so this line is a harmless no-op there.
 APP_ENV = os.environ.get("APP_ENV", "prod").strip().lower()
 if APP_ENV == "dev":
-    load_dotenv(os.path.join(REPO_ROOT, ".env.dev"))
+    load_dotenv(os.path.join(REPO_ROOT, ".env.dev"), skip_empty=True)
+
+# ─── Feature flags (Release Center) ──────────────────────────────────
+# features.json is committed (it is config, not a secret): each flag holds a dev + a prod
+# boolean, so ONE file drives both environments and each server reads only its own column.
+FLAGS_PATH = os.path.join(REPO_ROOT, "features.json")
+
+def load_flags():
+    try:
+        with open(FLAGS_PATH, encoding="utf-8") as _f:
+            data = json.load(_f)
+        return data.get("flags", {}) if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+def save_flags(flags):
+    with open(FLAGS_PATH, "w", encoding="utf-8") as _f:
+        json.dump({"flags": flags}, _f, indent=2, ensure_ascii=False)
+        _f.write("\n")
 API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 if not API_KEY:
     sys.stderr.write(
@@ -416,6 +441,14 @@ class Handler(SimpleHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError):
             pass
 
+    # ─── Release Center: local-only admin capability check ───
+    def _local_admin_ok(self):
+        # These powers exist ONLY on your local cockpit: RELEASE_CENTER=1 is set solely by
+        # release-center.command / run-local on your Mac (never on Render), AND the caller
+        # must be loopback. Either check failing → the route behaves as if it doesn't exist.
+        host = self.client_address[0] if self.client_address else ""
+        return os.environ.get("RELEASE_CENTER") == "1" and host in ("127.0.0.1", "::1", "localhost")
+
     # Disable directory listings entirely on the public server.
     def list_directory(self, path):
         self.send_error(404, "Not found")
@@ -437,6 +470,12 @@ class Handler(SimpleHTTPRequestHandler):
         # Public-server hygiene: never serve repo internals / secrets / scripts.
         low = path.lower()
         if low.startswith("/.") or "/." in low or low.endswith(".command") or low.endswith(".env"):
+            self.send_error(404, "Not found")
+            return
+        # The Release Center page: full controls on the local cockpit; a READ-ONLY
+        # view on the hosted dev site (so the in-app H overlay can show it); hidden
+        # entirely on production. Write/deploy endpoints stay local-only regardless.
+        if low.endswith("release-center.html") and not (self._local_admin_ok() or APP_ENV == "dev"):
             self.send_error(404, "Not found")
             return
         # Pretty URL for the template gallery: /templates/... → app/templates/...
@@ -461,6 +500,13 @@ class Handler(SimpleHTTPRequestHandler):
                 "has_anthropic_key": bool(API_KEY),
                 "model": MODEL,
             })
+        if path == "/api/flags":
+            # What the mockup reads to switch features on/off for THIS environment.
+            flags = load_flags()
+            return self._send_json({k: bool(v.get(APP_ENV, False)) for k, v in flags.items()})
+        if path == "/api/flags/all":
+            # Full dev+prod matrix — powers the Release Center dashboard.
+            return self._send_json({"env": APP_ENV, "admin": self._local_admin_ok(), "flags": load_flags()})
         if path == "/api/version":
             # OPEN (like /api/health) so deploy status is checkable without signing in.
             # `commit` tells you exactly which push is live; `features` confirms the NEW
@@ -874,10 +920,42 @@ class Handler(SimpleHTTPRequestHandler):
         except Exception:
             return None
 
+    def _handle_admin_post(self, path):
+        """Release Center actions — reachable only after _local_admin_ok() passes."""
+        if path == "/api/flags/set":
+            body = self._read_json_body() or {}
+            key = str(body.get("key", "")).strip()
+            env = str(body.get("env", "")).strip().lower()
+            val = bool(body.get("value"))
+            flags = load_flags()
+            if key not in flags or env not in ("dev", "prod"):
+                return self._send_json({"error": "unknown flag or env"}, 400)
+            flags[key][env] = val
+            save_flags(flags)
+            return self._send_json({"ok": True, "flags": flags})
+        if path in ("/api/release/deploy-dev", "/api/release/promote"):
+            script = "deploy-dev.command" if path.endswith("deploy-dev") else "promote-to-prod.command"
+            target = os.path.join(REPO_ROOT, script)
+            if not os.path.exists(target):
+                return self._send_json({"error": script + " not found"}, 404)
+            try:
+                # Open it in Terminal so YOUR "type yes" confirm still gates the deploy.
+                subprocess.Popen(["open", target])
+            except Exception as e:
+                return self._send_json({"error": str(e)}, 500)
+            return self._send_json({"ok": True, "launched": script})
+        return self._send_json({"error": "not found"}, 404)
+
     def do_POST(self):
+        path = urlparse(self.path).path
+        # ── Local Release Center admin — exists ONLY on the local cockpit (RELEASE_CENTER=1
+        #    + loopback); returns 404 anywhere else, so a hosted server can never be driven. ──
+        if path in ("/api/flags/set", "/api/release/deploy-dev", "/api/release/promote"):
+            if not self._local_admin_ok():
+                self.send_error(404, "Not found"); return
+            return self._handle_admin_post(path)
         if not self._authorized():
             return self._deny()
-        path = urlparse(self.path).path
         if path != "/api/ask":
             self.send_error(404, "POST not supported for " + path); return
 

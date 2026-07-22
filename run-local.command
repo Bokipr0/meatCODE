@@ -1,36 +1,20 @@
 #!/bin/bash
 # ============================================================================
-# run-local.command — preview your work on YOUR Mac, instantly, for free.
-# ----------------------------------------------------------------------------
-# Runs the MeatCODE server locally at http://localhost:8000 using your DEV
-# settings (dev database + dev key), so nothing you do here can affect the
-# public site or real data. This is your fastest edit → see-it loop.
-# Stop it with Ctrl+C in the Terminal window.
+# run-local.command — preview your work on YOUR Mac at http://localhost:8000.
+# Uses your dev settings; nothing here can affect the public site. Ctrl+C to stop.
 # ============================================================================
 set -o pipefail
 # Always work on the real repo, wherever this file is double-clicked from.
-# If you ever MOVE the meatCODE folder, update this one path.
 REPO="/Users/lior/Documents/Claude/Projects/Claude Database/meatCODE"
 [ -d "$REPO/.git" ] || REPO="$(dirname "$0")"
-cd "$REPO" || exit 1            # = meatCODE/ repo root
+cd "$REPO" || exit 1
 
-# First run: make a .env.dev for you to fill in (it is gitignored — never committed).
+# Optional local overrides (dev DB, etc.). Your .env already provides the API key,
+# so .env.dev is created COMMENTED — a blank key line here would wipe the real one.
 if [ ! -f .env.dev ]; then
-  cat > .env.dev <<'EOF'
-# LOCAL DEV ONLY — never commit this (it is gitignored).
-# run-local.command loads this so local runs use your DEV database + DEV key.
-APP_ENV=dev
-ANTHROPIC_API_KEY=
-DATABASE_URL=
-EOF
-  echo "Created .env.dev — paste your DEV Anthropic key and DEV Neon URL into it, then run this again."
-  echo "(Opening it for you…)"
-  open -e .env.dev 2>/dev/null
-  read -p "Press Enter to close."; exit 0
+  printf '# LOCAL DEV ONLY — never commit.\n# Uncomment + fill to point local dev at your DEV database:\n# DATABASE_URL=postgresql://...your-dev-branch...\n' > .env.dev
 fi
 
 echo "Starting MeatCODE DEV on http://localhost:8000  —  Ctrl+C to stop."
-echo "(Using .env.dev → your dev database. Nothing here touches the live site.)"
-# open the browser a moment after the server boots
 ( sleep 2; open "http://localhost:8000/app/meatcode_mockup.html" 2>/dev/null ) &
 APP_ENV=dev python3 server/meatcode_server.py

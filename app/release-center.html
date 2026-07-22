@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MeatCODE · Release Center</title>
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{ --wine:#7a2d3d; --wine-dark:#5c2130; --ink:#2a2320; --dim:#8a7f79; --line:#eadfe0;
+         --bg:#faf6f3; --on:#2f9e6b; --card:#fff; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--ink); background:var(--bg); }
+  .wrap{ max-width:760px; margin:0 auto; padding:26px 22px 96px; }
+  header{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  h1{ font-size:21px; margin:0; color:var(--wine); letter-spacing:.01em; }
+  .badge{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#fff; background:var(--wine); padding:3px 9px; border-radius:999px; }
+  .sub{ color:var(--dim); margin:8px 0 16px; }
+  .banner{ background:#fdeee2; border:1px solid #f0cfb0; border-radius:12px; padding:11px 14px; color:#8a5a2a; font-size:13.5px; margin-bottom:18px; }
+  .note{ background:#fff7f0; border:1px solid var(--line); border-radius:12px; padding:12px 14px; color:#6b5b54; font-size:13.5px; margin-bottom:20px; }
+  .note b{ color:var(--wine-dark); }
+  .flag{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 18px; margin-bottom:12px; display:flex; align-items:center; gap:16px; }
+  .flag .meta{ flex:1; min-width:0; }
+  .flag .name{ font-weight:650; }
+  .flag .desc{ color:var(--dim); font-size:13px; margin-top:2px; }
+  .switches{ display:flex; gap:20px; }
+  .sw{ display:flex; flex-direction:column; align-items:center; gap:6px; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--dim); }
+  .toggle{ position:relative; width:46px; height:26px; border-radius:999px; background:#d9cfca; cursor:pointer; transition:background .15s; border:none; padding:0; }
+  .toggle::after{ content:""; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition:transform .15s; box-shadow:0 1px 3px rgba(0,0,0,.2); }
+  .toggle[aria-pressed="true"]{ background:var(--on); }
+  .toggle[aria-pressed="true"]::after{ transform:translateX(20px); }
+  .toggle:disabled{ opacity:.5; cursor:default; }
+  .ro{ font-size:11px; font-weight:700; padding:4px 11px; border-radius:999px; background:#e7e0dc; color:#8a7f79; }
+  .ro.on{ background:var(--on); color:#fff; }
+  .deploybar{ position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid var(--line); padding:14px 22px; display:flex; gap:12px; justify-content:center; align-items:center; flex-wrap:wrap; }
+  .btn{ border:none; border-radius:10px; padding:11px 18px; font-size:14px; font-weight:650; cursor:pointer; }
+  .btn.dev{ background:#eef1f4; color:#33414f; }
+  .btn.prod{ background:var(--wine); color:#fff; }
+  .btn:active{ transform:translateY(1px); }
+  .toast{ position:fixed; bottom:78px; left:50%; transform:translateX(-50%); background:var(--ink); color:#fff; padding:10px 16px; border-radius:10px; font-size:13.5px; opacity:0; transition:opacity .2s; pointer-events:none; max-width:90%; text-align:center; }
+  .toast.show{ opacity:1; }
+  .locked{ text-align:center; color:var(--dim); padding:56px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>MeatCODE · Release Center</h1>
+    <span class="badge" id="envBadge">…</span>
+  </header>
+  <div class="sub">Flip a feature ON for <b>Dev</b> to test it, then ON for <b>Prod</b> when it's ready to go live.</div>
+  <div class="banner" id="banner" style="display:none"></div>
+  <div class="note" id="note">Toggling saves to <code>features.json</code> right away. <b>Nothing reaches users until you Promote.</b> Dev switches appear on staging after you <b>Deploy</b>; Prod switches go live on your next <b>Promote</b>.</div>
+  <div id="flags"><div class="locked">Loading…</div></div>
+</div>
+
+<div class="deploybar" id="deploybar" style="display:none">
+  <button class="btn dev" id="btnDeploy">Deploy to staging (dev)</button>
+  <button class="btn prod" id="btnPromote">Promote to production</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),3400); }
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function ctl(key,env,on,admin){
+  if(admin) return `<div class="sw">${env}<button class="toggle" aria-pressed="${!!on}" data-key="${key}" data-env="${env}"></button></div>`;
+  return `<div class="sw">${env}<span class="ro ${on?'on':''}">${on?'ON':'off'}</span></div>`;
+}
+
+async function load(){
+  let data;
+  try{ data = await (await fetch('/api/flags/all',{credentials:'same-origin'})).json(); }
+  catch(e){ $('#flags').innerHTML='<div class="locked">Can’t reach the local server. Start it with <b>release-center.command</b>.</div>'; return; }
+  const admin = !!data.admin;
+  $('#envBadge').textContent = admin ? 'admin · local' : (data.env||'dev');
+  if(!admin){
+    $('#banner').style.display='block';
+    $('#banner').innerHTML='This is the <b>read-only</b> hosted dev view. To change flags and deploy, open the Release Center on your Mac — double-click <b>release-center.command</b> (or press <b>H</b> there).';
+    $('#note').style.display='none';
+  } else {
+    $('#deploybar').style.display='flex';
+  }
+  const flags = data.flags||{};
+  const keys = Object.keys(flags);
+  if(!keys.length){ $('#flags').innerHTML='<div class="locked">No features yet. Add one to <b>features.json</b>.</div>'; return; }
+  $('#flags').innerHTML = keys.map(k=>{
+    const f=flags[k]||{};
+    return `<div class="flag">
+      <div class="meta"><div class="name">${esc(f.label||k)}</div><div class="desc">${esc(f.description||'')}</div></div>
+      <div class="switches">${ctl(k,'dev',f.dev,admin)}${ctl(k,'prod',f.prod,admin)}</div>
+    </div>`;
+  }).join('');
+  if(admin) document.querySelectorAll('.toggle').forEach(b=> b.addEventListener('click', onToggle));
+}
+
+async function onToggle(e){
+  const b=e.currentTarget, key=b.dataset.key, env=b.dataset.env;
+  const next = b.getAttribute('aria-pressed')!=='true';
+  b.disabled=true;
+  try{
+    const r=await fetch('/api/flags/set',{method:'POST',credentials:'same-origin',
+      headers:{'Content-Type':'application/json'}, body:JSON.stringify({key,env,value:next})});
+    if(!r.ok) throw 0;
+    b.setAttribute('aria-pressed', next?'true':'false');
+    toast(`${key}: ${env} → ${next?'ON':'off'} (saved)`);
+  }catch(_){ toast('Could not save — is the local server running?'); }
+  finally{ b.disabled=false; }
+}
+
+async function runRelease(kind, confirmMsg){
+  if(!confirm(confirmMsg)) return;
+  try{
+    const j = await (await fetch('/api/release/'+kind,{method:'POST',credentials:'same-origin'})).json();
+    if(j.ok) toast('A Terminal window opened — finish the confirmation there.');
+    else toast('Error: '+(j.error||'failed'));
+  }catch(_){ toast('Could not start — is the local server running?'); }
+}
+$('#btnDeploy').addEventListener('click',()=>runRelease('deploy-dev','Deploy your current work to the PRIVATE staging site?'));
+$('#btnPromote').addEventListener('click',()=>runRelease('promote','Promote to the PUBLIC site? A Terminal will open where you type “yes” to confirm.'));
+
+load();
+</script>
+</body>
+</html>

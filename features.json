@@ -1,0 +1,10 @@
+{
+  "flags": {
+    "new_logo": {
+      "label": "New logo",
+      "description": "Updated GFI / MeatCODE logo in the top bar.",
+      "dev": true,
+      "prod": false
+    }
+  }
+}
