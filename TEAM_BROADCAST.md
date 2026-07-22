@@ -8,6 +8,15 @@ _From: Project Coordinator · As of: **2026-07-20 ~13:10 UTC**_
 
 ---
 
+## 🆕 Latest — 2026-07-22 (read PROJECT_STATE + AGENT_UPDATE_LOG for detail; the sections further down predate this)
+The product surface moved several times today — trust PROJECT_STATE.md over this older body:
+- **2026-07-22 12:17 · nav trim + wider answer + related-molecule chips (PROJECT_STATE "Follow-up v12.5").** Parallel UI/UX + Full-Stack run: **Database + Map removed from the top nav** (screens kept, reachable via other journeys); **Oracle answer widened** (760→1080px); **"Related molecules" chips** at the end of each answer from a **new `GET /api/molecule-suggestions`** endpoint. Verified (mockup `node --check`, server `py_compile`, contract matches). **Awaiting `deploy.command`.**
+- **2026-07-22 · data-audit "AI Review" layer** on the recurring snapshot (PROJECT_STATE) — flags that enrichment/scoring is still largely unwritten (composite_score=0, tags 26–74%).
+- **2026-07-21 · lean-v1 design port (v12.4)** + **advisory Oracle-notes pass** (ORACLE eyebrow removed, new subtitle, sources moved below/blue/collapsible). All awaiting deploy.
+- ⚠️ **Multiple sessions keep editing `app/meatcode_mockup.html` un-committed between hand-offs** — commit/push (or hand off through the Coordinator) more often to avoid rebasing/merge churn.
+
+---
+
 ## Where we are, in one line
 The Oracle is **live, private, always-on, and genuinely grounded** — it retrieves from our own corpus and
 cites real sources — and just gained a round of UX polish (dictation, chat history, honest status copy).

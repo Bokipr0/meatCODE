@@ -83,6 +83,10 @@ def _cell(v):
 def main() -> int:
     ap = argparse.ArgumentParser(description="Raw Neon → 1 xlsx (5 sheets), newest-first.")
     ap.add_argument("--out", default=None, help="Output .xlsx path (default: data/snapshots/meatcode_snapshot_<UTCstamp>.xlsx)")
+    ap.add_argument("--with-ai-review", action="store_true",
+                    help="After writing the raw snapshot, append an honest AI Review sheet "
+                         "(calls pipeline/ai_review.py in API mode; can take ~60s). Default off "
+                         "keeps this export raw-only.")
     args = ap.parse_args()
 
     import psycopg2
@@ -149,6 +153,20 @@ def main() -> int:
     print(f"snapshot written: {out_path}")
     print(f"taken (UTC): {taken_utc:%Y-%m-%d %H:%M:%S}  origin: {origin}")
     print("rows: " + " · ".join(f"{k} {counts[k]}" for k in counts))
+
+    # Optional opinion layer. Kept OUT of the default path so the raw export stays raw,
+    # fast and deterministic. The recurring audit adds the review itself (agent-authored,
+    # injected) rather than relying on this slower in-process API call.
+    if args.with_ai_review:
+        try:
+            import sys as _sys
+            _sys.path.insert(0, str(Path(__file__).resolve().parent))
+            import ai_review
+            key = ai_review._env_value("ANTHROPIC_API_KEY")
+            status = ai_review.review_file(out_path, ai_review.DEFAULT_MODEL, key, force=True)
+            print(f"ai review: {status}")
+        except Exception as e:  # never let the review break the raw snapshot
+            print(f"ai review: SKIPPED ({type(e).__name__}: {e}) — raw snapshot is intact")
     return 0
 
 

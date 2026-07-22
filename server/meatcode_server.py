@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
-# Last updated: 2026-07-20 14:52 UTC · Coordinator (for Data Engineer) · GET /api/molecules is now paginated:
+# Last updated: 2026-07-22 13:55 UTC · Full-Stack Engineer · added GET /api/molecules/{id} — single-molecule
+#   detail endpoint powering the new molecule detail PAGE. Returns the molecule row (id/name/category/taste/
+#   use_notes) + mentions_count (COUNT from source_molecules, same signal as /api/molecules) + up to 10 linked
+#   `papers` (source_molecules → sources, ORDER BY priority_score DESC NULLS LAST, year DESC NULLS LAST),
+#   all parameterized via pg_rows. SELECT-only; 404 {"error":"not found"} for a missing id. Regex branch sits
+#   next to the list handler and requires a numeric id, so the bare /api/molecules list is NOT shadowed.
+# Prev 2026-07-22 12:06 UTC · Full-Stack Engineer · added GET /api/molecule-suggestions —
+#   context-aware molecule chips for the Oracle answer panel. Bare JSON array, SELECT-only. Ranks
+#   molecules NAMED in the passed question+answer text (m.name substring of q), then whose chemical
+#   FAMILY is named (m.category substring of q), then fills by mentions_count DESC; supports ?q, ?limit
+#   (default 6, cap 12), ?exclude=id,id (non-ints ignored); deduped by id, exclude always applied.
+# Prev 2026-07-20 14:52 UTC · Coordinator (for Data Engineer) · GET /api/molecules is now paginated:
 #   `limit` (≤200, default 50) + `offset`, and `meta=1` returns {items,total,limit,offset} so the Molecules
 #   pager can show "X of N". Bare (no-meta) calls unchanged. Verified live vs Neon (50/page, total 799, Fats=10).
 # Prev 2026-07-20 13:40 UTC · Coordinator · Oracle no longer narrates its own retrieval: the
@@ -47,6 +58,10 @@ Endpoints
   GET  /api/experts/{id}        single expert (detail panel)
   GET  /api/molecules[?q=&category=&sort=name|popularity&limit=]  Database tab: molecules
                                  (mentions_count = COUNT from source_molecules)
+  GET  /api/molecules/{id}      single molecule (detail page): fields + mentions_count + linked papers
+  GET  /api/molecule-suggestions[?q=&limit=&exclude=id,id,...]  context-aware molecule chips for the
+                                 Oracle answer panel: bare array ranked by molecules named in `q`, then
+                                 whose chemical family (category) appears in `q`, then top by mentions_count
   GET  /api/sources[?q=&topic=&sort=relevance|citations|year&min_relevance=&limit=]  Database tab:
                                  literature sources
   GET  /api/companies[?q=&country=&sort=name|country&limit=]  Database tab: companies — reads the
@@ -123,6 +138,14 @@ def load_dotenv(path):
 # .env at repo root first (the convention), then next to this script as fallback
 load_dotenv(os.path.join(REPO_ROOT, ".env"))
 load_dotenv(os.path.join(HERE, ".env"))
+# Two-environment support. APP_ENV is set to "dev" by run-local.command and by the
+# meatcode-dev Render service; anything else (incl. unset) means production. When dev,
+# load .env.dev LAST so local dev runs use the DEV database + DEV key, never production.
+# On Render, .env.dev isn't in the repo (gitignored) — the service's own dashboard env
+# vars are used instead, so this line is a harmless no-op there.
+APP_ENV = os.environ.get("APP_ENV", "prod").strip().lower()
+if APP_ENV == "dev":
+    load_dotenv(os.path.join(REPO_ROOT, ".env.dev"))
 API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 if not API_KEY:
     sys.stderr.write(
@@ -444,6 +467,7 @@ class Handler(SimpleHTTPRequestHandler):
             # code is running, not just that *something* is running.
             return self._send_json({
                 "service": BUILD_SERVICE,
+                "env": APP_ENV,                  # "dev" (staging/local) or "prod" (public site)
                 "commit": (BUILD_COMMIT[:12] or "local"),
                 "commit_full": BUILD_COMMIT,
                 "branch": (BUILD_BRANCH or "local"),
@@ -584,6 +608,92 @@ class Handler(SimpleHTTPRequestHandler):
                 total_rows = pg_rows("SELECT COUNT(*) AS total FROM molecules m" + where_sql, tuple(params))
                 total = int(total_rows[0]["total"]) if total_rows else 0
                 return self._send_json({"items": rows, "total": total, "limit": limit, "offset": offset})
+
+            m = re.match(r"^/api/molecules/(\d+)$", path)
+            if m:
+                # Single-molecule detail page. Sits AFTER the exact `path == "/api/molecules"`
+                # list branch above and matches only a numeric id segment, so the bare
+                # /api/molecules list endpoint is never shadowed. Two SELECT-only queries.
+                mid = int(m.group(1))
+                # (1) the molecule row + mentions_count — same COUNT-from-source_molecules
+                #     LEFT JOIN pattern as /api/molecules, narrowed to this id.
+                rows = pg_rows(
+                    "SELECT m.id, m.name, m.category, m.taste, m.use_notes, "
+                    "COALESCE(sm.mentions_count, 0)::int AS mentions_count "
+                    "FROM molecules m "
+                    "LEFT JOIN (SELECT molecule_id, COUNT(*) AS mentions_count "
+                    "FROM source_molecules GROUP BY molecule_id) sm ON sm.molecule_id = m.id "
+                    "WHERE m.id = %s",
+                    (mid,))
+                if not rows:
+                    return self._send_json({"error": "not found"}, 404)
+                molecule = rows[0]
+                # (2) the sources LINKED to this molecule via the source_molecules junction
+                #     (join source_molecules → sources on source_id), most-relevant/most-
+                #     recent first, capped at 10 for the detail panel.
+                molecule["papers"] = pg_rows(
+                    "SELECT s.id, s.name, s.year, s.journal, s.doi, s.url "
+                    "FROM source_molecules sm JOIN sources s ON s.id = sm.source_id "
+                    "WHERE sm.molecule_id = %s "
+                    "ORDER BY s.priority_score DESC NULLS LAST, s.year DESC NULLS LAST, s.id DESC "
+                    "LIMIT 10",
+                    (mid,))
+                return self._send_json(molecule)
+
+            if path == "/api/molecule-suggestions":
+                # Context-aware molecule chips for the Oracle answer panel: given the
+                # question + answer prose (`q`), surface the molecules most relevant to it.
+                # Ranking (all case-insensitive, matched AGAINST `q` so long free text works):
+                #   (1) molecules NAMED in the text  — m.name is a substring of q;
+                #   (2) molecules whose chemical FAMILY is named — m.category is a substring of q
+                #       ("pyrazines", "aldehydes", "sulfur", …);
+                #   (3) fill remaining slots with the most-referenced molecules (mentions_count DESC).
+                # `exclude` (CSV of ids; non-integers ignored) drops chips already on screen; rows are
+                # inherently deduped by id (one row per molecule via the aggregated join) and capped to
+                # `limit`. Blank q → every match_rank is 0, so it degrades to pure top-by-mentions.
+                # SELECT-only; `q` and the id list are bound params (never interpolated). Same LEFT JOIN
+                # for mentions_count as /api/molecules; returns the bare array the frontend consumes.
+                limit = max(1, min(12, int((qs.get("limit") or ["6"])[0])))
+                q = (qs.get("q") or [""])[0].strip()
+
+                exclude_ids = []
+                for tok in (qs.get("exclude") or [""])[0].split(","):
+                    tok = tok.strip()
+                    if not tok:
+                        continue
+                    try:
+                        exclude_ids.append(int(tok))
+                    except ValueError:
+                        pass  # parse defensively — silently ignore non-integer ids
+
+                where = []
+                params = []
+                if exclude_ids:
+                    # <> ALL(array) instead of NOT IN (…) so an id list of any length is one bound
+                    # param; only added when non-empty (avoids an untyped empty-array cast issue).
+                    where.append("m.id <> ALL(%s)")
+                    params.append(exclude_ids)
+                where_sql = (" WHERE " + " AND ".join(where)) if where else ""
+
+                # Score in SQL: name-in-q (2) outranks category-in-q (1) outranks everything else
+                # (0); mentions_count breaks ties within every tier, so tier 3 naturally becomes
+                # "top by mentions". The <> '' guards stop a blank name/category matching all of q
+                # via '%%'. '%%' is the psycopg2-escaped literal '%' → the pattern '%<name>%'.
+                sql = (
+                    "SELECT m.id, m.name, m.category, m.taste, "
+                    "COALESCE(sm.mentions_count, 0)::int AS mentions_count "
+                    "FROM molecules m "
+                    "LEFT JOIN (SELECT molecule_id, COUNT(*) AS mentions_count "
+                    "FROM source_molecules GROUP BY molecule_id) sm ON sm.molecule_id = m.id" +
+                    where_sql +
+                    " ORDER BY (CASE "
+                    "WHEN m.name IS NOT NULL AND m.name <> '' AND %s ILIKE '%%' || m.name || '%%' THEN 2 "
+                    "WHEN m.category IS NOT NULL AND m.category <> '' AND %s ILIKE '%%' || m.category || '%%' THEN 1 "
+                    "ELSE 0 END) DESC, mentions_count DESC NULLS LAST, m.id ASC "
+                    "LIMIT %s"
+                )
+                params.extend([q, q, limit])
+                return self._send_json(pg_rows(sql, tuple(params)))
 
             if path == "/api/sources":
                 limit = max(1, min(1000, int((qs.get("limit") or ["200"])[0])))

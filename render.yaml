@@ -23,3 +23,5 @@ services:
         value: meatcode         # not secret; change if you like
       - key: PYTHON_VERSION
         value: 3.12.4
+      - key: APP_ENV
+        value: prod          # this is the PUBLIC site. The meatcode-dev service sets APP_ENV=dev instead.

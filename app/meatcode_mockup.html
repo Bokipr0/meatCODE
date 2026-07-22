@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<!-- Last updated: 2026-07-21 14:40 UTC · advisory session · Oracle notes pass (from Lior's annotated screenshot): removed the "ORACLE" eyebrow; subtitle → "Every answer is based on a closed corpus with information you can access"; shorter one-line placeholder; input textarea auto-grows (overflow hidden, min-height 30px) so there's no scrollbar or wasted gap; starter chips are now showcase quick-suggestions (Maillard synthesis route · Mask beany off-notes · Sulfur notes in cooked beef · Boost roasted aroma); answer SOURCES moved BELOW the prose (was above), recolored to a BLUE palette, and collapsed to the first 2 with a "+N more" toggle. · Prior 2026-07-21 14:16 UTC · UI/UX Designer · Lean restyle (matches UI-UX Designer/meatcode_lean_v1.html). TASK A — Database molecules/experts/companies to the lean .filterbar + .tbl look: filter bar is now a surface-2 panel with a pill search + right-aligned sort; molecules category filter is live .fchip chips (All · real facets) that drive the hidden <select> so every fetch/pager/XLSX wire is reused; per-tab "Data / <Entity>" breadcrumb; columns reworked through the config-driven engine — Molecules = MOLECULE(mono) · CLASS(category) · SOURCES(mono mentions_count) · RELEVANCE(.db-bar from priority_score, 0–100); Experts = NAME · AFFILIATION · COUNTRY · H-INDEX(.db-bar, dynamic max, NO relevance column); Companies = NAME · COUNTRY · WEBSITE(link); Export moved below each table as a lean ghost "⤓ Export (.xlsx)". 50/page pagination + Toolbench bookmark on molecule rows preserved. TASK B — Oracle centre column to the lean look: ORACLE eyebrow + "Ask the Oracle" + corpus subtitle; ask box → .oracle-box proportions (1.5px line-strong, r20); answer card → .answer (r20, 15.5px/1.7); retrieved papers render as coral .ent.paper-style pills wired to the live SSE sources (no fabricated molecule/expert chips); follow-ups → lean "→" chips from the model's Follow-ups line; left Pinned/History rail, Lab Stash highlight-to-save, streaming + "Digging the MeatCODE database…" status phase, SESSION_EXPIRED + credentials same-origin, and no-page-scroll frame all preserved. Only CSS + HTML markup + the DB config-engine columns/chips changed; the Oracle/Lab-Stash/Toolbench script blocks are byte-identical. NOTE: the on-disk base was the 13:19 commit — the Full-Stack Engineer's 13:34 backup Export/Import (mc-backup / mcStashSnapshot) is NOT in this file and must be re-applied + committed. · Prior 2026-07-21 13:19 UTC · UI/UX Designer · (1+3) Every tab is a centered, fixed-height frame with NO page scroll: the app-shell grid (64px 1fr, 100vh, overflow:hidden) bounds each scene and each scene’s .canvas is the internal scroller (min-height:0 + overflow-y:auto). Map keeps canvas overflow:hidden for the globe. Oracle is now a bounded flex column — heading + ask box + starters stay pinned and ONLY #oracleAnswerSlot scrolls. Content stays horizontally centered via each wrap’s max-width + margin:auto. (2) The topbar search bar was removed on every scene and replaced by a Toolbench wrench button that opens a saved-items drawer with three persisted sections — Saved molecules (mc_saved_molecules_v1; bookmark button added to each Database molecules row), Saved sentences (mc_lab_stash_v1 via a new window.MCStash owner API), and Marked chats (pinned mc_oracle_history_v1). The redundant bottom-left “Lab Stash” button was removed; highlight-to-save still writes mc_lab_stash_v1. All three stores are versioned + try/catch-wrapped; molecules capped at 100. · Prior 2026-07-21: full-screen shell (grid 64px 1fr; dock/flow-bar hidden), bulletproof Ask re-enable (.finally + input-listener), verified caches. · Prior: 401/SESSION_EXPIRED “your sign-in expired” + credentials same-origin; “Digging the MeatCODE database…” status phase; Oracle default landing + brand→#oracle; nav Oracle·Research·Database·Simulate·Map; no topbar bell. -->
+<!-- Last updated: 2026-07-22 14:16 UTC · UI/UX Designer · Home v3 (Lior's review) — TWO changes. (1) DATA OUT OF TOP NAV: the load-time nav pass now removes BOTH Map and Database chips (was: relabel Database→Data and keep) + still injects Home + reorders → net top nav EVERYWHERE = Home · Oracle · Research · Simulate. The Home "Data" TILE (→#database) and the #database scene + all in-content routes are kept — Data stays reachable, just not as an upper-category button. setScene's dynamic active-map no longer activates a Data chip (database/molecule-detail/protocol-detail leave the nav with nothing active, like #map); Oracle/Research/Simulate/Home still highlight. ['data','database'] left in ROUTES (harmless; the tile uses href). (2) INVENTORY = Option A slide-over drawer, built + wired: a compact "Inventory" button on Home (below the tiles) shows live counts and opens a right slide-over (backdrop + 3-way segmented control Articles · Protocols · Sentences; Esc/backdrop/× close; item cards + italic quote cards for sentences), reproduced from outputs/inventory_option_A_drawer.html on the canonical tokens. CLIENT-SIDE ONLY (one shared password, no per-user identity — like Lab Stash; no server store). Stores: Articles → NEW mc_saved_articles_v1 (a save/bookmark button on each #molecule-detail linked-paper row pushes {id,name,meta,href}; exposed window.mcSaveArticle); Protocols → NEW mc_saved_protocols_v1 (a "Save protocol" button on #protocol-detail); Sentences → the real Lab Stash via window.MCStash.list() ({id,text,q}) rendered as quote cards, removable via window.MCStash.remove(id). Counts = the three live store sizes, re-read on open / on entering #home / after any save. Clicks: article → opens its doi/url (else the molecule); protocol → #protocol-detail; sentence → reopens its source question in #oracle. All new storage versioned + try/catch, dedupe by id, cap 50. Prior Home v2 work preserved (mic dictation, 4 tiles, merged recents, molecule/protocol detail scenes) and Toolbench/MCStash, Lab Stash highlight-to-save, Oracle SSE/status, SESSION_EXPIRED/same-origin, no-page-scroll shell untouched. · Prior 2026-07-22 13:48 UTC · UI/UX Designer · Home v2 (Lior's annotated review) — NAV is now Home · Oracle · Data · Research · Simulate: the load-time nav pass (formerly "trim") now drops only Map, RELABELS the Database chip to "Data" (icon kept), still prepends a Home chip, and REORDERS every topbar to the canonical order; nav-active is now DYNAMIC (setScene maps scene→category: database/molecule-detail/protocol-detail→Data, research/research-sub/toolbench→Research, etc. and lights the matching chip in every topbar), replacing the old static per-topbar active; ROUTES gained ['data','database']. HOME: ask box gained a MIC (reuses the Oracle's Web Speech dictation via a shared mcMakeDictation() helper — en-US, interim→final append into #homeAskInput, hidden where unsupported); tiles are now FOUR (Oracle→#oracle, Data→#database, Research→#research, Simulate→#simulate); "Pick up where you left off" now merges recent CHATS + MOLECULES (mc_recent_molecules_v1) + PROTOCOLS (mc_recent_protocols_v1), most-recent-first, labelled by kind, seeded with a representative molecule + protocol when empty (no experts); rows route chat→#oracle, molecule→#molecule-detail, protocol→#protocol-detail. NEW SCENES: #molecule-detail fetches GET {API}/api/molecules/{id} (same-origin guard + credentials:'same-origin'; crumbs Data/Molecules/name, mono title, category·taste·odor meta, tag chips, Linked-papers card with per-paper Open→ via doi/url, cross-links Ask the Oracle→ / See on Map→; loading/empty/error states never blank the page; records the view into mc_recent_molecules_v1). #protocol-detail is a representative TEMPLATE (no protocol backend yet — static placeholder steps/papers; only crumb+title populated live from mc_protocol_focus_id/name; records into mc_recent_protocols_v1). All prior work preserved (Related-molecules chips, widened Oracle answer, Toolbench, Lab Stash, lean restyle, SSE streaming/status, SESSION_EXPIRED/same-origin, no-page-scroll shell); #database/#map scenes + in-content journeys intact (Map off the nav; Data back on it). · Prior 2026-07-22 13:23 UTC · UI/UX Designer · added Home landing module — a new #home scene is now the DEFAULT landing (empty hash → #home via setScene) and the MeatCODE logo routes to #home. Top nav everywhere is now Home · Oracle · Research · Simulate: #home authors its own topbar (Home active), and trimNav — which still drops the Database + Map chips — now also PREPENDS a "Home" chip (house SVG) to every other topbar; nav router gained ['home','home'] in ROUTES + 'home' in SCENES. Home is built on #research's app/topbar/canvas shell (no left rail; #home .canvas spans both columns) and reproduces meatcode_lean_v1's Home on this file's tokens (teal=--wine, coral=--brass), all rules scoped under #home/.home-*. It has a REAL typeable ask box (Enter or Ask → sets #oracleTextarea, routes to #oracle, and streams via askOracle()), three tiles routing to #oracle/#research/#simulate, and a "Pick up where you left off" list wired to the saved Oracle chats (live oracleChats / mcLoadOracleChats seeds; a row → mcOpenOracleChat(id) then #oracle), re-rendered on load and on entering #home. All prior work preserved (Related-molecules chips, widened Oracle answer, Toolbench/window.MCStash, Lab Stash, lean DB/Oracle restyle, advisory Oracle-notes, SSE streaming + status phase, SESSION_EXPIRED + credentials same-origin, no-page-scroll shell); #database/#map scenes + their in-content journeys still intact and still off the top nav. · Prior 2026-07-22 12:10 UTC · UI/UX Designer · TASK 1 — removed Database + Map from the TOP NAV: a small load-time JS pass drops any .domain chip whose exact label is "Database"/"Map" across all ~11 topbars (DRY, can't desync); the #database and #map scenes AND every in-content route into them (dock items, "See on Map →", breadcrumbs, the new Related-molecule chips) are kept fully intact — the screens stay reachable, just not as nav buttons. TASK 2 — widened the Oracle answer to ~1080px via #oracle .oracle-wrap max-width, holding .oracle-heading/.oracle-input/.oracle-starter-row to a centered 780px so only #oracleAnswerSlot / the .oracle-answer card fills the wider wrap; content stays centered (margin:auto) and the no-page-scroll fixed shell is untouched. TASK 3 — added a "Related molecules" teal molecule-pill row at the very end of each answer card (below prose, sources, follow-ups): on completion (finalizeAnswer, guarded so the double SSE done/stream-close fire only requests once) it calls GET {API_BASE}/api/molecule-suggestions?q=<question+answer>&limit=6 with credentials:'same-origin' and the typeof-API_BASE same-origin guard, renders the bare [{id,name,category,taste,mentions_count}] array as chips with loading/empty/error states (all try/catch-wrapped — any fetch/parse failure hides the row silently and never blanks the answer); clicking a chip deep-links into Database → Molecules via mc_db_tab + mc_db_focus_id/name + a prefilled #db-molecules-search (reuses the DB engine's maybeFocus). Only the additions above changed; Toolbench, Lab Stash, lean DB/Oracle restyle, SSE streaming + status phase, SESSION_EXPIRED/same-origin, and the advisory Oracle-notes pass are all preserved. · Prior 2026-07-21 14:40 UTC · advisory session · Oracle notes pass (from Lior's annotated screenshot): removed the "ORACLE" eyebrow; subtitle → "Every answer is based on a closed corpus with information you can access"; shorter one-line placeholder; input textarea auto-grows (overflow hidden, min-height 30px) so there's no scrollbar or wasted gap; starter chips are now showcase quick-suggestions (Maillard synthesis route · Mask beany off-notes · Sulfur notes in cooked beef · Boost roasted aroma); answer SOURCES moved BELOW the prose (was above), recolored to a BLUE palette, and collapsed to the first 2 with a "+N more" toggle. · Prior 2026-07-21 14:16 UTC · UI/UX Designer · Lean restyle (matches UI-UX Designer/meatcode_lean_v1.html). TASK A — Database molecules/experts/companies to the lean .filterbar + .tbl look: filter bar is now a surface-2 panel with a pill search + right-aligned sort; molecules category filter is live .fchip chips (All · real facets) that drive the hidden <select> so every fetch/pager/XLSX wire is reused; per-tab "Data / <Entity>" breadcrumb; columns reworked through the config-driven engine — Molecules = MOLECULE(mono) · CLASS(category) · SOURCES(mono mentions_count) · RELEVANCE(.db-bar from priority_score, 0–100); Experts = NAME · AFFILIATION · COUNTRY · H-INDEX(.db-bar, dynamic max, NO relevance column); Companies = NAME · COUNTRY · WEBSITE(link); Export moved below each table as a lean ghost "⤓ Export (.xlsx)". 50/page pagination + Toolbench bookmark on molecule rows preserved. TASK B — Oracle centre column to the lean look: ORACLE eyebrow + "Ask the Oracle" + corpus subtitle; ask box → .oracle-box proportions (1.5px line-strong, r20); answer card → .answer (r20, 15.5px/1.7); retrieved papers render as coral .ent.paper-style pills wired to the live SSE sources (no fabricated molecule/expert chips); follow-ups → lean "→" chips from the model's Follow-ups line; left Pinned/History rail, Lab Stash highlight-to-save, streaming + "Digging the MeatCODE database…" status phase, SESSION_EXPIRED + credentials same-origin, and no-page-scroll frame all preserved. Only CSS + HTML markup + the DB config-engine columns/chips changed; the Oracle/Lab-Stash/Toolbench script blocks are byte-identical. NOTE: the on-disk base was the 13:19 commit — the Full-Stack Engineer's 13:34 backup Export/Import (mc-backup / mcStashSnapshot) is NOT in this file and must be re-applied + committed. · Prior 2026-07-21 13:19 UTC · UI/UX Designer · (1+3) Every tab is a centered, fixed-height frame with NO page scroll: the app-shell grid (64px 1fr, 100vh, overflow:hidden) bounds each scene and each scene’s .canvas is the internal scroller (min-height:0 + overflow-y:auto). Map keeps canvas overflow:hidden for the globe. Oracle is now a bounded flex column — heading + ask box + starters stay pinned and ONLY #oracleAnswerSlot scrolls. Content stays horizontally centered via each wrap’s max-width + margin:auto. (2) The topbar search bar was removed on every scene and replaced by a Toolbench wrench button that opens a saved-items drawer with three persisted sections — Saved molecules (mc_saved_molecules_v1; bookmark button added to each Database molecules row), Saved sentences (mc_lab_stash_v1 via a new window.MCStash owner API), and Marked chats (pinned mc_oracle_history_v1). The redundant bottom-left “Lab Stash” button was removed; highlight-to-save still writes mc_lab_stash_v1. All three stores are versioned + try/catch-wrapped; molecules capped at 100. · Prior 2026-07-21: full-screen shell (grid 64px 1fr; dock/flow-bar hidden), bulletproof Ask re-enable (.finally + input-listener), verified caches. · Prior: 401/SESSION_EXPIRED “your sign-in expired” + credentials same-origin; “Digging the MeatCODE database…” status phase; Oracle default landing + brand→#oracle; nav Oracle·Research·Database·Simulate·Map; no topbar bell. -->
 <title>MeatCODE · GFI Israel — flavor & aroma research</title>
 <meta name="viewport" content="width=1440" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -980,6 +980,23 @@ section.scene.active { display: block; }
 }
 .oracle-followup::before { content: "\2192  "; color: var(--wine); font-weight: 700; }
 .oracle-followup:hover { border-color: var(--wine); color: var(--wine); background: var(--wine-mist); }
+
+/* 2026-07-22 · Related molecules — a teal molecule-pill row at the very end of the answer
+   card (below prose, sources, follow-ups). Chips reuse the seaweed-teal molecule look and
+   route into the Database molecules screen (the DB is now off the top nav). */
+.oracle-related { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.oracle-related-label { font-size: 11px; font-weight: 700; color: var(--ink-faint); letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 8px; }
+.oracle-related-loading { font-size: 12.5px; color: var(--ink-faint); font-style: italic; }
+.oracle-related-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.oracle-related-chip {
+  padding: 7px 13px;
+  background: var(--wine-mist); color: var(--wine);
+  border: 1.5px solid var(--wine-tint); border-radius: 100px;
+  font-size: 12.5px; font-weight: 700; font-family: var(--round);
+  cursor: pointer; transition: 0.12s;
+}
+.oracle-related-chip:hover { background: var(--wine-tint); border-color: var(--wine-soft); color: var(--wine-deep); }
+.oracle-related-chip:focus-visible { outline: 2px solid var(--wine); outline-offset: 2px; }
 
 /* ── Paper detail modal ── */
 .modal-backdrop {
@@ -2006,8 +2023,11 @@ section.scene.active { display: block; }
 /* ── 2026-07-21 · Oracle as a bounded flex column: heading + ask box + starters stay
    fixed and ONLY the answer region (#oracleAnswerSlot) scrolls, so the page never grows. */
 #oracle .canvas { overflow: hidden; display: flex; flex-direction: column; }
-#oracle .oracle-wrap { display: flex; flex-direction: column; height: 100%; min-height: 0; width: 100%; }
-#oracle .oracle-heading, #oracle .oracle-input, #oracle .oracle-starter-row { flex: 0 0 auto; }
+#oracle .oracle-wrap { display: flex; flex-direction: column; height: 100%; min-height: 0; width: 100%; max-width: 1080px; }
+/* 2026-07-22 · Widen the answer region (~1080px) so answers read wider, while the ask
+   box + heading + starters stay a narrower centered column (their prior ~760px width) so
+   they aren't stretched — only #oracleAnswerSlot / the answer card fills the wider wrap. */
+#oracle .oracle-heading, #oracle .oracle-input, #oracle .oracle-starter-row { flex: 0 0 auto; max-width: 780px; width: 100%; margin-left: auto; margin-right: auto; }
 #oracle #oracleAnswerSlot {
   flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
   scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent;
@@ -2015,6 +2035,168 @@ section.scene.active { display: block; }
 #oracle #oracleAnswerSlot::-webkit-scrollbar { width: 11px; }
 #oracle #oracleAnswerSlot::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 100px; border: 3px solid var(--surface); }
 #oracle .oracle-answer { max-height: none; }
+
+/* ============ HOME landing (scene #home · added 2026-07-22) ============
+   Adapted from UI-UX Designer/meatcode_lean_v1.html's Home scene onto THIS file's
+   tokens + app/topbar/canvas shell. Every rule is scoped under #home or a .home-*
+   class so it can't collide with the existing .eyebrow/.h1/.chip. In this palette
+   teal = --wine (#00736E) and coral = --brass (#C77E5F). */
+#home .canvas { grid-column: 1 / -1; }        /* Home has no left context rail → span both columns */
+.home-wrap { max-width: 960px; margin: 0 auto; padding: 8px 0 48px; }
+.home-eyebrow { display: block; margin-bottom: 12px; }
+.home-h1 { font-size: 34px; font-weight: 700; color: var(--ink); margin: 0 0 8px; letter-spacing: -0.01em; }
+.home-lead { font-size: 16px; color: var(--ink-dim); margin: 0 0 26px; line-height: 1.5; }
+
+.home-ask {
+  background: var(--surface); border: 1.5px solid var(--line-strong); border-radius: 18px;
+  padding: 16px 18px 16px 20px; display: flex; align-items: center; gap: 14px;
+  box-shadow: var(--shadow); transition: border-color .15s, box-shadow .15s;
+}
+.home-ask:focus-within { border-color: var(--wine-soft); box-shadow: var(--shadow-lg); }
+.home-ask .home-ask-ico { width: 20px; height: 20px; color: var(--ink-faint); flex-shrink: 0; }
+.home-ask input {
+  flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+  font-size: 17px; font-family: var(--round); color: var(--ink);
+}
+.home-ask input::placeholder { color: var(--ink-faint); }
+.home-btn {
+  border: none; background: var(--wine); color: #fff; font-family: var(--round);
+  font-weight: 700; font-size: 14.5px; padding: 11px 20px; border-radius: 12px;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background .15s;
+}
+.home-btn:hover { background: var(--wine-deep); }
+
+.home-mic { margin-left: 2px; }               /* reuses .oracle-mic look; slight gap before Ask */
+.home-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 26px; }
+.home-tile {
+  display: block; text-decoration: none; color: inherit; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--wine);
+  border-radius: 16px; padding: 18px 16px; transition: transform .18s, box-shadow .18s;
+}
+.home-tile:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.home-tile .home-tile-ico { display: block; width: 24px; height: 24px; color: var(--wine); margin-bottom: 11px; }
+.home-tile h3 { font-size: 15.5px; font-weight: 700; color: var(--ink); margin: 0 0 5px; }
+.home-tile p { font-size: 12.5px; color: var(--ink-dim); margin: 0; line-height: 1.5; }
+.home-tile.data { border-left-color: var(--wine-deep); }
+.home-tile.data .home-tile-ico { color: var(--wine-deep); }
+.home-tile.research { border-left-color: var(--olive); }
+.home-tile.research .home-tile-ico { color: var(--olive); }
+.home-tile.simulate { border-left-color: var(--brass); }
+.home-tile.simulate .home-tile-ico { color: var(--brass); }
+
+.home-section-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--ink-faint); margin: 34px 0 8px; padding: 0 2px;
+}
+.home-recent { display: flex; flex-direction: column; gap: 2px; }
+.home-recent a {
+  display: flex; align-items: center; gap: 11px; padding: 11px 12px; border-radius: 11px;
+  text-decoration: none; color: var(--ink-dim); cursor: pointer; transition: background .12s;
+}
+.home-recent a:hover { background: var(--surface-2); }
+.home-recent .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--brass); flex-shrink: 0; }
+.home-recent .dot-chat     { background: var(--brass); }     /* recent kind → coral */
+.home-recent .dot-molecule { background: var(--wine); }      /* → teal */
+.home-recent .dot-protocol { background: var(--olive); }     /* → olive */
+.home-recent .home-recent-label { flex: 1; min-width: 0; font-size: 14px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-recent .home-recent-kind { flex-shrink: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+.home-recent-empty { padding: 11px 12px; font-size: 13px; color: var(--ink-faint); }
+
+/* ============ Detail scenes (#molecule-detail · #protocol-detail — added 2026-07-22) ============
+   Lean detail-page template on this file's tokens: breadcrumb, mono title, meta line, tag chips,
+   a Linked-papers / Steps card, and a cross-link row. Scoped under .detail-* / the scene ids. */
+#molecule-detail .canvas, #protocol-detail .canvas { grid-column: 1 / -1; }   /* no left rail */
+.detail-wrap { max-width: 860px; margin: 0 auto; padding: 8px 0 48px; }
+.detail-crumbs { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-faint); margin-bottom: 14px; flex-wrap: wrap; }
+.detail-crumbs a { color: var(--wine); text-decoration: none; font-weight: 700; }
+.detail-crumbs a:hover { text-decoration: underline; }
+.detail-crumbs .sep { color: var(--line-strong); }
+.detail-crumbs b { color: var(--ink-dim); font-weight: 700; }
+.detail-title { font-family: var(--mono); letter-spacing: -0.01em; font-size: 30px; font-weight: 700; color: var(--ink); margin: 0 0 8px; word-break: break-word; }
+.detail-meta { font-size: 14px; color: var(--ink-dim); margin: 0 0 12px; line-height: 1.5; }
+.detail-tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 22px; }
+.detail-tag { font-size: 11px; font-weight: 700; padding: 4px 11px; border-radius: 100px; background: var(--wine-mist); color: var(--wine-deep); border: 1px solid var(--wine-tint); }
+.detail-card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; box-shadow: var(--shadow); margin-bottom: 18px; }
+.detail-card + .detail-card { margin-top: 0; }
+.detail-card-head { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.detail-count { font-family: var(--mono); font-size: 11px; color: var(--ink-dim); letter-spacing: 0; }
+.detail-papers { display: flex; flex-direction: column; gap: 2px; }
+.detail-paper { display: flex; align-items: center; gap: 14px; padding: 12px 4px; border-bottom: 1px solid var(--line); }
+.detail-paper:last-child { border-bottom: none; }
+.detail-paper-main { flex: 1; min-width: 0; }
+.detail-paper-name { font-size: 14px; color: var(--ink); line-height: 1.4; }
+.detail-paper-sub { font-size: 12px; color: var(--ink-faint); margin-top: 2px; }
+.detail-paper-open { flex-shrink: 0; font-size: 12.5px; font-weight: 700; color: var(--wine); text-decoration: none; border: 1px solid var(--line); border-radius: 9px; padding: 6px 12px; transition: .15s; }
+.detail-paper-open:hover { background: var(--wine-mist); border-color: var(--wine-tint); }
+.detail-loading, .detail-empty { font-size: 13.5px; color: var(--ink-faint); padding: 6px 4px; }
+.detail-steps { margin: 0; padding-left: 20px; }
+.detail-steps li { font-size: 14px; color: var(--ink); line-height: 1.7; }
+.detail-desc { font-size: 14.5px; color: var(--ink-dim); line-height: 1.6; margin: 0 0 20px; }
+.detail-note { font-size: 12px; color: var(--ink-faint); font-style: italic; margin: 4px 0 20px; }
+.detail-xlinks { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 22px; }
+.detail-xlink { font-size: 14px; font-weight: 700; color: var(--wine); text-decoration: none; background: var(--surface); border: 1.5px solid var(--line-strong); border-radius: 12px; padding: 11px 18px; transition: .15s; }
+.detail-xlink:hover { background: var(--wine-mist); border-color: var(--wine-tint); color: var(--wine-deep); }
+
+/* ============ Inventory — Home slide-over drawer (Option A · added 2026-07-22) ============
+   Reproduces UI-UX Designer/outputs/inventory_option_A_drawer.html on THIS file's tokens
+   (teal=--wine, mist=--wine-mist, coral=--brass, coral-soft=--brass-soft, olive=--olive).
+   Client-side only — like Lab Stash (one shared password, no per-user identity, no server store). */
+.inv-btn {
+  margin-top: 24px; width: 100%; display: flex; align-items: center; gap: 16px;
+  background: var(--surface); border: 1.5px solid var(--line-strong); border-radius: 18px;
+  padding: 18px 20px; cursor: pointer; box-shadow: var(--shadow); text-align: left; font-family: inherit;
+  transition: transform .16s, box-shadow .16s, border-color .16s;
+}
+.inv-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--wine-soft); }
+.inv-btn .inv-ic { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: var(--wine-mist); color: var(--wine); flex-shrink: 0; }
+.inv-btn-txt { min-width: 0; }
+.inv-btn h3 { margin: 0; font-size: 17px; font-weight: 700; color: var(--ink); }
+.inv-btn p { margin: 3px 0 0; font-size: 12.5px; color: var(--ink-dim); }
+.inv-counts { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.inv-pill { font-size: 12px; font-weight: 700; padding: 5px 11px; border-radius: 100px; background: var(--surface-2); color: var(--ink-dim); white-space: nowrap; }
+.inv-pill b { color: var(--wine-deep); }
+
+.inv-backdrop { position: fixed; inset: 0; background: rgba(30,40,38,.28); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 60; }
+.inv-backdrop.on { opacity: 1; pointer-events: auto; }
+.inv-drawer {
+  position: fixed; top: 0; right: 0; height: 100%; width: min(440px, 92vw);
+  background: var(--bg); border-left: 1px solid var(--line); box-shadow: -16px 0 44px rgba(0,67,64,.18);
+  transform: translateX(102%); transition: transform .24s cubic-bezier(.4,0,.2,1);
+  z-index: 61; display: flex; flex-direction: column;
+}
+.inv-drawer.on { transform: none; }
+.inv-drawer-head { display: flex; align-items: center; gap: 12px; padding: 20px 22px 14px; border-bottom: 1px solid var(--line); }
+.inv-drawer-head .inv-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--wine-mist); color: var(--wine); }
+.inv-drawer-head h2 { margin: 0; font-size: 18px; font-weight: 700; color: var(--ink); }
+.inv-x { margin-left: auto; width: 32px; height: 32px; border: none; background: var(--surface-2); border-radius: 50%; cursor: pointer; font-size: 17px; color: var(--ink-dim); font-family: inherit; }
+.inv-x:hover { background: var(--wine-mist); color: var(--wine); }
+.inv-seg { display: flex; gap: 4px; background: var(--surface-2); margin: 14px 22px 0; padding: 5px; border-radius: 12px; }
+.inv-seg button { flex: 1; border: none; background: transparent; font-family: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink-dim); padding: 8px 6px; border-radius: 8px; cursor: pointer; transition: .12s; }
+.inv-seg button.on { background: var(--wine); color: #fff; box-shadow: var(--shadow); }
+.inv-list { flex: 1; overflow-y: auto; padding: 16px 22px 28px; }
+.inv-item { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 13px 40px 14px 16px; margin-bottom: 10px; transition: .14s; cursor: pointer; }
+.inv-item:hover { border-color: var(--wine); box-shadow: var(--shadow); }
+.inv-item .inv-t { font-size: 14px; font-weight: 700; line-height: 1.35; color: var(--ink); }
+.inv-item .inv-m { font-size: 11.5px; color: var(--ink-faint); margin-top: 4px; }
+.inv-item.quote .inv-t { font-weight: 400; font-style: italic; color: var(--ink-dim); font-size: 13.5px; }
+.inv-kind { display: inline-block; font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; padding: 3px 8px; border-radius: 100px; margin-bottom: 7px; }
+.inv-k-art { background: var(--brass-soft); color: #a5522f; }
+.inv-k-pro { background: var(--olive-soft); color: #5f6f45; }
+.inv-k-sen { background: var(--wine-mist); color: var(--wine); }
+.inv-remove { position: absolute; top: 9px; right: 9px; width: 24px; height: 24px; border: none; background: transparent; color: var(--ink-faint); border-radius: 50%; cursor: pointer; font-size: 16px; line-height: 1; }
+.inv-remove:hover { background: var(--surface-2); color: var(--wine); }
+.inv-empty { font-size: 13px; color: var(--ink-faint); padding: 22px 6px; line-height: 1.55; text-align: center; }
+
+/* per-paper bookmark button on molecule-detail linked papers */
+.detail-paper-save { flex-shrink: 0; width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink-faint); cursor: pointer; display: grid; place-items: center; transition: .14s; }
+.detail-paper-save:hover { border-color: var(--wine-tint); color: var(--wine); background: var(--wine-mist); }
+.detail-paper-save.saved { background: var(--wine); border-color: var(--wine); color: #fff; }
+.detail-paper-save svg { width: 15px; height: 15px; }
+/* "Save protocol" button on protocol-detail */
+.proto-save-btn { display: inline-flex; align-items: center; gap: 8px; font-family: inherit; font-size: 13.5px; font-weight: 700; color: var(--wine); background: var(--surface); border: 1.5px solid var(--line-strong); border-radius: 12px; padding: 10px 16px; cursor: pointer; transition: .15s; margin: 0 0 20px; }
+.proto-save-btn:hover { background: var(--wine-mist); border-color: var(--wine-tint); }
+.proto-save-btn.saved { background: var(--wine); border-color: var(--wine); color: #fff; }
+.proto-save-btn svg { width: 15px; height: 15px; }
 </style>
 <style id="mc-fullscreen-overrides">
   /* Full-scale: remove the bottom dock quick-nav (Open/Navigate/For You/Guide — all scenes)
@@ -2025,6 +2207,111 @@ section.scene.active { display: block; }
 </style>
 </head>
 <body>
+
+<!-- ==================== SCENE 0 :: Home landing ====================
+     Default landing (empty hash → #home; logo → #home). Modeled on #research's
+     app/topbar/canvas shell; no left .context rail (canvas spans both columns).
+     The load-time nav pass injects Home + drops Map/Database across every topbar, so nav
+     everywhere is Home · Oracle · Research · Simulate (Data reachable via the Home tile). -->
+<section class="scene" id="home">
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
+      <!-- Uniform domains authored here; the load-time nav pass injects "Home" first, DROPS Map +
+           Database, and reorders → Home · Oracle · Research · Simulate; setScene sets .active. -->
+      <div class="domains">
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
+        <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+      </div>
+      <div class="topbar-right">
+        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Toolbench — your saved items" title="Toolbench — your saved items">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span>Toolbench</span>
+          <span class="mc-tb-count" hidden>0</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="canvas">
+      <div class="home-wrap">
+        <div class="eyebrow home-eyebrow">MeatCODE · your workspace</div>
+        <h1 class="home-h1">What are you looking into today?</h1>
+        <p class="home-lead">Ask a question, or jump straight into the knowledge base.</p>
+
+        <div class="home-ask">
+          <svg class="home-ask-ico" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="9" r="6"/><line x1="13.5" y1="13.5" x2="17" y2="17"/></svg>
+          <input id="homeAskInput" type="text" autocomplete="off" placeholder="e.g. What drives roasted notes in plant-based beef?" aria-label="Ask the Oracle a question">
+          <!-- Dictation: reuses the Oracle's Web Speech mic (same .oracle-mic look + recording pulse).
+               Ships hidden; JS unhides it only where SpeechRecognition exists — no dead control. -->
+          <button class="oracle-mic home-mic" id="homeMicBtn" type="button" hidden aria-pressed="false" aria-label="Dictate your question" title="Dictate your question">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0"/><line x1="12" y1="17.5" x2="12" y2="21"/><line x1="8.5" y1="21" x2="15.5" y2="21"/></svg>
+          </button>
+          <button type="button" class="home-btn" id="homeAskBtn">Ask &rarr;</button>
+        </div>
+
+        <div class="home-tiles">
+          <a class="home-tile oracle" href="#oracle">
+            <svg class="home-tile-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>
+            <h3>Oracle</h3>
+            <p>Ask anything about flavor, aroma or molecules — cite-backed answers.</p>
+          </a>
+          <a class="home-tile data" href="#database">
+            <svg class="home-tile-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>
+            <h3>Data</h3>
+            <p>Browse molecules, experts and companies — filter, sort and export.</p>
+          </a>
+          <a class="home-tile research" href="#research">
+            <svg class="home-tile-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>
+            <h3>Research</h3>
+            <p>Explore the knowledge base by reaction phase, then drill into sub-topics.</p>
+          </a>
+          <a class="home-tile simulate" href="#simulate">
+            <svg class="home-tile-ico" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>
+            <h3>Simulate</h3>
+            <p>Model a reaction and predict the aroma compounds it should produce.</p>
+          </a>
+        </div>
+
+        <!-- Inventory: compact button (live counts) → opens the Option A slide-over drawer -->
+        <button class="inv-btn" id="invBtn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-label="Open your Inventory — saved articles, protocols and sentences">
+          <span class="inv-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="M3 12h18"/><path d="M7.5 8.5h.01M7.5 15.5h.01"/></svg></span>
+          <span class="inv-btn-txt">
+            <h3>Inventory</h3>
+            <p>Your saved articles, protocols and chat sentences — all in one place.</p>
+          </span>
+          <span class="inv-counts">
+            <span class="inv-pill"><b id="invCountArt">0</b> articles</span>
+            <span class="inv-pill"><b id="invCountPro">0</b> protocols</span>
+            <span class="inv-pill"><b id="invCountSen">0</b> sentences</span>
+          </span>
+        </button>
+
+        <div class="home-section-label">Pick up where you left off</div>
+        <div class="home-recent" id="homeRecent"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Inventory slide-over drawer (Option A) — fixed-positioned; lives inside #home so it only
+       shows on Home and auto-hides when you navigate away (the scene goes display:none). -->
+  <div class="inv-backdrop" id="invBackdrop"></div>
+  <aside class="inv-drawer" id="invDrawer" role="dialog" aria-modal="true" aria-label="Inventory">
+    <div class="inv-drawer-head">
+      <div class="inv-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="M3 12h18"/></svg></div>
+      <h2>Inventory</h2>
+      <button class="inv-x" id="invClose" type="button" aria-label="Close">&times;</button>
+    </div>
+    <div class="inv-seg" role="tablist" aria-label="Inventory sections">
+      <button class="on" type="button" data-inv-seg="art">Articles</button>
+      <button type="button" data-inv-seg="pro">Protocols</button>
+      <button type="button" data-inv-seg="sen">Sentences</button>
+    </div>
+    <div class="inv-list" id="invList"></div>
+  </aside>
+</section>
+
 
 <!-- ==================== SCENE 1 :: Onboarding ==================== -->
 <section class="scene" id="onboarding">
@@ -3621,6 +3908,122 @@ section.scene.active { display: block; }
   </div>
 </section>
 
+<!-- ==================== SCENE 12 :: Molecule detail ====================
+     Reached from Home "Pick up where you left off" molecule rows (sets mc_mol_focus_id/name
+     then routes here). On enter, mcOpenMoleculeDetail() fetches GET {API}/api/molecules/{id}
+     and fills the papers card; on failure it keeps the name + a graceful notice. -->
+<section class="scene" id="molecule-detail">
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
+      <div class="domains">
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
+        <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+      </div>
+      <div class="topbar-right">
+        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Toolbench — your saved items" title="Toolbench — your saved items">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span>Toolbench</span>
+          <span class="mc-tb-count" hidden>0</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="canvas">
+      <div class="detail-wrap">
+        <nav class="detail-crumbs">
+          <a href="#database">Data</a><span class="sep">/</span>
+          <a href="#database" onclick="try{localStorage.setItem('mc_db_tab','molecules');}catch(e){}">Molecules</a><span class="sep">/</span>
+          <b id="molDetailCrumbName">Molecule</b>
+        </nav>
+        <h1 class="detail-title" id="molDetailName">Molecule</h1>
+        <div class="detail-meta" id="molDetailMeta"></div>
+        <div class="detail-tags" id="molDetailTags"></div>
+
+        <div class="detail-card">
+          <div class="detail-card-head">Linked papers <span class="detail-count" id="molDetailPapersCount"></span></div>
+          <div class="detail-papers" id="molDetailPapers"><div class="detail-loading">Loading…</div></div>
+        </div>
+
+        <div class="detail-xlinks">
+          <a class="detail-xlink" href="#oracle">Ask the Oracle &rarr;</a>
+          <a class="detail-xlink" href="#map">See on Map &rarr;</a>
+        </div>
+      </div>
+    </main>
+  </div>
+</section>
+
+
+<!-- ==================== SCENE 13 :: Protocol detail ====================
+     Reached from Home "Pick up where you left off" protocol rows. NOTE: there is no protocol
+     backend yet — this is a representative TEMPLATE (static placeholder steps/papers). Only the
+     crumb + title are populated live from mc_protocol_focus_id/name by mcOpenProtocolDetail(). -->
+<section class="scene" id="protocol-detail">
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
+      <div class="domains">
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
+        <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+      </div>
+      <div class="topbar-right">
+        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Toolbench — your saved items" title="Toolbench — your saved items">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span>Toolbench</span>
+          <span class="mc-tb-count" hidden>0</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="canvas">
+      <div class="detail-wrap">
+        <nav class="detail-crumbs">
+          <a href="#database">Data</a><span class="sep">/</span>
+          <b>Protocols</b><span class="sep">/</span>
+          <b id="protoDetailCrumbName">Protocol</b>
+        </nav>
+        <h1 class="detail-title" id="protoDetailName">Protocol</h1>
+        <p class="detail-desc">A standardized bench protocol for capturing and characterizing the aroma-active volatiles produced in a model reaction system, from sample prep through instrumental read-out.</p>
+        <div class="detail-note">Representative template — protocols are not yet wired to a live backend, so the steps and linked papers below are illustrative placeholders.</div>
+        <button class="proto-save-btn" id="protoSaveBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+          <span id="protoSaveLabel">Save protocol</span>
+        </button>
+
+        <div class="detail-card">
+          <div class="detail-card-head">Steps</div>
+          <ol class="detail-steps">
+            <li>Equilibrate the sample in a sealed vial at 60&nbsp;°C for 30&nbsp;min to build headspace.</li>
+            <li>Extract volatiles by SPME (DVB/CAR/PDMS fiber), 20&nbsp;min exposure.</li>
+            <li>Desorb and separate by GC; acquire full-scan MS across the target mass range.</li>
+            <li>Identify compounds against the corpus library; confirm with linear retention indices.</li>
+            <li>Quantify relative to an internal standard and log to the molecule records.</li>
+          </ol>
+        </div>
+
+        <div class="detail-card">
+          <div class="detail-card-head">Linked papers</div>
+          <div class="detail-papers">
+            <div class="detail-paper"><div class="detail-paper-main"><div class="detail-paper-name">Headspace SPME–GC/MS of thermally generated meat-like aromas (representative)</div><div class="detail-paper-sub">Method reference · placeholder</div></div></div>
+            <div class="detail-paper"><div class="detail-paper-main"><div class="detail-paper-name">Retention-index confirmation for pyrazine and thiol volatiles (representative)</div><div class="detail-paper-sub">Method reference · placeholder</div></div></div>
+          </div>
+        </div>
+
+        <div class="detail-xlinks">
+          <a class="detail-xlink" href="#oracle">Ask the Oracle &rarr;</a>
+          <a class="detail-xlink" href="#research">Open Research &rarr;</a>
+        </div>
+      </div>
+    </main>
+  </div>
+</section>
+
+
 <!-- ==================== Paper detail modal ==================== -->
 <div class="modal-backdrop" id="paperModalBackdrop">
   <div class="modal" id="paperModal" role="dialog" aria-modal="true">
@@ -3651,12 +4054,33 @@ section.scene.active { display: block; }
 
 <script>
 function setScene() {
-  var h = location.hash.replace('#', '') || 'oracle';
+  var h = location.hash.replace('#', '') || 'home';
   document.querySelectorAll('section.scene').forEach(function(s){ s.classList.remove('active'); });
   var el = document.getElementById(h);
   if (el) el.classList.add('active');
   document.querySelectorAll('.dev-nav a').forEach(function(a){
     a.classList.toggle('active', a.getAttribute('href') === '#' + h);
+  });
+  /* Dynamic top-nav active state (replaces the old static per-topbar `active`): map the current
+     scene → a nav category, then light the matching label chip in EVERY topbar. Detail/sub scenes
+     roll up to their parent tab (molecule/protocol-detail + database → Data; research-sub/toolbench
+     → Research). Runs on every scene change; trimNav also calls setScene() once after it relabels
+     "Database"→"Data" and injects Home, so the final nav highlights correctly. */
+  var NAV_CAT = {
+    home: 'home', oracle: 'oracle',
+    research: 'research', 'research-sub': 'research', toolbench: 'research', 'toolbench-tools': 'research',
+    simulate: 'simulate'
+    /* database / molecule-detail / protocol-detail / map → no active chip (Data is not a top-nav button) */
+  };
+  var navCat = NAV_CAT[h] || '';
+  document.querySelectorAll('.domains .domain').forEach(function (d) {
+    var lbl = (d.textContent || '').trim().toLowerCase();
+    var chipCat = (lbl === 'home') ? 'home'
+                : (lbl === 'oracle') ? 'oracle'
+                : (lbl === 'research') ? 'research'
+                : (lbl === 'simulate') ? 'simulate'
+                : '';
+    d.classList.toggle('active', !!navCat && chipCat === navCat);
   });
   window.scrollTo(0,0);
 }
@@ -4081,15 +4505,15 @@ document.querySelectorAll('section.scene .brand').forEach(function (brand) {
 });
 
 /* The brand mark (top-left "GFI Israel · MeatCODE") is a home control: clicking
-   it — or hitting Enter/Space when focused — routes to the Oracle scene. */
+   it — or hitting Enter/Space when focused — routes to the Home landing scene. */
 document.querySelectorAll('section.scene .brand').forEach(function (brand) {
   brand.style.cursor = 'pointer';
   brand.setAttribute('role', 'button');
   brand.setAttribute('tabindex', '0');
-  brand.setAttribute('title', 'Go to Oracle');
-  brand.addEventListener('click', function () { location.hash = '#oracle'; });
+  brand.setAttribute('title', 'Go to Home');
+  brand.addEventListener('click', function () { location.hash = '#home'; });
   brand.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); location.hash = '#oracle'; }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); location.hash = '#home'; }
   });
 });
 
@@ -4186,6 +4610,7 @@ var oracleAskBtn   = document.getElementById('oracleAskBtn');
 var oracleTextarea = document.getElementById('oracleTextarea');
 var oracleInputBox = document.getElementById('oracleInputBox');
 var oracleSlot     = document.getElementById('oracleAnswerSlot');
+var mcOracleActiveQuestion = '';   // last asked question, for the Related-molecules lookup
 
 if (oracleTextarea) {
   // Auto-grow the input to fit its text (never shows a scrollbar, no wasted gap):
@@ -4592,6 +5017,7 @@ function askOracle() {
   if (!oracleTextarea) return;
   var q = oracleTextarea.value.trim();
   if (!q) { oracleTextarea.focus(); return; }
+  mcOracleActiveQuestion = q;     // remember it for the Related-molecules lookup on completion
   stopOracleDictation();          // asking ends any in-progress dictation
   mcSetMicStatus('');
   mcRecordOracleQuestion(q);      // drop it into the sidebar history
@@ -4644,6 +5070,7 @@ function streamSSE(res) {
         '<div id="oracleSourcesList"></div>' +
       '</div>' +
       '<div id="oracleFollowups"></div>' +
+      '<div id="oracleRelated"></div>' +
     '</div>';
   var bodyEl     = document.getElementById('oracleBody');
   var sourcesEl  = document.getElementById('oracleSourcesList');
@@ -4758,6 +5185,93 @@ function finalizeAnswer(fullText, bodyEl, followsEl, citedIds) {
     });
   }
   attachCiteHandlers(bodyEl);
+  // Once the answer has settled, surface related molecules from the same corpus. mainText is
+  // the prose (follow-ups stripped) so the lookup reflects what was actually discussed.
+  mcFetchRelatedMolecules(mcOracleActiveQuestion, mainText);
+}
+
+/* ============================================================
+   Related molecules — GET {API}/api/molecule-suggestions?q=…&limit=6
+   Renders a teal molecule-pill row at the end of the answer card. States: loading line →
+   chips, or hide silently on empty/error. Clicking a chip routes into the Database molecules
+   screen (the DB was removed from the top nav, so this is its in-content journey).
+   ============================================================ */
+function mcFetchRelatedMolecules(question, answerText) {
+  try {
+    var row = document.getElementById('oracleRelated');
+    if (!row) return;
+    // finalizeAnswer can fire twice (SSE 'done' event + stream close) — fetch only once.
+    if (row.getAttribute('data-mc-state')) return;
+    row.setAttribute('data-mc-state', 'loading');
+
+    // Same-origin guard: API_BASE is '' when the page is served (relative = same origin);
+    // an empty string is falsy, so test typeof — never `API_BASE ? API_BASE : localhost`.
+    var API = (typeof API_BASE !== 'undefined') ? API_BASE : 'http://127.0.0.1:8000';
+    var q = ((question || '') + ' ' + (answerText || '')).replace(/\s+/g, ' ').trim();
+    if (!q) { row.innerHTML = ''; return; }
+
+    row.innerHTML =
+      '<div class="oracle-related">' +
+        '<div class="oracle-related-label">Related molecules</div>' +
+        '<div class="oracle-related-loading">finding related molecules…</div>' +
+      '</div>';
+
+    var url = API + '/api/molecule-suggestions?q=' + encodeURIComponent(q) + '&limit=6';
+    fetch(url, { credentials: 'same-origin' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (list) {
+        // Endpoint returns a BARE array: [{id, name, category, taste, mentions_count}, …].
+        if (!Array.isArray(list) || list.length === 0) { row.innerHTML = ''; return; }  // empty → hide
+        var chips = list.map(function (m) {
+          if (!m) return '';
+          var id   = (m.id != null) ? String(m.id) : '';
+          var name = m.name ? String(m.name) : '';
+          if (!name) return '';                       // never fabricate — skip nameless rows
+          var sub  = [m.category, m.taste].filter(Boolean).map(String).join(' · ');
+          return '<button type="button" class="oracle-related-chip"' +
+                   ' data-molecule-id="' + escapeHtml(id) + '"' +
+                   ' data-molecule-name="' + escapeHtml(name) + '"' +
+                   (sub ? ' title="' + escapeHtml(sub) + '"' : '') + '>' +
+                   escapeHtml(name) +
+                 '</button>';
+        }).filter(Boolean).join('');
+        if (!chips) { row.innerHTML = ''; return; }
+        row.innerHTML =
+          '<div class="oracle-related">' +
+            '<div class="oracle-related-label">Related molecules</div>' +
+            '<div class="oracle-related-chips">' + chips + '</div>' +
+          '</div>';
+        row.querySelectorAll('.oracle-related-chip').forEach(function (chip) {
+          chip.addEventListener('click', function () {
+            mcRouteToMolecule(chip.getAttribute('data-molecule-id'), chip.getAttribute('data-molecule-name'));
+          });
+        });
+      })
+      .catch(function () { try { row.innerHTML = ''; } catch (e) {} });   // any failure → hide silently
+  } catch (e) { /* never break or blank the answer over suggestions */ }
+}
+
+/* Route a related-molecule chip into the Database → Molecules screen. Reuses the DB engine's
+   deep-link hooks: mc_db_tab picks the tab, mc_db_focus_id/name let maybeFocus() open the
+   molecule's row, and prefilling #db-molecules-search (its listener sets STATE.q) filters the
+   list so the target sorts to the top. Then navigate to #database. */
+function mcRouteToMolecule(id, name) {
+  name = (name || '').trim();
+  try {
+    localStorage.setItem('mc_db_tab', 'molecules');
+    if (name) localStorage.setItem('mc_db_focus_name', name);
+    if (id !== null && id !== undefined && String(id) !== '') localStorage.setItem('mc_db_focus_id', String(id));
+  } catch (e) {}
+  // Prefill + drive the molecules search (its input listener lives in the always-mounted DB
+  // scene, so this applies even before we navigate). This sets STATE.q so the DB engine's
+  // first fetch is already filtered to this molecule.
+  var searchEl = document.getElementById('db-molecules-search');
+  if (searchEl) {
+    searchEl.value = name;
+    try { searchEl.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) {}
+  }
+  if (location.hash !== '#database') location.hash = '#database';
+  else if (typeof setScene === 'function') setScene();
 }
 
 function renderAnswerHTML(text, citedIds) {
@@ -6600,13 +7114,15 @@ window.rebuildExpertList = function () {};
    Toolbench is reached from inside Research (see the callout card in #research and
    the explicit onclick= hash-jumps there), not from a top-level pill. */
 (function () {
-  var SCENES = ['onboarding','onboarding-refine','dashboard','oracle','map','research',
-                'research-sub','database','toolbench','toolbench-tools','simulate'];
+  var SCENES = ['home','onboarding','onboarding-refine','dashboard','oracle','map','research',
+                'research-sub','database','molecule-detail','protocol-detail','toolbench','toolbench-tools','simulate'];
   // longest / multi-word phrases first so 'community map' wins over 'map'
   var ROUTES = [
+    ['home','home'],
     ['community map','map'], ['food oracle','oracle'], ['open database','database'],
     ['navigate map','map'], ['for you','dashboard'], ['guide & tips','dashboard'],
     ['toolbench','toolbench'], ['simulate','simulate'], ['database','database'],
+    ['data','database'],   // the relabeled "Data" nav chip → #database (same dest as 'database')
     ['oracle','oracle'], ['research','research'], ['map','map']
   ];
   function destFor(el) {
@@ -6631,6 +7147,471 @@ window.rebuildExpertList = function () {};
   var st = document.createElement('style');
   st.textContent = '.domain,[class*="dash-card"]{cursor:pointer}';
   document.head.appendChild(st);
+})();
+</script>
+
+<script>
+/* ═══ 2026-07-22 · Home landing wiring (UI/UX) ═══
+   The #home scene is the default landing. This block wires:
+   (1) Ask box — Enter or the Ask button hands the question to the Oracle and streams the answer
+       (reuses the starter-chip path: set #oracleTextarea.value → #oracle → askOracle()).
+   (2) Mic dictation — REUSES the Oracle's Web Speech approach via a shared mcMakeDictation() helper
+       (SpeechRecognition/webkitSpeechRecognition, en-US, continuous, interim→final append; hidden
+       where unsupported). Wired to #homeMicBtn, appending into #homeAskInput.
+   (3) "Pick up where you left off" — merges recent CHATS (live oracleChats / mcLoadOracleChats,
+       seeded) + recent MOLECULES (mc_recent_molecules_v1) + recent PROTOCOLS (mc_recent_protocols_v1),
+       most-recent-first, labelled by kind. Molecule/protocol lists seed a representative example when
+       empty. Click: chat → #oracle (mcOpenOracleChat); molecule → #molecule-detail; protocol →
+       #protocol-detail (carrying the focus id/name in localStorage).
+   (4) Detail scenes — on entering #molecule-detail / #protocol-detail, populate + record the view.
+   Exposed globals used elsewhere: mcPushRecentMolecule / mcPushRecentProtocol (so other screens can
+   record a viewed molecule/protocol into the Home recents). */
+(function () {
+  var esc = (typeof escapeHtml === 'function') ? escapeHtml : function (s) { return String(s == null ? '' : s); };
+  function apiBase() { return (typeof API_BASE !== 'undefined') ? API_BASE : 'http://127.0.0.1:8000'; }
+  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+  /* ---- recently-viewed stores (most-recent-first, dedupe by id, cap 10, try/catch) ---- */
+  var MC_RECENT_MOL_KEY   = 'mc_recent_molecules_v1';
+  var MC_RECENT_PROTO_KEY = 'mc_recent_protocols_v1';
+  function mcLoadRecentList(key) {
+    var raw = lsGet(key); if (!raw) return [];
+    try { var a = JSON.parse(raw); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+  }
+  function mcPushRecent(key, item, cap) {
+    if (!item || item.id == null || String(item.id) === '') return;
+    var id = String(item.id), list = mcLoadRecentList(key);
+    list = list.filter(function (x) { return x && String(x.id) !== id; });
+    list.unshift({ id: item.id, name: item.name || '', ts: Date.now() });
+    if (list.length > (cap || 10)) list = list.slice(0, cap || 10);
+    lsSet(key, JSON.stringify(list));
+  }
+  function mcPushRecentMolecule(id, name) { mcPushRecent(MC_RECENT_MOL_KEY, { id: id, name: name }, 10); }
+  function mcPushRecentProtocol(id, name) { mcPushRecent(MC_RECENT_PROTO_KEY, { id: id, name: name }, 10); }
+  window.mcPushRecentMolecule = mcPushRecentMolecule;
+  window.mcPushRecentProtocol = mcPushRecentProtocol;
+  // Representative seeds so the Home list shows a mix (chat + molecule + protocol) out of the box.
+  function seedMolecules() { return [{ id: '2-acetylpyrazine', name: '2-Acetylpyrazine', ts: Date.now() - 5400000 }]; }
+  function seedProtocols() { return [{ id: 'spme-gcms-volatiles', name: 'SPME–GC/MS volatile capture', ts: Date.now() - 9000000 }]; }
+
+  /* ---- (1) Ask box ---- */
+  function homeAsk() {
+    var input = document.getElementById('homeAskInput');
+    if (!input) return;
+    var q = (input.value || '').trim();
+    if (!q) { input.focus(); return; }                                   // guard empty input
+    if (typeof oracleTextarea !== 'undefined' && oracleTextarea) oracleTextarea.value = q;
+    input.value = '';
+    location.hash = '#oracle';                                           // switch to the Oracle scene…
+    if (typeof askOracle === 'function') setTimeout(askOracle, 0);       // …then submit + stream the answer
+  }
+  var homeInput = document.getElementById('homeAskInput');
+  var homeBtn   = document.getElementById('homeAskBtn');
+  if (homeInput) homeInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); homeAsk(); }
+  });
+  if (homeBtn) homeBtn.addEventListener('click', homeAsk);
+
+  /* ---- (2) Mic dictation — shared helper mirroring the Oracle's working Web Speech impl ---- */
+  function mcMakeDictation(btn, appendFn) {
+    if (!btn || typeof appendFn !== 'function') return;
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;                                    // unsupported → leave the mic hidden
+    btn.hidden = false;
+    var rec = null, on = false;
+    function setRec(v) {
+      on = !!v; btn.classList.toggle('recording', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      var l = on ? 'Stop dictating' : 'Dictate your question';
+      btn.setAttribute('aria-label', l); btn.setAttribute('title', l);
+    }
+    btn.addEventListener('click', function () {
+      if (on) { if (rec) { try { rec.stop(); } catch (e) {} } setRec(false); return; }
+      if (!rec) {
+        try { rec = new SR(); } catch (e) { btn.hidden = true; return; }
+        rec.lang = 'en-US'; rec.continuous = true; rec.interimResults = true;
+        rec.onstart  = function () { setRec(true); };
+        rec.onresult = function (ev) {
+          for (var i = ev.resultIndex; i < ev.results.length; i++) {
+            if (ev.results[i].isFinal) appendFn(ev.results[i][0].transcript);   // final phrases only
+          }
+        };
+        rec.onerror  = function () { setRec(false); };
+        rec.onend    = function () { setRec(false); };
+      }
+      try { rec.start(); } catch (e) { setRec(false); }
+    });
+  }
+  mcMakeDictation(document.getElementById('homeMicBtn'), function (text) {
+    var input = document.getElementById('homeAskInput');
+    if (!input) return;
+    text = String(text || '').trim(); if (!text) return;
+    var cur = input.value;
+    input.value = (cur && !/\s$/.test(cur)) ? (cur + ' ' + text) : (cur + text);
+    try { input.selectionStart = input.selectionEnd = input.value.length; } catch (e) {}
+  });
+
+  /* ---- (3) "Pick up where you left off" — merged recents ---- */
+  function renderHomeRecent() {
+    var box = document.getElementById('homeRecent');
+    if (!box) return;
+    var rows = [];
+    // chats
+    var chats = (typeof oracleChats !== 'undefined' && Array.isArray(oracleChats) && oracleChats.length)
+      ? oracleChats.slice()
+      : (typeof mcLoadOracleChats === 'function' ? mcLoadOracleChats() : []);
+    chats.forEach(function (c) {
+      if (!c || !c.q) return;
+      rows.push({ kind: 'chat', id: c.id, label: (c.title && String(c.title).trim()) ? c.title : c.q, q: c.q, ts: c.ts || 0 });
+    });
+    // molecules (seed if empty)
+    var mols = mcLoadRecentList(MC_RECENT_MOL_KEY); if (!mols.length) mols = seedMolecules();
+    mols.forEach(function (m) {
+      if (!m) return;
+      rows.push({ kind: 'molecule', id: m.id, name: m.name, label: m.name || ('Molecule ' + m.id), ts: m.ts || 0 });
+    });
+    // protocols (seed if empty)
+    var protos = mcLoadRecentList(MC_RECENT_PROTO_KEY); if (!protos.length) protos = seedProtocols();
+    protos.forEach(function (p) {
+      if (!p) return;
+      rows.push({ kind: 'protocol', id: p.id, name: p.name, label: p.name || ('Protocol ' + p.id), ts: p.ts || 0 });
+    });
+    rows.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+    rows = rows.slice(0, 6);
+    if (!rows.length) { box.innerHTML = '<div class="home-recent-empty">Nothing here yet — ask a question above to get started.</div>'; return; }
+    box.innerHTML = rows.map(function (r) {
+      var kindLabel = r.kind === 'chat' ? 'Chat' : (r.kind === 'molecule' ? 'Molecule' : 'Protocol');
+      var href = r.kind === 'chat' ? '#oracle' : (r.kind === 'molecule' ? '#molecule-detail' : '#protocol-detail');
+      return '<a href="' + href + '" data-recent-kind="' + r.kind + '" data-recent-id="' + esc(String(r.id)) + '"' +
+                (r.q ? ' data-recent-q="' + esc(r.q) + '"' : '') +
+                (r.name ? ' data-recent-name="' + esc(r.name) + '"' : '') +
+                ' title="' + esc(r.label) + '">' +
+               '<span class="dot dot-' + r.kind + '"></span>' +
+               '<span class="home-recent-label">' + esc(r.label) + '</span>' +
+               '<span class="home-recent-kind">' + kindLabel + '</span>' +
+             '</a>';
+    }).join('');
+  }
+  window.mcRenderHomeRecent = renderHomeRecent;
+
+  var recentBox = document.getElementById('homeRecent');
+  if (recentBox) recentBox.addEventListener('click', function (e) {
+    var a = e.target.closest ? e.target.closest('a[data-recent-kind]') : null;
+    if (!a) return;
+    e.preventDefault();
+    var kind = a.getAttribute('data-recent-kind');
+    var id   = a.getAttribute('data-recent-id') || '';
+    var name = a.getAttribute('data-recent-name') || '';
+    if (kind === 'chat') {
+      if (typeof mcOpenOracleChat === 'function') mcOpenOracleChat(id);   // repopulate #oracleTextarea (no auto-ask)
+      location.hash = '#oracle';
+    } else if (kind === 'molecule') {
+      lsSet('mc_mol_focus_id', id); lsSet('mc_mol_focus_name', name);
+      location.hash = '#molecule-detail';
+    } else if (kind === 'protocol') {
+      lsSet('mc_protocol_focus_id', id); lsSet('mc_protocol_focus_name', name);
+      location.hash = '#protocol-detail';
+    }
+  });
+
+  /* ---- (4) #molecule-detail — live fetch GET {API}/api/molecules/{id} ---- */
+  function mcOpenMoleculeDetail() {
+    var nameEl   = document.getElementById('molDetailName');
+    var crumbEl  = document.getElementById('molDetailCrumbName');
+    var metaEl   = document.getElementById('molDetailMeta');
+    var tagsEl   = document.getElementById('molDetailTags');
+    var papersEl = document.getElementById('molDetailPapers');
+    var countEl  = document.getElementById('molDetailPapersCount');
+    if (!nameEl) return;
+    var id = lsGet('mc_mol_focus_id') || '';
+    var name = lsGet('mc_mol_focus_name') || '';
+    var displayName = name || (id ? ('Molecule ' + id) : 'Molecule');
+    nameEl.textContent = displayName;
+    if (crumbEl) crumbEl.textContent = displayName;
+    if (metaEl) metaEl.textContent = '';
+    if (tagsEl) tagsEl.innerHTML = '';
+    if (countEl) countEl.textContent = '';
+    if (papersEl) papersEl.innerHTML = '<div class="detail-loading">Loading…</div>';
+    if (id) mcPushRecentMolecule(id, name);            // record the view for Home recents
+    if (!id) { if (papersEl) papersEl.innerHTML = '<div class="detail-empty">No molecule selected.</div>'; return; }
+
+    fetch(apiBase() + '/api/molecules/' + encodeURIComponent(id), { credentials: 'same-origin' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (m) {
+        if (!m || typeof m !== 'object') throw new Error('bad payload');
+        var nm = m.name || displayName;
+        nameEl.textContent = nm;
+        if (crumbEl) crumbEl.textContent = nm;
+        if (m.name) mcPushRecentMolecule(id, m.name);  // upgrade the recent with the resolved name
+        if (metaEl) metaEl.textContent = [m.category, m.taste, m.use_notes].filter(Boolean).map(String).join('  ·  ');
+        if (tagsEl) tagsEl.innerHTML = [m.category, m.taste].filter(Boolean)
+          .map(function (t) { return '<span class="detail-tag">' + esc(String(t)) + '</span>'; }).join('');
+        var papers = Array.isArray(m.papers) ? m.papers : [];
+        if (countEl) countEl.textContent = papers.length ? ('· ' + papers.length) : '';
+        if (!papersEl) return;
+        if (!papers.length) { papersEl.innerHTML = '<div class="detail-empty">No linked papers found for this molecule.</div>'; return; }
+        papersEl.innerHTML = papers.map(function (p) {
+          if (!p) return '';
+          var pname = p.name ? String(p.name) : 'Untitled paper';
+          var sub = [p.journal, p.year].filter(Boolean).map(String).join(' · ');
+          var href = p.url ? String(p.url)
+                   : (p.doi ? ('https://doi.org/' + String(p.doi).replace(/^https?:\/\/(dx\.)?doi\.org\//i, '')) : '');
+          var open = href ? ('<a class="detail-paper-open" href="' + esc(href) + '" target="_blank" rel="noopener">Open →</a>') : '';
+          var pid = (p.id != null && String(p.id) !== '') ? String(p.id) : ('t:' + pname);
+          var saveBtn = '<button type="button" class="detail-paper-save' + (mcIsArticleSaved(pid) ? ' saved' : '') + '"' +
+              ' data-paper-id="' + esc(pid) + '" data-paper-name="' + esc(pname) + '" data-paper-meta="' + esc(sub) + '" data-paper-href="' + esc(href) + '"' +
+              ' aria-label="Save to Inventory" title="Save to Inventory">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button>';
+          return '<div class="detail-paper"><div class="detail-paper-main">' +
+                   '<div class="detail-paper-name">' + esc(pname) + '</div>' +
+                   (sub ? '<div class="detail-paper-sub">' + esc(sub) + '</div>' : '') +
+                 '</div>' + saveBtn + open + '</div>';
+        }).filter(Boolean).join('');
+      })
+      .catch(function () {
+        // graceful: keep the name, never blank the page
+        if (papersEl) papersEl.innerHTML = '<div class="detail-empty">Couldn\'t load linked papers for this molecule right now. Try again shortly.</div>';
+      });
+  }
+
+  /* ---- (4) #protocol-detail — template (no backend); populate crumb/title + record view ---- */
+  var curProtoId = '', curProtoName = '';
+  function mcOpenProtocolDetail() {
+    var nameEl  = document.getElementById('protoDetailName');
+    var crumbEl = document.getElementById('protoDetailCrumbName');
+    if (!nameEl) return;
+    var id = lsGet('mc_protocol_focus_id') || '';
+    var name = lsGet('mc_protocol_focus_name') || '';
+    curProtoId = id; curProtoName = name;
+    var displayName = name || (id ? ('Protocol ' + id) : 'Protocol');
+    nameEl.textContent = displayName;
+    if (crumbEl) crumbEl.textContent = displayName;
+    if (id) mcPushRecentProtocol(id, name);
+    // reflect saved-state on the "Save protocol" button
+    var sb = document.getElementById('protoSaveBtn');
+    if (sb) {
+      var saved = mcIsProtocolSaved(id);
+      sb.classList.toggle('saved', saved);
+      var lbl = document.getElementById('protoSaveLabel');
+      if (lbl) lbl.textContent = saved ? 'Saved to Inventory' : 'Save protocol';
+    }
+  }
+
+  /* ═══ INVENTORY (Home slide-over drawer · Option A) ═══
+     Client-side only — like Lab Stash (one shared password, no per-user identity, no server store).
+     • Articles  → mc_saved_articles_v1 (saved from #molecule-detail linked-paper rows).
+     • Protocols → mc_saved_protocols_v1 (saved from the #protocol-detail "Save protocol" button).
+     • Sentences → the real Lab Stash via window.MCStash.list() (highlight-to-save; {id,text,q}).
+     The button's pills show live store sizes (re-read on open / on entering #home / after any save). */
+  var MC_ART_KEY  = 'mc_saved_articles_v1';
+  var MC_PSAV_KEY = 'mc_saved_protocols_v1';
+  function mcLoadArticles()       { return mcLoadRecentList(MC_ART_KEY); }
+  function mcLoadSavedProtocols() { return mcLoadRecentList(MC_PSAV_KEY); }
+  function mcSaveArticle(paper) {
+    if (!paper) return false;
+    var id = (paper.id != null && String(paper.id) !== '') ? String(paper.id) : (paper.name ? ('t:' + String(paper.name)) : '');
+    if (!id) return false;
+    var name = paper.name || 'Untitled paper';
+    var meta = paper.meta || [paper.journal, paper.year].filter(Boolean).map(String).join(' · ');
+    var href = paper.href || paper.url || (paper.doi ? ('https://doi.org/' + String(paper.doi).replace(/^https?:\/\/(dx\.)?doi\.org\//i, '')) : '');
+    var list = mcLoadArticles().filter(function (x) { return x && String(x.id) !== id; });
+    list.unshift({ id: id, name: name, meta: meta, href: href, ts: Date.now() });
+    if (list.length > 50) list = list.slice(0, 50);
+    lsSet(MC_ART_KEY, JSON.stringify(list));
+    return true;
+  }
+  function mcIsArticleSaved(id) { id = String(id == null ? '' : id); return mcLoadArticles().some(function (x) { return x && String(x.id) === id; }); }
+  function mcRemoveArticle(id)  { id = String(id == null ? '' : id); lsSet(MC_ART_KEY, JSON.stringify(mcLoadArticles().filter(function (x) { return x && String(x.id) !== id; }))); }
+  function mcSaveProtocol(id, name) {
+    id = String(id == null ? '' : id); if (!id) return false;
+    var list = mcLoadSavedProtocols().filter(function (x) { return x && String(x.id) !== id; });
+    list.unshift({ id: id, name: name || '', ts: Date.now() });
+    if (list.length > 50) list = list.slice(0, 50);
+    lsSet(MC_PSAV_KEY, JSON.stringify(list));
+    return true;
+  }
+  function mcIsProtocolSaved(id) { id = String(id == null ? '' : id); return mcLoadSavedProtocols().some(function (x) { return x && String(x.id) === id; }); }
+  function mcRemoveProtocol(id)  { id = String(id == null ? '' : id); lsSet(MC_PSAV_KEY, JSON.stringify(mcLoadSavedProtocols().filter(function (x) { return x && String(x.id) !== id; }))); }
+  window.mcSaveArticle = mcSaveArticle;   // exposed so other screens can bookmark a paper
+
+  var INV = { seg: 'art' };
+  function invCard(quote, kindCls, kindLabel, title, meta, dataAttrs, removeId, removeKind) {
+    return '<div class="inv-item' + (quote ? ' quote' : '') + '" ' + dataAttrs + '>' +
+             (removeId ? '<button type="button" class="inv-remove" data-inv-remove="' + esc(String(removeId)) + '" data-inv-rkind="' + removeKind + '" aria-label="Remove">&times;</button>' : '') +
+             '<span class="inv-kind ' + kindCls + '">' + kindLabel + '</span>' +
+             '<div class="inv-t">' + esc(title) + '</div>' +
+             (meta ? '<div class="inv-m">' + esc(meta) + '</div>' : '') +
+           '</div>';
+  }
+  function invRenderArticles() {
+    var list = mcLoadArticles();
+    if (!list.length) return '<div class="inv-empty">Save papers from a molecule’s linked papers to keep them here.</div>';
+    return list.map(function (a) {
+      return invCard(false, 'inv-k-art', 'Article', a.name || 'Untitled paper', a.meta || '',
+        'data-inv-open="article" data-inv-href="' + esc(a.href || '') + '" data-inv-id="' + esc(String(a.id)) + '"', a.id, 'art');
+    }).join('');
+  }
+  function invRenderProtocols() {
+    var list = mcLoadSavedProtocols();
+    if (!list.length) return '<div class="inv-empty">Save a protocol to keep it here.</div>';
+    return list.map(function (p) {
+      return invCard(false, 'inv-k-pro', 'Protocol', p.name || ('Protocol ' + p.id), '',
+        'data-inv-open="protocol" data-inv-id="' + esc(String(p.id)) + '" data-inv-name="' + esc(p.name || '') + '"', p.id, 'pro');
+    }).join('');
+  }
+  function invRenderSentences() {
+    var list = (window.MCStash && window.MCStash.list) ? window.MCStash.list() : [];
+    if (!list.length) return '<div class="inv-empty">Highlight a sentence in an Oracle answer and hit Save to keep it here.</div>';
+    return list.map(function (s) {
+      var from = s.q ? ('from “' + s.q + '”') : '';
+      return invCard(true, 'inv-k-sen', 'Sentence', s.text || '', from,
+        'data-inv-open="sentence" data-inv-q="' + esc(s.q || '') + '"', s.id, 'sen');
+    }).join('');
+  }
+  function invRenderList(t) {
+    var el = document.getElementById('invList'); if (!el) return;
+    el.innerHTML = (t === 'pro') ? invRenderProtocols() : (t === 'sen') ? invRenderSentences() : invRenderArticles();
+  }
+  function mcInvRefresh() {
+    var a = mcLoadArticles().length, p = mcLoadSavedProtocols().length;
+    var s = (window.MCStash && window.MCStash.count) ? window.MCStash.count() : 0;
+    var ea = document.getElementById('invCountArt'); if (ea) ea.textContent = a;
+    var ep = document.getElementById('invCountPro'); if (ep) ep.textContent = p;
+    var es = document.getElementById('invCountSen'); if (es) es.textContent = s;
+    var dr = document.getElementById('invDrawer');
+    if (dr && dr.classList.contains('on')) invRenderList(INV.seg);
+  }
+  window.mcInvRefresh = mcInvRefresh;
+  function invOpen() {
+    mcInvRefresh(); invRenderList(INV.seg);
+    var bd = document.getElementById('invBackdrop'), dr = document.getElementById('invDrawer');
+    if (bd) bd.classList.add('on'); if (dr) dr.classList.add('on');
+    var btn = document.getElementById('invBtn'); if (btn) btn.setAttribute('aria-expanded', 'true');
+  }
+  function invClose() {
+    var bd = document.getElementById('invBackdrop'), dr = document.getElementById('invDrawer');
+    if (bd) bd.classList.remove('on'); if (dr) dr.classList.remove('on');
+    var btn = document.getElementById('invBtn'); if (btn) btn.setAttribute('aria-expanded', 'false');
+  }
+  function invSeg(t) {
+    INV.seg = t;
+    document.querySelectorAll('#invDrawer .inv-seg button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-inv-seg') === t); });
+    invRenderList(t);
+  }
+  var invBtn = document.getElementById('invBtn');           if (invBtn) invBtn.addEventListener('click', invOpen);
+  var invCloseBtn = document.getElementById('invClose');    if (invCloseBtn) invCloseBtn.addEventListener('click', invClose);
+  var invBackdrop = document.getElementById('invBackdrop'); if (invBackdrop) invBackdrop.addEventListener('click', invClose);
+  document.querySelectorAll('#invDrawer .inv-seg button').forEach(function (b) {
+    b.addEventListener('click', function () { invSeg(b.getAttribute('data-inv-seg')); });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { var dr = document.getElementById('invDrawer'); if (dr && dr.classList.contains('on')) invClose(); }
+  });
+  // drawer item + remove clicks
+  var invListEl = document.getElementById('invList');
+  if (invListEl) invListEl.addEventListener('click', function (e) {
+    var rm = e.target.closest ? e.target.closest('.inv-remove') : null;
+    if (rm) {
+      e.preventDefault(); e.stopPropagation();
+      var rid = rm.getAttribute('data-inv-remove'), rk = rm.getAttribute('data-inv-rkind');
+      if (rk === 'art') mcRemoveArticle(rid);
+      else if (rk === 'pro') mcRemoveProtocol(rid);
+      else if (rk === 'sen' && window.MCStash && window.MCStash.remove) window.MCStash.remove(rid);
+      mcInvRefresh();
+      return;
+    }
+    var it = e.target.closest ? e.target.closest('.inv-item') : null;
+    if (!it) return;
+    var kind = it.getAttribute('data-inv-open');
+    if (kind === 'article') {
+      var href = it.getAttribute('data-inv-href');
+      if (href) { window.open(href, '_blank', 'noopener'); }
+      else { lsSet('mc_mol_focus_id', it.getAttribute('data-inv-id') || ''); lsSet('mc_mol_focus_name', ''); invClose(); location.hash = '#molecule-detail'; }
+    } else if (kind === 'protocol') {
+      lsSet('mc_protocol_focus_id', it.getAttribute('data-inv-id') || ''); lsSet('mc_protocol_focus_name', it.getAttribute('data-inv-name') || '');
+      invClose(); location.hash = '#protocol-detail';
+    } else if (kind === 'sentence') {
+      var q = it.getAttribute('data-inv-q') || '';
+      if (q && typeof oracleTextarea !== 'undefined' && oracleTextarea) oracleTextarea.value = q;
+      invClose(); if (q) location.hash = '#oracle';
+    }
+  });
+  // save a linked paper from #molecule-detail into Articles (delegated; papers re-render each open)
+  var molPapersEl = document.getElementById('molDetailPapers');
+  if (molPapersEl) molPapersEl.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('.detail-paper-save') : null;
+    if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    mcSaveArticle({ id: b.getAttribute('data-paper-id'), name: b.getAttribute('data-paper-name'), meta: b.getAttribute('data-paper-meta'), href: b.getAttribute('data-paper-href') });
+    b.classList.add('saved'); b.setAttribute('title', 'Saved to Inventory');
+    mcInvRefresh();
+  });
+  // "Save protocol" on #protocol-detail
+  var protoSaveBtn = document.getElementById('protoSaveBtn');
+  if (protoSaveBtn) protoSaveBtn.addEventListener('click', function () {
+    if (!curProtoId) return;
+    mcSaveProtocol(curProtoId, curProtoName);
+    protoSaveBtn.classList.add('saved');
+    var lbl = document.getElementById('protoSaveLabel'); if (lbl) lbl.textContent = 'Saved to Inventory';
+    mcInvRefresh();
+  });
+
+  /* ---- router: render/populate on load AND on entering each relevant scene ---- */
+  function mcHomeHashRouter() {
+    var h = location.hash.replace('#', '') || 'home';
+    if (h === 'home') { renderHomeRecent(); mcInvRefresh(); }
+    else if (h === 'molecule-detail') mcOpenMoleculeDetail();
+    else if (h === 'protocol-detail') mcOpenProtocolDetail();
+  }
+  window.addEventListener('hashchange', mcHomeHashRouter);
+  mcHomeHashRouter();
+  mcInvRefresh();   // set the Inventory button pill counts on load
+})();
+</script>
+
+<script>
+/* 2026-07-22 · Top-nav normalize (UI/UX). Nav EVERYWHERE = Home · Oracle · Research · Simulate.
+   One load-time pass across all ~13 topbars (DRY, desync-proof):
+   (a) remove any "Map" AND "Database"/"Data" chip — both stay reachable via in-content journeys
+       (the Home Data tile → #database, "See on Map →", dock items, breadcrumbs), just not as nav buttons;
+   (b) prepend a "Home" chip (house icon) to any topbar lacking one → routes via ['home','home'];
+   (c) reorder each topbar's chips to the canonical ORDER.
+   Then setScene() is re-run so the dynamic .active highlight reflects the injected Home chip. The
+   #database / #map scenes and every in-content route into them are left fully intact — Lior's pick:
+   Data is no longer an upper-category nav button (only the Home tile opens the data module). */
+(function () {
+  var HOME_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 7.5L8 3l5.5 4.5"/><path d="M4 6.8V13h8V6.8"/></svg>';
+  var ORDER = ['Home', 'Oracle', 'Research', 'Simulate'];
+  function labelOf(d) { return (d.textContent || '').trim(); }
+  function trimNav() {
+    document.querySelectorAll('.domain').forEach(function (d) {
+      var t = labelOf(d);
+      if (t === 'Map' || t === 'Database' || t === 'Data') d.remove();   // (a) Map + Database off the nav
+    });
+    document.querySelectorAll('.domains').forEach(function (row) {
+      // (b) ensure a Home chip
+      var hasHome = false;
+      row.querySelectorAll('.domain').forEach(function (d) { if (labelOf(d) === 'Home') hasHome = true; });
+      if (!hasHome) {
+        var chip = document.createElement('div');
+        chip.className = 'domain';
+        chip.innerHTML = HOME_SVG + 'Home';
+        row.insertBefore(chip, row.firstChild);
+      }
+      // (c) reorder to canonical Home · Oracle · Research · Simulate (unknown labels appended)
+      var chips = Array.prototype.slice.call(row.querySelectorAll('.domain'));
+      chips.sort(function (a, b) {
+        var ia = ORDER.indexOf(labelOf(a)); if (ia < 0) ia = 99;
+        var ib = ORDER.indexOf(labelOf(b)); if (ib < 0) ib = 99;
+        return ia - ib;
+      });
+      chips.forEach(function (c) { row.appendChild(c); });
+    });
+    if (typeof setScene === 'function') setScene();   // re-light the correct chip
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', trimNav);
+  else trimNav();
 })();
 </script>
 

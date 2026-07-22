@@ -2,6 +2,10 @@
 .env
 .env.local
 .env.bak
+.env.dev
+.env.prod
+.env.*
+!.env.example
 *.bak
 *.key
 *.pem
