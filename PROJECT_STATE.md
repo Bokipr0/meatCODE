@@ -4,7 +4,16 @@
 > Asana owns *tasks & priorities*; this file owns *technical reality* — what's built, what's broken,
 > what's in flight. Keep it short and current, not a changelog.
 
-_Last updated: 2026-07-22 14:16 UTC · Project Coordinator — Home v3: Data taken out of the top nav (Data tile kept) + Inventory Option A drawer wired client-side. Prev: 2026-07-22 14:01 UTC Home module + detail pages; see AGENT_UPDATE_LOG.md_
+_Last updated: 2026-07-22 22:15 UTC · Project Coordinator — MVP definition + 5 user journeys broadcast to all lanes; per-lane gap analysis + P0 spine (docs/MVP_ALIGNMENT.md, TEAM_BROADCAST.md). Prev: 2026-07-22 14:16 UTC Home v3; see AGENT_UPDATE_LOG.md_
+
+## 🎯 MVP alignment — north star through mid-September (set 2026-07-22)
+Lior's **MVP Definition & 5 User Journeys** (`docs/MeatCODE_MVP_Definition_and_User_Journeys.md`) is now the bar: a credible source-backed prototype, **internal demo end of August**, **external P1 expert validation mid-September**. All 5 lanes assessed their status against it — full gap analysis in **`docs/MVP_ALIGNMENT.md`**, broadcast in `TEAM_BROADCAST.md`.
+
+**Journey status (honest):** 🟢 J1 Oracle (working skeleton) · 🔴 J2 GC-MS (hollow — no data/UI/endpoint/algorithm; team rec: **preview/Phase-2**) · 🟡 J3 Literature (Database + molecule-detail; no knowledge-graph) · 🟠 J4 Research Planning (design-only, no protocols backend) · 🟢 J5 Expert Discovery (Map + filters; experts under-enriched).
+
+**P0 spine (ordered, cross-lane):** (1) **Data** — close corpus trust: quarantine→`relevance_llm` write-back + back-tag 489 (39% gate →) + retrievability count; (2) **Algorithm** — build the benchmark harness (gold set vs GPT/Claude/Perplexity) proving criterion 1; (3) **Full-Stack** — deploy the month-long committed backlog + verify live, then scaffold GC-MS upload (preview) + `/api/protocols`; (4) **UI/UX** — lock one design system + J3 knowledge-graph + J4 planning flow + honest previews; (5) **Advisory** — P1 validation protocol + mid-Aug scope-freeze gate.
+
+**Open decisions (Lior + Daniel):** GC-MS scope (P0 vs preview)? · greenlight the benchmark eval? · close the quarantine write-back now? · run `deploy.command` to land the backlog?
 
 ## Follow-up v12.7 — Data off top nav + Inventory Option A — shipped to the repo 2026-07-22 (awaiting deploy)
 - **Data removed from the top nav** (Lior: not an upper-category button). Top nav across all topbars is now **Home · Oracle · Research · Simulate**; the load-time pass removes Database + Map chips + injects Home. The Home **Data tile** (→#database) and the `#database` scene + in-content routes are kept — Data is reachable off-nav. setScene's dynamic active state updated to match.

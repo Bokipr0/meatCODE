@@ -1,10 +1,37 @@
 # 📣 TEAM BROADCAST — MeatCODE
 
-_From: Project Coordinator · As of: **2026-07-20 ~13:10 UTC**_
+_From: Project Coordinator · As of: **2026-07-22 22:15 UTC**_
 
 > Standing notification channel for the whole agent team. The Coordinator refreshes this whenever there's
 > progress every agent should know. **Read this at the start of your session** (after CLAUDE.md +
 > PROJECT_STATE.md). Full history is in `AGENT_UPDATE_LOG.md`; this is the short "what you need to know now."
+
+---
+
+## 🎯 PROJECT GOALS — the MVP north star (broadcast 2026-07-22) · READ THIS FIRST
+Lior set the **MVP definition + 5 user journeys**. Full doc: **`docs/MeatCODE_MVP_Definition_and_User_Journeys.md`** · per-lane gap analysis: **`docs/MVP_ALIGNMENT.md`**. This is now the bar every lane is judged against.
+
+**Objective:** a credible, source-backed prototype — **internal demo by end of August**, refined early September, opened to selected **external P1 expert users for validation by mid-September**.
+
+**5 success criteria:** (1) Scientific Oracle — source-backed, **benchmark-competitive vs general AI**; (2) GC–MS Interpretation — upload → molecules → sensory → pathways → insight; (3) Knowledge Discovery — literature/molecules/pathways/protocols/experts/orgs; (4) Research Planning — question → literature/ideas/protocols/gaps/collaborators; (5) Collaboration — experts/orgs.
+
+**Where the 5 journeys actually stand (honest):**
+- 🟢 **J1 Oracle** — working skeleton (grounded, cites real sources).
+- 🔴 **J2 GC-MS** — hollow (no data / UI / endpoint / algorithm). Team recommendation: **mark PREVIEW / Phase-2**, not a mid-Sept P0.
+- 🟡 **J3 Literature** — partial (Database + molecule-detail; no knowledge-graph view yet).
+- 🟠 **J4 Research Planning** — design-only (static funnel, no protocols backend).
+- 🟢 **J5 Expert Discovery** — working (Map + filters; experts under-enriched).
+
+**The P0 spine — do these, in order:**
+1. **Data Engineer** — close **corpus trust**: quarantine→`relevance_llm` write-back + back-tag the ~489 untagged (39% gate →) + run the retrievability count. *Unblocks everything; you can't benchmark an ungoverned corpus.*
+2. **Algorithm Expert** — build the **benchmark harness** (30–50 expert-authored gold Qs, MeatCODE vs GPT/Claude/Perplexity, blind-rated). The only proof of criterion 1. Then reranking → pgvector hybrid.
+3. **Full-Stack Engineer** — **DEPLOY the backlog** (a month of committed work — Oracle v11 → v12.7: Home, detail pages, `molecules/{id}`, suggestions, Inventory — is NOT live) + verify via `/api/version`; then scaffold the GC-MS upload path (preview) + `/api/protocols`.
+4. **UI/UX Designer** — lock **ONE** design system (promote/merge the v8/v9/lean/research-screenflow fragments), add the **J3 knowledge-graph view**, reframe Research into a **J4 planning flow**, and label J2/J4/Simulate as honest previews.
+5. **Advisory** — P1 onboarding/validation protocol + a **mid-Aug scope-freeze gate** (Daniel signs off the corpus + the credible-vs-preview split).
+
+**Open decisions for Lior + Daniel:** Is GC-MS (J2) in scope for mid-Sept, or a labeled Phase-2 preview? · Greenlight the benchmark eval? · Close the quarantine write-back now? · Run `deploy.command` to land the backlog?
+
+⚠️ **Top risk:** the working lanes sit on an **ungoverned corpus** (39% pass the gate; Daniel's quarantines don't block retrieval) and the Oracle's "benchmark-competitive" claim has **no measurement yet**. Corpus trust + the benchmark are the two things that make P1 validation real.
 
 ---
 
