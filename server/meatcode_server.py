@@ -1,5 +1,18 @@
 #!/usr/bin/env python3
-# Last updated: 2026-07-23 · Advisory · Feature flags + Release Center. GET /api/flags (per-env booleans
+# Last updated: 2026-08-15 · Algorithm Expert · consensus + claims layer on the Oracle stream.
+#   (1) NEW additive SSE `event: consensus` on POST /api/ask — after the answer finishes streaming, ONE
+#       small Haiku call classifies each retrieved source's main_claim as agree/oppose/neutral toward the
+#       answer's central claim; payload {"agree":n,"oppose":n,"neutral":n,"per_source":[{id,stance}]},
+#       emitted BEFORE `event: done`. Fully guarded: any failure (model, JSON, DB) skips the event and the
+#       stream still ends with `done` — clients that ignore unknown events are untouched.
+#   (2) NEW auth-gated GET /api/consensus-demo?q=... — retrieval + the same classification WITHOUT
+#       streaming an answer (the classifier infers the majority position from the sources): test surface.
+#   (3) Claims layer wired into retrieval: sources retrieved by /api/ask (and consensus-demo) now carry an
+#       additive "claims" key ([{id,claim_text,stance,confidence}] from claims via claim_sources) in the
+#       existing `sources` SSE payload when rows exist. _RETRIEVAL_SQL additionally selects main_claim.
+#   Eval harness lives in analysis/rag_eval/ (closed-corpus answer + verifier scoring; keeps its own copy
+#   of the retrieval SQL + grounding prompt — update it if those change here).
+# Prev 2026-07-23 · Advisory · Feature flags + Release Center. GET /api/flags (per-env booleans
 #   from features.json) & /api/flags/all (full dev+prod matrix). Local-only admin: POST /api/flags/set +
 #   /api/release/{deploy-dev,promote}, gated by RELEASE_CENTER=1 AND loopback (404 anywhere else); the
 #   admin page app/release-center.html is served only under the same gate. APP_ENV picks each flag's column.
@@ -56,6 +69,11 @@ What it does
 Endpoints
 ---------
   POST /api/ask                 Oracle answer — grounded RAG over Neon `sources`, streamed as SSE
+                                 (events: status → sources [each with additive "claims"] → status →
+                                  chunk* → consensus [additive, best-effort] → done)
+  GET  /api/consensus-demo?q=   auth-gated test surface: runs the same retrieval + agree/oppose/neutral
+                                 classification WITHOUT streaming an answer (classifier infers the
+                                 majority position from the sources' main claims)
   GET  /api/health              {ok, db_ok, has_anthropic_key, model}
   GET  /api/experts[?q=&country=&sort=&min_relevance=&limit=]  Neon-backed expert list (map, filterable)
   GET  /api/expert-facets       country counts for curated experts (UI filter buttons)
@@ -106,6 +124,11 @@ from urllib.parse import urlparse, parse_qs
 PORT       = int(os.environ.get("PORT", "8000"))  # cloud hosts (Render, etc.) inject $PORT; 8000 locally
 MODEL      = "claude-sonnet-4-6"           # if you get a model-access error, try "claude-opus-4-8" or "claude-haiku-4-5-20251001"
 MAX_TOKENS = 1600
+# Consensus classification (the "N support · M oppose" signal) is a single SMALL call per question —
+# haiku-class on purpose: it reads the finished answer + ≤6 main_claim snippets and emits ~100 tokens
+# of JSON. Sonnet here would multiply cost for zero product benefit.
+CONSENSUS_MODEL      = "claude-haiku-4-5-20251001"
+CONSENSUS_MAX_TOKENS = 600
 ORACLE_TOP_K          = 6    # sources retrieved + handed to Claude per question
 ORACLE_MIN_RELEVANCE  = 60   # relevance_llm gate; sources scored below this are off-topic (PROJECT_STATE.md)
 SYSTEM_PROMPT = (
@@ -258,7 +281,7 @@ def pg_rows(sql, params=()):
 _RETRIEVAL_SQL = """
     SELECT * FROM (
         SELECT id, name AS title, year, COALESCE(journal, venue) AS journal, venue,
-               doi, url, abstract,
+               doi, url, abstract, main_claim,
                ts_rank_cd(search_vec, websearch_to_tsquery('english', %s)) AS rank
         FROM sources
         WHERE search_vec IS NOT NULL
@@ -302,6 +325,124 @@ def _public_source_fields(rows):
         "doi": r.get("doi"),
         "url": r.get("url"),
     } for r in rows]
+
+
+# ─── Claims layer (paper claim records attached to retrieval) ─────────
+def _claims_for_sources(source_ids):
+    """The `claims` table (45 rows, curated stance-tagged claims linked to papers via
+    `claim_sources`) existed but nothing read it. This surfaces it: returns
+    {source_id: [{id, claim_text, stance, confidence}, ...]} for whichever of the
+    retrieved ids have claim rows (most don't yet — 69 links across 818 sources).
+    Callers attach it as an ADDITIVE "claims" key on the `sources` SSE payload, so
+    clients that don't know the key are untouched. Growth plan for this record:
+    analysis/rag_eval/CLAIM_LAYER_NOTES.md."""
+    if not source_ids:
+        return {}
+    rows = pg_rows(
+        "SELECT cs.source_id, c.id, c.claim_text, c.stance::text AS stance, "
+        "c.confidence::float AS confidence "
+        "FROM claim_sources cs JOIN claims c ON c.id = cs.claim_id "
+        "WHERE cs.source_id = ANY(%s) "
+        "ORDER BY c.confidence DESC NULLS LAST, c.id ASC",
+        (list(source_ids),))
+    out = {}
+    for r in rows:
+        out.setdefault(r["source_id"], []).append({
+            "id": r["id"], "claim_text": r["claim_text"],
+            "stance": r["stance"], "confidence": r["confidence"],
+        })
+    return out
+
+
+def _attach_claims(public_rows):
+    """Best-effort: decorate _public_source_fields() output with each source's claim
+    records. Never raises — a claims-lookup failure must not break the sources event."""
+    try:
+        cmap = _claims_for_sources([p["id"] for p in public_rows])
+        for p in public_rows:
+            if p["id"] in cmap:
+                p["claims"] = cmap[p["id"]]
+    except Exception as e:
+        sys.stderr.write("[oracle] claims lookup skipped: %s\n" % str(e)[:200])
+    return public_rows
+
+
+# ─── Consensus classification (agree / oppose / neutral) ─────────────
+def _consensus_classify(rows, answer_text=None):
+    """ONE small model call that classifies each retrieved source as agree / oppose /
+    neutral toward the answer's central claim — the honest "N papers support · M oppose"
+    signal. Inputs are only what we actually have: the finished answer (when called from
+    /api/ask) and each source's main_claim (falling back to a short abstract snippet).
+    When answer_text is None (the /api/consensus-demo path) the classifier first infers
+    the majority position from the sources and classifies against that, returning it as
+    "central_claim" so the caller can show what was voted on.
+
+    Returns {"agree": n, "oppose": n, "neutral": n, "per_source": [{"id","stance"}]}.
+    Raises on any failure — callers guard and simply skip the event (never break the
+    stream). Every retrieved source gets a stance; ids the model drops default neutral."""
+    def _s(x):
+        if x is None:
+            return ""
+        if isinstance(x, (list, tuple)):
+            return " ".join(str(v) for v in x if v)
+        return str(x)
+
+    src_lines = []
+    for r in rows:
+        claim = _s(r.get("main_claim")).strip() or _s(r.get("abstract")).strip()[:300]
+        src_lines.append("[%s] %s\nCLAIM: %s" % (
+            r["id"], _s(r.get("title"))[:140] or "(untitled)",
+            claim[:400] or "(no claim or abstract on file)"))
+    if answer_text:
+        task = (
+            "Below is an ANSWER produced from these sources, then the sources' own main claims.\n"
+            "1. Identify the answer's single central claim.\n"
+            "2. Classify each source: does its claim support that central claim (agree), "
+            "contradict it (oppose), or neither / off-point / insufficient (neutral)?\n\n"
+            "ANSWER:\n" + answer_text[:4000]
+        )
+    else:
+        task = (
+            "Below are sources' main claims retrieved for the question. No answer exists yet.\n"
+            "1. Infer the majority position these sources take on the question — one sentence, "
+            "returned as \"central_claim\".\n"
+            "2. Classify each source: agree / oppose / neutral toward that position."
+        )
+    prompt = (
+        task + "\n\nSOURCES:\n" + "\n\n".join(src_lines) +
+        "\n\nRespond with ONLY a JSON object, no prose, exactly this shape:\n"
+        '{"central_claim": "...", "per_source": [{"id": <source id number>, "stance": "agree|oppose|neutral"}]}\n'
+        "Include every source id listed above exactly once. Be conservative: when a claim is "
+        "tangential or you are unsure, use neutral — never force agreement."
+    )
+    resp = client.messages.create(
+        model=CONSENSUS_MODEL, max_tokens=CONSENSUS_MAX_TOKENS,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
+    m = re.search(r"\{.*\}", text, re.S)
+    if not m:
+        raise ValueError("consensus: no JSON in model output")
+    data = json.loads(m.group(0))
+
+    stance_of = {}
+    for item in data.get("per_source", []):
+        try:
+            sid = int(item.get("id"))
+        except (TypeError, ValueError):
+            continue
+        stance = str(item.get("stance", "")).strip().lower()
+        stance_of[sid] = stance if stance in ("agree", "oppose", "neutral") else "neutral"
+    per_source = [{"id": r["id"], "stance": stance_of.get(r["id"], "neutral")} for r in rows]
+    out = {
+        "agree":   sum(1 for p in per_source if p["stance"] == "agree"),
+        "oppose":  sum(1 for p in per_source if p["stance"] == "oppose"),
+        "neutral": sum(1 for p in per_source if p["stance"] == "neutral"),
+        "per_source": per_source,
+    }
+    if answer_text is None and data.get("central_claim"):
+        out["central_claim"] = str(data["central_claim"])[:400]
+    return out
 
 
 def _format_sources_block(rows):
@@ -556,6 +697,32 @@ class Handler(SimpleHTTPRequestHandler):
         if not DATABASE_URL:
             return self._send_json({"error": "DATABASE_URL not configured"}, 503)
         try:
+            if path == "/api/consensus-demo":
+                # Test surface for the consensus signal: same retrieval as POST /api/ask,
+                # same classifier, but NO streamed answer (and no Sonnet call) — the
+                # classifier infers the majority position from the sources' main claims
+                # and votes against that. Auth-gated like every other API GET (only
+                # /api/health + /api/version are open). Classification failure is
+                # reported in-band, not as a 5xx — retrieval results are still useful.
+                q = (qs.get("q") or [""])[0].strip()
+                if not q:
+                    return self._send_json({"error": "missing ?q="}, 400)
+                rows, used_fallback = _retrieve_sources(q)
+                out = {
+                    "question": q,
+                    "used_fallback": used_fallback,
+                    "sources": _attach_claims(_public_source_fields(rows)),
+                }
+                if rows:
+                    try:
+                        out["consensus"] = _consensus_classify(rows)
+                    except Exception as e:
+                        sys.stderr.write("[oracle] consensus-demo classify failed: %s\n" % str(e)[:300])
+                        out["consensus_error"] = "classification unavailable"
+                else:
+                    out["consensus"] = {"agree": 0, "oppose": 0, "neutral": 0, "per_source": []}
+                return self._send_json(out)
+
             if path == "/api/experts":
                 limit = max(1, min(500, int((qs.get("limit") or ["200"])[0])))
                 q = (qs.get("q") or [""])[0].strip()
@@ -1074,8 +1241,9 @@ class Handler(SimpleHTTPRequestHandler):
         # 1) sources event — the REAL rows retrieved above (grounded RAG; this used
         #    to be hardcoded "[]"). The Oracle UI still handles an empty array
         #    gracefully for the DB-missing / retrieval-failed / genuinely-nothing-
-        #    matched cases.
-        send_event("sources", json.dumps(_public_source_fields(sources_rows), default=str))
+        #    matched cases. Each source additionally carries a "claims" key (its rows
+        #    from the curated `claims` table, when any exist) — ADDITIVE, best-effort.
+        send_event("sources", json.dumps(_attach_claims(_public_source_fields(sources_rows)), default=str))
 
         # 2) GROUND + stream — the answer as chunk events, grounded in those sources
         #    when retrieval worked; the untouched original SYSTEM_PROMPT otherwise
@@ -1083,6 +1251,7 @@ class Handler(SimpleHTTPRequestHandler):
         system_prompt = _grounding_system_prompt(sources_rows, used_fallback) if grounded else SYSTEM_PROMPT
         send_event("status", "answering")
         try:
+            answer_parts = []
             with client.messages.stream(
                 model=MODEL,
                 max_tokens=MAX_TOKENS,
@@ -1090,7 +1259,23 @@ class Handler(SimpleHTTPRequestHandler):
                 messages=[{"role": "user", "content": question}],
             ) as stream:
                 for text in stream.text_stream:
-                    if text: send_event("chunk", text)
+                    if text:
+                        answer_parts.append(text)
+                        send_event("chunk", text)
+
+            # 3) consensus event — ADDITIVE, emitted BEFORE `done`, and fully guarded:
+            #    one small Haiku call classifies each retrieved source's main_claim as
+            #    agree/oppose/neutral toward the finished answer's central claim, so the
+            #    UI can honestly show "N papers support · M oppose". ANY failure here
+            #    (model, JSON parse, timeout) skips the event entirely — the stream
+            #    still ends with `done`, and clients that ignore unknown SSE events
+            #    (the current mockup) behave exactly as before.
+            if grounded and sources_rows:
+                try:
+                    consensus = _consensus_classify(sources_rows, "".join(answer_parts))
+                    send_event("consensus", json.dumps(consensus, default=str))
+                except Exception as e:
+                    sys.stderr.write("[oracle] consensus skipped: %s\n" % str(e)[:300])
             send_event("done", "")
         except Exception as e:
             # Keep the real diagnostic in the server log (Render → Logs), but show the

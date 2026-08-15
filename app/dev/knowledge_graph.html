@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<!-- Last updated: 2026-08-15 · Fullstack Engineer · Dev Area KG screen: embeds /kg/kg_explorer.html full-height with fallback -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MeatCODE · Dev Area · Knowledge Graph</title>
+<style>
+:root {
+  /* ── GFI Israel · seaweed teal palette (mirrors app/meatcode_mockup.html :root) ── */
+  --bg:           #FAF6EF;
+  --bg-deep:      #F2EBDA;
+  --surface:      #FFFFFF;
+  --surface-2:    #F7F0E0;
+  --wine:         #00736E;
+  --wine-deep:    #015A56;
+  --wine-soft:    #4FA59F;
+  --wine-tint:    #B5DDD8;
+  --wine-mist:    #E0F0EE;
+  --ink:          #1A1A1A;
+  --ink-dim:      #4A4A4A;
+  --ink-faint:    #8A8A8A;
+  --line:         #E5DDD0;
+  --line-strong:  #D2C8B5;
+  --brass:        #C77E5F;
+  --brass-soft:   #F2D7C8;
+  --shadow:       0 4px 16px rgba(0, 67, 64, 0.08);
+  --round:        "Varela Round", "Heebo", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono:         "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body { font-family: var(--round); background: var(--bg); color: var(--ink); display: flex; flex-direction: column; }
+
+.dev-topbar {
+  display: flex; align-items: center; gap: 14px; flex: none;
+  padding: 10px 22px; background: var(--surface); border-bottom: 1px solid var(--line);
+}
+.back-link { color: var(--wine-deep); text-decoration: none; font-weight: 700; font-size: 13px; }
+.back-link:hover { text-decoration: underline; }
+.crumb { font-size: 13px; color: var(--ink-faint); }
+.crumb a { color: var(--wine-deep); text-decoration: none; }
+.crumb a:hover { text-decoration: underline; }
+.title { font-weight: 700; font-size: 15px; color: var(--wine-deep); }
+.dev-badge {
+  font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+  color: #fff; background: repeating-linear-gradient(45deg, var(--brass), var(--brass) 10px, #B06A4C 10px, #B06A4C 20px);
+  padding: 3px 9px; border-radius: 5px;
+}
+.src { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--ink-faint); }
+
+.frame-wrap { flex: 1; position: relative; }
+#kgFrame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--surface); }
+#kgFallback {
+  position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+  background: var(--bg); text-align: center; padding: 30px;
+}
+#kgFallback .box { max-width: 460px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 26px; box-shadow: var(--shadow); }
+#kgFallback h2 { font-size: 16px; color: var(--wine-deep); margin-bottom: 8px; }
+#kgFallback p { font-size: 13px; color: var(--ink-dim); line-height: 1.55; }
+#kgFallback code { font-family: var(--mono); font-size: 12px; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+#kgFallback a { color: var(--wine-deep); }
+</style>
+</head>
+<body>
+
+<header class="dev-topbar">
+  <a class="back-link" href="/app/meatcode_mockup.html">&larr; MeatCODE</a>
+  <span class="crumb"><a href="/app/dev/index.html">Dev Area</a> /</span>
+  <span class="title">Knowledge Graph</span>
+  <span class="dev-badge">DEV AREA</span>
+  <span class="src">embeds /kg/kg_explorer.html</span>
+</header>
+
+<div class="frame-wrap">
+  <iframe id="kgFrame" src="/kg/kg_explorer.html" title="MeatCODE Knowledge Graph explorer"></iframe>
+  <div id="kgFallback">
+    <div class="box">
+      <h2>Knowledge Graph explorer did not load</h2>
+      <p>
+        The explorer lives at <code>/kg/kg_explorer.html</code> and is served by
+        <code>meatcode_server.py</code>. If this stays blank, the server is probably not running &mdash;
+        start it with <code>run_oracle.command</code> (repo root), or open the file directly:
+        <a href="/kg/kg_explorer.html">/kg/kg_explorer.html</a>.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var frame = document.getElementById('kgFrame');
+  var fallback = document.getElementById('kgFallback');
+  var loaded = false;
+
+  frame.addEventListener('load', function () { loaded = true; });
+  frame.addEventListener('error', function () { fallback.style.display = 'flex'; });
+
+  // If the iframe never fires load (server down / file:// quirks), show the fallback.
+  setTimeout(function () {
+    if (!loaded) fallback.style.display = 'flex';
+  }, 4000);
+})();
+</script>
+</body>
+</html>

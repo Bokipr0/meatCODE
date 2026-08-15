@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<!-- Last updated: 2026-08-15 · Fullstack Engineer · Dev Area MEAT FINGERPRINT placeholder: canvas radar of 8 aroma axes, demo data only, no DB -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MeatCODE · Dev Area · Meat Fingerprint</title>
+<style>
+:root {
+  /* ── GFI Israel · seaweed teal palette (mirrors app/meatcode_mockup.html :root) ── */
+  --bg:           #FAF6EF;
+  --bg-deep:      #F2EBDA;
+  --surface:      #FFFFFF;
+  --surface-2:    #F7F0E0;
+  --wine:         #00736E;
+  --wine-deep:    #015A56;
+  --wine-soft:    #4FA59F;
+  --wine-tint:    #B5DDD8;
+  --wine-mist:    #E0F0EE;
+  --ink:          #1A1A1A;
+  --ink-dim:      #4A4A4A;
+  --ink-faint:    #8A8A8A;
+  --line:         #E5DDD0;
+  --line-strong:  #D2C8B5;
+  --brass:        #C77E5F;
+  --brass-soft:   #F2D7C8;
+  --olive:        #7A8C5F;
+  --shadow:       0 4px 16px rgba(0, 67, 64, 0.08);
+  --shadow-lg:    0 10px 32px rgba(0, 67, 64, 0.12);
+  --round:        "Varela Round", "Heebo", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono:         "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--round); background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+.dev-topbar {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 24px; background: var(--surface); border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 10;
+}
+.back-link { color: var(--wine-deep); text-decoration: none; font-weight: 700; font-size: 13px; }
+.back-link:hover { text-decoration: underline; }
+.crumb { font-size: 13px; color: var(--ink-faint); }
+.crumb a { color: var(--wine-deep); text-decoration: none; }
+.crumb a:hover { text-decoration: underline; }
+.title { font-weight: 700; font-size: 15px; color: var(--wine-deep); }
+.dev-badge {
+  font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+  color: #fff; background: repeating-linear-gradient(45deg, var(--brass), var(--brass) 10px, #B06A4C 10px, #B06A4C 20px);
+  padding: 3px 9px; border-radius: 5px;
+}
+
+.placeholder-banner {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--brass-soft); color: #8A4B30; border-bottom: 1px solid #E0BBA6;
+  padding: 9px 20px; font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.wrap { max-width: 940px; margin: 0 auto; padding: 30px 24px 70px; }
+
+.sample-head { margin-bottom: 22px; }
+.eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; color: var(--wine-soft); text-transform: uppercase; margin-bottom: 6px; }
+.sample-head h1 { font-size: 23px; color: var(--wine-deep); margin-bottom: 4px; }
+.sample-head .meta { font-size: 13px; color: var(--ink-dim); }
+.sample-head .meta code { font-family: var(--mono); font-size: 11px; background: var(--surface-2); padding: 1px 6px; border-radius: 4px; }
+
+.fp-split { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 760px) { .fp-split { grid-template-columns: 1fr; } }
+
+.fp-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: 20px; }
+.fp-card-title { font-weight: 700; font-size: 14px; color: var(--wine-deep); margin-bottom: 12px; }
+#radar { width: 100%; height: auto; display: block; }
+
+.legend { display: flex; gap: 20px; justify-content: center; margin-top: 10px; font-size: 12px; color: var(--ink-dim); flex-wrap: wrap; }
+.legend .swatch { display: inline-block; width: 22px; height: 0; border-top: 3px solid var(--wine); vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+.legend .swatch.dashed { border-top-style: dashed; border-top-color: var(--brass); }
+
+.axis-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.axis-table th { text-align: left; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); padding: 6px 8px; border-bottom: 1px solid var(--line-strong); }
+.axis-table td { padding: 7px 8px; border-bottom: 1px solid var(--line); }
+.axis-table td.num { font-family: var(--mono); font-size: 12px; text-align: right; }
+.axis-table tr:last-child td { border-bottom: none; }
+.bar { height: 6px; border-radius: 3px; background: var(--wine-mist); position: relative; overflow: hidden; min-width: 70px; }
+.bar > span { position: absolute; inset: 0 auto 0 0; background: var(--wine); border-radius: 3px; }
+
+.oracle-mock { margin-top: 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: 18px 20px; }
+.oracle-mock .fp-card-title { margin-bottom: 10px; }
+.oracle-row { display: flex; gap: 10px; }
+.oracle-row input {
+  flex: 1; font-family: var(--round); font-size: 14px; color: var(--ink);
+  padding: 11px 14px; border: 1px solid var(--line-strong); border-radius: 9px; background: var(--bg);
+}
+.oracle-row input::placeholder { color: var(--ink-faint); }
+.oracle-row a.ask {
+  display: inline-flex; align-items: center; padding: 11px 20px; border-radius: 9px;
+  background: var(--wine); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none;
+}
+.oracle-row a.ask:hover { background: var(--wine-deep); }
+.oracle-mock .note { font-size: 11px; color: var(--ink-faint); margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<header class="dev-topbar">
+  <a class="back-link" href="/app/meatcode_mockup.html">&larr; MeatCODE</a>
+  <span class="crumb"><a href="/app/dev/index.html">Dev Area</a> /</span>
+  <span class="title">Meat Fingerprint</span>
+  <span class="dev-badge">DEV AREA</span>
+</header>
+
+<div class="placeholder-banner">PLACEHOLDER &mdash; demo data, not connected to the database</div>
+
+<div class="wrap">
+  <div class="sample-head">
+    <div class="eyebrow">Meat Fingerprint</div>
+    <h1>Sample: Beef sirloin, pan-seared &mdash; demo data</h1>
+    <div class="meta">Aroma fingerprint across 8 sensory axes &middot; overlay: <code>Plant-based analog v2 (reference)</code> &middot; values are hardcoded for layout work</div>
+  </div>
+
+  <div class="fp-split">
+    <div class="fp-card">
+      <div class="fp-card-title">Aroma radar</div>
+      <canvas id="radar" width="640" height="560"></canvas>
+      <div class="legend">
+        <span><span class="swatch"></span>Beef sirloin, pan-seared</span>
+        <span><span class="swatch dashed"></span>Plant-based analog v2 (dashed)</span>
+      </div>
+    </div>
+
+    <div class="fp-card">
+      <div class="fp-card-title">Axis values (0&ndash;10, demo)</div>
+      <table class="axis-table">
+        <thead><tr><th>Axis</th><th>Beef</th><th></th><th>Analog</th></tr></thead>
+        <tbody id="axisRows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="oracle-mock">
+    <div class="fp-card-title">Ask the Oracle about this fingerprint</div>
+    <div class="oracle-row">
+      <input type="text" value="Why is the sulfurous note weaker in the plant-based analog?" readonly>
+      <a class="ask" href="/app/meatcode_mockup.html#oracle">Ask the Oracle &rarr;</a>
+    </div>
+    <div class="note">Mock only &mdash; the button routes into the product Oracle; the fingerprint itself is not passed as context yet.</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  // ── Demo data (hardcoded — no DB) ──
+  var AXES = ['Roasted', 'Meaty', 'Fatty', 'Green', 'Sulfurous', 'Nutty', 'Sweet', 'Metallic'];
+  var BEEF   = [8.4, 9.1, 7.2, 1.8, 6.5, 5.9, 3.2, 2.4];   // Beef sirloin, pan-seared
+  var ANALOG = [6.1, 5.4, 4.8, 4.6, 2.9, 6.8, 4.5, 3.7];   // Plant-based analog v2
+  var MAX = 10;
+
+  // ── Axis table ──
+  var rows = document.getElementById('axisRows');
+  var html = '';
+  for (var i = 0; i < AXES.length; i++) {
+    var pct = Math.round((BEEF[i] / MAX) * 100);
+    html += '<tr>' +
+      '<td>' + AXES[i] + '</td>' +
+      '<td class="num">' + BEEF[i].toFixed(1) + '</td>' +
+      '<td><div class="bar"><span style="width:' + pct + '%"></span></div></td>' +
+      '<td class="num">' + ANALOG[i].toFixed(1) + '</td>' +
+      '</tr>';
+  }
+  rows.innerHTML = html;
+
+  // ── Canvas radar ──
+  var canvas = document.getElementById('radar');
+  var ctx = canvas.getContext('2d');
+  var css = getComputedStyle(document.documentElement);
+  var C = {
+    wine:     (css.getPropertyValue('--wine') || '#00736E').trim(),
+    wineDeep: (css.getPropertyValue('--wine-deep') || '#015A56').trim(),
+    brass:    (css.getPropertyValue('--brass') || '#C77E5F').trim(),
+    line:     (css.getPropertyValue('--line-strong') || '#D2C8B5').trim(),
+    inkDim:   (css.getPropertyValue('--ink-dim') || '#4A4A4A').trim()
+  };
+
+  var W = canvas.width, H = canvas.height;
+  var cx = W / 2, cy = H / 2 + 6;
+  var R = Math.min(W, H) / 2 - 78;
+  var N = AXES.length;
+
+  function pt(axisIndex, value) {
+    var ang = -Math.PI / 2 + (axisIndex * 2 * Math.PI) / N;
+    var r = (value / MAX) * R;
+    return [cx + r * Math.cos(ang), cy + r * Math.sin(ang)];
+  }
+
+  // Grid rings
+  ctx.strokeStyle = C.line;
+  ctx.lineWidth = 1;
+  for (var ring = 1; ring <= 5; ring++) {
+    ctx.beginPath();
+    for (var a = 0; a <= N; a++) {
+      var p = pt(a % N, (ring / 5) * MAX);
+      if (a === 0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]);
+    }
+    ctx.stroke();
+  }
+
+  // Spokes + labels
+  ctx.font = '700 15px "Varela Round", "Heebo", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (var s = 0; s < N; s++) {
+    var edge = pt(s, MAX);
+    ctx.strokeStyle = C.line;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(edge[0], edge[1]);
+    ctx.stroke();
+    var lab = pt(s, MAX + 1.7);
+    ctx.fillStyle = C.inkDim;
+    ctx.fillText(AXES[s], lab[0], lab[1]);
+  }
+
+  function drawShape(values, stroke, fill, dashed) {
+    ctx.beginPath();
+    for (var v = 0; v <= N; v++) {
+      var p = pt(v % N, values[v % N]);
+      if (v === 0) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]);
+    }
+    ctx.closePath();
+    if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+    ctx.setLineDash(dashed ? [7, 5] : []);
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // vertex dots
+    for (var d = 0; d < N; d++) {
+      var q = pt(d, values[d]);
+      ctx.beginPath();
+      ctx.arc(q[0], q[1], 3.2, 0, 2 * Math.PI);
+      ctx.fillStyle = stroke;
+      ctx.fill();
+    }
+  }
+
+  // Primary sample (solid, filled) then comparison overlay (dashed)
+  drawShape(BEEF, C.wine, 'rgba(0, 115, 110, 0.16)', false);
+  drawShape(ANALOG, C.brass, 'rgba(199, 126, 95, 0.10)', true);
+})();
+</script>
+</body>
+</html>

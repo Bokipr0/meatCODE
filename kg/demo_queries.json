@@ -1,0 +1,518 @@
+[
+ {
+  "question": "What compounds give cooked beef its roasted and nutty aroma?",
+  "graph": {
+   "question": "What compounds give cooked beef its roasted and nutty aroma?",
+   "odours_matched": [
+    "cooked beef",
+    "nutty",
+    "roasted"
+   ],
+   "seed_molecules": [
+    "2,6-dimethyl-3-ethylpyrazine (or 3,5-dimethyl-2-ethylpyrazine)",
+    "2,4-dimethyl-3-thiazoline",
+    "2,3,5-trimethylpyrazine",
+    "4,6-dimethylpyrimidine",
+    "2,3-dimethyl-5-ethylpyrazine (or 5,6-dimethyl-2-ethylpyrazine)",
+    "2,6-dimethylpyrazine",
+    "2-ethylpyrazine",
+    "2-ethyl-3-methylpyrazine (or 3-ethyl-2-methylpyrazine)",
+    "2-(1-methylpropyl)-4,5-dimethyl-3-thiazoline",
+    "2-methylpyrazine",
+    "2,3-dimethylpyrazine",
+    "2-ethyl-5-methylpyrazine (or 5-ethyl-2-methylpyrazine)",
+    "2,5-dimethyl-3-ethylpyrazine (or 3,6-dimethyl-2-ethylpyrazine)",
+    "2-propyl-3-thiazoline",
+    "2,3-diethyl-5-methylpyrazine"
+   ],
+   "expanded_molecules": [
+    "2-ethylthiazole",
+    "2-isopropylpyrazine",
+    "4-methylthiazole",
+    "2,5-diethyl-4-methylthiazole",
+    "2-acetyl-3-methylpyrazine",
+    "2-ethyl-6-methylpyrazine",
+    "2-methoxy-3-isopropylpyrazine",
+    "4,5-diethyloxazole",
+    "4-methyl-5-hexyloxazole",
+    "2-methylthiazole",
+    "4-hexyl-5-methyloxazole",
+    "4-ethyl-5-propyloxazole"
+   ],
+   "chemistry_profile": {
+    "classes": [
+     [
+      "Pyrazines",
+      15
+     ],
+     [
+      "Sulfur compounds",
+      7
+     ],
+     [
+      "Nitrogen compounds",
+      5
+     ]
+    ],
+    "pathways": [
+     [
+      "Maillard",
+      5
+     ]
+    ],
+    "groups": [
+     [
+      "Nitrogen-containing compounds",
+      4
+     ],
+     [
+      "Sulfur containing compounds",
+      1
+     ]
+    ]
+   },
+   "papers": [],
+   "n_candidate_papers": 0
+  },
+  "flat": {
+   "papers": [
+    {
+     "id": 220,
+     "title": "Insights into the flavor endowment of aroma-active compounds in cloves (Syzygium aromaticum) to stewed beef",
+     "year": 2024,
+     "keyword_hits": 7,
+     "claim": "Clove volatiles contribute aroma-active compounds that enrich and improve stewed beef flavor during the stewing process."
+    },
+    {
+     "id": 260,
+     "title": "Ratio limitation of burnt-bitter-aroma compounds in strong-aroma Baijiu",
+     "year": 2026,
+     "keyword_hits": 7,
+     "claim": "Identified burnt-bitter-aroma compounds in strong-aroma Baijiu and developed a ratio-based analysis method to control aroma deterioration."
+    },
+    {
+     "id": 208,
+     "title": "Role of lipids in beef flavor development: A review of research from the past 20 years",
+     "year": 2025,
+     "keyword_hits": 5,
+     "claim": "Lipids influence beef flavor through volatile formation; enhancing beefy and roasted aromas improves consumer preference while oxidized and metallic notes reduce acceptance."
+    },
+    {
+     "id": 187,
+     "title": "Why Does Braising Enhance the Aroma Profile of Xinjiang Braised–Roasted Chicken? Insights into Precursor Conversion and Aroma Formation Path",
+     "year": 2026,
+     "keyword_hits": 5,
+     "claim": "Braising followed by roasting enhances aroma complexity in Xinjiang chicken through precursor conversion and multiple aroma formation pathways."
+    },
+    {
+     "id": 195,
+     "title": "Characterization of key aroma-active components in roast mutton: Integration of GC-IMS, GC–MS, and aroma recombination",
+     "year": 2026,
+     "keyword_hits": 5,
+     "claim": "Multi-technique analysis identifies key aroma-active compounds in roasted lamb and demonstrates six-minute roasting optimizes flavor and texture."
+    },
+    {
+     "id": 181,
+     "title": "Effect of alterations in phospholipids and free fatty acids on aroma-active compounds in instant-boiled chuck tender, sirloin and silverside",
+     "year": 2024,
+     "keyword_hits": 5,
+     "claim": "Lipid composition and phospholipid profiles significantly influence aroma-active volatile compounds in different beef cuts after instant-boiling."
+    }
+   ],
+   "n_candidate_papers": 311
+  }
+ },
+ {
+  "question": "Which molecules are responsible for sulfurous meaty notes?",
+  "graph": {
+   "question": "Which molecules are responsible for sulfurous meaty notes?",
+   "odours_matched": [
+    "sulfurous"
+   ],
+   "seed_molecules": [
+    "1,3,5-trithiane",
+    "2-(2-methylthioethyl)-3-methyl-4-(methylthiomethyl)thiophene",
+    "sulfurdioxide",
+    "2-methyl-4,5-dihydrothiophene",
+    "1-acetoxy-2-oxa-6-thiabicyclo[3.3.0]octane",
+    "2-tetrahydrothiophenethiol",
+    "1-butanethiol",
+    "hydrogen sulfide",
+    "2-formylpyrrole",
+    "dimethyl sulfide (methylthiomethane)",
+    "2-(2-methyl-3-furylthio)thietane",
+    "2-(3-hydroxypropyl)thiophene",
+    "2-methoxy-2-methyl-4,5-dihydro-3(2H)-thiophenone",
+    "2-methyl-3-[[(tetrahydro-2-thienyl)methyl]thio]furan",
+    "3-acetyl-2,5-dimethylthiophene"
+   ],
+   "expanded_molecules": [
+    "2-(2-hydroxyethyl)-3,4-dimethylthiophene",
+    "2-methyl-3-[[(tetrahydro-2-thienyl)methyl]thio]thiophene",
+    "3-(methyldithio)propanal",
+    "dibutyl sulfide",
+    "ethylthioethane",
+    "ethyldithioethane",
+    "4-acetyl-2,5-dimethylthiazole",
+    "2-methyl-3-(methyldithio)thiophene",
+    "2-methyl-5-methoxythiazole",
+    "2-methyl-3-furanthiol",
+    "mercaptopropanone",
+    "2-methyl-3-(methylthio)furan"
+   ],
+   "chemistry_profile": {
+    "classes": [
+     [
+      "Sulfur compounds",
+      22
+     ],
+     [
+      "Furans",
+      3
+     ],
+     [
+      "Hydrocarbons",
+      1
+     ],
+     [
+      "Nitrogen compounds",
+      1
+     ]
+    ],
+    "pathways": [
+     [
+      "Maillard",
+      3
+     ]
+    ],
+    "groups": [
+     [
+      "Sulfur containing compounds",
+      3
+     ]
+    ]
+   },
+   "papers": [
+    {
+     "id": 175,
+     "title": "Thiamine, cysteine and xylose added to the Maillard reaction of goat protein hydrolysate potentiates the formation of meat flavoring compoun",
+     "year": 2024,
+     "relevance": 95,
+     "molecules_covered": 1,
+     "which": [
+      "2-methyl-3-furanthiol"
+     ],
+     "claim": "Thiamine, cysteine, and xylose supplementation of goat protein hydrolysate potentiates meat-like flavor formation through Maillard and Strecker pathways."
+    },
+    {
+     "id": 232,
+     "title": "Mechanistic insights into off-flavor masking of textured soy protein using a Maillard reaction system with D-xylose and sulfur-containing am",
+     "year": 2026,
+     "relevance": 92,
+     "molecules_covered": 1,
+     "which": [
+      "2-methyl-3-furanthiol"
+     ],
+     "claim": "Maillard reaction systems with D-xylose and sulfur-containing amino acids effectively mask soy protein off-flavors in plant-based meat products."
+    },
+    {
+     "id": 151,
+     "title": "The Aroma of Non-Fermented and Fermented Dry-Cured Meat Products: Savory and Toasted Odors",
+     "year": 2025,
+     "relevance": 92,
+     "molecules_covered": 1,
+     "which": [
+      "2-methyl-3-(methylthio)furan"
+     ],
+     "claim": "Nitrogen and sulfur volatile compounds with low odor thresholds define savory and toasted aroma signatures in dry-cured meat products, differing between fermented and non-fermented"
+    },
+    {
+     "id": 162,
+     "title": "Production Systems and Feeding Strategies in the Aromatic Fingerprinting of Animal-Derived Foods: Invited Review",
+     "year": 2025,
+     "relevance": 91,
+     "molecules_covered": 1,
+     "which": [
+      "2-methyl-3-furanthiol"
+     ],
+     "claim": "Volatile aroma compounds in animal-derived foods arise from lipid oxidation, Maillard, Strecker, and thiamine degradation pathways, modulated by species, diet, husbandry, and proce"
+    },
+    {
+     "id": 136,
+     "title": "Effects of Lactiplantibacillus plantarum and Staphylococcus simulans fermentation on Maillard reaction and flavor characteristics in a myofi",
+     "year": 2026,
+     "relevance": 87,
+     "molecules_covered": 1,
+     "which": [
+      "2-methyl-3-furanthiol"
+     ],
+     "claim": "Lactiplantibacillus plantarum fermentation enhances the Maillard reaction and flavor formation in myofibrillar protein-glucose systems mimicking fermented sausages."
+    },
+    {
+     "id": 183,
+     "title": "Characteristics of changes in volatile organic compounds and bacterial communities in physically preserved pigeon breast meat",
+     "year": 2024,
+     "relevance": 52,
+     "molecules_covered": 1,
+     "which": [
+      "2-methyl-3-furanthiol"
+     ],
+     "claim": "Modified atmospheric packaging and electron beam irradiation extend pigeon breast meat shelf-life while modulating volatile compounds and bacterial communities."
+    }
+   ],
+   "n_candidate_papers": 8
+  },
+  "flat": {
+   "papers": [
+    {
+     "id": 99,
+     "title": "The flavour substances and key precursor peptides of meaty flavour prepared from Maillard reaction products of Lycium barbarum seed meal",
+     "year": 2025,
+     "keyword_hits": 2,
+     "claim": "Maillard reaction products from Lycium barbarum seed meal with added cysteine generate strong meaty flavor through sulfur-containing compounds and furans."
+    },
+    {
+     "id": 182,
+     "title": "Relationship between phospholipid molecules species and volatile compounds in grilled lambs during the heating process",
+     "year": 2024,
+     "keyword_hits": 2,
+     "claim": "Nineteen key volatile compounds with high odor-activity values and 142 phospholipid molecules are identified in grilled lamb, with phosphatidylcholine as the predominant phospholip"
+    },
+    {
+     "id": 167,
+     "title": "Revealing the flavor changes of spiced beef under different thermal treatment temperatures: A complementary approach with GC-IMS and GC-O-MS",
+     "year": 2025,
+     "keyword_hits": 2,
+     "claim": "Milder thermal treatment (80-95°C) of spiced beef better preserves spice flavor while moderately promoting Maillard reaction and lipid oxidation-derived meaty and caramel notes."
+    },
+    {
+     "id": 692,
+     "title": "Improving the aromatic profile of plant-based meat alternatives: Effects of leghemoglobin and myoglobin addition on volatiles.",
+     "year": 2025,
+     "keyword_hits": 2,
+     "claim": "Heme protein addition increases aldehydes and pyrazines in plant-based meat, enhancing meaty aroma while reducing off-notes."
+    },
+    {
+     "id": 202,
+     "title": "Cost-effective production of meaty aroma from porcine cells for hybrid cultivated meat",
+     "year": 2025,
+     "keyword_hits": 2,
+     "claim": "Controlling Maillard and lipid thermal degradation reactions in porcine cells generates meaty aroma from minimal cell quantities via freeze-thaw flavor precursor extraction."
+    },
+    {
+     "id": 192,
+     "title": "Characterization of aroma release and perception during ginger-infused stewed beef oral processing",
+     "year": 2025,
+     "keyword_hits": 2,
+     "claim": "Ginger infusion enhances meaty and fatty aroma attributes in stewed beef during oral processing, with meaty note dominant during chewing."
+    }
+   ],
+   "n_candidate_papers": 32
+  }
+ },
+ {
+  "question": "What causes green, beany off-notes in plant protein?",
+  "graph": {
+   "question": "What causes green, beany off-notes in plant protein?",
+   "odours_matched": [
+    "green",
+    "beany"
+   ],
+   "seed_molecules": [
+    "4-isopropenylpyridine",
+    "2-(2',3'-epoxy-3'-methylbutyl)-3-methylfuran",
+    "3,4-dimethylpyridine",
+    "2-ethylthiazole",
+    "2-methoxy-3-acetylpyrazine",
+    "2-butyl-5-methylfuran",
+    "2-ethylpyridine",
+    "2-pentenal",
+    "O-decylhydroxylamine",
+    "(E)-2-nonenal",
+    "3-hydroxy-2-butanone (acetoin)",
+    "(Z)-3,7-dimethyl-3,6-octadienal",
+    "butanal (butyraldehyde)",
+    "4,5-diethyloxazole",
+    "4-mercaptotetrahydro-3-furanone"
+   ],
+   "expanded_molecules": [
+    "2-isopropylpyrazine",
+    "4-methylthiazole",
+    "2,5-diethyl-4-methylthiazole",
+    "2-propyl-3-thiazoline",
+    "2-propylthiazole",
+    "2,4-diethyl-5-propyloxazole",
+    "(Z)-3-hexenal",
+    "4-methyl-5-hexyloxazole",
+    "2-methylthiazole",
+    "4-hexyl-5-methyloxazole",
+    "4-ethyl-5-propyloxazole",
+    "4-ethyl-5-butyloxazole"
+   ],
+   "chemistry_profile": {
+    "classes": [
+     [
+      "Nitrogen compounds",
+      10
+     ],
+     [
+      "Sulfur compounds",
+      6
+     ],
+     [
+      "Aldehydes",
+      5
+     ],
+     [
+      "Furans",
+      3
+     ],
+     [
+      "Pyrazines",
+      2
+     ]
+    ],
+    "pathways": [
+     [
+      "Maillard",
+      2
+     ],
+     [
+      "Lipid oxidation",
+      2
+     ]
+    ],
+    "groups": [
+     [
+      "aldehydes",
+      2
+     ],
+     [
+      "Nitrogen-containing compounds",
+      1
+     ],
+     [
+      "Sulfur containing compounds",
+      1
+     ]
+    ]
+   },
+   "papers": [
+    {
+     "id": 200,
+     "title": "Characterization of key aromas in different breeds of pork based on molecular sensory science and computational chemistry",
+     "year": 2026,
+     "relevance": 92,
+     "molecules_covered": 1,
+     "which": [
+      "(E)-2-nonenal"
+     ],
+     "claim": "Different pork breeds develop distinct aroma profiles during high-temperature cooking, characterized by breed-specific volatile compound patterns."
+    },
+    {
+     "id": 181,
+     "title": "Effect of alterations in phospholipids and free fatty acids on aroma-active compounds in instant-boiled chuck tender, sirloin and silverside",
+     "year": 2024,
+     "relevance": 88,
+     "molecules_covered": 1,
+     "which": [
+      "(E)-2-nonenal"
+     ],
+     "claim": "Lipid composition and phospholipid profiles significantly influence aroma-active volatile compounds in different beef cuts after instant-boiling."
+    },
+    {
+     "id": 827,
+     "title": "Structural remodeling and flavor binding: Unraveling the interaction mechanism of chicken skin collagen with key aroma compounds",
+     "year": 2026,
+     "relevance": 78,
+     "molecules_covered": 1,
+     "which": [
+      "(E)-2-nonenal"
+     ],
+     "claim": "Chicken skin collagen binds key aroma compounds with structure-dependent affinity, affecting flavor retention in meat products."
+    },
+    {
+     "id": 561,
+     "title": "Comparative analysis of meat quality and flavor profiles between Bian chicken and Cobb broiler using FTIR and GC×GC-TOF MS technologies.",
+     "year": 2025,
+     "relevance": 78,
+     "molecules_covered": 1,
+     "which": [
+      "(E)-2-nonenal"
+     ],
+     "claim": "Bian chicken displays superior tenderness and distinct flavor profiles compared to Cobb broiler, characterized by lower pH and different volatile compound compositions."
+    },
+    {
+     "id": 217,
+     "title": "An integrated metabolomics-flavoromics analysis reveals flavor diversity in indigenous and hybrid cattle via UHPLC-MS/MS and GC×GC-TOF-MS",
+     "year": 2025,
+     "relevance": 75,
+     "molecules_covered": 1,
+     "which": [
+      "(E)-2-nonenal"
+     ],
+     "claim": "Breed-specific flavor metabolites in cattle correlate with beta-alanine, histidine, glutathione, and purine metabolism pathways."
+    },
+    {
+     "id": 536,
+     "title": "Extensive \"Heart-Cut\" 2D GC-MS/Olfactometry, Complementary to Aroma Extract Dilution Analysis, Odor Activity Value Evaluation, and Aroma Rec",
+     "year": 2026,
+     "relevance": 72,
+     "molecules_covered": 1,
+     "which": [
+      "(E)-2-nonenal"
+     ],
+     "claim": "Five-grain fermented baijiu aroma compounds are comprehensively characterized using 2D GC-MS/olfactometry to assess raw material contributions to product quality."
+    }
+   ],
+   "n_candidate_papers": 10
+  },
+  "flat": {
+   "papers": [
+    {
+     "id": 311,
+     "title": "Pea protein: Advances in applications, protein-flavor interactions, and flavor enhancement strategies",
+     "year": 2026,
+     "keyword_hits": 6,
+     "claim": "Pea protein is a sustainable alternative to animal proteins for plant-based meat analogues, requiring flavor enhancement strategies to address off-notes."
+    },
+    {
+     "id": 136,
+     "title": "Effects of Lactiplantibacillus plantarum and Staphylococcus simulans fermentation on Maillard reaction and flavor characteristics in a myofi",
+     "year": 2026,
+     "keyword_hits": 5,
+     "claim": "Lactiplantibacillus plantarum fermentation enhances the Maillard reaction and flavor formation in myofibrillar protein-glucose systems mimicking fermented sausages."
+    },
+    {
+     "id": 322,
+     "title": "Plant-protein isolates and flavour perception: Understanding mechanisms and strategies to balance flavour retention and release",
+     "year": 2025,
+     "keyword_hits": 6,
+     "claim": "Plant-protein isolates interact with flavor compounds through chemical bonding and processing factors, affecting volatility and sensory perception including off-notes like beany an"
+    },
+    {
+     "id": 351,
+     "title": "Hybrid plant-dairy cheese: Effects of lactic acid bacteria and plant proteins on composition, proteolysis, and flavor profile",
+     "year": 2025,
+     "keyword_hits": 5,
+     "claim": "Lactic acid bacteria selection improves flavor profile in hybrid plant-dairy cheese combining bovine milk with rice or pea protein."
+    },
+    {
+     "id": 692,
+     "title": "Improving the aromatic profile of plant-based meat alternatives: Effects of leghemoglobin and myoglobin addition on volatiles.",
+     "year": 2025,
+     "keyword_hits": 4,
+     "claim": "Heme protein addition increases aldehydes and pyrazines in plant-based meat, enhancing meaty aroma while reducing off-notes."
+    },
+    {
+     "id": 374,
+     "title": "Presence and Impact of Aldol Condensation Products as Off-Notes in Plant-Based Protein Sources",
+     "year": 2025,
+     "keyword_hits": 4,
+     "claim": "α,β-unsaturated aldehydes from aldol condensation of pentanal and hexanal produce off-note soapy odors in pea protein isolates."
+    }
+   ],
+   "n_candidate_papers": 231
+  }
+ }
+]

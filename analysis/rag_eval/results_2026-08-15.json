@@ -1,0 +1,663 @@
+{
+ "summary": {
+  "date": "2026-08-15",
+  "n_questions": 8,
+  "n_scored": 8,
+  "avg_groundedness": 3.4,
+  "avg_citation_accuracy": 4.8,
+  "avg_coverage": 4.1,
+  "answer_model": "claude-sonnet-4-6",
+  "verifier_model": "claude-sonnet-4-6",
+  "retrieval": "search_vec ts_rank_cd · relevance_llm>=60 gate · top-6 · OR fallback"
+ },
+ "results": [
+  {
+   "id": "Q1",
+   "topic": "maillard",
+   "question": "What are the key Maillard reaction products responsible for the roasted and meaty aroma of cooked beef?",
+   "retrieval": {
+    "n_sources": 6,
+    "used_fallback": true,
+    "source_ids": [
+     79,
+     78,
+     99,
+     74,
+     205,
+     76
+    ],
+    "sources": [
+     {
+      "id": 79,
+      "title": "Maillard Reaction in Flour Product Processing: Mechanism, Impact on Quality, and Mitigation Strategies of Harmful Products",
+      "year": 2025,
+      "rank": 11.6
+     },
+     {
+      "id": 78,
+      "title": "Studies on the Increasing Saltiness and Antioxidant Effects of Peanut Protein Maillard Reaction Products",
+      "year": 2024,
+      "rank": 10.6
+     },
+     {
+      "id": 99,
+      "title": "The flavour substances and key precursor peptides of meaty flavour prepared from Maillard reaction products of Lycium barbarum seed meal",
+      "year": 2025,
+      "rank": 10.6
+     },
+     {
+      "id": 74,
+      "title": "Maillard Reaction: Mechanism, Influencing Parameters, Advantages, Disadvantages, and Food Industrial Applications: A Review",
+      "year": 2025,
+      "rank": 10.400001
+     },
+     {
+      "id": 205,
+      "title": "Difference comparison of characteristic aroma compounds between braised pork cooked by traditional open-fire and induction cooker and the potential formation cause under electromagnetic cooking",
+      "year": 2024,
+      "rank": 9.8
+     },
+     {
+      "id": 76,
+      "title": "Aroma formation in peptide-involved Maillard reaction: mechanistic insights, key factors, and control strategies",
+      "year": 2026,
+      "rank": 9.6
+     }
+    ]
+   },
+   "answer": "The roasted and meaty character of cooked beef emerges from an intricate web of volatile compounds generated when amino acids and reducing sugars react under heat. The most critical contributors fall into a few chemical classes. Pyrazines — particularly 2-methylpyrazine, 2,5-dimethylpyrazine, and 2-acetylpyrazine — deliver the roasted, nutty top notes that define high-heat sear aromas. These form via condensation of α-dicarbonyl intermediates (from sugar fragmentation) with amino compounds, followed by oxidative aromatization [76]. Their threshold concentrations are low enough that even minor quantities register strongly in GC-O analyses.\n\nSulfur-containing heterocycles are arguably the most potent contributors to the specifically \"meaty\" quality. 2-Methyl-3-furanthiol (MFT) and its disulfide bis(2-methyl-3-furyl)disulfide have extraordinarily low odor thresholds (in the sub-parts-per-trillion range) and are generated when cysteine reacts with ribose — a reaction central to thermal meat flavor development. 2-Furfurylthiol, methional (derived from methionine via Strecker degradation), and thiophene derivatives add further roasted-sulfurous dimensions [99]. Thiazoles and thiazolines, formed from cysteine with carbonyl fragments, contribute green-meaty and vegetable-like nuances that round the profile.\n\nStrecker aldehydes are also indispensable. Strecker degradation of leucine gives 3-methylbutanal (malty), phenylalanine yields phenylacetaldehyde (floral-honey), and methionine produces methional (cooked-potato, brothy). These aldehydes themselves have low thresholds and interact synergistically with the heterocycles described above [76]. In braised or slow-cooked beef, longer heating at moderate temperatures also generates furans such as 2-furfural and hydroxymethylfurfural from sugar degradation, adding sweet-caramel nuances alongside the roast notes [205].\n\nLipid-derived volatiles amplify the Maillard framework rather than replace it. Alkenals such as (E)-2-nonenal and (E,E)-2,4-decadienal from oleic and linoleic acid oxidation contribute fatty-fried notes, and these carbonyls can themselves feed back into Maillard-type condensations with amino acids to generate additional heterocycles. The interplay between lipid oxidation products and Maillard intermediates is one reason why the fat content and fatty acid profile of beef so strongly modulates its final aroma character. GC-MS combined with GC-O and odor activity value (OAV) calculation remains the standard workflow for ranking which of these many compounds actually drives perception, consistently elevating MFT, its disulfide, methional, and key pyrazines to the top tier.\n\nFollow-ups: How does ribose differ from glucose as a Maillard co-reactant for generating sulfur-containing meaty volatiles? · What GC-O techniques are most effective for pinpointing ultra-low-threshold compounds like 2-methyl-3-furanthiol in a complex beef matrix? · How can plant-protein-based systems be engineered to replicate the cysteine-ribose reaction pathway for meat analog applications?",
+   "cited_ids": [
+    "205",
+    "76",
+    "99"
+   ],
+   "verifier": {
+    "groundedness": 3,
+    "citation_accuracy": 4,
+    "coverage": 3,
+    "criticisms": [
+     "The central claims about 2-methyl-3-furanthiol (MFT), bis(2-methyl-3-furyl)disulfide, and cysteine-ribose reactions generating meaty aroma are not supported by any of the listed sources. None of the six sources discuss MFT, its disulfide, or cysteine-ribose chemistry in beef; this is accurate chemistry knowledge but completely unsupported by the closed source set.",
+     "The citation [99] is attached to the claim about '2-Furfurylthiol, methional, and thiophene derivatives,' but source [99] only mentions these compounds in the context of Lycium barbarum seed meal Maillard reaction products — not cooked beef. The extrapolation to beef is unsupported by that source.",
+     "The citation [76] is used to support claims about pyrazine formation mechanisms and Strecker aldehydes in beef, but source [76] discusses peptide-involved Maillard reactions in general food systems, with no specific reference to beef, 2-methylpyrazine, or the named Strecker aldehydes (3-methylbutanal, phenylacetaldehyde, methional).",
+     "The citation [205] is used to support the claim about furans (2-furfural, HMF) in braised beef, but source [205] is about braised pork (not beef), and its main finding concerns aldehydes like hexanal and methanethiol via open-fire vs. induction cooking — not furan formation from sugar degradation.",
+     "Key sources [79], [78], and [74] are entirely ignored in the answer despite being retrieved. None of their content is used, representing a coverage failure relative to the available source set.",
+     "The claim that 'GC-MS combined with GC-O and OAV calculation remains the standard workflow' and the specific sub-parts-per-trillion odor thresholds for MFT are asserted without any grounding in the provided sources, constituting unsupported claims drawn from external knowledge."
+    ],
+    "verdict": "The answer provides chemically plausible information about beef aroma compounds but is overwhelmingly drawn from external knowledge rather than the closed source set, with citations that are either off-topic (braised pork, Lycium seed meal, general flour products) or only peripherally relevant, making it poorly grounded and citation-inaccurate.",
+    "citations_found": [
+     "76",
+     "99",
+     "205"
+    ]
+   }
+  },
+  {
+   "id": "Q2",
+   "topic": "maillard",
+   "question": "How do cysteine and ribose interact during thermal processing to generate meaty flavor compounds, and what conditions favor this reaction?",
+   "retrieval": {
+    "n_sources": 6,
+    "used_fallback": true,
+    "source_ids": [
+     137,
+     699,
+     508,
+     144,
+     132,
+     124
+    ],
+    "sources": [
+     {
+      "id": 137,
+      "title": "Effect of lysine on the cysteine-xylose Maillard reaction to form flavor compounds",
+      "year": 2024,
+      "rank": 12.8
+     },
+     {
+      "id": 699,
+      "title": "The development of chicken meat flavor from the interaction between Maillard reaction intermediates and enzymatically hydrolyzed-oxidized chicken fat",
+      "year": 2025,
+      "rank": 12.6
+     },
+     {
+      "id": 508,
+      "title": "Elucidating the Impact of High-Temperature Daqu on Base Baijiu of Sauce-Flavor Baijiu: From Key Aroma Compounds to Microbial Origins",
+      "year": 2026,
+      "rank": 12.400001
+     },
+     {
+      "id": 144,
+      "title": "Effect of protease reaction conditions on volatile compounds generated in Maillard reaction products from soy protein hydrolysates",
+      "year": 2024,
+      "rank": 11.8
+     },
+     {
+      "id": 132,
+      "title": "Effects of unsaturated C18 fatty acids on “glucose-glutathione” Maillard reaction: Comparison and formation pathways of initial stage and meaty flavor compounds",
+      "year": 2024,
+      "rank": 10.4
+     },
+     {
+      "id": 124,
+      "title": "The flavor properties of Amadori rearrangement products and their potentials in flavor replication of plant-based meat analogs: a review",
+      "year": 2025,
+      "rank": 9.6
+     }
+    ]
+   },
+   "answer": "Cysteine and ribose are among the most potent precursor pairs in meat flavor chemistry. When heated together, the amino group of cysteine reacts with the carbonyl of ribose to form a Schiff base, which then undergoes Amadori rearrangement to yield a relatively stable ketoamine intermediate. This Amadori compound is the true flavor precursor: upon further heating it fragments via retro-aldol and β-elimination pathways, releasing reactive carbonyl species and hydrogen sulfide or other sulfur intermediates from the cysteine thiol group. These fragments then recombine to yield the characteristic heterocyclic sulfur compounds associated with cooked meat aroma — principally 2-methyl-3-furanthiol, bis(2-methyl-3-furyl) disulfide, 2-furfurylthiol, thiophenes, and thiazolines. The bicyclic compound 2-methyl-3-furanthiol is arguably the single most potent meaty odorant generated by this route, with a detection threshold in the low parts per trillion range.\n\nReaction conditions strongly modulate both yield and selectivity. Temperature is the dominant driver: the cysteine-ribose system becomes highly productive above 120°C, with peak meaty volatile generation typically observed between 140°C and 160°C in aqueous model systems. Below 100°C the Amadori compound accumulates but fragmentation is slow, so sulfur heterocycle yields are poor. pH is equally critical — mildly acidic to near-neutral conditions (pH 5–7) favor the furanone and furanthiol pathways, while more alkaline conditions push the reaction toward pyrazines and other nitrogen heterocycles at the expense of sulfur compounds. Water activity matters too: lower aw concentrates intermediates and accelerates condensation steps, which is why dry or low-moisture heating (e.g., roasting, extrusion) produces a richer heterocyclic palette than boiling.\n\nThe ratio of amino acid to sugar and the presence of other amino acids profoundly shift product distribution. When lysine is present alongside cysteine and xylose, at a 1:1 molar ratio of lysine to cysteine the yield of sulfur-containing meaty compounds is maximized; excess lysine diverts the reaction toward pyrazine formation as lysine competes to form its own Amadori compound, sequestering carbonyl intermediates away from sulfur pathways [137]. Ribose is distinctly more reactive than glucose or xylose in driving sulfur volatile formation because the pentose degrades more readily at moderate temperatures, generating a higher flux of reactive dicarbonyls such as methylglyoxal and 2-oxopropanal that are needed to build the furan ring of 2-methyl-3-furanthiol.\n\nIn plant-based meat applications, soy protein hydrolysates are frequently combined with cysteine and ribose to generate Maillard reaction products that approximate cooked meat aroma. The protease used to generate the hydrolysate matters: flavourzyme tends to release more free glutamine and branched-chain amino acids that participate as secondary reactants, while trypsin produces a different peptide size distribution, both of which alter the volatile profile of the resulting MRPs [144]. Amadori rearrangement products themselves, when isolated and used directly as ingredients, offer a stabilized flavor precursor format that releases meaty volatiles only upon heating — a useful property for designing plant-based products that develop authentic aroma during cooking rather than during storage [124].\n\nFollow-ups: How does pH control during the cysteine-ribose reaction shift the ratio of furanthiol to thiophene products? · What role does 2-methyl-3-furanthiol play relative to bis(2-methyl-3-furyl) disulfide in perceived meaty intensity, and how are they interconverted? · Can isolated Amadori rearrangement products from cysteine-ribose be used as shelf-stable flavor precursors in extruded plant-based meat, and what are the processing challenges?",
+   "cited_ids": [
+    "124",
+    "137",
+    "144"
+   ],
+   "verifier": {
+    "groundedness": 4,
+    "citation_accuracy": 7,
+    "coverage": 5,
+    "criticisms": [
+     "The detailed mechanistic description of Schiff base formation, Amadori rearrangement fragmentation via retro-aldol and β-elimination pathways, and generation of specific compounds like 2-methyl-3-furanthiol, bis(2-methyl-3-furyl) disulfide, and 2-furfurylthiol is entirely unsupported by any of the listed sources. None of the source abstracts describe these mechanistic steps or name these specific odorants, making these claims ungrounded.",
+     "The temperature range cited (140°C–160°C for peak meaty volatile generation, 'above 120°C becomes highly productive') contradicts source [699], which states 120°C is favorable for meat flavor formation and 80°C is optimal for EHOC treatment — yet these specific temperature thresholds for cysteine-ribose are not sourced from any listed document and are presented without citation.",
+     "The pH discussion (pH 5–7 favoring furanthiol/furanone pathways; alkaline conditions favoring pyrazines) is presented as established fact with no citation and no supporting text found in any of the listed sources.",
+     "The claim that 'ribose is distinctly more reactive than glucose or xylose' due to pentose degradation generating methylglyoxal and 2-oxopropanal is entirely unsupported by the listed sources. No source compares ribose and xylose reactivity in this way.",
+     "The claim about water activity (lower aw concentrating intermediates and accelerating condensation, producing richer heterocyclic palette in dry/low-moisture heating) is presented without citation and is not traceable to any of the listed sources.",
+     "Source [699] is not cited anywhere in the answer despite being directly relevant to Amadori reaction intermediates (specifically 2-threityl-thiazolidine-4-carboxylic acid) and meat flavor formation conditions, representing a significant coverage gap. Similarly, sources [132] and [124] contain relevant ARPs content that is underutilized."
+    ],
+    "verdict": "The answer provides only a handful of grounded claims (lysine/cysteine ratio from [137], protease effects from [144], ARPs from [124]) while the majority of its scientific content — mechanisms, specific odorant identities, temperature ranges, pH effects, water activity effects, and ribose reactivity comparisons — is entirely unsupported by the closed source set.",
+    "citations_found": [
+     "137",
+     "144",
+     "124"
+    ]
+   }
+  },
+  {
+   "id": "Q3",
+   "topic": "sulfur_volatiles",
+   "question": "Which sulfur-containing volatiles are most important for cooked meat flavor, and through what pathways are they formed?",
+   "retrieval": {
+    "n_sources": 6,
+    "used_fallback": true,
+    "source_ids": [
+     155,
+     540,
+     550,
+     369,
+     124,
+     608
+    ],
+    "sources": [
+     {
+      "id": 155,
+      "title": "Effective Strategies for Understanding Meat Flavor: A Review",
+      "year": 2025,
+      "rank": 11.6
+     },
+     {
+      "id": 540,
+      "title": "Non-volatile and volatile compound analyses revealed the effect of oregano essential oil on the flavor characteristics of beef.",
+      "year": 2026,
+      "rank": 11.400001
+     },
+     {
+      "id": 550,
+      "title": "Modulate meat flavor by different forms of Iron with chicken breast as a model.",
+      "year": 2026,
+      "rank": 10.6
+     },
+     {
+      "id": 369,
+      "title": "Flavor of extruded meat analogs: A review on composition, influencing factors, and analytical techniques",
+      "year": 2024,
+      "rank": 10.400001
+     },
+     {
+      "id": 124,
+      "title": "The flavor properties of Amadori rearrangement products and their potentials in flavor replication of plant-based meat analogs: a review",
+      "year": 2025,
+      "rank": 10.2
+     },
+     {
+      "id": 608,
+      "title": "Effect of Replacing Soybean Meal with Cottonseed Meal or Rapeseed Meal on Growth Performance, Meat Quality, and Metabolome of Raw and Cooked Meat in Finishing Lambs.",
+      "year": 2026,
+      "rank": 9.8
+     }
+    ]
+   },
+   "answer": "Sulfur-containing volatiles are among the most potent contributors to cooked meat aroma, often active at parts-per-billion or even parts-per-trillion thresholds. The most important ones include hydrogen sulfide (H₂S), methanethiol, dimethyl sulfide, dimethyl disulfide, dimethyl trisulfide, thiophenes, thiolanes, and — critically — the thiazoles and thiazolines. Furan-2(3H)-thione and its relatives also contribute, but the single most impactful group for \"meaty\" character is the thiazoline/thiazole family, alongside bis(2-methyl-3-furyl) disulfide, which has one of the lowest odor thresholds of any known food volatile (sub-nanogram per liter range) and delivers a roasted, sulfurous, intensely meaty note. [155]\n\nThe primary biosynthetic feedstock is the amino acid cysteine. During heating, cysteine undergoes thermal degradation via β-elimination to release H₂S, ammonia, and pyruvate. H₂S is the central reactive intermediate: it condenses with carbonyl compounds from the Maillard reaction — particularly with dicarbonyls such as methylglyoxal and diacetyl — to generate the ring-closure products that become thiophenes, thiolanes, and thiazolines. Cysteine can also react directly with reducing sugars through the Maillard pathway, and the Amadori rearrangement products formed early in that cascade are important reservoirs that feed into sulfur-volatile generation later in cooking. [124] Methionine contributes a separate channel: Strecker degradation of methionine yields methanethiol, which is then available to oxidize to dimethyl disulfide and dimethyl trisulfide, or to participate in further condensations.\n\nHeme iron and free iron accelerate these pathways significantly. Heme iron catalyzes lipid oxidation, generating alkenals and other reactive carbonyls that intersect with H₂S and methanethiol to form additional sulfur heterocycles. [550] The lipid-derived aldehydes — 2-octenal, 2,4-decadienal — can themselves react with H₂S to give thiolane and dithiolane structures that are species-characteristic; this is part of why beef, pork, and lamb sulfur-volatile profiles differ despite sharing similar amino acid complants.\n\nTemperature and water activity govern which of these pathways dominate. At lower cook temperatures (below ~140 °C), aliphatic sulfur compounds like H₂S, methanethiol, and dimethyl sulfides prevail. Higher surface temperatures favor ring-forming condensations that generate the thiophenes, thiazoles, and furanones — the \"roasted\" and \"browned\" sulfur notes associated with searing. In plant-based and extruded meat analogs, replicating this chemistry is challenging because the protein matrix, sugar inventory, and iron speciation all differ from whole muscle, making the ARP-based Maillard strategy and deliberate cysteine addition among the more tractable approaches to engineering an authentic sulfur-volatile signature. [369]\n\nFollow-ups: How does heme iron concentration specifically shift the ratio of aliphatic to heterocyclic sulfur volatiles? · What analytical approaches best capture ultra-low-threshold sulfur compounds like bis(2-methyl-3-furyl) disulfide in meat headspace? · Can Amadori rearrangement products from cysteine–glucose pairs reliably reproduce the sulfur-volatile profile of beef when applied to soy-protein extrudates?",
+   "cited_ids": [
+    "124",
+    "155",
+    "369",
+    "550"
+   ],
+   "verifier": {
+    "groundedness": 2,
+    "citation_accuracy": 2,
+    "coverage": 2,
+    "criticisms": [
+     "The answer's detailed claims about specific sulfur volatiles (hydrogen sulfide, methanethiol, dimethyl sulfide, dimethyl disulfide, dimethyl trisulfide, thiophenes, thiolanes, thiazoles, thiazolines, bis(2-methyl-3-furyl) disulfide and its odor threshold) are not supported by any of the six sources. Source [155] only broadly mentions Maillard reaction products, lipids, and proteins as flavor precursors — it contains no specific information about sulfur-containing volatiles or their formation pathways.",
+     "The citation of [124] to support the claim that 'Amadori rearrangement products formed early in that cascade are important reservoirs that feed into sulfur-volatile generation' is an over-claim. Source [124] discusses ARPs as Maillard intermediates for plant-based meat analogs generally; it does not specifically state ARPs feed into sulfur-volatile generation via H₂S condensation with dicarbonyls.",
+     "The citation of [550] to support the claim that 'Heme iron catalyzes lipid oxidation, generating alkenals and other reactive carbonyls that intersect with H₂S and methanethiol to form additional sulfur heterocycles' is inaccurate. Source [550] does discuss heme iron and lipid oxidation but makes no mention of H₂S, methanethiol, or formation of sulfur heterocycles — the specific mechanistic link claimed is not in the source.",
+     "The citation of [369] to support claims about temperature-dependent pathway dominance (below 140°C vs. higher temperatures producing different sulfur volatile classes) is unsupported. Source [369] covers flavor in extruded meat analogs and mentions lipid oxidation and Maillard reactions generally but contains no information about temperature thresholds and their effects on sulfur volatile speciation.",
+     "Extensive mechanistic claims — cysteine β-elimination yielding H₂S/ammonia/pyruvate, condensation with methylglyoxal and diacetyl to form thiophenes/thiolanes/thiazolines, Strecker degradation of methionine to methanethiol, lipid-derived aldehydes reacting with H₂S to give thiolane/dithiolane structures — appear nowhere in any of the six sources and are entirely unsupported by the closed source set.",
+     "Source [540] (oregano essential oil effect on beef flavor) and [608] (cottonseed/rapeseed meal in lamb diets) were retrieved but completely ignored in the answer, representing poor use of available sources, though neither source contains specific sulfur volatile pathway information — indicating a retrieval failure in that the source set is fundamentally inadequate to answer this question."
+    ],
+    "verdict": "The answer is largely fabricated from external knowledge unsupported by the closed source set; while the chemistry described may be broadly accurate, virtually none of the specific claims about sulfur volatiles or their formation pathways can be traced to any of the six provided sources, and the citations used are either tangential or misleading.",
+    "citations_found": [
+     "155",
+     "124",
+     "550",
+     "369"
+    ]
+   }
+  },
+  {
+   "id": "Q4",
+   "topic": "sulfur_volatiles",
+   "question": "What role does thiamine degradation play in generating meaty sulfur aroma compounds such as 2-methyl-3-furanthiol?",
+   "retrieval": {
+    "n_sources": 6,
+    "used_fallback": true,
+    "source_ids": [
+     205,
+     258,
+     163,
+     189,
+     194,
+     536
+    ],
+    "sources": [
+     {
+      "id": 205,
+      "title": "Difference comparison of characteristic aroma compounds between braised pork cooked by traditional open-fire and induction cooker and the potential formation cause under electromagnetic cooking",
+      "year": 2024,
+      "rank": 10.8
+     },
+     {
+      "id": 258,
+      "title": "Relationship between sulfur compounds and Baijiu flavor: composition, flavor characteristics, and modulation",
+      "year": 2026,
+      "rank": 9.2
+     },
+     {
+      "id": 163,
+      "title": "Characteristic aroma changes during the sauce-flavoured black pork processing based on HS-SPME-GC-O-MS and aroma recombination/omission experiments of the final product",
+      "year": 2025,
+      "rank": 9.2
+     },
+     {
+      "id": 189,
+      "title": "Identification and comparison of aroma and taste-related compounds from breast meat of three breeds of Korean native chickens",
+      "year": 2024,
+      "rank": 8.4
+     },
+     {
+      "id": 194,
+      "title": "Characterization of Key Aroma Compounds in Dongpo Pork Dish and Their Dynamic Changes During Storage",
+      "year": 2025,
+      "rank": 8.0
+     },
+     {
+      "id": 536,
+      "title": "Extensive \"Heart-Cut\" 2D GC-MS/Olfactometry, Complementary to Aroma Extract Dilution Analysis, Odor Activity Value Evaluation, and Aroma Recombination Study, to Assess the Contribution of \"Five-Grain\" Derived Compounds to Baijiu Aroma.",
+      "year": 2026,
+      "rank": 8.0
+     }
+    ]
+   },
+   "answer": "Thiamine (vitamin B1) is one of the most important precursors to meat-characteristic sulfur volatiles, and its thermal degradation is central to why cooked meat smells the way it does. The molecule contains both a pyrimidine ring and a thiazole ring; under heating, the thiazole moiety fragments to release reactive sulfur-containing intermediates, most notably hydrogen sulfide and various carbonyl fragments. These building blocks then participate in a cascade of condensation and cyclization reactions that ultimately produce the heterocyclic sulfur compounds most closely associated with roasted, meaty aroma.\n\n2-Methyl-3-furanthiol (2-MFT) is considered one of the single most important contributors to cooked meat aroma, with an odor threshold in the low parts-per-trillion range. Its formation from thiamine involves the thiazole ring opening to yield acetaldehyde and a thiol-containing fragment, which then reacts with Maillard-derived dicarbonyls — particularly 2-oxopropanal and related 1,2-dicarbonyls generated from sugar degradation — to form the furan backbone bearing the thiol substituent. Ribose is a particularly efficient co-reactant because it degrades faster than glucose under mild heating, which is why reaction flavor systems for meat analogs often use ribose–cysteine or ribose–thiamine mixtures to boost 2-MFT yield.\n\nThe disulfide bis(2-methyl-3-furyl) disulfide, formed by oxidative coupling of two 2-MFT molecules, has an even lower threshold and amplifies the meaty impression at vanishingly small concentrations; it can reform 2-MFT under reducing conditions in the food matrix, effectively acting as a reservoir. Other thiamine-derived sulfur compounds formed through similar pathways include 2-methyl-3-(methyldithio)furan, 3-mercapto-2-pentanone, and various thiophenes and thiolanes. Furanones such as 4-hydroxy-2,5-dimethyl-3(2H)-furanone (HDMF, or furaneol) can also arise in parallel and then react with hydrogen sulfide to give further thiol variants.\n\nFor plant-based and cultivated meat applications, thiamine is deliberately added to reaction flavoring systems precisely to drive this chemistry. Controlling pH, water activity, temperature, and reaction time allows formulators to shift the product distribution toward 2-MFT and away from undesired overreaction products like sulfurous or eggy notes from excess H₂S. Analytical work tracking these compounds typically couples HS-SPME with GC-MS and GC-olfactometry [163], allowing researchers to correlate specific volatile concentrations with sensory intensity and confirm which thiamine-derived compounds carry the highest odor activity values in a given matrix.\n\nFollow-ups: How does ribose compare to glucose as a co-reactant with thiamine for maximizing 2-MFT yield in reaction flavors? · What strategies can suppress excess H₂S formation during thiamine-based Maillard reactions in plant protein matrices? · How does the redox environment of a cultivated meat scaffold influence the 2-MFT / bis(2-methyl-3-furyl) disulfide equilibrium during cooking?",
+   "cited_ids": [
+    "163"
+   ],
+   "verifier": {
+    "groundedness": 1,
+    "citation_accuracy": 1,
+    "coverage": 1,
+    "criticisms": [
+     "The entire mechanistic account of thiamine degradation — thiazole ring opening, release of H2S and carbonyl fragments, formation of 2-methyl-3-furanthiol via reaction with Maillard-derived dicarbonyls — is unsupported by any of the six listed sources, none of which discuss thiamine chemistry or 2-MFT formation pathways.",
+     "The claim about ribose being a more efficient co-reactant than glucose for 2-MFT production in reaction flavor systems appears nowhere in any listed source; this is textbook knowledge introduced without grounding.",
+     "The citation [163] attached to 'HS-SPME with GC-MS and GC-olfactometry' is misleading: while source [163] does use HS-SPME-GC-O-MS, it studies sauce-flavoured black pork and does not discuss thiamine degradation, 2-MFT, or odor activity values for thiamine-derived compounds as implied by the sentence's context.",
+     "Claims about bis(2-methyl-3-furyl) disulfide acting as a reservoir for 2-MFT under reducing conditions, and about 3-mercapto-2-pentanone and thiolanes as thiamine-derived products, are entirely absent from all listed sources.",
+     "The discussion of plant-based and cultivated meat applications of thiamine in reaction flavoring systems is completely fabricated relative to the source set, which contains no sources on this topic.",
+     "Retrieval failure: none of the six sources is relevant to the question about thiamine degradation and 2-MFT formation; the sources cover braised pork aroma, Baijiu sulfur compounds, chicken breast volatiles, and grain fermentation — none addresses thiamine chemistry."
+    ],
+    "verdict": "The answer is almost entirely unsupported by the provided sources, with only a single tangential citation to [163] that does not actually back the specific claim made; virtually all substantive scientific content is drawn from external knowledge absent from the closed source set.",
+    "citations_found": [
+     "163"
+    ]
+   }
+  },
+  {
+   "id": "Q5",
+   "topic": "plant_protein_offnotes",
+   "question": "What causes the green and beany off-notes in pea and soy protein ingredients, and which strategies reduce them?",
+   "retrieval": {
+    "n_sources": 6,
+    "used_fallback": true,
+    "source_ids": [
+     315,
+     311,
+     318,
+     333,
+     312,
+     355
+    ],
+    "sources": [
+     {
+      "id": 315,
+      "title": "Unveiling the role of oxylipins in the formation of off-flavor in pea protein isolates",
+      "year": 2025,
+      "rank": 10.400001
+     },
+     {
+      "id": 311,
+      "title": "Pea protein: Advances in applications, protein-flavor interactions, and flavor enhancement strategies",
+      "year": 2026,
+      "rank": 10.4
+     },
+     {
+      "id": 318,
+      "title": "Fortification of Pea and Potato Protein Isolates in Oat-Based Milk Alternatives; Effects on the Sensory and Volatile Profile",
+      "year": 2024,
+      "rank": 10.0
+     },
+     {
+      "id": 333,
+      "title": "Investigation of Flavor and Functional Properties of Diverse Yellow Pea Ingredients for Pan Bread Applications",
+      "year": 2025,
+      "rank": 9.6
+     },
+     {
+      "id": 312,
+      "title": "Aroma, Flavor, and Textural Drivers of Acceptance in Unflavored Pea Protein Isolates",
+      "year": 2026,
+      "rank": 9.6
+     },
+     {
+      "id": 355,
+      "title": "Faba bean and pea protein ingredients: Endogenous lipid accumulation and lipid oxidative state",
+      "year": 2025,
+      "rank": 8.6
+     }
+    ]
+   },
+   "answer": "The green and beany off-notes in pea and soy proteins share a common origin: enzymatic and autoxidative degradation of polyunsaturated fatty acids, particularly linoleic and linolenic acids. Lipoxygenase (LOX) acts on these substrates during cell disruption to generate hydroperoxide intermediates — oxylipins — which then cleave into a suite of volatile carbonyl compounds. [315] shows clearly that the fatty acid composition of pea varieties directly governs both the oxylipin pool formed during extraction and the secondary volatiles that follow. The dominant culprits are C6 aldehydes (hexanal, (E)-2-hexenal) responsible for green/grassy notes, C9 aldehydes such as nonanal contributing fatty-waxy character, and shorter-chain aldehydes plus furans adding beany depth. In soy, 1-octen-3-ol, (E,E)-2,4-decadienal, and 2-pentylfuran are particularly well-documented beany markers generated by the same LOX-driven cascade.\n\nThe protein matrix complicates matters further because these volatiles bind tightly to proteins — especially to hydrophobic pockets and via covalent adduction to lysine and cysteine — and are released during oral processing. [311] discusses how protein-flavor interactions specific to pea protein affect retention and perception of these off-note compounds, making simple stripping approaches less effective than they would be with free volatiles in solution. [312] confirms through descriptive sensory analysis that beany, grassy, and astringent attributes cluster as the primary drivers of rejection across commercially available pea protein isolates.\n\nReduction strategies fall into several categories. At the raw-material level, selecting varieties with lower linolenic acid content or naturally reduced LOX activity significantly shrinks the precursor pool; [333] found meaningful differences across fourteen yellow pea ingredients that tracked back to fatty acid profiles. Thermal inactivation of LOX — blanching or steam treatment before milling — is the most widely practiced industrial approach, though excessive heat introduces cooked or sulfurous off-notes of its own. Wet fractionation under cold, low-oxygen conditions limits autoxidative initiation, and [355] demonstrates that both endogenous lipid accumulation and oxidative state differ substantially between dry and wet fractionation routes for pea and faba bean.\n\nPost-production, several masking and removal strategies are employed. Steam stripping, supercritical CO₂ extraction, and vacuum deodorization physically remove bound and free volatiles; combining these with mild heat gives better results than either alone. Fermentation with selected lactic acid bacteria or fungi reduces beany aldehydes through biotransformation and can simultaneously generate pleasant fermented or umami notes that perceptually mask residual off-notes. Enzymatic crosslinking with transglutaminase alters protein surface hydrophobicity and can reduce volatile binding sites, though this is a double-edged approach. On the formulation side, Maillard reaction partners (reducing sugars), certain flavor compounds that compete for the same receptors, and fat inclusion all shift perception away from the dominant green/beany character. Cyclodextrin encapsulation of the offending aldehydes has been demonstrated at lab scale but remains costly for commodity ingredients.\n\nFollow-ups: Which specific LOX isoforms are most responsible for hexanal vs. nonanal production in legumes? · How does fermentation with lactic acid bacteria quantitatively change the volatile aldehyde profile in pea protein isolates? · Are there cultivated-meat or hybrid-meat applications where residual beany notes are actually exploitable as flavor precursors?",
+   "cited_ids": [
+    "311",
+    "312",
+    "315",
+    "333",
+    "355"
+   ],
+   "verifier": {
+    "groundedness": 5,
+    "citation_accuracy": 7,
+    "coverage": 6,
+    "criticisms": [
+     "The answer makes detailed claims about soy protein off-notes (1-octen-3-ol, (E,E)-2,4-decadienal, 2-pentylfuran as 'well-documented beany markers') but none of the six sources address soy protein flavor chemistry at all — this is an unsupported claim introduced from outside the source set.",
+     "The specific volatile compounds named as 'dominant culprits' — hexanal, (E)-2-hexenal, nonanal, C9 aldehydes, furans — are mentioned without traceable support from the abstracts provided; [315]'s abstract only mentions 'aldehydes, alcohols, and ketones' generically, so the specific compound-to-note mapping is overclaimed relative to available source content.",
+     "The answer attributes to [355] that 'endogenous lipid accumulation and oxidative state differ substantially between dry and wet fractionation routes,' but [355]'s abstract states that protein isolates had higher lipid content than concentrates and discusses oxidative state generally — it does not explicitly compare dry vs. wet fractionation routes as claimed.",
+     "Reduction strategies such as steam stripping, supercritical CO₂ extraction, vacuum deodorization, fermentation with LAB/fungi, transglutaminase crosslinking, Maillard reaction partners, cyclodextrin encapsulation, and fat inclusion are all presented without citation to any source in the set, yet the source set ([311] in particular) explicitly covers flavor enhancement strategies that the answer fails to properly cite or draw from.",
+     "Source [318] is retrieved and listed but entirely ignored in the answer despite being directly relevant — it documents that pea protein contributes bitter and metallic taste to oat milk, which could have supported the discussion of off-flavor types and mitigation in product contexts.",
+     "The claim that volatiles bind 'via covalent adduction to lysine and cysteine' and are 'released during oral processing' is a specific mechanistic assertion not traceable to any of the provided source abstracts, representing an unsupported intrusion of outside knowledge."
+    ],
+    "verdict": "The answer provides a plausible and often accurate overview of pea protein off-flavor science, but it relies heavily on outside knowledge not present in the source set — particularly for soy protein, specific volatile compounds, and most mitigation strategies — while underutilizing directly relevant sources like [318] and [311].",
+    "citations_found": [
+     "315",
+     "311",
+     "312",
+     "333",
+     "355"
+    ]
+   }
+  },
+  {
+   "id": "Q6",
+   "topic": "plant_protein_offnotes",
+   "question": "How does lipid oxidation contribute to off-flavors in plant-based meat analogs, and how does this differ from its role in real meat flavor?",
+   "retrieval": {
+    "n_sources": 6,
+    "used_fallback": true,
+    "source_ids": [
+     369,
+     124,
+     699,
+     155,
+     550,
+     646
+    ],
+    "sources": [
+     {
+      "id": 369,
+      "title": "Flavor of extruded meat analogs: A review on composition, influencing factors, and analytical techniques",
+      "year": 2024,
+      "rank": 15.8
+     },
+     {
+      "id": 124,
+      "title": "The flavor properties of Amadori rearrangement products and their potentials in flavor replication of plant-based meat analogs: a review",
+      "year": 2025,
+      "rank": 15.0
+     },
+     {
+      "id": 699,
+      "title": "The development of chicken meat flavor from the interaction between Maillard reaction intermediates and enzymatically hydrolyzed-oxidized chicken fat",
+      "year": 2025,
+      "rank": 13.8
+     },
+     {
+      "id": 155,
+      "title": "Effective Strategies for Understanding Meat Flavor: A Review",
+      "year": 2025,
+      "rank": 12.400001
+     },
+     {
+      "id": 550,
+      "title": "Modulate meat flavor by different forms of Iron with chicken breast as a model.",
+      "year": 2026,
+      "rank": 12.2
+     },
+     {
+      "id": 646,
+      "title": "Next-generation strategies for designing cultured fat with enhanced flavor and functionality",
+      "year": 2026,
+      "rank": 11.400001
+     }
+    ]
+   },
+   "answer": "Lipid oxidation in plant-based meat analogs is predominantly a liability rather than an asset. The legume and cereal oils used in these products — mainly from soy, pea, or sunflower — are rich in polyunsaturated fatty acids (linoleic and linolenic acid) that are highly susceptible to autoxidation. This generates a cascade of aldehydes, particularly hexanal, (E)-2-nonenal, (E,E)-2,4-decadienal, and (E)-2-decenal, along with ketones and short-chain carboxylic acids. These compounds are perceived as rancid, painty, grassy, or beany — descriptors that clash with any target meat-like profile. Lipoxygenase activity in raw legume ingredients can accelerate this oxidation even before thermal processing, making lipid management a formidable challenge throughout the entire supply chain [369].\n\nIn real meat, lipid oxidation plays a genuinely constructive role, but only within a controlled thermal window. Intramuscular triacylglycerols and phospholipids — particularly those rich in arachidonic and linoleic acid in the phospholipid fraction — generate species-characteristic volatiles during cooking that define much of what we recognize as \"beefy,\" \"porky,\" or \"chicken-like.\" Compounds such as (E)-2-undecenal, 2-pentyl furan, and various lactones from phospholipid-derived precursors are crucial contributors. Critically, these reactions are spatially and temporally coupled with Maillard chemistry, and the interaction between lipid oxidation products and amino acids or Maillard intermediates produces additional heterocyclic compounds that deepen overall flavor complexity [646]. When meat is overheated the same pathways that generate pleasant notes push into off-note territory — the same mechanistic machinery, but shifted by temperature and time.\n\nThe structural context of fat also matters enormously. In conventional muscle, fat is compartmentalized within membranes and adipose tissue, which moderates the rate and directionality of oxidation. Plant-based analogs typically incorporate oils that are either emulsified or distributed through a protein matrix in ways that expose a far larger interfacial area to oxygen and pro-oxidant metal ions. Free iron, heme iron from added ingredients, and non-heme iron from plant protein fractions can all catalyze Fenton-type reactions [550], generating hydroxyl radicals that drive runaway lipid peroxidation. Cultivated fat approaches are being explored partly to replicate the encapsulated, adipocyte-like fat structure of real meat and thereby bring oxidation back under the kind of architectural control that muscle tissue naturally provides [646].\n\nPractical mitigation strategies in plant-based systems include antioxidant addition (rosemary extract, tocopherols, ascorbate), metal chelation (EDTA, phytic acid derivatives), oxygen exclusion during processing, and careful selection of oil fractions with lower polyunsaturation. Flavor masking of hexanal — the canonical rancidity marker — has been attempted with cyclodextrins and yeast extracts. There is also growing interest in using Amadori rearrangement products and other controlled Maillard intermediates to generate desirable sulfur- and furan-containing volatiles that can effectively compete with or mask the off-note background produced by oxidized plant lipids [124].\n\nFollow-ups: Which plant protein sources show the lowest inherent lipoxygenase activity and therefore the cleanest lipid oxidation profile? · How can phospholipid composition in cultivated fat be tuned to maximize species-characteristic volatiles while minimizing off-note aldehydes? · What analytical approaches best distinguish Maillard-derived aldehydes from lipid-oxidation aldehydes in a complex plant-based matrix?",
+   "cited_ids": [
+    "124",
+    "369",
+    "550",
+    "646"
+   ],
+   "verifier": {
+    "groundedness": 4,
+    "citation_accuracy": 5,
+    "coverage": 6,
+    "criticisms": [
+     "The opening paragraph's specific claims about lipoxygenase activity in raw legume ingredients accelerating oxidation before thermal processing, and about (E)-2-nonenal, (E,E)-2,4-decadienal, and (E)-2-decenal as key off-flavor aldehydes, are not traceable to any of the listed sources. These may be chemically accurate but are unsupported by the closed source set.",
+     "The claim in paragraph 2 about specific meat-characteristic volatiles such as '(E)-2-undecenal, 2-pentyl furan, and various lactones from phospholipid-derived precursors' contributing to 'beefy,' 'porky,' or 'chicken-like' notes is attributed to no source, and none of the sources (including [155] or [646]) specifically name these compounds in their available abstracts.",
+     "Citation [550] is used to support the claim about 'Free iron, heme iron from added ingredients, and non-heme iron from plant protein fractions' catalyzing Fenton-type reactions in plant-based analogs. However, [550] is specifically about chicken breast meat, not plant-based analogs, and does not discuss plant protein fractions or non-heme iron in that context — the citation is only partially appropriate and somewhat misleading.",
+     "The mitigation strategies paragraph (antioxidants, metal chelation, cyclodextrins, yeast extracts) is entirely unsupported by any of the listed sources. No source in the closed set discusses rosemary extract, tocopherols, ascorbate, EDTA, phytic acid, cyclodextrins, or yeast extracts as mitigation tools.",
+     "Source [155], which explicitly reviews meat flavor chemistry including lipid roles, proteins, and Maillard reactions, is never cited despite being highly relevant to the answer's discussion of how lipid oxidation contributes to real meat flavor. This represents a meaningful coverage gap.",
+     "Source [699], which directly addresses off-flavors from excessive high-temperature lipid oxidation (>140°C) and the distinction between constructive and destructive oxidation in meat flavor, is entirely ignored by the answer despite being the most directly relevant source to the question's core comparison."
+    ],
+    "verdict": "The answer provides a chemically plausible and well-structured discussion, but relies heavily on domain knowledge outside the closed source set, ignores two directly relevant sources ([155] and [699]), and makes several specific claims — including all mitigation strategies and many named volatile compounds — that are entirely unsupported by the provided sources.",
+    "citations_found": [
+     "369",
+     "646",
+     "550",
+     "124"
+    ]
+   }
+  },
+  {
+   "id": "Q7",
+   "topic": "gcms_methodology",
+   "question": "What GC-MS and GC-olfactometry approaches are used to identify the key aroma-active compounds in cooked meat?",
+   "retrieval": {
+    "n_sources": 6,
+    "used_fallback": true,
+    "source_ids": [
+     642,
+     608,
+     586,
+     194,
+     508,
+     222
+    ],
+    "sources": [
+     {
+      "id": 642,
+      "title": "Key volatile off-flavor compounds identification in chicken meat and deodorizing effects of polyphenol and spice extracts.",
+      "year": 2025,
+      "rank": 11.0
+     },
+     {
+      "id": 608,
+      "title": "Effect of Replacing Soybean Meal with Cottonseed Meal or Rapeseed Meal on Growth Performance, Meat Quality, and Metabolome of Raw and Cooked Meat in Finishing Lambs.",
+      "year": 2026,
+      "rank": 10.6
+     },
+     {
+      "id": 586,
+      "title": "Characterization of key volatile compounds in meat-based broths using HS-SPME-Arrow-GC/MS and their relationship to sensory perception.",
+      "year": 2026,
+      "rank": 10.0
+     },
+     {
+      "id": 194,
+      "title": "Characterization of Key Aroma Compounds in Dongpo Pork Dish and Their Dynamic Changes During Storage",
+      "year": 2025,
+      "rank": 10.0
+     },
+     {
+      "id": 508,
+      "title": "Elucidating the Impact of High-Temperature Daqu on Base Baijiu of Sauce-Flavor Baijiu: From Key Aroma Compounds to Microbial Origins",
+      "year": 2026,
+      "rank": 9.2
+     },
+     {
+      "id": 222,
+      "title": "Influence of Cooking Methods on Flavor Parameters and Sensory Quality of Tibetan Sheep Meat Examined Using an Electronic Nose, an Electronic Tongue, GC–IMS, and GC–MS",
+      "year": 2025,
+      "rank": 9.0
+     }
+    ]
+   },
+   "answer": "The most common starting point is headspace solid-phase microextraction (HS-SPME) coupled to GC-MS. The fiber adsorbs volatiles directly from the sample headspace, and the resulting chromatogram gives compound identities via library matching and retention indices. Because GC-MS detects everything — including odorless compounds — a parallel olfactometry step is essential to narrow the list to what actually matters sensorially. [642] used HS-SPME together with both GC×GC-MS and GC-O-MS on chicken meat, identifying 18 volatile compounds with odor activity values (OAVs) ≥ 1 and flavor intensity scores ≥ 2 as the truly key off-flavor contributors. The two-dimensional GC×GC-MS format improves peak separation enormously, which matters for complex cooked-meat matrices where hundreds of compounds co-elute in a conventional single-column run.\n\nGC-olfactometry itself comes in several variants. Frequency-of-detection methods (CHARM, AEDA — aroma extract dilution analysis) ask trained panelists to sniff the GC effluent and either mark detection events over time or record the highest dilution at which an odor is still perceived; the resulting flavor dilution (FD) factor ranks compounds by potency rather than abundance. Combined with OAV calculations (concentration divided by odor threshold in the matrix), this produces a short list of genuinely impact compounds — typically aldehydes like hexanal, nonanal, and (E)-2-nonenal from lipid oxidation; sulfur volatiles like methanethiol, dimethyl trisulfide, and 2-methyl-3-furanthiol from Maillard and Strecker pathways; and heterocyclic compounds like 2-acetyl-1-pyrroline and various pyrazines from high-temperature browning. [586] applied HS-SPME-Arrow-GC/MS to meat-based broths, an Arrow fiber format that loads more sorbent mass and improves sensitivity for trace-level aroma-active species that conventional SPME fibers can miss.\n\nA sensomic approach layers recombination and omission experiments on top of the GC-O data. Once candidate key compounds are shortlisted by OAV and FD factor, model mixtures are built in a neutral matrix and compared to the real product by trained panel; individual compounds are then left out one at a time to confirm their perceptual contribution. [194] used this strategy on Dongpo pork combined with GC×GC-MS and quantitative descriptive analysis (QDA), allowing researchers to link dynamic storage-related changes in specific volatiles to sensory panel scores. Quantification in GC-MS is typically done against stable-isotope-labeled internal standards or via standard addition to account for matrix effects during SPME extraction.\n\nComplementary tools increasingly appear alongside GC-O. Gas chromatography–ion mobility spectrometry (GC-IMS) operates at ambient temperature and pressure, requires no vacuum, and resolves many short-chain and highly volatile compounds that elute early and are often poorly retained on SPME fibers. [222] used GC-IMS alongside GC-MS on Tibetan sheep meat cooked by different methods, capturing volatile fingerprints that differed by thermal treatment and correlated with electronic-nose and electronic-tongue responses. For sulfur-containing aroma compounds in particular — which are critical to roasted and boiled meat character — pulsed-flame photometric detection (PFPD) or sulfur chemiluminescence detection added in series with MS provides orders-of-magnitude greater selectivity and sensitivity than a standard quadrupole alone.\n\nFollow-ups: How do OAV rankings differ between boiled and roasted cooked-meat matrices? · What SPME fiber chemistries (e.g., DVB/CAR/PDMS vs. PA) best capture sulfur volatiles in meat headspace? · How is recombination/omission modeling used to confirm that a GC-O-identified compound is genuinely perceptually impactful?",
+   "cited_ids": [
+    "194",
+    "222",
+    "586",
+    "642"
+   ],
+   "verifier": {
+    "groundedness": 5,
+    "citation_accuracy": 7,
+    "coverage": 6,
+    "criticisms": [
+     "The answer describes AEDA, CHARM, and FD-factor methods in detail, but none of the listed sources describe or use these GC-olfactometry techniques; these claims are unsupported by the closed source set and should not appear in a source-grounded answer.",
+     "The claim about sulfur volatiles (methanethiol, dimethyl trisulfide, 2-methyl-3-furanthiol) and heterocyclic compounds (2-acetyl-1-pyrroline, pyrazines) being key Maillard/Strecker products in cooked meat is not traceable to any listed source; it is general chemistry knowledge injected without source support.",
+     "The claim about pulsed-flame photometric detection (PFPD) or sulfur chemiluminescence detection for sulfur-containing aroma compounds has no basis in any of the listed sources — this is an unsupported technical claim.",
+     "The sentence about stable-isotope-labeled internal standards or standard addition for GC-MS quantification is not supported by any of the listed sources.",
+     "Citation [586] is used to support the claim about the Arrow fiber format improving sensitivity for 'trace-level aroma-active species that conventional SPME fibers can miss,' but the source abstract does not compare Arrow sensitivity to conventional SPME fibers in those terms — this is an over-claim beyond what the source states.",
+     "The answer largely ignores source [608] on lamb meat metabolomics and VOC profiling, and source [222] is only shallowly addressed (GC-IMS mention), missing the opportunity to discuss cooking-method effects on volatile profiles as directly relevant to the question."
+    ],
+    "verdict": "The answer provides a technically informed overview but relies heavily on unsupported background knowledge (AEDA/CHARM, sulfur detection methods, isotope dilution), with only roughly half of its substantive claims traceable to the closed source set, and it neglects or under-uses several relevant sources.",
+    "citations_found": [
+     "642",
+     "586",
+     "194",
+     "222"
+    ]
+   }
+  },
+  {
+   "id": "Q8",
+   "topic": "gcms_methodology",
+   "question": "How is SPME used for extracting volatile compounds in meat flavor analysis, and what are its main limitations?",
+   "retrieval": {
+    "n_sources": 6,
+    "used_fallback": true,
+    "source_ids": [
+     540,
+     642,
+     508,
+     169,
+     346,
+     155
+    ],
+    "sources": [
+     {
+      "id": 540,
+      "title": "Non-volatile and volatile compound analyses revealed the effect of oregano essential oil on the flavor characteristics of beef.",
+      "year": 2026,
+      "rank": 16.0
+     },
+     {
+      "id": 642,
+      "title": "Key volatile off-flavor compounds identification in chicken meat and deodorizing effects of polyphenol and spice extracts.",
+      "year": 2025,
+      "rank": 15.400001
+     },
+     {
+      "id": 508,
+      "title": "Elucidating the Impact of High-Temperature Daqu on Base Baijiu of Sauce-Flavor Baijiu: From Key Aroma Compounds to Microbial Origins",
+      "year": 2026,
+      "rank": 14.0
+     },
+     {
+      "id": 169,
+      "title": "Integrated HS-SPME-GC/MS and RNA sequencing analysis reveals metabolic differences of flavor compounds of muscle tissues with different intramuscular fat contents from Tibetan sheep",
+      "year": 2025,
+      "rank": 14.0
+     },
+     {
+      "id": 346,
+      "title": "Characterization and comparative study of flavor profiles of soy, pea, mung bean, chickpea, faba bean, and peanut proteins using GC‐E‐nose, HS‐SPME‐GC‐MS, and HS‐GC‐IMS",
+      "year": 2025,
+      "rank": 13.0
+     },
+     {
+      "id": 155,
+      "title": "Effective Strategies for Understanding Meat Flavor: A Review",
+      "year": 2025,
+      "rank": 12.8
+     }
+    ]
+   },
+   "answer": "Solid-phase microextraction is the dominant sampling technique in meat flavor research because it combines extraction and concentration into a single solvent-free step. A coated fiber — typically polydimethylsiloxane (PDMS), divinylbenzene (DVB), or a mixed-phase like CAR/PDMS — is exposed to the headspace above a meat sample, and volatiles partition onto the coating according to their affinities. After a set equilibration period the fiber is thermally desorbed directly into a GC inlet, making it straightforward to couple with MS or olfactometry. [642] used HS-SPME paired with GC×GC-MS and GC-O-MS to identify eighteen key off-flavor compounds in chicken meat with odor activity values ≥1, illustrating how the technique handles complex matrices where hundreds of compounds coexist. [169] similarly applied HS-SPME-GC/MS to compare volatile profiles in Tibetan sheep muscle with differing intramuscular fat contents, capturing lipid-derived aldehydes, ketones, and alcohols that differ substantially between high- and low-fat tissues.\n\nThe core analytical strength is sensitivity in the low ppb to ppt range for many volatiles, and the ability to detect potent sulfur compounds — methanethiol, dimethyl sulfide, 2-furfurylthiol — as well as Maillard-derived pyrazines, furans, and carbonyl species that together define cooked meat character. [155] highlights that understanding these compound classes requires pairing robust extraction with careful identification, and SPME delivers the sample enrichment needed to detect trace contributors that nonetheless dominate aroma due to low odor thresholds.\n\nThe limitations are real and worth knowing for experimental design. First, fiber coatings are selective: no single phase captures polar and non-polar volatiles equally well, so highly polar compounds like short-chain acids or some sulfur species can be underrepresented on a PDMS fiber, while a DVB/CAR/PDMS fiber improves coverage but still shows bias. Second, SPME is an equilibrium technique, not an exhaustive extraction — it measures a partition coefficient, not total concentration — so absolute quantification requires isotope-labeled internal standards or standard addition, which adds analytical burden. [346] found notable differences in volatile profiles of plant proteins depending on analytical platform, underlining that method choice shapes which compounds appear and at what apparent concentrations. Third, matrix effects in meat are severe: fat content, water activity, salt, and protein structure all shift the headspace equilibrium, meaning that comparing a high-fat sausage to a lean cultivated meat construct requires careful normalization. Fourth, very high-boiling compounds (some heterocyclic Maillard products) may not efficiently transfer to the fiber at typical incubation temperatures, and very volatile compounds can be lost during fiber handling.\n\nFor cultivated meat and plant-protein systems specifically, these limitations are compounded by novel matrices — scaffolds, hydrocolloids, texturized proteins — that interact with volatiles differently than conventional muscle tissue, potentially altering both emission kinetics and fiber uptake. This makes method validation especially important before drawing conclusions about flavor equivalence to conventional meat.\n\nFollow-ups: Which SPME fiber coating gives the best coverage for sulfur volatiles in cooked meat? · How do researchers normalize SPME data across samples with very different fat contents? · Can SPME be combined with stable-isotope dilution to quantify key Maillard compounds in plant-based meat analogues?",
+   "cited_ids": [
+    "155",
+    "169",
+    "346",
+    "642"
+   ],
+   "verifier": {
+    "groundedness": 3,
+    "citation_accuracy": 5,
+    "coverage": 4,
+    "criticisms": [
+     "The detailed description of SPME fiber coatings (PDMS, DVB, CAR/PDMS), partitioning mechanism, thermal desorption, and equilibration period is not traceable to any of the listed sources — these are background chemistry facts introduced without source support.",
+     "The claim about sensitivity 'in the low ppb to ppt range' and the specific listing of sulfur compounds (methanethiol, dimethyl sulfide, 2-furfurylthiol), pyrazines, and furans as SPME-detectable Maillard products is not supported by any of the listed sources.",
+     "Citation [155] is used to support the claim that 'understanding these compound classes requires pairing robust extraction with careful identification, and SPME delivers the sample enrichment needed' — but the abstract of [155] does not specifically discuss SPME or sample enrichment strategies; it discusses meat flavor chemistry broadly, making this citation over-claimed.",
+     "Citation [346] is used to support the claim about matrix-dependent volatile profiles and method choice affecting apparent concentrations — but [346] concerns legume/plant proteins, not meat matrices, making it tangentially relevant at best and misleading in this meat-flavor context.",
+     "The extended discussion of limitations — fiber selectivity bias, equilibrium vs. exhaustive extraction, matrix effects from fat/water activity/salt/protein, and high-boiling compound transfer issues — is entirely unsupported by any listed source, representing substantial uncited content.",
+     "The final paragraph on cultivated meat, scaffolds, hydrocolloids, and texturized proteins interacting with volatiles differently is completely unsupported by any listed source, constituting speculative content with no grounding in the provided material."
+    ],
+    "verdict": "The answer provides technically plausible information about SPME in meat flavor analysis but relies overwhelmingly on background knowledge not contained in the listed sources, with citations that are either tangentially related or do not specifically support the claims they are attached to.",
+    "citations_found": [
+     "642",
+     "169",
+     "155",
+     "346"
+    ]
+   }
+  }
+ ]
+}

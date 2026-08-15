@@ -1,0 +1,909 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<!-- Last updated: 2026-08-15 14:59 UTC · UI/UX Designer · screen-flow wireframes (6 cross-nav flows) -->
+<title>MeatCODE · Screen-Flow Wireframes (6 cross-nav flows)</title>
+<meta name="viewport" content="width=1440" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAF6EF; --surface:#fff; --surface-2:#F7F0E0;
+  --teal:#00736E; --teal-deep:#015A56; --teal-soft:#4FA59F; --mist:#E0F0EE;
+  --coral:#C77E5F; --coral-soft:#F2D7C8; --olive:#7A8C5F; --olive-soft:#E4E9D6;
+  --ink:#1A1A1A; --ink-dim:#4A4A4A; --ink-faint:#8A8A8A;
+  --line:#E9E1D4; --line-strong:#D8CEBC;
+  --shadow:0 4px 16px rgba(0,67,64,.06); --shadow-lg:0 12px 34px rgba(0,67,64,.12);
+  --round:"Varela Round","Heebo",system-ui,-apple-system,sans-serif;
+  --mono:"SF Mono","JetBrains Mono",ui-monospace,Menlo,monospace;
+  --wf:#B7AC97; /* wireframe grey line */
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--round);-webkit-font-smoothing:antialiased;letter-spacing:.005em}
+a{color:inherit;text-decoration:none}
+section.scene{display:none}
+section.scene.active{display:block}
+small{font-size:inherit}
+
+/* ---------- topbar shell ---------- */
+.topbar{
+  position:sticky;top:0;z-index:20;
+  display:flex;align-items:center;justify-content:space-between;
+  height:60px;padding:0 26px;background:var(--surface);border-bottom:1px solid var(--line);
+}
+.brand{font-weight:700;font-size:19px;color:var(--teal);letter-spacing:.01em;width:230px;display:flex;align-items:center;gap:9px}
+.brand .logo{width:26px;height:26px;border-radius:8px;background:var(--teal);color:#fff;display:grid;place-items:center;font-size:14px}
+.brand .wf-tag{font-size:10px;font-weight:700;color:var(--ink-faint);letter-spacing:.12em;text-transform:uppercase;border:1px dashed var(--wf);border-radius:6px;padding:2px 7px}
+.tabs{display:flex;gap:4px;background:var(--surface-2);padding:5px;border-radius:12px}
+.tab{padding:7px 16px;border-radius:9px;font-size:13.5px;color:var(--ink-dim);cursor:pointer;transition:.15s}
+.tab:hover{color:var(--teal)}
+.tab.active{background:var(--teal);color:#fff;font-weight:700;box-shadow:var(--shadow)}
+.topbar-right{width:230px;display:flex;justify-content:flex-end;gap:10px;align-items:center}
+.home-link{font-size:12.5px;color:var(--ink-faint);cursor:pointer;display:flex;align-items:center;gap:6px}
+.home-link:hover{color:var(--teal)}
+
+.canvas{max-width:1120px;margin:0 auto;padding:34px 32px 110px}
+.canvas.narrow{max-width:900px}
+
+/* ---------- shared ---------- */
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--teal)}
+.h1{font-size:29px;font-weight:700;letter-spacing:-.01em;margin:6px 0 0}
+.lead{font-size:15px;color:var(--ink-dim);margin:8px 0 0;line-height:1.55;max-width:760px}
+.crumbs{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-faint);margin-bottom:16px}
+.crumbs a{color:var(--teal);font-weight:700}
+.crumbs .sep{color:var(--line-strong)}
+.section-label{font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--ink-faint);margin:30px 0 12px}
+.mono{font-family:var(--mono);letter-spacing:-.01em}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:100px;font-size:12.5px;font-weight:700;background:var(--mist);color:var(--teal)}
+.chip.coral{background:var(--coral-soft);color:#a5522f}
+.chip.olive{background:var(--olive-soft);color:#5f6f45}
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--teal);color:#fff;border:none;border-radius:11px;padding:11px 20px;font-weight:700;font-size:13.5px;font-family:var(--round);cursor:pointer;box-shadow:var(--shadow)}
+.btn:hover{background:var(--teal-deep)}
+.btn.ghost{background:transparent;color:var(--teal);box-shadow:none;border:1.5px solid var(--teal)}
+.btn.ghost:hover{background:var(--mist)}
+.btn.coral{background:var(--coral)}.btn.coral:hover{background:#b06b4d}
+.btn.olive{background:var(--olive)}.btn.olive:hover{background:#68774f}
+.btn.sm{padding:7px 13px;font-size:12px;border-radius:9px}
+.muted-link{color:var(--teal);font-weight:700;font-size:13px}
+.newtag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#a5522f;background:var(--coral-soft);border-radius:6px;padding:2px 7px;vertical-align:middle;margin-left:8px}
+
+/* ---------- carry banner (the context-handoff proof) ---------- */
+.carry{display:none;align-items:flex-start;gap:14px;background:var(--surface);border:1.5px solid var(--teal);border-left-width:5px;border-radius:13px;padding:14px 18px;margin-bottom:20px;box-shadow:var(--shadow)}
+.carry.on{display:flex}
+.carry.coral{border-color:var(--coral)} .carry.olive{border-color:var(--olive)}
+.carry .ic{width:30px;height:30px;border-radius:9px;background:var(--mist);color:var(--teal);display:grid;place-items:center;flex-shrink:0;margin-top:1px}
+.carry.coral .ic{background:var(--coral-soft);color:var(--coral)} .carry.olive .ic{background:var(--olive-soft);color:#5f6f45}
+.carry .body{flex:1}
+.carry .flowtag{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
+.carry .msg{font-size:14px;font-weight:700;color:var(--ink);margin-top:2px}
+.carry .payload{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.carry .payload .pc{font-family:var(--mono);font-size:11.5px;font-weight:700;background:var(--mist);color:var(--teal-deep);border-radius:100px;padding:4px 11px}
+.carry.coral .payload .pc{background:var(--coral-soft);color:#a5522f}
+.carry.olive .payload .pc{background:var(--olive-soft);color:#5f6f45}
+.carry .clear{font-size:11.5px;color:var(--ink-faint);cursor:pointer;align-self:center}
+.carry .clear:hover{color:var(--teal)}
+
+/* ---------- flow index ---------- */
+.idx-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:26px}
+.flowcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 22px;display:flex;flex-direction:column;gap:12px;transition:.16s}
+.flowcard:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.flowcard .num{width:30px;height:30px;border-radius:9px;background:var(--teal);color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px}
+.flowcard h3{margin:0;font-size:16.5px}
+.flowcard .route{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11.5px;font-weight:700}
+.flowcard .rp{padding:4px 10px;border-radius:7px;background:var(--surface-2);color:var(--ink-dim);border:1px solid var(--line)}
+.flowcard .rp.start{background:var(--mist);color:var(--teal);border-color:var(--teal-soft)}
+.flowcard .rp.end{background:var(--coral-soft);color:#a5522f;border-color:var(--coral)}
+.flowcard .arr{color:var(--ink-faint)}
+.flowcard p{margin:0;font-size:13px;color:var(--ink-dim);line-height:1.5;flex:1}
+.flowcard .foot{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.flowcard .carries{font-size:11px;color:var(--ink-faint)}
+.flowcard .carries b{color:var(--ink-dim)}
+.idx-note{margin-top:26px;background:var(--surface-2);border:1px dashed var(--wf);border-radius:12px;padding:14px 18px;font-size:12.5px;color:var(--ink-dim);line-height:1.55}
+.idx-head{display:flex;align-items:center;gap:6px}
+
+/* ---------- oracle ---------- */
+.oracle-box{background:var(--surface);border:1.5px solid var(--line-strong);border-radius:18px;padding:18px 20px;box-shadow:var(--shadow)}
+.oracle-box .qlabel{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px}
+.oracle-box .q{font-size:17.5px;color:var(--ink)}
+.oracle-box .q .cur{color:var(--teal-soft)}
+.starters{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0}
+.starter{padding:7px 13px;border:1.5px solid var(--line-strong);border-radius:100px;font-size:12.5px;color:var(--ink-dim);cursor:pointer;background:none;font-family:var(--round)}
+.starter:hover{border-color:var(--teal);color:var(--teal);background:var(--mist)}
+.answer{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px 24px;margin-top:20px}
+.answer h4{margin:0 0 12px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal)}
+.answer p{font-size:15px;line-height:1.7;margin:0 0 12px;color:var(--ink)}
+.answer .prov{font-size:11.5px;color:var(--ink-faint);border-top:1px dashed var(--line);padding-top:10px;margin-top:6px}
+.cite{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--teal);background:var(--mist);border-radius:5px;padding:1px 5px;cursor:pointer;vertical-align:top}
+.entities{border-top:1px solid var(--line);margin-top:14px;padding-top:16px}
+.entities .lbl{font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:10px}
+.ent-row{display:flex;flex-wrap:wrap;gap:8px}
+.ent{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:100px;font-size:12.5px;font-weight:700;cursor:pointer;border:1px solid transparent}
+.ent.mol{background:var(--mist);color:var(--teal)} .ent.paper{background:var(--coral-soft);color:#a5522f} .ent.exp{background:var(--olive-soft);color:#5f6f45}
+.ent:hover{filter:brightness(.97);border-color:currentColor}
+.ent .tg{font-size:9px;opacity:.7;letter-spacing:.08em;text-transform:uppercase}
+.xnav{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px;padding:16px 18px;background:var(--surface-2);border:1px dashed var(--wf);border-radius:13px}
+.xnav .xn-lbl{width:100%;font-size:10.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint)}
+
+/* ---------- data table ---------- */
+.filterbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface-2);border:1px solid var(--line);border-radius:13px;padding:11px 13px;margin-bottom:14px}
+.filterbar .search{flex:1;min-width:170px;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:100px;padding:8px 14px;color:var(--ink-faint);font-size:13px}
+.fchip{padding:6px 13px;border-radius:100px;font-size:12px;font-weight:700;color:var(--ink-dim);background:var(--surface);border:1px solid var(--line);cursor:pointer}
+.fchip.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+.tbl{background:var(--surface);border:1px solid var(--line);border-radius:15px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:11px 14px;background:var(--surface-2);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);border-bottom:1px solid var(--line)}
+td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr.row.hl td{background:var(--mist)}
+tr.row.hl td:first-child{box-shadow:inset 4px 0 0 var(--teal)}
+.cellname{font-weight:700}
+.cat-pill{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;border-radius:6px;padding:2px 7px;background:var(--coral-soft);color:#a5522f}
+.cat-pill.prec{background:var(--olive-soft);color:#5f6f45}
+.rowact{display:flex;gap:6px;justify-content:flex-end}
+.rowact button{font-size:11px;font-weight:700;font-family:var(--round);border-radius:8px;padding:5px 10px;cursor:pointer;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-dim)}
+.rowact button:hover{border-color:var(--teal);color:var(--teal);background:var(--mist)}
+.rowact button.sim:hover{border-color:var(--coral);color:#a5522f;background:var(--coral-soft)}
+.tbl-check{width:15px;height:15px;accent-color:var(--teal);cursor:pointer}
+.selbar{position:sticky;bottom:16px;display:none;align-items:center;gap:14px;background:var(--ink);color:#fff;border-radius:13px;padding:11px 16px;margin-top:16px;box-shadow:var(--shadow-lg)}
+.selbar.on{display:flex}
+.selbar .n{font-weight:700;font-size:13.5px}
+.selbar .n b{color:var(--teal-soft)}
+.selbar .spacer{flex:1}
+.selbar button{font-size:12.5px;font-weight:700;font-family:var(--round);border-radius:9px;padding:8px 14px;cursor:pointer;border:none;background:rgba(255,255,255,.14);color:#fff}
+.selbar button:hover{background:rgba(255,255,255,.26)}
+.selbar button:disabled{opacity:.35;cursor:not-allowed}
+.tbl-foot{margin-top:13px;display:flex;justify-content:space-between;align-items:center;color:var(--ink-faint);font-size:12px}
+
+/* ---------- compare (net-new) ---------- */
+.cmp-grid{display:grid;grid-template-columns:200px 1fr 1fr;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-top:8px}
+.cmp-grid .ch{background:var(--surface-2);padding:16px 18px;border-bottom:1px solid var(--line)}
+.cmp-grid .ch.rowlabel{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
+.cmp-grid .cell{padding:14px 18px;border-bottom:1px solid var(--line);font-size:13.5px;color:var(--ink)}
+.cmp-grid .rowlabel-c{padding:14px 18px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);background:#FCFAF4;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint)}
+.cmp-grid .cell.mid{border-right:1px solid var(--line)}
+.cmp-head-mol{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--teal-deep)}
+.cmp-head-sub{font-size:11.5px;color:var(--ink-dim);margin-top:3px}
+.cmp-grid .cell b{color:var(--teal-deep)}
+.cmp-diff{display:inline-block;font-size:10px;font-weight:700;color:#a5522f;background:var(--coral-soft);border-radius:5px;padding:1px 6px;margin-left:6px}
+.cmp-actions{display:flex;gap:12px;margin-top:20px}
+
+/* ---------- protocol ---------- */
+.pr-head{display:flex;justify-content:space-between;align-items:flex-start;gap:18px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:18px 20px;margin-top:14px}
+.pr-params{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+.pr-param{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.pr-param small{display:block;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:4px}
+.pr-param b{font-size:15px;font-family:var(--mono);color:var(--ink)}
+.pr-steps{counter-reset:step;list-style:none;padding:0;margin:6px 0 0}
+.pr-steps li{position:relative;padding:10px 0 10px 34px;border-bottom:1px dashed var(--line);font-size:13.5px;color:var(--ink-dim)}
+.pr-steps li:last-child{border-bottom:none}
+.pr-steps li::before{counter-increment:step;content:counter(step);position:absolute;left:0;top:9px;width:22px;height:22px;border-radius:50%;background:var(--mist);color:var(--teal);font-size:12px;font-weight:700;display:grid;place-items:center}
+.target-strip{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.target-mol{font-family:var(--mono);font-size:12px;font-weight:700;background:var(--coral-soft);color:#a5522f;border-radius:100px;padding:6px 12px}
+.xbanner{display:flex;align-items:center;justify-content:space-between;gap:16px;background:var(--surface-2);border:1px dashed var(--wf);border-radius:14px;padding:16px 18px;margin-top:20px}
+.xbanner .t{font-size:13.5px;font-weight:700;color:var(--ink)}
+.xbanner .s{font-size:12px;color:var(--ink-dim);margin-top:2px}
+
+/* ---------- simulate ---------- */
+.sim-split{display:grid;grid-template-columns:0.85fr 1.15fr;gap:18px;margin-top:8px;align-items:start}
+.sim-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+.sim-card-title{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:12px;letter-spacing:.01em}
+.sim-field{margin-bottom:16px}
+.sim-field>label{display:block;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px}
+.sim-prec{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:11px;padding:10px 13px;margin-bottom:8px}
+.sim-prec.loaded{border-color:var(--teal);background:var(--mist)}
+.sim-prec .name{font-family:var(--mono);font-weight:700;font-size:13.5px;flex:1;color:var(--ink)}
+.sim-prec .conc{font-family:var(--mono);font-size:12.5px;color:var(--ink-dim)}
+.sim-prec .badge{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--teal);background:#fff;border:1px solid var(--teal-soft);border-radius:6px;padding:2px 6px}
+.sim-cond-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.sim-cond{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.sim-cond small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);margin-bottom:3px}
+.sim-cond b{font-size:15px;font-family:var(--mono)}
+.sim-cond b span{font-size:11px;color:var(--ink-faint)}
+.sim-predict{background:var(--surface-2);border:1px solid var(--line);border-radius:13px;padding:14px 16px;margin-bottom:14px}
+.sim-predict-head{display:flex;justify-content:space-between;align-items:center}
+.sim-predict-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);display:flex;align-items:center;gap:8px}
+.sim-predict-label .pulse{width:8px;height:8px;border-radius:50%;background:var(--teal)}
+.sim-predict-num{font-family:var(--mono);font-weight:700;font-size:24px;color:var(--teal-deep)}
+.sim-predict-num .sym{font-size:14px;color:var(--ink-faint)}
+.sim-predict-bar{height:7px;background:var(--surface);border-radius:100px;overflow:hidden;margin-top:10px}
+.sim-predict-bar>i{display:block;height:100%;width:78%;background:var(--teal);border-radius:100px}
+.sim-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+.sim-table th{background:var(--surface-2);font-size:10px}
+.sim-mol{font-family:var(--mono);font-weight:700;font-size:12.5px}
+.sim-mol-class{font-size:10.5px;color:var(--ink-faint)}
+.sim-conc{font-family:var(--mono);font-size:12px;color:var(--ink-dim)}
+.sim-foot-note{background:var(--surface-2);border:1px dashed var(--wf);border-radius:11px;padding:11px 14px;font-size:11.5px;color:var(--ink-dim);line-height:1.5;margin-top:14px}
+.preview-tag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#5f6f45;background:var(--olive-soft);border-radius:6px;padding:2px 8px;vertical-align:middle;margin-left:8px}
+
+/* ---------- dev flow bar ---------- */
+.dev{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:3px;background:rgba(26,26,26,.93);border-radius:100px;padding:5px 6px;z-index:100;font-size:11px;align-items:center;flex-wrap:wrap;max-width:96vw}
+.dev .grp{display:flex;gap:2px;align-items:center}
+.dev .glbl{color:rgba(255,255,255,.4);font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:0 5px}
+.dev a{padding:5px 9px;color:rgba(255,255,255,.62);border-radius:100px;cursor:pointer}
+.dev a:hover{color:#fff;background:rgba(255,255,255,.12)}
+.dev a.active{background:var(--teal-soft);color:#fff}
+.dev .x{width:20px;height:20px;display:grid;place-items:center;color:rgba(255,255,255,.6);cursor:pointer;border-radius:50%}
+.dev .x:hover{background:rgba(255,255,255,.15);color:#fff}
+.hhint{position:fixed;bottom:14px;right:16px;font-size:11px;color:var(--ink-faint);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:5px 10px;z-index:99}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><div class="logo">M</div>MeatCODE <span class="wf-tag">Wireframe</span></div>
+  <nav class="tabs">
+    <a class="tab" data-cat="index"    href="#index">Flow Map</a>
+    <a class="tab" data-cat="oracle"   href="#oracle">Oracle</a>
+    <a class="tab" data-cat="data"     href="#data">Data</a>
+    <a class="tab" data-cat="compare"  href="#compare">Compare</a>
+    <a class="tab" data-cat="protocol" href="#protocol">Protocol</a>
+    <a class="tab" data-cat="sim"      href="#sim">Simulate</a>
+  </nav>
+  <div class="topbar-right">
+    <span class="home-link" onclick="location.hash='#index'">&#8962; Flow Map</span>
+  </div>
+</header>
+
+<!-- ============================================================ FLOW MAP / INDEX ============================================================ -->
+<section class="scene" id="index">
+  <div class="canvas">
+    <div class="eyebrow">Screen-flow wireframes</div>
+    <h1 class="h1">Six cross-navigation flows</h1>
+    <p class="lead">Each flow wires two standalone MeatCODE screens into one continuous journey. Click <b>Start flow</b> to open its first screen, then use the highlighted transition button inside to jump — the destination shows a <b>carry banner</b> naming exactly what context travelled across.</p>
+
+    <div class="idx-grid">
+
+      <div class="flowcard">
+        <div class="idx-head"><span class="num">1</span></div>
+        <h3>Oracle &rarr; Raw table data</h3>
+        <div class="route"><span class="rp start">Oracle answer</span><span class="arr">&rarr;</span><span class="rp end">Data table</span></div>
+        <p>From an Oracle answer, jump into the Database filtered to just the molecules that answer cited &mdash; "show me the underlying data."</p>
+        <div class="foot">
+          <div class="carries"><b>Carries:</b> 3 cited molecules</div>
+          <button class="btn sm" onclick="location.hash='#oracle'">Start flow &rarr;</button>
+        </div>
+      </div>
+
+      <div class="flowcard">
+        <div class="idx-head"><span class="num">2</span></div>
+        <h3>Oracle &rarr; Data comparison <span class="newtag">new screen</span></h3>
+        <div class="route"><span class="rp start">Oracle answer</span><span class="arr">&rarr;</span><span class="rp end">Compare</span></div>
+        <p>From an Oracle answer, open a side-by-side comparison of two entities discussed (e.g. 2-acetyl-1-pyrroline vs methional).</p>
+        <div class="foot">
+          <div class="carries"><b>Carries:</b> 2 entities to compare</div>
+          <button class="btn sm" onclick="location.hash='#oracle'">Start flow &rarr;</button>
+        </div>
+      </div>
+
+      <div class="flowcard">
+        <div class="idx-head"><span class="num">3</span></div>
+        <h3>Raw data &rarr; Oracle</h3>
+        <div class="route"><span class="rp start">Data table</span><span class="arr">&rarr;</span><span class="rp end">Oracle</span></div>
+        <p>From a Database row, ask the Oracle about that molecule &mdash; the question arrives pre-filled with the row as context.</p>
+        <div class="foot">
+          <div class="carries"><b>Carries:</b> 1 molecule as question context</div>
+          <button class="btn sm" onclick="location.hash='#data'">Start flow &rarr;</button>
+        </div>
+      </div>
+
+      <div class="flowcard">
+        <div class="idx-head"><span class="num">4</span></div>
+        <h3>Protocol &rarr; Data</h3>
+        <div class="route"><span class="rp start">Protocol detail</span><span class="arr">&rarr;</span><span class="rp end">Data table</span></div>
+        <p>From a protocol (HS-SPME-GC-MS), jump to the data it targets &mdash; the compounds that method is set up to measure.</p>
+        <div class="foot">
+          <div class="carries"><b>Carries:</b> 6 target compounds</div>
+          <button class="btn sm" onclick="location.hash='#protocol'">Start flow &rarr;</button>
+        </div>
+      </div>
+
+      <div class="flowcard">
+        <div class="idx-head"><span class="num">5</span></div>
+        <h3>Simulation &rarr; Data</h3>
+        <div class="route"><span class="rp start">Simulation result</span><span class="arr">&rarr;</span><span class="rp end">Data table</span></div>
+        <p>From a simulation's predicted volatile profile, open those predicted compounds as rows in the Database to explore them for real.</p>
+        <div class="foot">
+          <div class="carries"><b>Carries:</b> 6 predicted compounds</div>
+          <button class="btn sm" onclick="location.hash='#sim'">Start flow &rarr;</button>
+        </div>
+      </div>
+
+      <div class="flowcard">
+        <div class="idx-head"><span class="num">6</span></div>
+        <h3>Data &rarr; Simulation</h3>
+        <div class="route"><span class="rp start">Data table</span><span class="arr">&rarr;</span><span class="rp end">Simulate</span></div>
+        <p>From the Database, select precursors (L-cysteine + D-ribose) and send them into the Simulator pre-loaded as reaction inputs.</p>
+        <div class="foot">
+          <div class="carries"><b>Carries:</b> 2 precursors as sim inputs</div>
+          <button class="btn sm" onclick="location.hash='#data'">Start flow &rarr;</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="idx-note">
+      <b>Wireframe, not a live product.</b> All data is representative (2-acetyl-1-pyrroline, hexanal, methional, Cys&times;Ribose @110&deg;C, HS-SPME-GC-MS) &mdash; no backend is implied. Press <b>H</b> to toggle the dev flow-bar. Every transition button is styled with a teal/coral/olive accent so you can spot the cross-nav jumps.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ ORACLE ANSWER ============================================================ -->
+<section class="scene" id="oracle">
+  <div class="canvas narrow">
+    <div class="crumbs"><a href="#index">Flow Map</a><span class="sep">/</span><span>Oracle answer</span></div>
+
+    <!-- carry banner: arrives here from Flow 3 (Data -> Oracle) -->
+    <div class="carry" id="oracleCarry">
+      <div class="ic">&#9992;</div>
+      <div class="body">
+        <div class="flowtag" id="oracleCarryFlow">Flow 3 &middot; Raw data &rarr; Oracle</div>
+        <div class="msg" id="oracleCarryMsg">Question pre-filled from a Database row</div>
+        <div class="payload" id="oracleCarryPayload"></div>
+      </div>
+      <span class="clear" onclick="clearCarry('oracle')">clear</span>
+    </div>
+
+    <div class="eyebrow">Oracle</div>
+    <h1 class="h1">Ask the Oracle</h1>
+    <p class="lead">Every answer is grounded in the corpus (818 sources, keyword/FTS retrieval, <span class="mono">relevance_llm &ge; 60</span>) with sources you can open.</p>
+
+    <div class="oracle-box" style="margin-top:20px">
+      <div class="qlabel">Question</div>
+      <div class="q" id="oracleQ">What drives the roasted, meaty note in plant-based patties?<span class="cur">&#9611;</span></div>
+    </div>
+    <div class="starters">
+      <button class="starter">Precursors for 2-acetyl-1-pyrroline</button>
+      <button class="starter">Reduce beany off-notes in pea protein</button>
+      <button class="starter">Maillard vs lipid oxidation in analogs</button>
+    </div>
+
+    <div class="answer">
+      <h4>Answer</h4>
+      <p>Roasted, meaty character in plant-based beef comes mainly from <b>Maillard chemistry</b> during cooking &mdash; reducing sugars reacting with amino acids and peptides to form sulfur- and nitrogen-bearing volatiles. The dominant impact compounds are <span class="mono">2-methyl-3-furanthiol</span> (meaty/brothy)<span class="cite" onclick="location.hash='#compare'">[1]</span> and <span class="mono">2-acetyl-1-pyrroline</span> (roasted/popcorn)<span class="cite" onclick="location.hash='#compare'">[2]</span>, with <span class="mono">methional</span> adding a savoury, cooked-potato note via Strecker degradation of methionine<span class="cite" onclick="location.hash='#compare'">[3]</span>.</p>
+      <p>Because analogs are lower in the right precursors than muscle, added <span class="mono">cysteine&ndash;ribose</span> systems and thiamine are common routes to boost the roasted, brothy profile. <b>Lipid oxidation</b> contributes fatty notes and cross-talks with the Maillard pathway.</p>
+
+      <div class="entities">
+        <div class="lbl">Entities in this answer</div>
+        <div class="ent-row">
+          <span class="ent mol" onclick="carry('f1')"><span class="tg">Molecule</span> 2-methyl-3-furanthiol</span>
+          <span class="ent mol" onclick="carry('f1')"><span class="tg">Molecule</span> 2-acetyl-1-pyrroline</span>
+          <span class="ent mol" onclick="carry('f1')"><span class="tg">Molecule</span> methional</span>
+          <span class="ent paper" onclick="location.hash='#compare'"><span class="tg">Paper</span> Hofmann &amp; Schieberle 1995</span>
+          <span class="ent exp" onclick="location.hash='#index'"><span class="tg">Expert</span> A. Yamamoto</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- the two Oracle-origin transitions -->
+    <div class="xnav">
+      <div class="xn-lbl">Cross-navigate from this answer</div>
+      <button class="btn" onclick="carry('f1')">
+        &#9636; Show the underlying data
+        <span style="opacity:.8;font-weight:400">&middot; Flow 1 &rarr; Data table</span>
+      </button>
+      <button class="btn coral" onclick="carry('f2')">
+        &#8646; Compare 2-AP vs methional
+        <span style="opacity:.85;font-weight:400">&middot; Flow 2 &rarr; Compare</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ RAW DATA TABLE ============================================================ -->
+<section class="scene" id="data">
+  <div class="canvas">
+    <div class="crumbs"><a href="#index">Flow Map</a><span class="sep">/</span><a href="#index">Data</a><span class="sep">/</span><span id="dataCrumbLeaf">Molecules</span></div>
+
+    <!-- carry banner: arrives here from Flow 1 (Oracle), Flow 4 (Protocol), Flow 5 (Simulation) -->
+    <div class="carry" id="dataCarry">
+      <div class="ic">&#9636;</div>
+      <div class="body">
+        <div class="flowtag" id="dataCarryFlow">Flow 1 &middot; Oracle &rarr; Raw data</div>
+        <div class="msg" id="dataCarryMsg">Opening the 3 molecules cited in the Oracle answer</div>
+        <div class="payload" id="dataCarryPayload"></div>
+      </div>
+      <span class="clear" onclick="clearCarry('data')">show all 799</span>
+    </div>
+
+    <div class="eyebrow">Database</div>
+    <h1 class="h1">Molecules</h1>
+    <p class="lead">The raw molecular table. Filter, sort, and cross over to the Oracle or the Simulator from any row.</p>
+
+    <div class="filterbar" style="margin-top:20px">
+      <div class="search">&#128269; Search molecules&hellip;</div>
+      <span class="fchip on">All</span>
+      <span class="fchip">Thiols</span>
+      <span class="fchip">Pyrazines</span>
+      <span class="fchip">Aldehydes</span>
+      <span class="fchip">Precursors</span>
+      <span class="fchip" style="margin-left:auto">Sort: relevance &#9662;</span>
+    </div>
+
+    <div class="tbl">
+      <table>
+        <thead><tr>
+          <th style="width:34px"></th>
+          <th>Molecule</th><th>Class</th><th>Aroma</th><th>Sources</th>
+          <th style="text-align:right">Row actions</th>
+        </tr></thead>
+        <tbody id="dataBody">
+          <tr class="row" data-id="mft3">
+            <td><input type="checkbox" class="tbl-check" data-id="mft3" onchange="onCheck()"></td>
+            <td><span class="cellname mono">2-methyl-3-furanthiol</span> <span class="cat-pill">volatile</span></td>
+            <td>Thiol &middot; MFT</td><td>Meaty &middot; brothy</td><td class="mono">14</td>
+            <td><div class="rowact"><button onclick="askFromRow('2-methyl-3-furanthiol')">&#9636; Ask Oracle</button><button class="sim" onclick="simFromRow('2-methyl-3-furanthiol')">&rarr; Simulator</button></div></td>
+          </tr>
+          <tr class="row" data-id="fft">
+            <td><input type="checkbox" class="tbl-check" data-id="fft" onchange="onCheck()"></td>
+            <td><span class="cellname mono">2-furfurylthiol</span> <span class="cat-pill">volatile</span></td>
+            <td>Thiol</td><td>Coffee &middot; roasted</td><td class="mono">18</td>
+            <td><div class="rowact"><button onclick="askFromRow('2-furfurylthiol')">&#9636; Ask Oracle</button><button class="sim" onclick="simFromRow('2-furfurylthiol')">&rarr; Simulator</button></div></td>
+          </tr>
+          <tr class="row" data-id="disulf">
+            <td><input type="checkbox" class="tbl-check" data-id="disulf" onchange="onCheck()"></td>
+            <td><span class="cellname mono">bis(2-furfuryl) disulfide</span> <span class="cat-pill">volatile</span></td>
+            <td>Disulfide</td><td>Sulfurous &middot; meaty</td><td class="mono">9</td>
+            <td><div class="rowact"><button onclick="askFromRow('bis(2-furfuryl) disulfide')">&#9636; Ask Oracle</button><button class="sim" onclick="simFromRow('bis(2-furfuryl) disulfide')">&rarr; Simulator</button></div></td>
+          </tr>
+          <tr class="row" data-id="ap">
+            <td><input type="checkbox" class="tbl-check" data-id="ap" onchange="onCheck()"></td>
+            <td><span class="cellname mono">2-acetyl-1-pyrroline</span> <span class="cat-pill">volatile</span></td>
+            <td>Pyrroline</td><td>Popcorn &middot; roasted</td><td class="mono">31</td>
+            <td><div class="rowact"><button onclick="askFromRow('2-acetyl-1-pyrroline')">&#9636; Ask Oracle</button><button class="sim" onclick="simFromRow('2-acetyl-1-pyrroline')">&rarr; Simulator</button></div></td>
+          </tr>
+          <tr class="row" data-id="meth">
+            <td><input type="checkbox" class="tbl-check" data-id="meth" onchange="onCheck()"></td>
+            <td><span class="cellname mono">methional</span> <span class="cat-pill">volatile</span></td>
+            <td>Aldehyde &middot; S</td><td>Cooked-potato &middot; savoury</td><td class="mono">24</td>
+            <td><div class="rowact"><button onclick="askFromRow('methional')">&#9636; Ask Oracle</button><button class="sim" onclick="simFromRow('methional')">&rarr; Simulator</button></div></td>
+          </tr>
+          <tr class="row" data-id="dmp">
+            <td><input type="checkbox" class="tbl-check" data-id="dmp" onchange="onCheck()"></td>
+            <td><span class="cellname mono">2,5-dimethylpyrazine</span> <span class="cat-pill">volatile</span></td>
+            <td>Pyrazine</td><td>Roasted &middot; nutty</td><td class="mono">27</td>
+            <td><div class="rowact"><button onclick="askFromRow('2,5-dimethylpyrazine')">&#9636; Ask Oracle</button><button class="sim" onclick="simFromRow('2,5-dimethylpyrazine')">&rarr; Simulator</button></div></td>
+          </tr>
+          <tr class="row" data-id="eth">
+            <td><input type="checkbox" class="tbl-check" data-id="eth" onchange="onCheck()"></td>
+            <td><span class="cellname mono">2-ethyl-3,5-dimethylpyrazine</span> <span class="cat-pill">volatile</span></td>
+            <td>Pyrazine</td><td>Earthy &middot; roasted</td><td class="mono">11</td>
+            <td><div class="rowact"><button onclick="askFromRow('2-ethyl-3,5-dimethylpyrazine')">&#9636; Ask Oracle</button><button class="sim" onclick="simFromRow('2-ethyl-3,5-dimethylpyrazine')">&rarr; Simulator</button></div></td>
+          </tr>
+          <tr class="row" data-id="hex">
+            <td><input type="checkbox" class="tbl-check" data-id="hex" onchange="onCheck()"></td>
+            <td><span class="cellname mono">hexanal</span> <span class="cat-pill">volatile</span></td>
+            <td>Aldehyde</td><td>Green &middot; fatty</td><td class="mono">22</td>
+            <td><div class="rowact"><button onclick="askFromRow('hexanal')">&#9636; Ask Oracle</button><button class="sim" onclick="simFromRow('hexanal')">&rarr; Simulator</button></div></td>
+          </tr>
+          <tr class="row" data-id="furf">
+            <td><input type="checkbox" class="tbl-check" data-id="furf" onchange="onCheck()"></td>
+            <td><span class="cellname mono">furfural</span> <span class="cat-pill">volatile</span></td>
+            <td>Furan aldehyde</td><td>Almond &middot; sweet</td><td class="mono">16</td>
+            <td><div class="rowact"><button onclick="askFromRow('furfural')">&#9636; Ask Oracle</button><button class="sim" onclick="simFromRow('furfural')">&rarr; Simulator</button></div></td>
+          </tr>
+          <tr class="row" data-id="cys">
+            <td><input type="checkbox" class="tbl-check" data-id="cys" onchange="onCheck()"></td>
+            <td><span class="cellname mono">L-cysteine</span> <span class="cat-pill prec">precursor</span></td>
+            <td>Amino acid</td><td>&mdash; (reactant)</td><td class="mono">42</td>
+            <td><div class="rowact"><button onclick="askFromRow('L-cysteine')">&#9636; Ask Oracle</button><button class="sim" onclick="simFromRow('L-cysteine')">&rarr; Simulator</button></div></td>
+          </tr>
+          <tr class="row" data-id="rib">
+            <td><input type="checkbox" class="tbl-check" data-id="rib" onchange="onCheck()"></td>
+            <td><span class="cellname mono">D-ribose</span> <span class="cat-pill prec">precursor</span></td>
+            <td>Reducing sugar</td><td>&mdash; (reactant)</td><td class="mono">38</td>
+            <td><div class="rowact"><button onclick="askFromRow('D-ribose')">&#9636; Ask Oracle</button><button class="sim" onclick="simFromRow('D-ribose')">&rarr; Simulator</button></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="tbl-foot">
+      <span id="dataCount">Showing 11 of 799 molecules</span>
+      <button class="btn ghost sm">&#10515; Export (.xlsx)</button>
+    </div>
+
+    <!-- multi-select action bar: supports Flow 6 (send precursors to Simulator) + Compare -->
+    <div class="selbar" id="selbar">
+      <span class="n"><b id="selN">0</b> selected</span>
+      <span class="spacer"></span>
+      <button id="selCompare" onclick="compareFromSel()" disabled>&#8646; Compare selected</button>
+      <button id="selSim" onclick="simFromSel()">&rarr; Send to Simulator &middot; Flow 6</button>
+    </div>
+
+    <div class="idx-note" style="margin-top:22px">
+      <b>Try Flow 3:</b> click <b>&#9636; Ask Oracle</b> on any row &mdash; the Oracle opens with that molecule pre-loaded as question context. &nbsp; <b>Try Flow 6:</b> tick <span class="mono">L-cysteine</span> + <span class="mono">D-ribose</span> and hit <b>Send to Simulator</b>.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ DATA COMPARISON (NET-NEW) ============================================================ -->
+<section class="scene" id="compare">
+  <div class="canvas">
+    <div class="crumbs"><a href="#index">Flow Map</a><span class="sep">/</span><a href="#oracle">Oracle answer</a><span class="sep">/</span><span>Compare</span></div>
+
+    <div class="carry coral on" id="compareCarry">
+      <div class="ic">&#8646;</div>
+      <div class="body">
+        <div class="flowtag" id="compareCarryFlow">Flow 2 &middot; Oracle &rarr; Data comparison</div>
+        <div class="msg" id="compareCarryMsg">Comparing 2 entities carried from the Oracle answer</div>
+        <div class="payload" id="compareCarryPayload">
+          <span class="pc">2-acetyl-1-pyrroline</span><span class="pc">methional</span>
+        </div>
+      </div>
+      <span class="clear" onclick="location.hash='#oracle'">back to answer</span>
+    </div>
+
+    <div class="eyebrow">Compare <span class="newtag">new screen</span></div>
+    <h1 class="h1">Side-by-side comparison</h1>
+    <p class="lead">A net-new screen: two (or more) molecules the Oracle discussed, aligned row-by-row so differences are legible at a glance. Add a third column, swap an entity, or compare a beef reference against a prototype.</p>
+
+    <div class="cmp-grid" style="margin-top:22px">
+      <div class="ch rowlabel">Attribute</div>
+      <div class="ch">
+        <div class="cmp-head-mol">2-acetyl-1-pyrroline</div>
+        <div class="cmp-head-sub">Impact compound A &middot; from citation [2]</div>
+      </div>
+      <div class="ch">
+        <div class="cmp-head-mol">methional</div>
+        <div class="cmp-head-sub">Impact compound B &middot; from citation [3]</div>
+      </div>
+
+      <div class="rowlabel-c">Chemical class</div>
+      <div class="cell mid">Pyrroline (N-heterocycle)</div>
+      <div class="cell">Aldehyde &middot; sulfur-bearing</div>
+
+      <div class="rowlabel-c">Aroma descriptor</div>
+      <div class="cell mid">Popcorn &middot; roasted-cereal</div>
+      <div class="cell">Cooked-potato &middot; savoury <span class="cmp-diff">differs</span></div>
+
+      <div class="rowlabel-c">Odor threshold</div>
+      <div class="cell mid"><b>~0.02 ppb</b></div>
+      <div class="cell"><b>~0.2 ppb</b> <span class="cmp-diff">10&times; higher</span></div>
+
+      <div class="rowlabel-c">Formation route</div>
+      <div class="cell mid">Proline + reducing sugar (Maillard / Strecker)</div>
+      <div class="cell">Strecker degradation of methionine <span class="cmp-diff">differs</span></div>
+
+      <div class="rowlabel-c">Key precursors</div>
+      <div class="cell mid">proline, ornithine, reducing sugar</div>
+      <div class="cell">methionine, dicarbonyls</div>
+
+      <div class="rowlabel-c">Sources in corpus</div>
+      <div class="cell mid"><b>31</b> papers</div>
+      <div class="cell"><b>24</b> papers</div>
+
+      <div class="rowlabel-c">Shared reference</div>
+      <div class="cell mid">Hofmann &amp; Schieberle 1995</div>
+      <div class="cell">Hofmann &amp; Schieberle 1995</div>
+    </div>
+
+    <div class="cmp-actions">
+      <button class="btn ghost" onclick="location.hash='#oracle'">&larr; Back to the Oracle answer</button>
+      <button class="btn" onclick="carry('f1')">&#9636; Open both in the Data table</button>
+      <button class="btn ghost sm">+ Add a third molecule</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ PROTOCOL DETAIL ============================================================ -->
+<section class="scene" id="protocol">
+  <div class="canvas">
+    <div class="crumbs"><a href="#index">Flow Map</a><span class="sep">/</span><span>Toolbench</span><span class="sep">/</span><span>Protocol</span></div>
+
+    <div class="pr-head">
+      <div>
+        <div class="eyebrow">Protocol detail</div>
+        <h1 class="h1">HS-SPME-GC-MS for cooked-beef volatile profiling</h1>
+        <p class="lead">Headspace solid-phase micro-extraction with GC-MS separation &mdash; the workhorse method for capturing the volatile fingerprint of cooked and analog meat systems.</p>
+      </div>
+      <button class="btn ghost sm">&#9733; Save protocol</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+      <span class="chip">HS-SPME</span><span class="chip">GC-MS</span><span class="chip coral">volatile profiling</span><span class="chip olive">beef reference</span>
+    </div>
+
+    <div class="section-label">Method parameters</div>
+    <div class="pr-params">
+      <div class="pr-param"><small>Fiber</small><b>DVB/CAR/PDMS</b></div>
+      <div class="pr-param"><small>Extraction temp</small><b>50 &deg;C</b></div>
+      <div class="pr-param"><small>Extraction time</small><b>30 min</b></div>
+      <div class="pr-param"><small>Desorption</small><b>250 &deg;C &middot; 3 min</b></div>
+    </div>
+
+    <div class="section-label">Steps</div>
+    <div class="card" style="margin-top:0">
+      <ol class="pr-steps">
+        <li>Weigh 2 g homogenised cooked sample into a 20 mL headspace vial; add internal standard.</li>
+        <li>Equilibrate 10 min at 50 &deg;C with agitation.</li>
+        <li>Expose the DVB/CAR/PDMS fiber to the headspace for 30 min at 50 &deg;C.</li>
+        <li>Desorb 3 min at 250 &deg;C in splitless mode; separate on a polar column.</li>
+        <li>Identify peaks by RI + MS library match; quantify target compounds against the internal standard.</li>
+      </ol>
+    </div>
+
+    <div class="section-label">Target compounds this protocol measures</div>
+    <div class="target-strip">
+      <span class="target-mol">2-methyl-3-furanthiol</span>
+      <span class="target-mol">2-furfurylthiol</span>
+      <span class="target-mol">2-acetyl-1-pyrroline</span>
+      <span class="target-mol">2,5-dimethylpyrazine</span>
+      <span class="target-mol">methional</span>
+      <span class="target-mol">hexanal</span>
+    </div>
+
+    <!-- Flow 4 transition -->
+    <div class="xbanner">
+      <div>
+        <div class="t">See the 6 target compounds as raw rows</div>
+        <div class="s">Jumps to the Database filtered to exactly the molecules this method is set up to measure.</div>
+      </div>
+      <button class="btn coral" onclick="carry('f4')">&#9636; Open target data &middot; Flow 4 &rarr;</button>
+    </div>
+
+    <div class="section-label">Benchmark references</div>
+    <div class="card">
+      <div style="font-size:13.5px;font-weight:700">Hofmann &amp; Schieberle 1995 &middot; J. Agric. Food Chem.</div>
+      <div style="font-size:11.5px;color:var(--ink-faint);margin-top:2px">SIDA quantitation of MFT &amp; FFT in a cysteine&ndash;ribose model &mdash; the anchor for this method's calibration.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ SIMULATE (SETUP + RESULT) ============================================================ -->
+<section class="scene" id="sim">
+  <div class="canvas">
+    <div class="crumbs"><a href="#index">Flow Map</a><span class="sep">/</span><span>Simulate</span><span class="preview-tag">Preview</span></div>
+
+    <!-- carry banner: arrives here from Flow 6 (Data -> Simulation) -->
+    <div class="carry olive" id="simCarry">
+      <div class="ic">&rarr;</div>
+      <div class="body">
+        <div class="flowtag" id="simCarryFlow">Flow 6 &middot; Data &rarr; Simulation</div>
+        <div class="msg" id="simCarryMsg">Sent to Simulator &mdash; loaded as precursors</div>
+        <div class="payload" id="simCarryPayload">
+          <span class="pc">L-cysteine</span><span class="pc">D-ribose</span>
+        </div>
+      </div>
+      <span class="clear" onclick="clearCarry('sim')">reset inputs</span>
+    </div>
+
+    <div class="eyebrow">Simulate <span class="preview-tag">Preview</span></div>
+    <h1 class="h1">Predict the aroma before you pipette.</h1>
+    <p class="lead">Pick precursors and conditions; MeatCODE maps your setup onto the Maillard benchmark grid and estimates which volatiles to expect &mdash; order-of-magnitude, literature-backed, not first-principles chemistry.</p>
+
+    <div class="sim-split">
+      <!-- setup -->
+      <div class="sim-card">
+        <div class="sim-card-title">Set up your reaction</div>
+        <div class="sim-field">
+          <label>Precursors</label>
+          <div class="sim-prec loaded" id="simPrec1"><span class="name">L-cysteine</span><span class="conc">5.0 mM</span><span class="badge" id="simPrec1Badge">loaded</span></div>
+          <div class="sim-prec loaded" id="simPrec2"><span class="name">D-ribose</span><span class="conc">5.0 mM</span><span class="badge" id="simPrec2Badge">loaded</span></div>
+        </div>
+        <div class="sim-field">
+          <label>Conditions</label>
+          <div class="sim-cond-grid">
+            <div class="sim-cond"><small>Temperature</small><b>110 <span>&deg;C</span></b></div>
+            <div class="sim-cond"><small>Time</small><b>30 <span>min</span></b></div>
+            <div class="sim-cond"><small>pH</small><b>5.5</b></div>
+            <div class="sim-cond"><small>Water activity</small><b>0.85 <span>Aw</span></b></div>
+          </div>
+        </div>
+        <div class="sim-field">
+          <label>Matrix family</label>
+          <div class="sim-prec"><span class="name" style="font-family:var(--round);font-weight:400">Aqueous model system</span><span class="conc">&#9662;</span></div>
+        </div>
+        <button class="btn" style="width:100%;justify-content:center">&rarr; Predict outcomes</button>
+      </div>
+
+      <!-- result -->
+      <div class="sim-card">
+        <div class="sim-predict">
+          <div class="sim-predict-head">
+            <div class="sim-predict-label"><span class="pulse"></span>Predictability</div>
+            <div class="sim-predict-num">78<span class="sym">%</span></div>
+          </div>
+          <div class="sim-predict-bar"><i></i></div>
+        </div>
+
+        <div class="sim-card-title" style="margin-bottom:4px">Predicted volatile profile</div>
+        <div style="font-size:11.5px;color:var(--ink-faint);margin-bottom:8px">Maps to <b style="color:var(--ink-dim)">SLR Family 01 &middot; Amino acid &times; Sugar</b> &middot; 14 benchmarks in this region</div>
+
+        <table class="sim-table">
+          <thead><tr><th>Compound</th><th>Conc.</th><th>Aroma</th></tr></thead>
+          <tbody>
+            <tr><td><div class="sim-mol">2-methyl-3-furanthiol</div><div class="sim-mol-class">Thiol &middot; MFT</div></td><td><span class="sim-conc">0.04 ppb</span></td><td>Meaty &middot; brothy</td></tr>
+            <tr><td><div class="sim-mol">bis(2-furfuryl) disulfide</div><div class="sim-mol-class">Disulfide</div></td><td><span class="sim-conc">0.05 ppb</span></td><td>Sulfurous &middot; meaty</td></tr>
+            <tr><td><div class="sim-mol">2-furfurylthiol</div><div class="sim-mol-class">Thiol</div></td><td><span class="sim-conc">0.018 ppb</span></td><td>Coffee &middot; roasted</td></tr>
+            <tr><td><div class="sim-mol">2-acetyl-1-pyrroline</div><div class="sim-mol-class">Pyrroline</div></td><td><span class="sim-conc">0.030 ppb</span></td><td>Popcorn &middot; roasted</td></tr>
+            <tr><td><div class="sim-mol">2-ethyl-3,5-dimethylpyrazine</div><div class="sim-mol-class">Pyrazine</div></td><td><span class="sim-conc">0.21 ppb</span></td><td>Earthy &middot; roasted</td></tr>
+            <tr><td><div class="sim-mol">furfural</div><div class="sim-mol-class">Aldehyde</div></td><td><span class="sim-conc">1.4 ppm</span></td><td>Almond &middot; sweet</td></tr>
+          </tbody>
+        </table>
+
+        <!-- Flow 5 transition -->
+        <button class="btn coral" style="width:100%;justify-content:center;margin-top:14px" onclick="carry('f5')">&#9636; Open these 6 predicted compounds in the Data table &middot; Flow 5 &rarr;</button>
+
+        <div class="sim-foot-note">
+          <b>How to read this.</b> Concentrations are order-of-magnitude estimates from the literature benchmark set. Use them to decide whether an experiment is worth running &mdash; not to skip it.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- dev flow bar -->
+<nav class="dev" id="dev">
+  <div class="grp"><span class="glbl">screens</span>
+    <a href="#index">Map</a>
+    <a href="#oracle">Oracle</a>
+    <a href="#data">Data</a>
+    <a href="#compare">Compare</a>
+    <a href="#protocol">Protocol</a>
+    <a href="#sim">Simulate</a>
+  </div>
+  <div class="grp"><span class="glbl">flows</span>
+    <a onclick="location.hash='#oracle'">1</a>
+    <a onclick="location.hash='#oracle'">2</a>
+    <a onclick="location.hash='#data'">3</a>
+    <a onclick="location.hash='#protocol'">4</a>
+    <a onclick="location.hash='#sim'">5</a>
+    <a onclick="location.hash='#data'">6</a>
+  </div>
+  <span class="x" onclick="document.getElementById('dev').style.display='none'">&times;</span>
+</nav>
+<div class="hhint">press <b>H</b> to toggle flow-bar</div>
+
+<script>
+/* ---------- scene routing ---------- */
+var CAT = {index:'index', oracle:'oracle', data:'data', compare:'compare', protocol:'protocol', sim:'sim'};
+
+/* ---------- context-handoff (carry) definitions: the heart of the wireframe ---------- */
+var CARRY = {
+  f1: { scene:'data', banner:'dataCarry', accent:'',
+        flow:'Flow 1 · Oracle → Raw data',
+        msg:'Opening the 3 molecules cited in the Oracle answer',
+        payload:['2-methyl-3-furanthiol','2-acetyl-1-pyrroline','methional'],
+        ids:['mft3','ap','meth'], count:'Showing 3 of 799 · filtered from the Oracle answer' },
+  f2: { scene:'compare', banner:'compareCarry', accent:'coral',
+        flow:'Flow 2 · Oracle → Data comparison',
+        msg:'Comparing 2 entities carried from the Oracle answer',
+        payload:['2-acetyl-1-pyrroline','methional'] },
+  f3: { scene:'oracle', banner:'oracleCarry', accent:'',
+        flow:'Flow 3 · Raw data → Oracle',
+        msg:'Question pre-filled from the Database row',
+        payload:[] /* filled at call time with the clicked molecule */ },
+  f4: { scene:'data', banner:'dataCarry', accent:'coral',
+        flow:'Flow 4 · Protocol → Data',
+        msg:'Showing the 6 target compounds of protocol HS-SPME-GC-MS · beef volatiles',
+        payload:['2-methyl-3-furanthiol','2-furfurylthiol','2-acetyl-1-pyrroline','2,5-dimethylpyrazine','methional','hexanal'],
+        ids:['mft3','fft','ap','dmp','meth','hex'], count:'Showing 6 of 799 · targets of protocol HS-SPME-GC-MS' },
+  f5: { scene:'data', banner:'dataCarry', accent:'coral',
+        flow:'Flow 5 · Simulation → Data',
+        msg:'Opening 6 predicted compounds from the Cys × Ribose @110°C simulation',
+        payload:['2-methyl-3-furanthiol','bis(2-furfuryl) disulfide','2-furfurylthiol','2-acetyl-1-pyrroline','2-ethyl-3,5-dimethylpyrazine','furfural'],
+        ids:['mft3','disulf','fft','ap','eth','furf'], count:'Showing 6 of 799 · predicted by the simulation' },
+  f6: { scene:'sim', banner:'simCarry', accent:'olive',
+        flow:'Flow 6 · Data → Simulation',
+        msg:'Sent to Simulator — loaded as precursors',
+        payload:['L-cysteine','D-ribose'] }
+};
+
+var pending = null;
+
+function carry(id, override){
+  var def = CARRY[id];
+  if(!def) return;
+  pending = Object.assign({}, def);
+  if(override){ pending = Object.assign(pending, override); }
+  location.hash = '#' + def.scene;
+  /* if already on that scene, hashchange won't fire — apply directly */
+  if((location.hash||'') === '#'+def.scene){ applyPending(def.scene); }
+}
+
+function applyPending(scene){
+  if(!pending || pending.scene !== scene) return;
+  var el = document.getElementById(pending.banner);
+  if(el){
+    el.classList.remove('coral','olive');
+    if(pending.accent) el.classList.add(pending.accent);
+    var fl = el.querySelector('.flowtag'); if(fl) fl.innerHTML = pending.flow;
+    var mg = el.querySelector('.msg'); if(mg) mg.textContent = pending.msg;
+    var pl = el.querySelector('.payload');
+    if(pl){ pl.innerHTML = (pending.payload||[]).map(function(p){ return '<span class="pc">'+p+'</span>'; }).join(''); }
+    el.classList.add('on');
+  }
+  if(scene === 'data'){ applyDataFilter(pending.ids, pending.count); }
+  if(scene === 'sim'){ setSimPrecursors(pending.payload); }
+  pending = null;
+}
+
+/* ---------- data table filtering (shows the carried subset) ---------- */
+function applyDataFilter(ids, countText){
+  var rows = document.querySelectorAll('#dataBody tr.row');
+  rows.forEach(function(r){
+    var on = !ids || ids.indexOf(r.getAttribute('data-id')) !== -1;
+    r.style.display = on ? '' : 'none';
+    r.classList.toggle('hl', !!ids && on);
+  });
+  var c = document.getElementById('dataCount');
+  if(c) c.textContent = countText || ('Showing '+rows.length+' of 799 molecules');
+}
+
+function clearCarry(scene){
+  var map = {data:'dataCarry', oracle:'oracleCarry', compare:'compareCarry', sim:'simCarry'};
+  var el = document.getElementById(map[scene]);
+  if(el) el.classList.remove('on');
+  if(scene === 'data'){
+    document.querySelectorAll('#dataBody tr.row').forEach(function(r){ r.style.display=''; r.classList.remove('hl'); });
+    var c = document.getElementById('dataCount'); if(c) c.textContent = 'Showing 11 of 799 molecules';
+  }
+  if(scene === 'oracle'){ document.getElementById('oracleQ').innerHTML = 'What drives the roasted, meaty note in plant-based patties?<span class="cur">&#9611;</span>'; }
+  if(scene === 'sim'){ /* keep default loaded precursors */ }
+}
+
+/* ---------- Flow 3: Raw data row → Oracle (pre-filled question) ---------- */
+function askFromRow(name){
+  carry('f3', {
+    payload:['About: '+name],
+    msg:'Question pre-filled from the Database row',
+    _q:'What is known about ' + name + ' — its formation, sensory role and key sources?'
+  });
+  var q = document.getElementById('oracleQ');
+  if(q) q.innerHTML = 'What is known about <span class="mono">'+name+'</span> — its formation, sensory role and key sources?<span class="cur">&#9611;</span>';
+}
+
+/* ---------- Flow 6: row(s) → Simulator ---------- */
+function simFromRow(name){
+  carry('f6', { payload:[name], msg:'Sent to Simulator — loaded as an input' });
+}
+function setSimPrecursors(list){
+  list = list || [];
+  var n1 = document.querySelector('#simPrec1 .name'), n2 = document.querySelector('#simPrec2 .name');
+  var p2 = document.getElementById('simPrec2');
+  if(n1 && list[0]) n1.textContent = list[0];
+  if(list.length > 1){ if(p2) p2.style.display=''; if(n2) n2.textContent = list[1]; }
+  else { if(p2) p2.style.display = (list.length===1 ? 'none' : ''); }
+}
+
+/* ---------- multi-select action bar (Flow 6 pair + Compare) ---------- */
+function selectedIds(){
+  return Array.prototype.map.call(document.querySelectorAll('#dataBody .tbl-check:checked'), function(c){ return c.getAttribute('data-id'); });
+}
+var ROWNAME = {mft3:'2-methyl-3-furanthiol',fft:'2-furfurylthiol',disulf:'bis(2-furfuryl) disulfide',ap:'2-acetyl-1-pyrroline',meth:'methional',dmp:'2,5-dimethylpyrazine',eth:'2-ethyl-3,5-dimethylpyrazine',hex:'hexanal',furf:'furfural',cys:'L-cysteine',rib:'D-ribose'};
+function onCheck(){
+  var ids = selectedIds();
+  var bar = document.getElementById('selbar');
+  bar.classList.toggle('on', ids.length > 0);
+  document.getElementById('selN').textContent = ids.length;
+  document.getElementById('selCompare').disabled = ids.length < 2;
+}
+function simFromSel(){
+  var names = selectedIds().map(function(i){ return ROWNAME[i]; });
+  if(!names.length) names = ['L-cysteine','D-ribose'];
+  carry('f6', { payload:names, msg:'Sent to Simulator — '+names.length+' input(s) loaded as precursors' });
+}
+function compareFromSel(){
+  var names = selectedIds().map(function(i){ return ROWNAME[i]; });
+  carry('f2', { payload:names.slice(0,2), msg:'Comparing '+Math.min(names.length,2)+' entities selected from the Data table', accent:'coral' });
+}
+
+/* ---------- scene switch ---------- */
+function setScene(){
+  var h = (location.hash||'#index').slice(1);
+  if(!document.getElementById(h)){ h = 'index'; }
+  document.querySelectorAll('section.scene').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById(h).classList.add('active');
+  var cat = CAT[h] || 'index';
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('active', t.getAttribute('data-cat')===cat); });
+  document.querySelectorAll('.dev a[href]').forEach(function(a){ a.classList.toggle('active', a.getAttribute('href')==='#'+h); });
+  applyPending(h);
+  window.scrollTo(0,0);
+}
+window.addEventListener('hashchange', setScene);
+setScene();
+document.addEventListener('keydown', function(e){ if(e.key==='h'||e.key==='H'){ var d=document.getElementById('dev'); d.style.display = d.style.display==='none'?'flex':'none'; }});
+</script>
+</body>
+</html>

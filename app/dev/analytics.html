@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<!-- Last updated: 2026-08-15 · Fullstack Engineer · Dev Area ANALYTICS ZONE: five analytical-method cards with honest status chips (placeholder, no live data) -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MeatCODE · Dev Area · Analytics Zone</title>
+<style>
+:root {
+  /* ── GFI Israel · seaweed teal palette (mirrors app/meatcode_mockup.html :root) ── */
+  --bg:           #FAF6EF;
+  --bg-deep:      #F2EBDA;
+  --surface:      #FFFFFF;
+  --surface-2:    #F7F0E0;
+  --wine:         #00736E;
+  --wine-deep:    #015A56;
+  --wine-soft:    #4FA59F;
+  --wine-tint:    #B5DDD8;
+  --wine-mist:    #E0F0EE;
+  --ink:          #1A1A1A;
+  --ink-dim:      #4A4A4A;
+  --ink-faint:    #8A8A8A;
+  --line:         #E5DDD0;
+  --line-strong:  #D2C8B5;
+  --brass:        #C77E5F;
+  --brass-soft:   #F2D7C8;
+  --olive:        #7A8C5F;
+  --olive-soft:   #D6DCC4;
+  --shadow:       0 4px 16px rgba(0, 67, 64, 0.08);
+  --shadow-lg:    0 10px 32px rgba(0, 67, 64, 0.12);
+  --round:        "Varela Round", "Heebo", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono:         "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--round); background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+.dev-topbar {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 24px; background: var(--surface); border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 10;
+}
+.back-link { color: var(--wine-deep); text-decoration: none; font-weight: 700; font-size: 13px; }
+.back-link:hover { text-decoration: underline; }
+.crumb { font-size: 13px; color: var(--ink-faint); }
+.crumb a { color: var(--wine-deep); text-decoration: none; }
+.crumb a:hover { text-decoration: underline; }
+.title { font-weight: 700; font-size: 15px; color: var(--wine-deep); }
+.dev-badge {
+  font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+  color: #fff; background: repeating-linear-gradient(45deg, var(--brass), var(--brass) 10px, #B06A4C 10px, #B06A4C 20px);
+  padding: 3px 9px; border-radius: 5px;
+}
+
+.placeholder-banner {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--brass-soft); color: #8A4B30; border-bottom: 1px solid #E0BBA6;
+  padding: 9px 20px; font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.wrap { max-width: 940px; margin: 0 auto; padding: 30px 24px 70px; }
+.eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; color: var(--wine-soft); text-transform: uppercase; margin-bottom: 6px; }
+.head h1 { font-size: 23px; color: var(--wine-deep); margin-bottom: 6px; }
+.head p { font-size: 14px; color: var(--ink-dim); max-width: 640px; margin-bottom: 28px; }
+
+.methods { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 16px; }
+.method {
+  background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--wine);
+  border-radius: 12px; padding: 18px 20px; box-shadow: var(--shadow);
+}
+.method-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.method h2 { font-size: 16px; color: var(--wine-deep); }
+.method .abbr { font-family: var(--mono); font-size: 10px; color: var(--ink-faint); display: block; margin-top: 2px; }
+.method p { font-size: 13px; color: var(--ink-dim); line-height: 1.5; }
+.method .extra { margin-top: 10px; font-size: 12px; color: var(--wine-deep); background: var(--wine-mist); border: 1px solid var(--wine-tint); border-radius: 8px; padding: 8px 11px; line-height: 1.45; }
+
+.chip { font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.06em; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+.chip.planned { background: var(--surface-2); border: 1px solid var(--line-strong); color: var(--ink-faint); }
+.chip.data { background: var(--olive-soft); border: 1px solid var(--olive); color: #4A5A33; }
+.method.has-data { border-left-color: var(--olive); }
+</style>
+</head>
+<body>
+
+<header class="dev-topbar">
+  <a class="back-link" href="/app/meatcode_mockup.html">&larr; MeatCODE</a>
+  <span class="crumb"><a href="/app/dev/index.html">Dev Area</a> /</span>
+  <span class="title">Analytics Zone</span>
+  <span class="dev-badge">DEV AREA</span>
+</header>
+
+<div class="placeholder-banner">PLACEHOLDER &mdash; method overview only; no live instrument data behind these cards</div>
+
+<div class="wrap">
+  <div class="head">
+    <div class="eyebrow">Analytics Zone</div>
+    <h1>Analytical methods for flavor work</h1>
+    <p>The five measurement families MeatCODE plans to speak fluently. Status chips are honest: only GC-MS has reference data in the database today.</p>
+  </div>
+
+  <div class="methods">
+    <div class="method has-data">
+      <div class="method-top">
+        <h2>GC-MS<span class="abbr">gas chromatography&ndash;mass spectrometry</span></h2>
+        <span class="chip data">DATA EXISTS</span>
+      </div>
+      <p>Separates and identifies the volatile compounds that make up aroma &mdash; the workhorse for profiling meaty top-notes.</p>
+      <div class="extra">In the DB: the <strong>Meaty Volatile Library</strong> &mdash; reference volatiles with retention indices, usable as clearly-labelled reference data (GC-MS journey itself is preview-scope).</div>
+    </div>
+
+    <div class="method">
+      <div class="method-top">
+        <h2>HPLC<span class="abbr">high-performance liquid chromatography</span></h2>
+        <span class="chip planned">PLANNED</span>
+      </div>
+      <p>Quantifies non-volatile taste and precursor molecules &mdash; amino acids, sugars, nucleotides &mdash; the inputs that cooking turns into flavor.</p>
+    </div>
+
+    <div class="method">
+      <div class="method-top">
+        <h2>Olfactory<span class="abbr">GC-O &amp; sensory panels</span></h2>
+        <span class="chip planned">PLANNED</span>
+      </div>
+      <p>Puts human noses on the data &mdash; which detected compounds actually smell, how intense, and what descriptor they evoke.</p>
+    </div>
+
+    <div class="method">
+      <div class="method-top">
+        <h2>H/C-NMR<span class="abbr">&sup1;H / &sup1;&sup3;C nuclear magnetic resonance</span></h2>
+        <span class="chip planned">PLANNED</span>
+      </div>
+      <p>Resolves molecular structure and tracks reaction chemistry &mdash; confirming what a Maillard system actually produced.</p>
+    </div>
+
+    <div class="method">
+      <div class="method-top">
+        <h2>Spectroscopy<span class="abbr">UV-Vis / IR / fluorescence</span></h2>
+        <span class="chip planned">PLANNED</span>
+      </div>
+      <p>Fast optical readouts of browning, oxidation and pigment state &mdash; cheap process-level signals to complement the deep methods.</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

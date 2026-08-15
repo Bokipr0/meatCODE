@@ -4,7 +4,16 @@
 > Asana owns *tasks & priorities*; this file owns *technical reality* — what's built, what's broken,
 > what's in flight. Keep it short and current, not a changelog.
 
-_Last updated: 2026-07-22 22:15 UTC · Project Coordinator — MVP definition + 5 user journeys broadcast to all lanes; per-lane gap analysis + P0 spine (docs/MVP_ALIGNMENT.md, TEAM_BROADCAST.md). Prev: 2026-07-22 14:16 UTC Home v3; see AGENT_UPDATE_LOG.md_
+_Last updated: 2026-08-15 · Project Coordinator — 5-agent run (Lior's task list): flagged Dev Area (app/dev/) + Oracle attach preview + Home off nav + Research tiles · molecule canonical IDs + tailored abstracts + topic fill · consensus SSE + claims layer + RAG eval baseline. Also today: screen-flow design pass (A2, `UI-UX Designer/`). See AGENT_UPDATE_LOG.md_
+
+## 5-agent run — Lior's task list — shipped to the repo 2026-08-15 (awaiting deploy-dev)
+- **Mockup** (`app/meatcode_mockup.html`): Oracle **attach button (client-side preview**, honest tooltip, no fake upload) · **Dev Area button** on all 14 topbars gated behind **`ff-dev_area`** (flag added to `Release Center/features.json`, ON dev / OFF prod) · **Home removed from nav — Oracle is the landing again** (#home kept in-file, unreachable) · **Research = Juice · Lipid · Analytics** tiles with same-hue darkening hover (Matrix/Volatiles tiles removed, scenes intact).
+- **Dev Area** (`app/dev/`, new, static): hub (Features = live flags read-only · Screens · Documents · the 6 user screen flows as diagrams) + **knowledge-graph screen** (embeds `/kg/kg_explorer.html`) + **Meat Fingerprint placeholder** (canvas radar, loudly labelled demo) + **Analytics zone** (GC-MS/HPLC/Olfactory/NMR/Spectroscopy cards, honest status chips).
+- **Server** (`server/meatcode_server.py`): `/api/ask` emits additive **`event: consensus`** (agree/oppose/neutral per retrieved source, guarded — failure can never break the stream) · retrieved sources now carry their **`claims`** records · new auth-gated `GET /api/consensus-demo?q=`. Backward-compatible; py_compile + live SSE smoke test clean.
+- **Data (Neon, migration 0009 applied):** molecules += 7 columns (canonical-ID + chemistry scaffolding + `is_junk`); **CAS 0→110** (MVL backfill), **PubChem CIDs 20-pilot** (network open — scale next), `Decline` flagged junk; `sources.tailored_abstract` **0→30**; topic backfill **untagged 489→252** (+240 source_topics). Nothing fabricated; 4 chemistry fields left NULL awaiting a curation source. Paper ingestion **blocked** (no Dimensions creds/ingester).
+- **RAG eval baseline** (`analysis/rag_eval/`): 8 questions, closed-corpus, verifier-scored — **groundedness 3.4 · citation-accuracy 4.8 · coverage 4.1 (/10)**; zero invented citation ids; all questions needed the OR-fallback; thiamine degradation = confirmed corpus hole. This is the pre-improvement baseline on record.
+- **Docs/board:** `platform_docs/DEV_AREA.md` + `platform_docs/KG_DECISION.md` (new) · MVP_BOARD refreshed (A1/A4/A5 🟡, new A6/A7; **B1 deploy + B2 quarantine write-back remain the critical path**).
+- **NOT deployed.** Lior: `deploy-dev.command` → check staging (flip ff-dev_area if needed) → `promote-to-prod.command`.
 
 ## 🎯 MVP alignment — north star through mid-September (set 2026-07-22)
 Lior's **MVP Definition & 5 User Journeys** (`docs/MeatCODE_MVP_Definition_and_User_Journeys.md`) is now the bar: a credible source-backed prototype, **internal demo end of August**, **external P1 expert validation mid-September**. All 5 lanes assessed their status against it — full gap analysis in **`docs/MVP_ALIGNMENT.md`**, broadcast in `TEAM_BROADCAST.md`.
@@ -13,7 +22,15 @@ Lior's **MVP Definition & 5 User Journeys** (`docs/MeatCODE_MVP_Definition_and_U
 
 **P0 spine (ordered, cross-lane):** (1) **Data** — close corpus trust: quarantine→`relevance_llm` write-back + back-tag 489 (39% gate →) + retrievability count; (2) **Algorithm** — build the benchmark harness (gold set vs GPT/Claude/Perplexity) proving criterion 1; (3) **Full-Stack** — deploy the month-long committed backlog + verify live, then scaffold GC-MS upload (preview) + `/api/protocols`; (4) **UI/UX** — lock one design system + J3 knowledge-graph + J4 planning flow + honest previews; (5) **Advisory** — P1 validation protocol + mid-Aug scope-freeze gate.
 
-**Open decisions (Lior + Daniel):** GC-MS scope (P0 vs preview)? · greenlight the benchmark eval? · close the quarantine write-back now? · run `deploy.command` to land the backlog?
+**Open decisions (Lior + Daniel):** ~~GC-MS scope (P0 vs preview)?~~ → **DECIDED 2026-07-23: preview** (honest, clearly-labelled reference data — not a live analytical engine) · greenlight the benchmark eval? · close the quarantine write-back now? · deploy the backlog (`deploy-dev` → `promote-to-prod`)?
+
+> 📋 **Open deliverables for the 31 Aug demo now live in `MVP_BOARD.md`** (8 MVP lanes · 5 action items · 2 blocking gaps, with owners + critical path). Agents: read it after this file and update your rows as you finish.
+
+## Screen-flow design pass — 6 cross-nav flows (wireframes + journey spec) — 2026-08-15 · design only, in `UI-UX Designer/`
+Parallel UI/UX + Advisory run (Coordinator-orchestrated) on Lior's ask to wire the standalone screens into one end-to-end experience. **Design/exploration only — no live-mockup or deployed-file changes.** Advances board item **A2 (scenario & user screen-flow creation)**.
+- `UI-UX Designer/screen_flows_wireframes.html` — interactive wireframe, 6 hash-routed scenes (Flow-Map · Oracle answer · Raw Data table · **Data Comparison** [net-new] · Protocol detail · Simulate), every transition clickable with a **"carry banner"** naming the context handed across. Verified (6/6 sections, 192/192 divs, inline script `node --check` clean).
+- `UI-UX Designer/SCREEN_FLOWS_user_journeys.md` — journey + IA spec; unifying **"entity + context handoff bus"** (`mcHandoff()/mcConsumeHandoff()`, generalizing the existing `mc_mol_focus_id`). **Buildable-now:** Flow 3 (Data→Oracle, zero backend), Flow 1 (Oracle→Raw table), Flow 2 (Comparison, client-side over `/api/molecules/{id}`). **Preview/flag:** Flows 5/6 (Sim↔Data). **Design-only:** Flow 4 (Protocols→Data — no `/api/protocols` / protocols table).
+- Recommended P0 for 31 Aug: handoff bus + Flow 3 + Flow 1; Flow 2 as a `data_compare`-flagged stretch. Review candidates — awaiting Lior's go before any port into the live mockup.
 
 ## Follow-up v12.7 — Data off top nav + Inventory Option A — shipped to the repo 2026-07-22 (awaiting deploy)
 - **Data removed from the top nav** (Lior: not an upper-category button). Top nav across all topbars is now **Home · Oracle · Research · Simulate**; the load-time pass removes Database + Map chips + injects Home. The Home **Data tile** (→#database) and the `#database` scene + in-content routes are kept — Data is reachable off-nav. setScene's dynamic active state updated to match.

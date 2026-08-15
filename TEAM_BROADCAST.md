@@ -1,10 +1,71 @@
 # 📣 TEAM BROADCAST — MeatCODE
 
-_From: Project Coordinator · As of: **2026-07-22 22:15 UTC**_
+_From: Project Coordinator (with Lior) · As of: **2026-08-15**_
 
 > Standing notification channel for the whole agent team. The Coordinator refreshes this whenever there's
 > progress every agent should know. **Read this at the start of your session** (after CLAUDE.md +
 > PROJECT_STATE.md). Full history is in `AGENT_UPDATE_LOG.md`; this is the short "what you need to know now."
+
+---
+
+## 🚀 2026-08-15 · 5-AGENT RUN LANDED — Dev Area · consensus · canonical IDs · eval baseline · Oracle-first
+All five lanes shipped Lior's task list in one parallel run (full detail: AGENT_UPDATE_LOG.md top entry; state: PROJECT_STATE.md). What every agent must know:
+- **Dev Area exists** (`app/dev/`): hub + KG screen + fingerprint placeholder + analytics zone, reachable from a new topbar button **gated behind `ff-dev_area`** (OFF in prod — rules in `platform_docs/DEV_AREA.md`). Placeholders must say they're placeholders.
+- **Landing flipped back: Oracle is home again.** Nav = Oracle · Research · Simulate. The v12.6/12.7 "Home is the landing" notes below are now historical.
+- **`/api/ask` gained `event: consensus`** (agree/oppose/neutral per source) + per-source `claims` in the sources payload — additive, UIs may ignore. **UI/UX: a consensus chip ("N support · M oppose") is the natural next render.**
+- **Molecules are getting canonical IDs** (CAS 110 from MVL, PubChem CID pilot 20/20 — scaling next). Check `is_junk` before using molecule rows. 4 chemistry fields exist but are NULL until a curation source is chosen — don't invent values.
+- **RAG eval baseline is on record** (`analysis/rag_eval/`): groundedness 3.4 · cite-acc 4.8 · coverage 4.1 — zero invented citations, but depth largely uncited-general-knowledge. Improvements must beat these numbers.
+- **Open Lior decisions:** topic aliases (off-note / plant-protein / sensory → existing topics, ~239 papers) · GC-MS reference-data source · usage log · benchmark gold set. **B1 (deploy) + B2 (quarantine write-back) are still the critical path.**
+
+## 🧭 2026-08-15 · Screen-flow design pass landed (board A2) — design only, in `UI-UX Designer/`
+The **6 cross-navigation screen flows** (Oracle↔Data · Data↔Oracle · Protocols→Data · Sim↔Data) are now designed: an interactive **wireframe** (`UI-UX Designer/screen_flows_wireframes.html`) + a **journey/IA spec** (`UI-UX Designer/SCREEN_FLOWS_user_journeys.md`). **No live-mockup or deployed-file changes** — review candidates for Lior. Advances board **A2**.
+- **Architectural takeaway for every lane:** all six flows are one **"entity + context handoff bus"** — capture→stash→route→consume + breadcrumb. Generalize the existing `mc_mol_focus_id` into `mcHandoff()/mcConsumeHandoff()`; it's the shared dependency of all six.
+- **Build order when greenlit:** P0 = bus + Flow 3 (Data→Oracle, zero backend) + Flow 1 (Oracle→Raw table). Flow 2 (Comparison) = client-side over `/api/molecules/{id}` behind a `data_compare` flag. **Flow 4 (Protocols→Data) is design-only until `/api/protocols` + a protocols table exist (Data Eng / Full-Stack).** Flows 5/6 (Sim↔Data) preview-gated (sim is hardcoded, emits names not ids).
+
+---
+
+## 🚨 2026-07-23 · NEW TASK BOARD + 3 THINGS THAT CHANGE HOW YOU WORK · READ BEFORE ANYTHING ELSE
+
+Lior + Daniel set the end-of-August task list. **Open deliverables now live in `MVP_BOARD.md`** (repo root):
+8 MVP lanes · 5 action items · 2 blocking gaps, each with owner, status and critical-path marking.
+**Read `MVP_BOARD.md` after PROJECT_STATE.md and update your rows when you finish something.**
+
+### 1. ✅ DECIDED — GC-MS (J2) ships as an **honest preview**
+The long-open "P0 vs preview?" question is **answered: preview.** Build the fingerprint + by-cut comparison
+on **clearly-labelled reference data — not a live analytical engine.** This matches the team's own
+recommendation and is what makes 31 Aug realistic. Do **not** scope a real GC-MS pipeline for August.
+⚠️ Still open (gates the work): **where do reference profiles per cut come from** — WUR, literature-mined,
+or synthetic-and-labelled? Don't guess; flag it to Lior.
+
+### 2. 🔄 PROCESS CHANGE — `deploy.command` is RETIRED. Dev and production are now split.
+Every "run `deploy.command`" instruction elsewhere in this repo is **stale**. The new flow:
+- Work happens on the **`dev`** git branch (never `main`).
+- **`deploy-dev.command`** → pushes to the private staging site (`meatcode-dev`, own Neon dev DB, own key).
+- **`promote-to-prod.command`** → the only path to the public site (shows a diff, asks for `yes`, tags the release).
+- **`rollback-prod.command`** / the Release Center's Version history → revert production to any previous release.
+- Full runbook: `platform_docs/TWO_ENVIRONMENT_WORKFLOW.md`.
+
+### 3. 🎛️ NEW — feature flags. Ship unfinished work safely.
+`Release Center/features.json` holds one entry per feature with a **dev** and a **prod** boolean; the app turns
+each ON flag into a `body.ff-<key>` class. Lior toggles them in the **Release Center** (`release-center.command`,
+or press **H** in the dev app) — full guide: `platform_docs/RELEASE_CENTER.md`.
+**Convention going forward: anything half-built or "preview" ships behind a flag, ON in dev / OFF in prod.**
+That explicitly includes the **GC-MS preview**, the simulation demo, and the knowledge-graph view.
+
+### 🎯 Your lane's next move (from `MVP_BOARD.md`)
+| Lane | Do this next | Why |
+|---|---|---|
+| **Full-Stack** | **B1 — deploy the v12.1→v12.7 backlog** (`deploy-dev` → verify → `promote-to-prod`) | **[CRITICAL PATH]** A month of finished work is not live. Nothing on the board is demoable until this lands. Then: GC-MS preview endpoints (A1/A3) behind a flag, `/api/protocols`, and the usage-log decision (lane 7). |
+| **Data Engineer** | **B2 — close quarantine → `relevance_llm` write-back**, then back-tag + retrievability count | **[CRITICAL PATH]** Same problem as MVP lane 2 ("Database quality"). Retrieval still gates on unreviewed scores. Then: define the **A1 fingerprint schema** with Full-Stack. |
+| **UI/UX Designer** | **A2 — scenario & user screen-flow creation** | Highest leverage on the board: it decides what must exist by 31 Aug **and what doesn't**. Then: lock ONE design system, GC-MS preview UI (flagged), J3 knowledge-graph view, honest preview labels. |
+| **Algorithm Expert** | **A4 — RAG development → the benchmark harness** (gold set vs GPT/Claude/Perplexity) | The only evidence for success criterion 1, and the thing Daniel can actually show. |
+| **Advisory** | Mid-Aug **scope-freeze gate** + P1 validation protocol + a reviewer-facing "what this is / what it isn't" doc | Lane 8 is thin for outsiders; mid-Sept validation needs it. |
+
+**Sequencing note:** A1 (fingerprint schema) blocks A3 (by-cut comparison); A5 (knowledge graph) blocks MVP lane 5
+(white-space mapping). Don't start the dependents until the parent lands.
+
+**Open decisions for Lior + Daniel** (don't assume — ask): GC-MS reference-data source · do users upload real
+GC-MS data in v1 or pick a bundled sample? · anonymous usage/question log, yes or no? · greenlight the benchmark gold set?
 
 ---
 

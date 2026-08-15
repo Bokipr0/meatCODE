@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<!-- Last updated: 2026-07-22 14:16 UTC · UI/UX Designer · Home v3 (Lior's review) — TWO changes. (1) DATA OUT OF TOP NAV: the load-time nav pass now removes BOTH Map and Database chips (was: relabel Database→Data and keep) + still injects Home + reorders → net top nav EVERYWHERE = Home · Oracle · Research · Simulate. The Home "Data" TILE (→#database) and the #database scene + all in-content routes are kept — Data stays reachable, just not as an upper-category button. setScene's dynamic active-map no longer activates a Data chip (database/molecule-detail/protocol-detail leave the nav with nothing active, like #map); Oracle/Research/Simulate/Home still highlight. ['data','database'] left in ROUTES (harmless; the tile uses href). (2) INVENTORY = Option A slide-over drawer, built + wired: a compact "Inventory" button on Home (below the tiles) shows live counts and opens a right slide-over (backdrop + 3-way segmented control Articles · Protocols · Sentences; Esc/backdrop/× close; item cards + italic quote cards for sentences), reproduced from outputs/inventory_option_A_drawer.html on the canonical tokens. CLIENT-SIDE ONLY (one shared password, no per-user identity — like Lab Stash; no server store). Stores: Articles → NEW mc_saved_articles_v1 (a save/bookmark button on each #molecule-detail linked-paper row pushes {id,name,meta,href}; exposed window.mcSaveArticle); Protocols → NEW mc_saved_protocols_v1 (a "Save protocol" button on #protocol-detail); Sentences → the real Lab Stash via window.MCStash.list() ({id,text,q}) rendered as quote cards, removable via window.MCStash.remove(id). Counts = the three live store sizes, re-read on open / on entering #home / after any save. Clicks: article → opens its doi/url (else the molecule); protocol → #protocol-detail; sentence → reopens its source question in #oracle. All new storage versioned + try/catch, dedupe by id, cap 50. Prior Home v2 work preserved (mic dictation, 4 tiles, merged recents, molecule/protocol detail scenes) and Toolbench/MCStash, Lab Stash highlight-to-save, Oracle SSE/status, SESSION_EXPIRED/same-origin, no-page-scroll shell untouched. · Prior 2026-07-22 13:48 UTC · UI/UX Designer · Home v2 (Lior's annotated review) — NAV is now Home · Oracle · Data · Research · Simulate: the load-time nav pass (formerly "trim") now drops only Map, RELABELS the Database chip to "Data" (icon kept), still prepends a Home chip, and REORDERS every topbar to the canonical order; nav-active is now DYNAMIC (setScene maps scene→category: database/molecule-detail/protocol-detail→Data, research/research-sub/toolbench→Research, etc. and lights the matching chip in every topbar), replacing the old static per-topbar active; ROUTES gained ['data','database']. HOME: ask box gained a MIC (reuses the Oracle's Web Speech dictation via a shared mcMakeDictation() helper — en-US, interim→final append into #homeAskInput, hidden where unsupported); tiles are now FOUR (Oracle→#oracle, Data→#database, Research→#research, Simulate→#simulate); "Pick up where you left off" now merges recent CHATS + MOLECULES (mc_recent_molecules_v1) + PROTOCOLS (mc_recent_protocols_v1), most-recent-first, labelled by kind, seeded with a representative molecule + protocol when empty (no experts); rows route chat→#oracle, molecule→#molecule-detail, protocol→#protocol-detail. NEW SCENES: #molecule-detail fetches GET {API}/api/molecules/{id} (same-origin guard + credentials:'same-origin'; crumbs Data/Molecules/name, mono title, category·taste·odor meta, tag chips, Linked-papers card with per-paper Open→ via doi/url, cross-links Ask the Oracle→ / See on Map→; loading/empty/error states never blank the page; records the view into mc_recent_molecules_v1). #protocol-detail is a representative TEMPLATE (no protocol backend yet — static placeholder steps/papers; only crumb+title populated live from mc_protocol_focus_id/name; records into mc_recent_protocols_v1). All prior work preserved (Related-molecules chips, widened Oracle answer, Toolbench, Lab Stash, lean restyle, SSE streaming/status, SESSION_EXPIRED/same-origin, no-page-scroll shell); #database/#map scenes + in-content journeys intact (Map off the nav; Data back on it). · Prior 2026-07-22 13:23 UTC · UI/UX Designer · added Home landing module — a new #home scene is now the DEFAULT landing (empty hash → #home via setScene) and the MeatCODE logo routes to #home. Top nav everywhere is now Home · Oracle · Research · Simulate: #home authors its own topbar (Home active), and trimNav — which still drops the Database + Map chips — now also PREPENDS a "Home" chip (house SVG) to every other topbar; nav router gained ['home','home'] in ROUTES + 'home' in SCENES. Home is built on #research's app/topbar/canvas shell (no left rail; #home .canvas spans both columns) and reproduces meatcode_lean_v1's Home on this file's tokens (teal=--wine, coral=--brass), all rules scoped under #home/.home-*. It has a REAL typeable ask box (Enter or Ask → sets #oracleTextarea, routes to #oracle, and streams via askOracle()), three tiles routing to #oracle/#research/#simulate, and a "Pick up where you left off" list wired to the saved Oracle chats (live oracleChats / mcLoadOracleChats seeds; a row → mcOpenOracleChat(id) then #oracle), re-rendered on load and on entering #home. All prior work preserved (Related-molecules chips, widened Oracle answer, Toolbench/window.MCStash, Lab Stash, lean DB/Oracle restyle, advisory Oracle-notes, SSE streaming + status phase, SESSION_EXPIRED + credentials same-origin, no-page-scroll shell); #database/#map scenes + their in-content journeys still intact and still off the top nav. · Prior 2026-07-22 12:10 UTC · UI/UX Designer · TASK 1 — removed Database + Map from the TOP NAV: a small load-time JS pass drops any .domain chip whose exact label is "Database"/"Map" across all ~11 topbars (DRY, can't desync); the #database and #map scenes AND every in-content route into them (dock items, "See on Map →", breadcrumbs, the new Related-molecule chips) are kept fully intact — the screens stay reachable, just not as nav buttons. TASK 2 — widened the Oracle answer to ~1080px via #oracle .oracle-wrap max-width, holding .oracle-heading/.oracle-input/.oracle-starter-row to a centered 780px so only #oracleAnswerSlot / the .oracle-answer card fills the wider wrap; content stays centered (margin:auto) and the no-page-scroll fixed shell is untouched. TASK 3 — added a "Related molecules" teal molecule-pill row at the very end of each answer card (below prose, sources, follow-ups): on completion (finalizeAnswer, guarded so the double SSE done/stream-close fire only requests once) it calls GET {API_BASE}/api/molecule-suggestions?q=<question+answer>&limit=6 with credentials:'same-origin' and the typeof-API_BASE same-origin guard, renders the bare [{id,name,category,taste,mentions_count}] array as chips with loading/empty/error states (all try/catch-wrapped — any fetch/parse failure hides the row silently and never blanks the answer); clicking a chip deep-links into Database → Molecules via mc_db_tab + mc_db_focus_id/name + a prefilled #db-molecules-search (reuses the DB engine's maybeFocus). Only the additions above changed; Toolbench, Lab Stash, lean DB/Oracle restyle, SSE streaming + status phase, SESSION_EXPIRED/same-origin, and the advisory Oracle-notes pass are all preserved. · Prior 2026-07-21 14:40 UTC · advisory session · Oracle notes pass (from Lior's annotated screenshot): removed the "ORACLE" eyebrow; subtitle → "Every answer is based on a closed corpus with information you can access"; shorter one-line placeholder; input textarea auto-grows (overflow hidden, min-height 30px) so there's no scrollbar or wasted gap; starter chips are now showcase quick-suggestions (Maillard synthesis route · Mask beany off-notes · Sulfur notes in cooked beef · Boost roasted aroma); answer SOURCES moved BELOW the prose (was above), recolored to a BLUE palette, and collapsed to the first 2 with a "+N more" toggle. · Prior 2026-07-21 14:16 UTC · UI/UX Designer · Lean restyle (matches UI-UX Designer/meatcode_lean_v1.html). TASK A — Database molecules/experts/companies to the lean .filterbar + .tbl look: filter bar is now a surface-2 panel with a pill search + right-aligned sort; molecules category filter is live .fchip chips (All · real facets) that drive the hidden <select> so every fetch/pager/XLSX wire is reused; per-tab "Data / <Entity>" breadcrumb; columns reworked through the config-driven engine — Molecules = MOLECULE(mono) · CLASS(category) · SOURCES(mono mentions_count) · RELEVANCE(.db-bar from priority_score, 0–100); Experts = NAME · AFFILIATION · COUNTRY · H-INDEX(.db-bar, dynamic max, NO relevance column); Companies = NAME · COUNTRY · WEBSITE(link); Export moved below each table as a lean ghost "⤓ Export (.xlsx)". 50/page pagination + Toolbench bookmark on molecule rows preserved. TASK B — Oracle centre column to the lean look: ORACLE eyebrow + "Ask the Oracle" + corpus subtitle; ask box → .oracle-box proportions (1.5px line-strong, r20); answer card → .answer (r20, 15.5px/1.7); retrieved papers render as coral .ent.paper-style pills wired to the live SSE sources (no fabricated molecule/expert chips); follow-ups → lean "→" chips from the model's Follow-ups line; left Pinned/History rail, Lab Stash highlight-to-save, streaming + "Digging the MeatCODE database…" status phase, SESSION_EXPIRED + credentials same-origin, and no-page-scroll frame all preserved. Only CSS + HTML markup + the DB config-engine columns/chips changed; the Oracle/Lab-Stash/Toolbench script blocks are byte-identical. NOTE: the on-disk base was the 13:19 commit — the Full-Stack Engineer's 13:34 backup Export/Import (mc-backup / mcStashSnapshot) is NOT in this file and must be re-applied + committed. · Prior 2026-07-21 13:19 UTC · UI/UX Designer · (1+3) Every tab is a centered, fixed-height frame with NO page scroll: the app-shell grid (64px 1fr, 100vh, overflow:hidden) bounds each scene and each scene’s .canvas is the internal scroller (min-height:0 + overflow-y:auto). Map keeps canvas overflow:hidden for the globe. Oracle is now a bounded flex column — heading + ask box + starters stay pinned and ONLY #oracleAnswerSlot scrolls. Content stays horizontally centered via each wrap’s max-width + margin:auto. (2) The topbar search bar was removed on every scene and replaced by a Toolbench wrench button that opens a saved-items drawer with three persisted sections — Saved molecules (mc_saved_molecules_v1; bookmark button added to each Database molecules row), Saved sentences (mc_lab_stash_v1 via a new window.MCStash owner API), and Marked chats (pinned mc_oracle_history_v1). The redundant bottom-left “Lab Stash” button was removed; highlight-to-save still writes mc_lab_stash_v1. All three stores are versioned + try/catch-wrapped; molecules capped at 100. · Prior 2026-07-21: full-screen shell (grid 64px 1fr; dock/flow-bar hidden), bulletproof Ask re-enable (.finally + input-listener), verified caches. · Prior: 401/SESSION_EXPIRED “your sign-in expired” + credentials same-origin; “Digging the MeatCODE database…” status phase; Oracle default landing + brand→#oracle; nav Oracle·Research·Database·Simulate·Map; no topbar bell. -->
+<!-- Last updated: 2026-08-15 14:55 UTC · UI/UX Designer · FOUR changes (Lior's dev-area sprint). (1) ORACLE ATTACH (preview): paperclip button in the ask box next to the mic (#oracleAttachBtn + hidden #oracleFileInput); picking a file renders a removable filename chip (+ "preview" tag) in #oracleAttachRow above the ask controls. CLIENT-SIDE ONLY — nothing is uploaded and NO success/processing message is shown (tooltip: "Attach data or a paper (preview — processing coming soon)"). (2) DEV AREA BUTTON: a flask "Dev Area" link (→ /app/dev/index.html, same tab, plain <a>) authored statically next to the Inventory button on all 14 topbars; FEATURE-FLAGGED — .mc-devarea-btn is display:none unless body.ff-dev_area (set by the existing /api/flags load pass), so it stays off production until the flag flips. (3) HOME OFF THE NAV — Oracle is the landing again: empty hash → #oracle (setScene default), the brand/logo click → #oracle, and the load-time nav pass now REMOVES any Home chip instead of injecting one → top nav everywhere = Oracle · Research · Simulate. The #home scene + its wiring stay in the file but are unreachable from nav (harmless dead scene, cheap rollback; NAV_CAT/ROUTES 'home' entries left in place). (4) RESEARCH TILES: #research now shows THREE tiles — Juice · Lipid (both subtitled "aroma profiles inside", still → #research-sub) · Analytics (→ /app/dev/analytics.html, labelled a dev preview); the Matrix + Volatiles cards and the dashed "Looking for a protocol instead?" card are REMOVED (the #research-sub matrix/volatiles content + #toolbench stay intact off-scene); each tile now carries its own palette (Juice teal · Lipid coral · Analytics olive) whose card background DEEPENS to a darker shade of the same hue on hover (smooth background-color transition via .phase-card[data-phase] rules). · Prior 2026-07-22 14:16 UTC · UI/UX Designer · Home v3 (Lior's review) — TWO changes. (1) DATA OUT OF TOP NAV: the load-time nav pass now removes BOTH Map and Database chips (was: relabel Database→Data and keep) + still injects Home + reorders → net top nav EVERYWHERE = Home · Oracle · Research · Simulate. The Home "Data" TILE (→#database) and the #database scene + all in-content routes are kept — Data stays reachable, just not as an upper-category button. setScene's dynamic active-map no longer activates a Data chip (database/molecule-detail/protocol-detail leave the nav with nothing active, like #map); Oracle/Research/Simulate/Home still highlight. ['data','database'] left in ROUTES (harmless; the tile uses href). (2) INVENTORY = Option A slide-over drawer, built + wired: a compact "Inventory" button on Home (below the tiles) shows live counts and opens a right slide-over (backdrop + 3-way segmented control Articles · Protocols · Sentences; Esc/backdrop/× close; item cards + italic quote cards for sentences), reproduced from outputs/inventory_option_A_drawer.html on the canonical tokens. CLIENT-SIDE ONLY (one shared password, no per-user identity — like Lab Stash; no server store). Stores: Articles → NEW mc_saved_articles_v1 (a save/bookmark button on each #molecule-detail linked-paper row pushes {id,name,meta,href}; exposed window.mcSaveArticle); Protocols → NEW mc_saved_protocols_v1 (a "Save protocol" button on #protocol-detail); Sentences → the real Lab Stash via window.MCStash.list() ({id,text,q}) rendered as quote cards, removable via window.MCStash.remove(id). Counts = the three live store sizes, re-read on open / on entering #home / after any save. Clicks: article → opens its doi/url (else the molecule); protocol → #protocol-detail; sentence → reopens its source question in #oracle. All new storage versioned + try/catch, dedupe by id, cap 50. Prior Home v2 work preserved (mic dictation, 4 tiles, merged recents, molecule/protocol detail scenes) and Toolbench/MCStash, Lab Stash highlight-to-save, Oracle SSE/status, SESSION_EXPIRED/same-origin, no-page-scroll shell untouched. · Prior 2026-07-22 13:48 UTC · UI/UX Designer · Home v2 (Lior's annotated review) — NAV is now Home · Oracle · Data · Research · Simulate: the load-time nav pass (formerly "trim") now drops only Map, RELABELS the Database chip to "Data" (icon kept), still prepends a Home chip, and REORDERS every topbar to the canonical order; nav-active is now DYNAMIC (setScene maps scene→category: database/molecule-detail/protocol-detail→Data, research/research-sub/toolbench→Research, etc. and lights the matching chip in every topbar), replacing the old static per-topbar active; ROUTES gained ['data','database']. HOME: ask box gained a MIC (reuses the Oracle's Web Speech dictation via a shared mcMakeDictation() helper — en-US, interim→final append into #homeAskInput, hidden where unsupported); tiles are now FOUR (Oracle→#oracle, Data→#database, Research→#research, Simulate→#simulate); "Pick up where you left off" now merges recent CHATS + MOLECULES (mc_recent_molecules_v1) + PROTOCOLS (mc_recent_protocols_v1), most-recent-first, labelled by kind, seeded with a representative molecule + protocol when empty (no experts); rows route chat→#oracle, molecule→#molecule-detail, protocol→#protocol-detail. NEW SCENES: #molecule-detail fetches GET {API}/api/molecules/{id} (same-origin guard + credentials:'same-origin'; crumbs Data/Molecules/name, mono title, category·taste·odor meta, tag chips, Linked-papers card with per-paper Open→ via doi/url, cross-links Ask the Oracle→ / See on Map→; loading/empty/error states never blank the page; records the view into mc_recent_molecules_v1). #protocol-detail is a representative TEMPLATE (no protocol backend yet — static placeholder steps/papers; only crumb+title populated live from mc_protocol_focus_id/name; records into mc_recent_protocols_v1). All prior work preserved (Related-molecules chips, widened Oracle answer, Toolbench, Lab Stash, lean restyle, SSE streaming/status, SESSION_EXPIRED/same-origin, no-page-scroll shell); #database/#map scenes + in-content journeys intact (Map off the nav; Data back on it). · Prior 2026-07-22 13:23 UTC · UI/UX Designer · added Home landing module — a new #home scene is now the DEFAULT landing (empty hash → #home via setScene) and the MeatCODE logo routes to #home. Top nav everywhere is now Home · Oracle · Research · Simulate: #home authors its own topbar (Home active), and trimNav — which still drops the Database + Map chips — now also PREPENDS a "Home" chip (house SVG) to every other topbar; nav router gained ['home','home'] in ROUTES + 'home' in SCENES. Home is built on #research's app/topbar/canvas shell (no left rail; #home .canvas spans both columns) and reproduces meatcode_lean_v1's Home on this file's tokens (teal=--wine, coral=--brass), all rules scoped under #home/.home-*. It has a REAL typeable ask box (Enter or Ask → sets #oracleTextarea, routes to #oracle, and streams via askOracle()), three tiles routing to #oracle/#research/#simulate, and a "Pick up where you left off" list wired to the saved Oracle chats (live oracleChats / mcLoadOracleChats seeds; a row → mcOpenOracleChat(id) then #oracle), re-rendered on load and on entering #home. All prior work preserved (Related-molecules chips, widened Oracle answer, Toolbench/window.MCStash, Lab Stash, lean DB/Oracle restyle, advisory Oracle-notes, SSE streaming + status phase, SESSION_EXPIRED + credentials same-origin, no-page-scroll shell); #database/#map scenes + their in-content journeys still intact and still off the top nav. · Prior 2026-07-22 12:10 UTC · UI/UX Designer · TASK 1 — removed Database + Map from the TOP NAV: a small load-time JS pass drops any .domain chip whose exact label is "Database"/"Map" across all ~11 topbars (DRY, can't desync); the #database and #map scenes AND every in-content route into them (dock items, "See on Map →", breadcrumbs, the new Related-molecule chips) are kept fully intact — the screens stay reachable, just not as nav buttons. TASK 2 — widened the Oracle answer to ~1080px via #oracle .oracle-wrap max-width, holding .oracle-heading/.oracle-input/.oracle-starter-row to a centered 780px so only #oracleAnswerSlot / the .oracle-answer card fills the wider wrap; content stays centered (margin:auto) and the no-page-scroll fixed shell is untouched. TASK 3 — added a "Related molecules" teal molecule-pill row at the very end of each answer card (below prose, sources, follow-ups): on completion (finalizeAnswer, guarded so the double SSE done/stream-close fire only requests once) it calls GET {API_BASE}/api/molecule-suggestions?q=<question+answer>&limit=6 with credentials:'same-origin' and the typeof-API_BASE same-origin guard, renders the bare [{id,name,category,taste,mentions_count}] array as chips with loading/empty/error states (all try/catch-wrapped — any fetch/parse failure hides the row silently and never blanks the answer); clicking a chip deep-links into Database → Molecules via mc_db_tab + mc_db_focus_id/name + a prefilled #db-molecules-search (reuses the DB engine's maybeFocus). Only the additions above changed; Toolbench, Lab Stash, lean DB/Oracle restyle, SSE streaming + status phase, SESSION_EXPIRED/same-origin, and the advisory Oracle-notes pass are all preserved. · Prior 2026-07-21 14:40 UTC · advisory session · Oracle notes pass (from Lior's annotated screenshot): removed the "ORACLE" eyebrow; subtitle → "Every answer is based on a closed corpus with information you can access"; shorter one-line placeholder; input textarea auto-grows (overflow hidden, min-height 30px) so there's no scrollbar or wasted gap; starter chips are now showcase quick-suggestions (Maillard synthesis route · Mask beany off-notes · Sulfur notes in cooked beef · Boost roasted aroma); answer SOURCES moved BELOW the prose (was above), recolored to a BLUE palette, and collapsed to the first 2 with a "+N more" toggle. · Prior 2026-07-21 14:16 UTC · UI/UX Designer · Lean restyle (matches UI-UX Designer/meatcode_lean_v1.html). TASK A — Database molecules/experts/companies to the lean .filterbar + .tbl look: filter bar is now a surface-2 panel with a pill search + right-aligned sort; molecules category filter is live .fchip chips (All · real facets) that drive the hidden <select> so every fetch/pager/XLSX wire is reused; per-tab "Data / <Entity>" breadcrumb; columns reworked through the config-driven engine — Molecules = MOLECULE(mono) · CLASS(category) · SOURCES(mono mentions_count) · RELEVANCE(.db-bar from priority_score, 0–100); Experts = NAME · AFFILIATION · COUNTRY · H-INDEX(.db-bar, dynamic max, NO relevance column); Companies = NAME · COUNTRY · WEBSITE(link); Export moved below each table as a lean ghost "⤓ Export (.xlsx)". 50/page pagination + Toolbench bookmark on molecule rows preserved. TASK B — Oracle centre column to the lean look: ORACLE eyebrow + "Ask the Oracle" + corpus subtitle; ask box → .oracle-box proportions (1.5px line-strong, r20); answer card → .answer (r20, 15.5px/1.7); retrieved papers render as coral .ent.paper-style pills wired to the live SSE sources (no fabricated molecule/expert chips); follow-ups → lean "→" chips from the model's Follow-ups line; left Pinned/History rail, Lab Stash highlight-to-save, streaming + "Digging the MeatCODE database…" status phase, SESSION_EXPIRED + credentials same-origin, and no-page-scroll frame all preserved. Only CSS + HTML markup + the DB config-engine columns/chips changed; the Oracle/Lab-Stash/Toolbench script blocks are byte-identical. NOTE: the on-disk base was the 13:19 commit — the Full-Stack Engineer's 13:34 backup Export/Import (mc-backup / mcStashSnapshot) is NOT in this file and must be re-applied + committed. · Prior 2026-07-21 13:19 UTC · UI/UX Designer · (1+3) Every tab is a centered, fixed-height frame with NO page scroll: the app-shell grid (64px 1fr, 100vh, overflow:hidden) bounds each scene and each scene’s .canvas is the internal scroller (min-height:0 + overflow-y:auto). Map keeps canvas overflow:hidden for the globe. Oracle is now a bounded flex column — heading + ask box + starters stay pinned and ONLY #oracleAnswerSlot scrolls. Content stays horizontally centered via each wrap’s max-width + margin:auto. (2) The topbar search bar was removed on every scene and replaced by a Toolbench wrench button that opens a saved-items drawer with three persisted sections — Saved molecules (mc_saved_molecules_v1; bookmark button added to each Database molecules row), Saved sentences (mc_lab_stash_v1 via a new window.MCStash owner API), and Marked chats (pinned mc_oracle_history_v1). The redundant bottom-left “Lab Stash” button was removed; highlight-to-save still writes mc_lab_stash_v1. All three stores are versioned + try/catch-wrapped; molecules capped at 100. · Prior 2026-07-21: full-screen shell (grid 64px 1fr; dock/flow-bar hidden), bulletproof Ask re-enable (.finally + input-listener), verified caches. · Prior: 401/SESSION_EXPIRED “your sign-in expired” + credentials same-origin; “Digging the MeatCODE database…” status phase; Oracle default landing + brand→#oracle; nav Oracle·Research·Database·Simulate·Map; no topbar bell. -->
 <title>MeatCODE · GFI Israel — flavor & aroma research</title>
 <meta name="viewport" content="width=1440" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -177,6 +177,21 @@ section.scene.active { display: block; }
   background: var(--wine); color: #fff; border-radius: 100px;
   padding: 1px 7px; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
 }
+/* 2026-08-15 · Dev Area button (feature-flagged). Authored statically next to the
+   Inventory button on every topbar, but CSS-hidden unless the /api/flags load pass
+   adds body.ff-dev_area — so it stays invisible on production until the flag flips. */
+.mc-devarea-btn { display: none; }
+body.ff-dev_area .mc-devarea-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px;
+  background: var(--bg-deep); border: 1px solid transparent;
+  border-radius: 10px;
+  font-family: inherit; font-size: 13px; font-weight: 700; color: var(--ink-dim);
+  text-decoration: none;
+  cursor: pointer; transition: 0.13s;
+}
+body.ff-dev_area .mc-devarea-btn:hover { background: var(--wine-mist); color: var(--wine); border-color: var(--wine-tint); }
+body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
 
 /* ── Left context panel ── */
 .context {
@@ -1377,7 +1392,7 @@ section.scene.active { display: block; }
 
 /* ═══ v4 polish bundle ═══ */
 
-/* v4 · phase cards (Juice / Lipid / Matrix / Volatiles) */
+/* v4 · phase cards (now Juice / Lipid / Analytics — Matrix + Volatiles tiles removed 2026-08-15) */
 .phase-card {
   background: var(--surface);
   border: 1px solid var(--line);
@@ -1411,6 +1426,19 @@ section.scene.active { display: block; }
   font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
   color: var(--wine); display: flex; justify-content: flex-end;
 }
+/* 2026-08-15 · Research tiles v2 (Juice · Lipid · Analytics): each tile owns one hue
+   family (teal / coral / olive) and on hover its background DEEPENS to a darker shade
+   of that SAME hue — no hue shift, smooth background-color transition. */
+.phase-card[data-phase] {
+  transition: background-color 0.25s ease, border-color 0.25s ease,
+              box-shadow 0.18s ease, transform 0.18s ease;
+}
+.phase-card[data-phase="juice"]           { background: #EDF6F4; border-color: #D5E7E3; }
+.phase-card[data-phase="juice"]:hover     { background: #CFE5E0; border-color: #A9D0C9; }
+.phase-card[data-phase="lipid"]           { background: #FAF0E9; border-color: #EDD8C9; }
+.phase-card[data-phase="lipid"]:hover     { background: #F0D5C3; border-color: #DFB89F; }
+.phase-card[data-phase="analytics"]       { background: #F3F5EA; border-color: #DCE1C9; }
+.phase-card[data-phase="analytics"]:hover { background: #DCE2C6; border-color: #C2CBA0; }
 
 /* v4 · database tabs */
 .db-tab {
@@ -1537,6 +1565,48 @@ section.scene.active { display: block; }
 }
 .oracle-mic-status.on { display: block; }
 .oracle-mic-status.warn { color: #6F2A26; }
+
+/* 2026-08-15 · Oracle attach (preview). The paperclip mirrors the mic's round ghost
+   button; a picked file shows as a removable wine chip above the ask controls.
+   Client-side only — there is no upload state and deliberately no success styling. */
+.oracle-attach {
+  width: 40px; height: 40px; padding: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-dim);
+  cursor: pointer;
+  display: grid; place-items: center;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+.oracle-attach svg { width: 17px; height: 17px; }
+.oracle-attach:hover { border-color: var(--wine); color: var(--wine); background: var(--wine-mist); }
+.oracle-attach:focus-visible { outline: 2px solid var(--wine); outline-offset: 2px; }
+.oracle-attach.on { border-color: var(--wine-soft); color: var(--wine); background: var(--wine-mist); }
+.oracle-attach-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 0 2px; }
+.oracle-attach-row[hidden] { display: none; }
+.oracle-attach-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  max-width: 100%;
+  padding: 5px 8px 5px 12px;
+  background: var(--wine-mist);
+  border: 1px solid var(--wine-tint);
+  border-radius: 100px;
+  font-size: 12.5px; font-weight: 700; color: var(--wine);
+}
+.oracle-attach-name { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.oracle-attach-tag {
+  font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--wine-deep); background: var(--surface);
+  border-radius: 100px; padding: 2px 7px;
+}
+.oracle-attach-x {
+  width: 18px; height: 18px; padding: 0; border: none; border-radius: 50%;
+  background: transparent; color: var(--wine);
+  font-size: 15px; line-height: 1; font-weight: 700; cursor: pointer;
+  display: grid; place-items: center;
+}
+.oracle-attach-x:hover { background: var(--wine-tint); color: var(--wine-deep); }
 
 /* v11 · Oracle sidebar — pinned chats ABOVE history, both rendered by JS.
    The save/bookmark hit area is enlarged ONLY inside the Oracle scene; database
@@ -2221,17 +2291,17 @@ section.scene.active { display: block; }
 </head>
 <body>
 
-<!-- ==================== SCENE 0 :: Home landing ====================
-     Default landing (empty hash → #home; logo → #home). Modeled on #research's
-     app/topbar/canvas shell; no left .context rail (canvas spans both columns).
-     The load-time nav pass injects Home + drops Map/Database across every topbar, so nav
-     everywhere is Home · Oracle · Research · Simulate (Data reachable via the Home tile). -->
+<!-- ==================== SCENE 0 :: Home landing (DORMANT since 2026-08-15) ====================
+     Home was removed from the nav — the Oracle is the landing again (empty hash → #oracle;
+     logo → #oracle) and the load-time nav pass now REMOVES Home chips (nav = Oracle · Research ·
+     Simulate). This scene is kept in the file but unreachable from nav: harmless dead scene,
+     cheap rollback (repoint setScene default + brand clicks and restore the inject-Home pass). -->
 <section class="scene" id="home">
   <div class="app">
     <header class="topbar">
       <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
-      <!-- Uniform domains authored here; the load-time nav pass injects "Home" first, DROPS Map +
-           Database, and reorders → Home · Oracle · Research · Simulate; setScene sets .active. -->
+      <!-- Uniform domains authored here; the load-time nav pass DROPS Map + Database + Home
+           and reorders → Oracle · Research · Simulate; setScene sets .active. -->
       <div class="domains">
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
@@ -2239,6 +2309,7 @@ section.scene.active { display: block; }
         <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
       </div>
       <div class="topbar-right">
+        <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -2343,6 +2414,7 @@ section.scene.active { display: block; }
         <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
       </div>
       <div class="topbar-right">
+        <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -2423,6 +2495,7 @@ section.scene.active { display: block; }
         <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
       </div>
       <div class="topbar-right">
+        <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -2508,6 +2581,7 @@ section.scene.active { display: block; }
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
+        <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -2640,6 +2714,7 @@ section.scene.active { display: block; }
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
+        <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -2704,11 +2779,25 @@ section.scene.active { display: block; }
             class="oracle-textarea" id="oracleTextarea"
             placeholder="e.g. What drives roasted notes in plant-based beef?"
             rows="1"></textarea>
+          <!-- 2026-08-15 · Attach (preview): the chip for a picked file renders here, above
+               the ask controls. Client-side only — no upload happens yet, so no success or
+               processing message is ever shown. -->
+          <div class="oracle-attach-row" id="oracleAttachRow" hidden></div>
           <div class="oracle-input-bottom">
             <div class="oracle-chips" id="oracleTopicChips">
               <!-- topic chips from onboarding refinement appear here at runtime -->
             </div>
             <div class="oracle-actions">
+              <!-- 2026-08-15 · attach (preview). Paperclip → hidden file input; picking a
+                   file only shows a removable chip — upload/processing comes later. -->
+              <input type="file" id="oracleFileInput" hidden tabindex="-1" aria-hidden="true">
+              <button class="oracle-attach" id="oracleAttachBtn" type="button"
+                      aria-label="Attach data or a paper (preview — processing coming soon)"
+                      title="Attach data or a paper (preview — processing coming soon)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                </svg>
+              </button>
               <!-- v11 · dictation. Ships hidden; JS unhides it only where the Web
                    Speech API exists, so there is never a dead mic on screen. -->
               <button class="oracle-mic" id="oracleMicBtn" type="button" hidden
@@ -2770,6 +2859,7 @@ section.scene.active { display: block; }
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
+        <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -2921,6 +3011,7 @@ section.scene.active { display: block; }
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
+        <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -2967,12 +3058,12 @@ section.scene.active { display: block; }
           <h1 style="font-size:28px;font-weight:700;margin:6px 0 4px;color:var(--ink);">What kind of system are you studying?</h1>
           <p class="muted" style="font-size:14.5px;color:var(--ink-dim);max-width:680px;line-height:1.55;">MeatCODE narrows the database by the phase your reaction lives in. Pick one — we'll then drill into the sub-topics most relevant to it.</p>
         </div>
-        <div class="phase-grid" id="phaseGrid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:24px;">
+        <div class="phase-grid" id="phaseGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:24px;">
           <div class="phase-card" data-phase="juice" onclick="localStorage.setItem('mc_phase','juice');location.hash='#research-sub';">
             <div class="phase-icon" style="background:#E0F0EE;color:var(--wine-deep);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px;"><path d="M12 3c-2 3-6 8-6 12 0 3.3 2.7 6 6 6s6-2.7 6-6c0-4-4-9-6-12z"/><path d="M9.5 15c0 1.5 1 2.5 2 2.5"/></svg></div>
             <div class="phase-body">
               <h3>Juice</h3>
-              <div class="phase-tag">Water-based</div>
+              <div class="phase-tag">Water-based · aroma profiles inside</div>
               <p>Aqueous matrices: broths, plant juices, hydrolysates. Where polar volatiles, sugars and free amino acids drive the chemistry.</p>
             </div>
             <div class="phase-cta">Open sub-topics →</div>
@@ -2981,38 +3072,22 @@ section.scene.active { display: block; }
             <div class="phase-icon" style="background:var(--brass-soft);color:#7A4628;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px;"><circle cx="12" cy="5.5" r="2.8"/><path d="M10.5 8L8 21M13.5 8l2.5 13"/><path d="M9.2 13l1.6 .3M14.8 13l-1.6 .3"/></svg></div>
             <div class="phase-body">
               <h3>Lipid</h3>
-              <div class="phase-tag">Fat-based</div>
+              <div class="phase-tag">Fat-based · aroma profiles inside</div>
               <p>Oils, fats, lipid emulsions. The home of lipid oxidation aldehydes, fat-soluble top-notes, and frying chemistry.</p>
             </div>
             <div class="phase-cta">Open sub-topics →</div>
           </div>
-          <div class="phase-card" data-phase="matrix" onclick="localStorage.setItem('mc_phase','matrix');location.hash='#research-sub';">
-            <div class="phase-icon" style="background:var(--olive-soft);color:#3A4A25;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px;"><path d="M12 2L3 7l9 5 9-5z"/><path d="M3 12l9 5 9-5"/><path d="M3 17l9 5 9-5"/></svg></div>
+          <!-- 2026-08-15 · Analytics tile (dev preview) — plain link into the dev-area
+               analytics page for now; a first-class Analytics scene comes later. -->
+          <div class="phase-card" data-phase="analytics" onclick="location.href='/app/dev/analytics.html';">
+            <div class="phase-icon" style="background:var(--olive-soft);color:#3A4A25;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px;"><path d="M4 20h16"/><path d="M6.5 20v-6"/><path d="M11.5 20V9.5"/><path d="M16.5 20v-8"/><path d="M21 20V4.5"/><path d="M6.5 10.5l5-4 4.5 3 4.5-5"/></svg></div>
             <div class="phase-body">
-              <h3>Matrix</h3>
-              <div class="phase-tag">Solid / complex</div>
-              <p>Protein isolates, extruded textures, formulated systems. Where binding, release and Maillard chemistry interact with structure.</p>
+              <h3>Analytics</h3>
+              <div class="phase-tag">Corpus dashboards · preview</div>
+              <p>Corpus-wide trends, molecule and source breakdowns. Opens the analytics workbench in the dev area for now.</p>
             </div>
-            <div class="phase-cta">Open sub-topics →</div>
+            <div class="phase-cta">Open analytics →</div>
           </div>
-          <div class="phase-card" data-phase="volatiles" onclick="localStorage.setItem('mc_phase','volatiles');location.hash='#research-sub';">
-            <div class="phase-icon" style="background:#EDE6F0;color:#4F3360;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px;"><path d="M5 14h14v5c0 1.1-.9 2-2 2H7c-1.1 0-2-.9-2-2v-5z"/><path d="M5 14l1.5-4h11L19 14"/><circle cx="9" cy="6" r=".9" fill="currentColor"/><circle cx="13" cy="3.5" r=".9" fill="currentColor"/><circle cx="16" cy="7" r=".9" fill="currentColor"/><circle cx="11" cy="9" r=".9" fill="currentColor"/></svg></div>
-            <div class="phase-body">
-              <h3>Volatiles</h3>
-              <div class="phase-tag">Headspace</div>
-              <p>The aroma molecules themselves — what GC-MS, SPME and the panel actually capture. Top-notes, off-notes, OAVs.</p>
-            </div>
-            <div class="phase-cta">Open sub-topics →</div>
-          </div>
-        </div>
-
-        <div class="phase-card" onclick="location.hash='#toolbench';" style="flex-direction:row;align-items:center;gap:18px;margin-top:18px;border-style:dashed;box-shadow:none;">
-          <div class="phase-icon" style="background:var(--bg-deep);color:var(--wine);flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;"><path d="M5 5l2 8M11 5L9 13M3 7h10M3 11h10"/></svg></div>
-          <div class="phase-body" style="flex:1;">
-            <h3 style="font-size:16px;">Looking for a protocol instead?</h3>
-            <p>Toolbench has the analytical methods, benchmarks and tutorials pulled from the literature — parameterized and one click from your bench.</p>
-          </div>
-          <div class="phase-cta" style="justify-content:flex-end;white-space:nowrap;">Open Toolbench →</div>
         </div>
       </div>
     </main>
@@ -3040,6 +3115,7 @@ section.scene.active { display: block; }
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
+        <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -3163,6 +3239,7 @@ section.scene.active { display: block; }
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
+        <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -3371,6 +3448,7 @@ section.scene.active { display: block; }
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
+        <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -3483,6 +3561,7 @@ section.scene.active { display: block; }
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
+        <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -3744,6 +3823,7 @@ section.scene.active { display: block; }
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
+        <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -3936,6 +4016,7 @@ section.scene.active { display: block; }
         <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
       </div>
       <div class="topbar-right">
+        <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -3985,6 +4066,7 @@ section.scene.active { display: block; }
         <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
       </div>
       <div class="topbar-right">
+        <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -4067,7 +4149,7 @@ section.scene.active { display: block; }
 
 <script>
 function setScene() {
-  var h = location.hash.replace('#', '') || 'home';
+  var h = location.hash.replace('#', '') || 'oracle';   /* 2026-08-15 · Oracle is the landing again (Home off the nav) */
   document.querySelectorAll('section.scene').forEach(function(s){ s.classList.remove('active'); });
   var el = document.getElementById(h);
   if (el) el.classList.add('active');
@@ -4517,16 +4599,17 @@ document.querySelectorAll('section.scene .brand').forEach(function (brand) {
   brand.appendChild(co);
 });
 
-/* The brand mark (top-left "GFI Israel · MeatCODE") is a home control: clicking
-   it — or hitting Enter/Space when focused — routes to the Home landing scene. */
+/* The brand mark (top-left "GFI Israel · MeatCODE") routes to the ORACLE — the landing
+   scene again since 2026-08-15 (Home was removed from the nav; the #home scene stays in
+   the file but is unreachable from here — cheap rollback: point these back at '#home'). */
 document.querySelectorAll('section.scene .brand').forEach(function (brand) {
   brand.style.cursor = 'pointer';
   brand.setAttribute('role', 'button');
   brand.setAttribute('tabindex', '0');
-  brand.setAttribute('title', 'Go to Home');
-  brand.addEventListener('click', function () { location.hash = '#home'; });
+  brand.setAttribute('title', 'Go to the Oracle');
+  brand.addEventListener('click', function () { location.hash = '#oracle'; });
   brand.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); location.hash = '#home'; }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); location.hash = '#oracle'; }
   });
 });
 
@@ -6042,6 +6125,51 @@ window.rebuildExpertList = function () {};
       if (window.mcToolbenchRefresh) window.mcToolbenchRefresh();
     }
   };
+})();
+
+/* ═══ 2026-08-15 · Oracle attach (preview) ═══
+   Paperclip next to the mic in the ask box. CLIENT-SIDE ONLY: picking a file just shows
+   a removable filename chip above the ask controls — there is NO backend upload yet, so
+   we never show a success/processing message (the tooltip says processing is coming). */
+(function initOracleAttach() {
+  var btn   = document.getElementById('oracleAttachBtn');
+  var input = document.getElementById('oracleFileInput');
+  var row   = document.getElementById('oracleAttachRow');
+  if (!btn || !input || !row) return;
+  function clearAttach() {
+    try { input.value = ''; } catch (e) {}
+    row.innerHTML = '';
+    row.hidden = true;
+    btn.classList.remove('on');
+  }
+  function renderChip(file) {
+    row.innerHTML = '';
+    var chip = document.createElement('span');
+    chip.className = 'oracle-attach-chip';
+    chip.title = file.name + ' — attached as a preview only; processing coming soon';
+    var name = document.createElement('span');
+    name.className = 'oracle-attach-name';
+    name.textContent = file.name;                 // textContent → no HTML-injection risk
+    var tag = document.createElement('span');
+    tag.className = 'oracle-attach-tag';
+    tag.textContent = 'preview';
+    var x = document.createElement('button');
+    x.type = 'button';
+    x.className = 'oracle-attach-x';
+    x.setAttribute('aria-label', 'Remove attachment');
+    x.title = 'Remove attachment';
+    x.textContent = '×';
+    x.addEventListener('click', clearAttach);
+    chip.appendChild(name); chip.appendChild(tag); chip.appendChild(x);
+    row.appendChild(chip);
+    row.hidden = false;
+    btn.classList.add('on');
+  }
+  btn.addEventListener('click', function () { input.click(); });
+  input.addEventListener('change', function () {
+    var f = input.files && input.files[0];
+    if (f) renderChip(f); else clearAttach();
+  });
 })();
 
 </script>
@@ -7572,7 +7700,7 @@ window.rebuildExpertList = function () {};
 
   /* ---- router: render/populate on load AND on entering each relevant scene ---- */
   function mcHomeHashRouter() {
-    var h = location.hash.replace('#', '') || 'home';
+    var h = location.hash.replace('#', '') || 'oracle';   /* 2026-08-15 · empty hash lands on the Oracle now */
     if (h === 'home') { renderHomeRecent(); mcInvRefresh(); }
     else if (h === 'molecule-detail') mcOpenMoleculeDetail();
     else if (h === 'protocol-detail') mcOpenProtocolDetail();
@@ -7584,35 +7712,28 @@ window.rebuildExpertList = function () {};
 </script>
 
 <script>
-/* 2026-07-22 · Top-nav normalize (UI/UX). Nav EVERYWHERE = Home · Oracle · Research · Simulate.
-   One load-time pass across all ~13 topbars (DRY, desync-proof):
-   (a) remove any "Map" AND "Database"/"Data" chip — both stay reachable via in-content journeys
-       (the Home Data tile → #database, "See on Map →", dock items, breadcrumbs), just not as nav buttons;
-   (b) prepend a "Home" chip (house icon) to any topbar lacking one → routes via ['home','home'];
+/* 2026-08-15 · Top-nav normalize (UI/UX). Nav EVERYWHERE = Oracle · Research · Simulate.
+   One load-time pass across all topbars (DRY, desync-proof):
+   (a) remove any "Map" / "Database" / "Data" chip — reachable via in-content journeys only
+       ("See on Map →", dock items, breadcrumbs), just not as nav buttons;
+   (b) remove any "Home" chip — Home is OFF the nav (Lior, 2026-08-15): the Oracle is the
+       landing scene again (empty hash → #oracle; the brand mark also routes to #oracle).
+       The #home scene stays in the file but is unreachable from nav — harmless dead scene,
+       cheap rollback (restore the old inject-Home block from git to bring it back);
    (c) reorder each topbar's chips to the canonical ORDER.
-   Then setScene() is re-run so the dynamic .active highlight reflects the injected Home chip. The
-   #database / #map scenes and every in-content route into them are left fully intact — Lior's pick:
-   Data is no longer an upper-category nav button (only the Home tile opens the data module). */
+   Then setScene() is re-run so the dynamic .active highlight is correct. The #database /
+   #map / #home scenes and every in-content route into them are left fully intact. */
 (function () {
-  var HOME_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 7.5L8 3l5.5 4.5"/><path d="M4 6.8V13h8V6.8"/></svg>';
-  var ORDER = ['Home', 'Oracle', 'Research', 'Simulate'];
+  var ORDER = ['Oracle', 'Research', 'Simulate'];
   function labelOf(d) { return (d.textContent || '').trim(); }
   function trimNav() {
     document.querySelectorAll('.domain').forEach(function (d) {
       var t = labelOf(d);
-      if (t === 'Map' || t === 'Database' || t === 'Data') d.remove();   // (a) Map + Database off the nav
+      // (a)+(b) Map + Database + Home off the nav
+      if (t === 'Map' || t === 'Database' || t === 'Data' || t === 'Home') d.remove();
     });
     document.querySelectorAll('.domains').forEach(function (row) {
-      // (b) ensure a Home chip
-      var hasHome = false;
-      row.querySelectorAll('.domain').forEach(function (d) { if (labelOf(d) === 'Home') hasHome = true; });
-      if (!hasHome) {
-        var chip = document.createElement('div');
-        chip.className = 'domain';
-        chip.innerHTML = HOME_SVG + 'Home';
-        row.insertBefore(chip, row.firstChild);
-      }
-      // (c) reorder to canonical Home · Oracle · Research · Simulate (unknown labels appended)
+      // (c) reorder to canonical Oracle · Research · Simulate (unknown labels appended)
       var chips = Array.prototype.slice.call(row.querySelectorAll('.domain'));
       chips.sort(function (a, b) {
         var ia = ORDER.indexOf(labelOf(a)); if (ia < 0) ia = 99;

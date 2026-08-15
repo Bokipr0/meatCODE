@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<!-- Last updated: 2026-08-15 · Fullstack Engineer · Dev Area hub: feature flags (read-only), screens, documents, user screen flows -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MeatCODE · Dev Area</title>
+<style>
+:root {
+  /* ── GFI Israel · seaweed teal palette (mirrors app/meatcode_mockup.html :root) ── */
+  --bg:           #FAF6EF;
+  --bg-deep:      #F2EBDA;
+  --surface:      #FFFFFF;
+  --surface-2:    #F7F0E0;
+  --wine:         #00736E;
+  --wine-deep:    #015A56;
+  --wine-soft:    #4FA59F;
+  --wine-tint:    #B5DDD8;
+  --wine-mist:    #E0F0EE;
+  --ink:          #1A1A1A;
+  --ink-dim:      #4A4A4A;
+  --ink-faint:    #8A8A8A;
+  --line:         #E5DDD0;
+  --line-strong:  #D2C8B5;
+  --brass:        #C77E5F;
+  --brass-soft:   #F2D7C8;
+  --olive:        #7A8C5F;
+  --olive-soft:   #D6DCC4;
+  --shadow:       0 4px 16px rgba(0, 67, 64, 0.08);
+  --shadow-lg:    0 10px 32px rgba(0, 67, 64, 0.12);
+  --round:        "Varela Round", "Heebo", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono:         "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--round); background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+.dev-topbar {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 26px; background: var(--surface);
+  border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 10;
+}
+.back-link { color: var(--wine-deep); text-decoration: none; font-weight: 700; font-size: 14px; }
+.back-link:hover { text-decoration: underline; }
+.brand-name { font-weight: 700; font-size: 20px; color: var(--wine-deep); }
+.dev-badge {
+  font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+  color: #fff; background: repeating-linear-gradient(45deg, var(--brass), var(--brass) 10px, #B06A4C 10px, #B06A4C 20px);
+  padding: 4px 10px; border-radius: 5px;
+}
+.env-chip { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
+
+.wrap { max-width: 1080px; margin: 0 auto; padding: 34px 26px 70px; }
+.hero h1 { font-size: 26px; color: var(--wine-deep); margin-bottom: 6px; }
+.hero p { color: var(--ink-dim); font-size: 14px; max-width: 640px; margin-bottom: 34px; }
+
+.section { margin-bottom: 40px; }
+.section-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+.section-head h2 { font-size: 17px; color: var(--wine-deep); }
+.section-head .hint { font-size: 12px; color: var(--ink-faint); }
+
+/* ── Feature flags ── */
+.flags-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+.flag-row { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: center; padding: 13px 18px; border-bottom: 1px solid var(--line); }
+.flag-row:last-child { border-bottom: none; }
+.flag-name { font-weight: 700; font-size: 14px; }
+.flag-key { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
+.flag-desc { font-size: 12px; color: var(--ink-dim); margin-top: 2px; }
+.env-pill { font-family: var(--mono); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line-strong); color: var(--ink-faint); background: var(--surface-2); }
+.env-pill.on { background: var(--wine-mist); border-color: var(--wine-tint); color: var(--wine-deep); }
+.flags-foot { padding: 11px 18px; font-size: 12px; color: var(--ink-dim); background: var(--surface-2); border-top: 1px solid var(--line); }
+.flags-foot a { color: var(--wine-deep); }
+.flags-fallback { padding: 18px; font-size: 13px; color: var(--ink-dim); }
+
+/* ── Cards grid (Screens / Documents) ── */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+.card {
+  display: block; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--wine);
+  border-radius: 12px; padding: 16px 18px; text-decoration: none; color: var(--ink);
+  box-shadow: var(--shadow); transition: transform .12s ease, box-shadow .12s ease;
+}
+.card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.card h3 { font-size: 15px; color: var(--wine-deep); margin-bottom: 4px; }
+.card p { font-size: 12px; color: var(--ink-dim); line-height: 1.45; }
+.card .path { display: block; margin-top: 8px; font-family: var(--mono); font-size: 10px; color: var(--ink-faint); word-break: break-all; }
+.card.empty { border-left-color: var(--line-strong); border-style: dashed; background: transparent; box-shadow: none; }
+.card.empty h3 { color: var(--ink-faint); }
+.card.doc { border-left-color: var(--olive); }
+
+/* ── User screen flow ── */
+.flows { display: grid; gap: 10px; }
+.flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; box-shadow: var(--shadow); }
+.flow-node {
+  font-size: 13px; font-weight: 700; color: var(--wine-deep);
+  background: var(--wine-mist); border: 1px solid var(--wine-tint);
+  padding: 7px 14px; border-radius: 8px; white-space: nowrap;
+}
+.flow-node.data { background: var(--brass-soft); border-color: #E0BBA6; color: #8A4B30; }
+.flow-arrow { position: relative; width: 46px; height: 2px; background: var(--line-strong); margin: 0 4px; flex: none; }
+.flow-arrow::after { content: ""; position: absolute; right: -1px; top: -4px; border: 5px solid transparent; border-left-color: var(--line-strong); }
+.flow-label { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--ink-faint); letter-spacing: 0.05em; }
+</style>
+</head>
+<body>
+
+<header class="dev-topbar">
+  <a class="back-link" href="/app/meatcode_mockup.html">&larr; MeatCODE</a>
+  <div class="brand-name">Dev Area</div>
+  <span class="dev-badge">DEV AREA</span>
+  <span class="env-chip" id="envChip">internal workbench · not user-facing</span>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>Lior&rsquo;s internal workbench</h1>
+    <p>Feature flags, work-in-progress screens, key documents and user-flow maps. Everything here is internal &mdash; the product surface stays in the mockup.</p>
+  </div>
+
+  <!-- ─── 1 · Features ─── -->
+  <section class="section" id="features">
+    <div class="section-head"><h2>Features</h2><span class="hint">read-only · live from /api/flags/all</span></div>
+    <div class="flags-card">
+      <div id="flagsBody" class="flags-fallback">Loading feature flags&hellip;</div>
+      <div class="flags-foot">
+        Flags are changed via the Release Center, not here &mdash; see
+        <a href="/platform_docs/RELEASE_CENTER.md">platform_docs/RELEASE_CENTER.md</a>
+        (admin page: <a href="/app/release-center.html">release-center.html</a>, local only).
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 2 · Screens ─── -->
+  <section class="section" id="screens">
+    <div class="section-head"><h2>Screens</h2><span class="hint">dev-only screens, placeholders welcome</span></div>
+    <div class="grid">
+      <a class="card" href="/app/dev/knowledge_graph.html">
+        <h3>Knowledge Graph</h3>
+        <p>Explore the literature knowledge graph (embeds the KG explorer).</p>
+        <span class="path">/app/dev/knowledge_graph.html</span>
+      </a>
+      <a class="card" href="/app/dev/fingerprint.html">
+        <h3>Meat Fingerprint</h3>
+        <p>Radar aroma fingerprint of a sample vs. reference. Placeholder &mdash; demo data.</p>
+        <span class="path">/app/dev/fingerprint.html</span>
+      </a>
+      <a class="card" href="/app/dev/analytics.html">
+        <h3>Analytics Zone</h3>
+        <p>Analytical methods overview: GC-MS, HPLC, olfactory, NMR, spectroscopy.</p>
+        <span class="path">/app/dev/analytics.html</span>
+      </a>
+      <div class="card empty">
+        <h3>+ Next screen</h3>
+        <p>Add your next dev screen here &mdash; drop a new HTML file in app/dev/ and link it.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── 3 · Documents ─── -->
+  <section class="section" id="documents">
+    <div class="section-head"><h2>Documents</h2><span class="hint">key repo docs (raw markdown)</span></div>
+    <div class="grid">
+      <a class="card doc" href="/platform_docs/RELEASE_CENTER.md">
+        <h3>Release Center</h3>
+        <p>Feature flags, deploy-dev / promote / rollback &mdash; how releases work.</p>
+        <span class="path">/platform_docs/RELEASE_CENTER.md</span>
+      </a>
+      <a class="card doc" href="/platform_docs/TWO_ENVIRONMENT_WORKFLOW.md">
+        <h3>Two-Environment Workflow</h3>
+        <p>How dev and prod are kept separate, and how changes travel between them.</p>
+        <span class="path">/platform_docs/TWO_ENVIRONMENT_WORKFLOW.md</span>
+      </a>
+      <a class="card doc" href="/MVP_BOARD.md">
+        <h3>MVP Board</h3>
+        <p>Open deliverables for the 31 Aug demo &mdash; lanes, owners, critical path.</p>
+        <span class="path">/MVP_BOARD.md</span>
+      </a>
+      <a class="card doc" href="/PROJECT_STATE.md">
+        <h3>Project State</h3>
+        <p>Living technical status: done, in-flight, decisions, next.</p>
+        <span class="path">/PROJECT_STATE.md</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ─── 4 · User screen flow ─── -->
+  <section class="section" id="flows">
+    <div class="section-head"><h2>User screen flow</h2><span class="hint">the six core cross-screen journeys</span></div>
+    <div class="flows">
+      <div class="flow"><span class="flow-node">Oracle</span><span class="flow-arrow"></span><span class="flow-node data">Raw data</span><span class="flow-label">F1 · answer &rarr; evidence</span></div>
+      <div class="flow"><span class="flow-node">Oracle</span><span class="flow-arrow"></span><span class="flow-node data">Data Comparison</span><span class="flow-label">F2 · answer &rarr; compare</span></div>
+      <div class="flow"><span class="flow-node data">Raw Data</span><span class="flow-arrow"></span><span class="flow-node">Oracle</span><span class="flow-label">F3 · evidence &rarr; ask</span></div>
+      <div class="flow"><span class="flow-node">Protocols</span><span class="flow-arrow"></span><span class="flow-node data">Data</span><span class="flow-label">F4 · method &rarr; results</span></div>
+      <div class="flow"><span class="flow-node">Simulation</span><span class="flow-arrow"></span><span class="flow-node data">Data</span><span class="flow-label">F5 · prediction &rarr; ground truth</span></div>
+      <div class="flow"><span class="flow-node data">Data</span><span class="flow-arrow"></span><span class="flow-node">Simulation</span><span class="flow-label">F6 · observation &rarr; model</span></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var body = document.getElementById('flagsBody');
+  var envChip = document.getElementById('envChip');
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function renderFlags(data) {
+    var flags = (data && data.flags) || {};
+    var keys = Object.keys(flags);
+    if (!keys.length) {
+      body.textContent = 'No feature flags defined yet.';
+      return;
+    }
+    if (data.env) envChip.textContent = 'server env: ' + data.env + ' · internal workbench';
+    var html = '';
+    keys.forEach(function (key) {
+      var f = flags[key] || {};
+      html +=
+        '<div class="flag-row">' +
+          '<div>' +
+            '<div class="flag-name">' + esc(f.label || key) + ' <span class="flag-key">' + esc(key) + '</span></div>' +
+            (f.description ? '<div class="flag-desc">' + esc(f.description) + '</div>' : '') +
+          '</div>' +
+          '<span class="env-pill' + (f.dev ? ' on' : '') + '">dev ' + (f.dev ? 'ON' : 'off') + '</span>' +
+          '<span class="env-pill' + (f.prod ? ' on' : '') + '">prod ' + (f.prod ? 'ON' : 'off') + '</span>' +
+        '</div>';
+    });
+    body.className = '';
+    body.innerHTML = html;
+  }
+
+  function showFallback() {
+    body.className = 'flags-fallback';
+    body.innerHTML =
+      'Could not reach <code>/api/flags/all</code> &mdash; the server is probably not running. ' +
+      'Start it with <code>run_oracle.command</code> (repo root). ' +
+      'Flags live in <code>Release Center/features.json</code>; known flags: ' +
+      '<strong>new_logo</strong>, <strong>dev_banner</strong>, <strong>highlight_inventory</strong>.';
+  }
+
+  try {
+    fetch('/api/flags/all')
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(renderFlags)
+      .catch(showFallback);
+  } catch (e) {
+    showFallback();
+  }
+})();
+</script>
+</body>
+</html>

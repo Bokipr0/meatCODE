@@ -17,6 +17,12 @@
       "description": "Give the Inventory button a colored glow to draw attention to it.",
       "dev": true,
       "prod": false
+    },
+    "dev_area": {
+      "label": "Dev Area",
+      "description": "Show the Dev Area button (internal workbench: flags, WIP screens, docs, screen flows). Keep OFF in prod permanently.",
+      "dev": true,
+      "prod": false
     }
   }
 }

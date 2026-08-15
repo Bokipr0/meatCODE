@@ -1,0 +1,45 @@
+{
+  "_comment": "Last updated: 2026-08-15 · Algorithm Expert · 8 closed-corpus eval questions for analysis/rag_eval/run_eval.py. Coverage: Maillard (2), sulfur volatiles (2), plant-protein off-notes (2), GC-MS methodology (2).",
+  "questions": [
+    {
+      "id": "Q1",
+      "topic": "maillard",
+      "question": "What are the key Maillard reaction products responsible for the roasted and meaty aroma of cooked beef?"
+    },
+    {
+      "id": "Q2",
+      "topic": "maillard",
+      "question": "How do cysteine and ribose interact during thermal processing to generate meaty flavor compounds, and what conditions favor this reaction?"
+    },
+    {
+      "id": "Q3",
+      "topic": "sulfur_volatiles",
+      "question": "Which sulfur-containing volatiles are most important for cooked meat flavor, and through what pathways are they formed?"
+    },
+    {
+      "id": "Q4",
+      "topic": "sulfur_volatiles",
+      "question": "What role does thiamine degradation play in generating meaty sulfur aroma compounds such as 2-methyl-3-furanthiol?"
+    },
+    {
+      "id": "Q5",
+      "topic": "plant_protein_offnotes",
+      "question": "What causes the green and beany off-notes in pea and soy protein ingredients, and which strategies reduce them?"
+    },
+    {
+      "id": "Q6",
+      "topic": "plant_protein_offnotes",
+      "question": "How does lipid oxidation contribute to off-flavors in plant-based meat analogs, and how does this differ from its role in real meat flavor?"
+    },
+    {
+      "id": "Q7",
+      "topic": "gcms_methodology",
+      "question": "What GC-MS and GC-olfactometry approaches are used to identify the key aroma-active compounds in cooked meat?"
+    },
+    {
+      "id": "Q8",
+      "topic": "gcms_methodology",
+      "question": "How is SPME used for extracting volatile compounds in meat flavor analysis, and what are its main limitations?"
+    }
+  ]
+}
