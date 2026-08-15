@@ -1,26 +1,178 @@
 {
+  "_schema": {
+    "version": 2,
+    "updated": "2026-08-15",
+    "doc": "platform_docs/DEV_AREA.md",
+    "about": "Registry of every flagged FEATURE and every dev SCREEN. Backward compatible: the server still reads flags.<key>.dev / .prod, and the app still turns each ON flag into a body class ff-<key>. Everything else here is descriptive metadata rendered by the Dev Area hub.",
+    "fields": {
+      "label": "Human name shown in the hub / Release Center.",
+      "description": "What it actually is, in one line.",
+      "kind": "feature | screen",
+      "added": "YYYY-MM-DD the thing first landed in the repo (from AGENT_UPDATE_LOG.md). 'unknown' if genuinely not recorded.",
+      "updated": "optional YYYY-MM-DD of the last material revision.",
+      "status": "live (real + working) | preview (works but honestly labelled, not backed by real data/algorithm) | placeholder (illustrative only)",
+      "where": "{ screen, spot, file } — the precise place this lives.",
+      "destination": "screens only — where the screen lands in the product when its flag is ON. Lior's decision, per screen.",
+      "url": "screens only — the path the screen is served at.",
+      "note": "optional caveat / known issue.",
+      "dev": "boolean — ON in the dev environment.",
+      "prod": "boolean — ON in production."
+    }
+  },
   "flags": {
     "new_logo": {
       "label": "New logo",
       "description": "Updated GFI / MeatCODE logo in the top bar.",
+      "kind": "feature",
+      "added": "2026-07-23",
+      "status": "preview",
+      "where": {
+        "screen": "All screens",
+        "spot": "Top bar, far left — the MeatCODE wordmark (.brand-name); adds a 'new' pill after it until the real asset is dropped in.",
+        "file": "app/meatcode_mockup.html"
+      },
+      "note": "Fixed 2026-08-15 (Coordinator): the mockup's CSS said body.ff-new-logo (hyphen) while the flag emits body.ff-new_logo (underscore), so the switch did nothing. Selectors realigned to the flag key — the toggle now works. Still a placeholder treatment until the real logo asset is dropped in.",
       "dev": true,
       "prod": false
     },
     "dev_banner": {
       "label": "Dev banner",
       "description": "Show a 'DEV · staging' ribbon so you never mistake staging for production.",
+      "kind": "feature",
+      "added": "2026-07-23",
+      "status": "live",
+      "where": {
+        "screen": "All screens",
+        "spot": "Fixed ribbon pinned to the top-centre of the viewport, above the top bar (#ffDevBanner).",
+        "file": "app/meatcode_mockup.html"
+      },
       "dev": true,
       "prod": false
     },
     "highlight_inventory": {
       "label": "Highlight Inventory",
       "description": "Give the Inventory button a colored glow to draw attention to it.",
+      "kind": "feature",
+      "added": "2026-07-23",
+      "status": "live",
+      "where": {
+        "screen": "All screens",
+        "spot": "Top bar, right cluster — the Inventory / Toolbench button (.mc-toolbench-btn) gains a brass ring.",
+        "file": "app/meatcode_mockup.html"
+      },
       "dev": true,
       "prod": false
     },
     "dev_area": {
       "label": "Dev Area",
-      "description": "Show the Dev Area button (internal workbench: flags, WIP screens, docs, screen flows). Keep OFF in prod permanently.",
+      "description": "Show the Dev Area button (internal workbench: registry, WIP screens, docs, screen flows). Keep OFF in prod permanently.",
+      "kind": "feature",
+      "added": "2026-08-15",
+      "status": "live",
+      "where": {
+        "screen": "All screens (14 topbars)",
+        "spot": "Top bar, immediately right of the Inventory button — the flask link (.mc-devarea-btn) to /app/dev/index.html.",
+        "file": "app/meatcode_mockup.html"
+      },
+      "note": "Never promote to prod. Individual screens graduate by getting their own flag flipped, not by shipping the Dev Area.",
+      "dev": true,
+      "prod": false
+    },
+    "knowledge_graph": {
+      "label": "Knowledge Graph explorer",
+      "description": "Literature/molecule knowledge-graph explorer, embedded from the standalone KG explorer artifact.",
+      "kind": "screen",
+      "added": "2026-08-15",
+      "status": "preview",
+      "where": {
+        "screen": "Dev Area → Screens",
+        "spot": "'Knowledge Graph' card; the page itself is a full-height iframe of /kg/kg_explorer.html with a fallback message.",
+        "file": "app/dev/knowledge_graph.html"
+      },
+      "destination": "Dev Area only — direction still open in platform_docs/KG_DECISION.md (bridge density is the blocker).",
+      "url": "/app/dev/knowledge_graph.html",
+      "dev": true,
+      "prod": false
+    },
+    "fingerprint": {
+      "label": "Meat Fingerprint",
+      "description": "8-axis aroma radar of a sample vs a reference (beef sirloin demo vs dashed plant analog).",
+      "kind": "screen",
+      "added": "2026-08-15",
+      "status": "placeholder",
+      "where": {
+        "screen": "Dev Area → Screens",
+        "spot": "'Meat Fingerprint' card; the page carries a PLACEHOLDER banner above the canvas radar.",
+        "file": "app/dev/fingerprint.html"
+      },
+      "destination": "Dev Area only for now — proposed landing is a Research tile (MVP board A1); blocked until the fingerprint schema is defined. Lior's call.",
+      "url": "/app/dev/fingerprint.html",
+      "dev": true,
+      "prod": false
+    },
+    "analytics": {
+      "label": "Analytics zone",
+      "description": "Analytical-methods overview: GC-MS (data exists — Meaty Volatile Library), HPLC, Olfactory, H/C-NMR, Spectroscopy (planned).",
+      "kind": "screen",
+      "added": "2026-08-15",
+      "status": "preview",
+      "where": {
+        "screen": "Dev Area → Screens (also reachable from the product)",
+        "spot": "'Analytics Zone' card in the Dev Area; in the mockup it is the third Research tile ('Analytics', labelled preview).",
+        "file": "app/dev/analytics.html"
+      },
+      "destination": "Research tile → Analytics (already linked from the mockup's Research screen, labelled preview).",
+      "url": "/app/dev/analytics.html",
+      "dev": true,
+      "prod": false
+    },
+    "compare": {
+      "label": "Compare screen",
+      "description": "Side-by-side molecule comparison (2-AP vs methional grid, diff chips, add a third column) — the Flow 2 target.",
+      "kind": "screen",
+      "added": "2026-08-15",
+      "updated": "2026-08-15",
+      "status": "preview",
+      "where": {
+        "screen": "Dev Area → Screens",
+        "spot": "'Compare screen' card; the page opens with the Flow-2 carry banner naming the entities handed over.",
+        "file": "app/dev/compare.html"
+      },
+      "destination": "Oracle answer → 'Compare these two →' handoff (screen-flow Flow 2). Ships behind this flag once the handoff bus lands.",
+      "url": "/app/dev/compare.html",
+      "dev": true,
+      "prod": false
+    },
+    "versions": {
+      "label": "Production version history",
+      "description": "Every promoted prod snapshot, newest-first, with the live one marked and a per-snapshot re-migrate button.",
+      "kind": "screen",
+      "added": "2026-08-15",
+      "status": "live",
+      "where": {
+        "screen": "Dev Area → Versions",
+        "spot": "'Production version history' card; the page reads GET /api/release/history (visible on hosted dev, rollback POST stays local-admin).",
+        "file": "app/dev/versions.html"
+      },
+      "destination": "Dev Area only — release machinery is internal and rollback runs from the Mac.",
+      "url": "/app/dev/versions.html",
+      "dev": true,
+      "prod": false
+    },
+    "oracle_redesign": {
+      "label": "Oracle redesign (v11 chat)",
+      "description": "Proposed next Oracle: multi-turn chat thread, approved answer-card anatomy, attach + dictate in the ask box, history rail unchanged.",
+      "kind": "screen",
+      "added": "2026-08-15",
+      "updated": "2026-08-15",
+      "status": "preview",
+      "where": {
+        "screen": "Dev Area → Screens",
+        "spot": "'Oracle redesign' card; the page is a static design artifact — Ask honestly says retrieval is not wired.",
+        "file": "app/dev/oracle_redesign.html"
+      },
+      "destination": "Dev Area only — approved patterns get ported into app/meatcode_mockup.html; the thread itself needs multi-turn retrieval before it graduates.",
+      "url": "/app/dev/oracle_redesign.html",
       "dev": true,
       "prod": false
     }

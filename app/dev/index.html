@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Last updated: 2026-08-15 · Fullstack Engineer · added Screens cards for Oracle redesign (v10 proposal) + Compare screen, and a new Versions section → versions.html (prod snapshot history / rollback). Prev: Dev Area hub: feature flags (read-only), screens, documents, user screen flows -->
+<!-- Last updated: 2026-08-15 · Fullstack Engineer · Features + Screens are now ONE live REGISTRY rendered from /api/flags/all: every entry shows what it is, the date it was added, where it lives (screen · spot · file), a kind badge + status chip, and Dev/Prod toggles (screens also show their destination). Toggles POST /api/flags/set when the server reports admin:true (local cockpit) and render disabled with a read-only banner otherwise. Added an "Add a new entry" form that POSTs /api/flags/upsert so future features/screens are registered from the UI. Prev: added Screens cards for Oracle redesign + Compare, and a Versions section -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -58,18 +58,56 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
 .section-head h2 { font-size: 17px; color: var(--wine-deep); }
 .section-head .hint { font-size: 12px; color: var(--ink-faint); }
 
-/* ── Feature flags ── */
+/* ── Registry (Features + Screens) ── */
 .flags-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
-.flag-row { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: center; padding: 13px 18px; border-bottom: 1px solid var(--line); }
+.flag-row { display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: start; padding: 15px 18px; border-bottom: 1px solid var(--line); }
 .flag-row:last-child { border-bottom: none; }
-.flag-name { font-weight: 700; font-size: 14px; }
-.flag-key { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
-.flag-desc { font-size: 12px; color: var(--ink-dim); margin-top: 2px; }
-.env-pill { font-family: var(--mono); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line-strong); color: var(--ink-faint); background: var(--surface-2); }
-.env-pill.on { background: var(--wine-mist); border-color: var(--wine-tint); color: var(--wine-deep); }
-.flags-foot { padding: 11px 18px; font-size: 12px; color: var(--ink-dim); background: var(--surface-2); border-top: 1px solid var(--line); }
+.flag-row.off-here { background: var(--surface-2); }
+.flag-name { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.flag-key { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); font-weight: 400; }
+.flag-desc { font-size: 12px; color: var(--ink-dim); margin-top: 3px; line-height: 1.5; }
+.flag-note { font-size: 11.5px; color: #8A4B30; margin-top: 5px; line-height: 1.45; }
+.meta { margin-top: 8px; display: grid; gap: 3px; font-size: 11.5px; color: var(--ink-dim); }
+.meta b { color: var(--ink); font-weight: 700; }
+.meta .mono { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); }
+.badge { font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; padding: 2px 8px; border-radius: 5px; border: 1px solid var(--line-strong); color: var(--ink-dim); background: var(--surface-2); }
+.badge.kind-screen { background: var(--brass-soft); border-color: #E0BBA6; color: #8A4B30; }
+.badge.kind-feature { background: var(--wine-mist); border-color: var(--wine-tint); color: var(--wine-deep); }
+.chip { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line-strong); color: var(--ink-dim); background: var(--surface-2); }
+.chip.live { background: #E4EFDC; border-color: #B9CFA6; color: #46603A; }
+.chip.preview { background: var(--brass-soft); border-color: #E0BBA6; color: #8A4B30; }
+.chip.placeholder { background: var(--surface-2); border-color: var(--line-strong); color: var(--ink-faint); }
+.date { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
+
+.toggles { display: grid; gap: 7px; justify-items: end; min-width: 132px; }
+.tg { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--ink-faint); }
+.tg .sw { width: 40px; height: 22px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface-2); position: relative; padding: 0; cursor: pointer; transition: background .12s ease, border-color .12s ease; }
+.tg .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .12s ease; }
+.tg .sw[aria-checked="true"] { background: var(--wine); border-color: var(--wine-deep); }
+.tg .sw[aria-checked="true"]::after { transform: translateX(18px); }
+.tg .sw[disabled] { cursor: not-allowed; opacity: .5; }
+.tg .sw:focus-visible { outline: 2px solid var(--wine-soft); outline-offset: 2px; }
+
+.flags-foot { padding: 11px 18px; font-size: 12px; color: var(--ink-dim); background: var(--surface-2); border-top: 1px solid var(--line); line-height: 1.55; }
 .flags-foot a { color: var(--wine-deep); }
 .flags-fallback { padding: 18px; font-size: 13px; color: var(--ink-dim); }
+.ro-banner { padding: 11px 18px; font-size: 12.5px; color: #8A4B30; background: var(--brass-soft); border-bottom: 1px solid #E0BBA6; }
+
+/* ── Add-a-new-entry form ── */
+.addbox { margin-top: 12px; background: var(--surface); border: 1px dashed var(--line-strong); border-radius: 12px; padding: 14px 18px; }
+.addbox summary { cursor: pointer; font-weight: 700; font-size: 13px; color: var(--wine-deep); }
+.addgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; margin-top: 12px; }
+.addgrid label { display: grid; gap: 4px; font-size: 11px; color: var(--ink-dim); font-weight: 700; }
+.addgrid input, .addgrid select { font-family: var(--round); font-size: 13px; padding: 7px 9px; border: 1px solid var(--line-strong); border-radius: 7px; background: var(--bg); color: var(--ink); }
+.addrow { margin-top: 12px; display: flex; align-items: center; gap: 12px; }
+.btn { font-family: var(--round); font-weight: 700; font-size: 13px; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--wine-deep); background: var(--wine); color: #fff; cursor: pointer; }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+.addnote { font-size: 11.5px; color: var(--ink-faint); }
+
+/* ── Toast ── */
+#toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(14px); opacity: 0; pointer-events: none; background: var(--wine-deep); color: #fff; font-size: 13px; font-weight: 700; padding: 10px 18px; border-radius: 999px; box-shadow: var(--shadow-lg); transition: opacity .16s ease, transform .16s ease; z-index: 999; max-width: 80vw; }
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#toast.bad { background: #8A3B2A; }
 
 /* ── Cards grid (Screens / Documents) ── */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
@@ -115,51 +153,56 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
     <p>Feature flags, work-in-progress screens, key documents and user-flow maps. Everything here is internal &mdash; the product surface stays in the mockup.</p>
   </div>
 
-  <!-- ─── 1 · Features ─── -->
+  <!-- ─── 1 · Features (registry) ─── -->
   <section class="section" id="features">
-    <div class="section-head"><h2>Features</h2><span class="hint">read-only · live from /api/flags/all</span></div>
+    <div class="section-head"><h2>Features</h2><span class="hint">the registry &mdash; what it is · when it was added · where it lives · on/off</span></div>
     <div class="flags-card">
-      <div id="flagsBody" class="flags-fallback">Loading feature flags&hellip;</div>
-      <div class="flags-foot">
-        Flags are changed via the Release Center, not here &mdash; see
-        <a href="/platform_docs/RELEASE_CENTER.md">platform_docs/RELEASE_CENTER.md</a>
-        (admin page: <a href="/app/release-center.html">release-center.html</a>, local only).
+      <div id="roBanner" class="ro-banner" hidden></div>
+      <div id="featuresBody" class="flags-fallback">Loading the registry&hellip;</div>
+      <div class="flags-foot" id="howItWorks">
+        <b>How this works.</b> Each row is one registered thing. Flipping <b>Dev</b> or <b>Prod</b> writes
+        straight into <code>Release Center/features.json</code>; the server turns every ON flag into a
+        <code>ff-&lt;key&gt;</code> class on <code>&lt;body&gt;</code>, which is what the app reacts to.
+        The change reaches the dev site on your next <b>deploy-dev</b>, and production only after
+        <b>promote-to-prod</b>. Writes work on your Mac only &mdash; see
+        <a href="/platform_docs/DEV_AREA.md">DEV_AREA.md</a> and
+        <a href="/platform_docs/RELEASE_CENTER.md">RELEASE_CENTER.md</a>
+        (full cockpit: <a href="/app/release-center.html">release-center.html</a>).
       </div>
     </div>
+
+    <details class="addbox" id="addBox">
+      <summary>+ Add a new entry to the registry</summary>
+      <div class="addgrid">
+        <label>Key <span class="flag-key">a-z0-9_</span><input id="afKey" placeholder="my_feature"></label>
+        <label>Name<input id="afLabel" placeholder="My feature"></label>
+        <label>Kind<select id="afKind"><option value="feature">feature</option><option value="screen">screen</option></select></label>
+        <label>Status<select id="afStatus"><option value="placeholder">placeholder</option><option value="preview">preview</option><option value="live">live</option></select></label>
+        <label>Added (YYYY-MM-DD)<input id="afAdded" placeholder="today if blank"></label>
+        <label>What it is<input id="afDesc" placeholder="One honest line."></label>
+        <label>Where &middot; screen<input id="afScreen" placeholder="Oracle"></label>
+        <label>Where &middot; spot<input id="afSpot" placeholder="Ask box, left of the mic"></label>
+        <label>Where &middot; file<input id="afFile" placeholder="app/meatcode_mockup.html"></label>
+        <label>Destination (screens)<input id="afDest" placeholder="Research tile &rarr; Analytics"></label>
+        <label>URL (screens)<input id="afUrl" placeholder="/app/dev/my_screen.html"></label>
+      </div>
+      <div class="addrow">
+        <button class="btn" id="afSave" type="button">Register it</button>
+        <span class="addnote" id="afNote">Saves to features.json (dev ON / prod OFF). Local cockpit only.</span>
+      </div>
+    </details>
   </section>
 
-  <!-- ─── 2 · Screens ─── -->
+  <!-- ─── 2 · Screens (registry) ─── -->
   <section class="section" id="screens">
-    <div class="section-head"><h2>Screens</h2><span class="hint">dev-only screens, placeholders welcome</span></div>
-    <div class="grid">
-      <a class="card" href="/app/dev/knowledge_graph.html">
-        <h3>Knowledge Graph</h3>
-        <p>Explore the literature knowledge graph (embeds the KG explorer).</p>
-        <span class="path">/app/dev/knowledge_graph.html</span>
-      </a>
-      <a class="card" href="/app/dev/fingerprint.html">
-        <h3>Meat Fingerprint</h3>
-        <p>Radar aroma fingerprint of a sample vs. reference. Placeholder &mdash; demo data.</p>
-        <span class="path">/app/dev/fingerprint.html</span>
-      </a>
-      <a class="card" href="/app/dev/analytics.html">
-        <h3>Analytics Zone</h3>
-        <p>Analytical methods overview: GC-MS, HPLC, olfactory, NMR, spectroscopy.</p>
-        <span class="path">/app/dev/analytics.html</span>
-      </a>
-      <a class="card" href="/app/dev/oracle_redesign.html">
-        <h3>Oracle redesign (v10 proposal)</h3>
-        <p>Proposed next iteration of the Oracle answer screen &mdash; entities, cross-nav, compare handoff.</p>
-        <span class="path">/app/dev/oracle_redesign.html</span>
-      </a>
-      <a class="card" href="/app/dev/compare.html">
-        <h3>Compare screen</h3>
-        <p>Side-by-side molecule comparison (Flow 2: Oracle &rarr; compare). Placeholder &mdash; demo data.</p>
-        <span class="path">/app/dev/compare.html</span>
-      </a>
-      <div class="card empty">
-        <h3>+ Next screen</h3>
-        <p>Add your next dev screen here &mdash; drop a new HTML file in app/dev/ and link it.</p>
+    <div class="section-head"><h2>Screens</h2><span class="hint">every dev screen &mdash; with its own toggle, destination and date</span></div>
+    <div class="flags-card">
+      <div id="screensBody" class="flags-fallback">Loading screens&hellip;</div>
+      <div class="flags-foot">
+        A screen registered here gets the same <code>ff-&lt;key&gt;</code> switch as any feature.
+        Its <b>destination</b> is where it lands in the product once the switch is ON &mdash; that is a
+        per-screen decision, edited in <code>features.json</code> or through the form above.
+        Rows greyed out are OFF for this environment.
       </div>
     </div>
   </section>
@@ -217,55 +260,189 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
   </section>
 </div>
 
+<div id="toast" role="status" aria-live="polite"></div>
+
 <script>
+/* Dev Area registry.
+   /api/flags/all → { env, admin, flags:{ key:{label,description,kind,added,status,where{},destination,url,dev,prod} } }
+   admin === true  → local cockpit: toggles POST /api/flags/set and the add-form POSTs /api/flags/upsert.
+   admin !== true  → hosted dev: everything renders disabled behind a read-only banner. */
 (function () {
-  var body = document.getElementById('flagsBody');
-  var envChip = document.getElementById('envChip');
+  var featuresBody = document.getElementById('featuresBody');
+  var screensBody  = document.getElementById('screensBody');
+  var roBanner     = document.getElementById('roBanner');
+  var envChip      = document.getElementById('envChip');
+  var addBox       = document.getElementById('addBox');
+  var afSave       = document.getElementById('afSave');
+  var afNote       = document.getElementById('afNote');
+  var toastEl      = document.getElementById('toast');
+  var STATE = { env: '', admin: false, flags: {} };
+  var toastTimer = null;
 
   function esc(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
 
-  function renderFlags(data) {
-    var flags = (data && data.flags) || {};
-    var keys = Object.keys(flags);
-    if (!keys.length) {
-      body.textContent = 'No feature flags defined yet.';
-      return;
-    }
-    if (data.env) envChip.textContent = 'server env: ' + data.env + ' · internal workbench';
-    var html = '';
-    keys.forEach(function (key) {
-      var f = flags[key] || {};
-      html +=
-        '<div class="flag-row">' +
-          '<div>' +
-            '<div class="flag-name">' + esc(f.label || key) + ' <span class="flag-key">' + esc(key) + '</span></div>' +
-            (f.description ? '<div class="flag-desc">' + esc(f.description) + '</div>' : '') +
-          '</div>' +
-          '<span class="env-pill' + (f.dev ? ' on' : '') + '">dev ' + (f.dev ? 'ON' : 'off') + '</span>' +
-          '<span class="env-pill' + (f.prod ? ' on' : '') + '">prod ' + (f.prod ? 'ON' : 'off') + '</span>' +
-        '</div>';
-    });
-    body.className = '';
-    body.innerHTML = html;
+  function toast(msg, bad) {
+    toastEl.textContent = msg;
+    toastEl.className = 'show' + (bad ? ' bad' : '');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.className = ''; }, 3200);
   }
 
+  function whereLine(f) {
+    var w = f.where || {};
+    var bits = '';
+    if (w.screen) bits += '<div><b>Screen:</b> ' + esc(w.screen) + '</div>';
+    if (w.spot)   bits += '<div><b>Spot:</b> ' + esc(w.spot) + '</div>';
+    if (w.file)   bits += '<div class="mono">' + esc(w.file) + '</div>';
+    if (!bits)    bits = '<div class="mono">location not recorded yet</div>';
+    return bits;
+  }
+
+  function rowHTML(key, f) {
+    var kind = f.kind === 'screen' ? 'screen' : 'feature';
+    var status = ['live', 'preview', 'placeholder'].indexOf(f.status) >= 0 ? f.status : 'placeholder';
+    var offHere = !f[STATE.env === 'prod' ? 'prod' : 'dev'];
+    var title = esc(f.label || key);
+    if (kind === 'screen' && f.url) title = '<a href="' + esc(f.url) + '" style="color:var(--wine-deep)">' + title + '</a>';
+
+    var meta = whereLine(f);
+    if (kind === 'screen' && f.destination) meta += '<div><b>Destination when ON:</b> ' + esc(f.destination) + '</div>';
+
+    return '<div class="flag-row' + (offHere ? ' off-here' : '') + '" data-key="' + esc(key) + '">' +
+        '<div>' +
+          '<div class="flag-name">' + title +
+            '<span class="badge kind-' + kind + '">' + kind + '</span>' +
+            '<span class="chip ' + status + '">' + status + '</span>' +
+            '<span class="date">added ' + esc(f.added || 'date unknown') + '</span>' +
+            (f.updated ? '<span class="date">· updated ' + esc(f.updated) + '</span>' : '') +
+            '<span class="flag-key">' + esc(key) + '</span>' +
+          '</div>' +
+          (f.description ? '<div class="flag-desc">' + esc(f.description) + '</div>' : '') +
+          '<div class="meta">' + meta + '</div>' +
+          (f.note ? '<div class="flag-note">⚠ ' + esc(f.note) + '</div>' : '') +
+        '</div>' +
+        '<div class="toggles">' +
+          toggleHTML(key, 'dev', !!f.dev) +
+          toggleHTML(key, 'prod', !!f.prod) +
+        '</div>' +
+      '</div>';
+  }
+
+  function toggleHTML(key, env, on) {
+    return '<span class="tg">' + env +
+      '<button class="sw" type="button" role="switch" aria-checked="' + (on ? 'true' : 'false') +
+        '" aria-label="' + esc(key) + ' in ' + env + '" data-key="' + esc(key) + '" data-env="' + env + '"' +
+        (STATE.admin ? '' : ' disabled') + '></button></span>';
+  }
+
+  function render() {
+    var flags = STATE.flags || {};
+    var keys = Object.keys(flags);
+    var feats = keys.filter(function (k) { return (flags[k] || {}).kind !== 'screen'; });
+    var scrs  = keys.filter(function (k) { return (flags[k] || {}).kind === 'screen'; });
+
+    featuresBody.className = feats.length ? '' : 'flags-fallback';
+    featuresBody.innerHTML = feats.length
+      ? feats.map(function (k) { return rowHTML(k, flags[k] || {}); }).join('')
+      : 'No features registered yet — use “Add a new entry” below.';
+
+    screensBody.className = scrs.length ? '' : 'flags-fallback';
+    screensBody.innerHTML = scrs.length
+      ? scrs.map(function (k) { return rowHTML(k, flags[k] || {}); }).join('')
+      : 'No screens registered yet — use “Add a new entry” above (kind = screen).';
+
+    if (!STATE.admin) {
+      roBanner.hidden = false;
+      roBanner.innerHTML = '<b>Read-only here</b> — flip features on your Mac ' +
+        '(<code>release-center.command</code>, or press <b>H</b> inside the dev app), then <code>deploy-dev</code>.';
+      afSave.disabled = true;
+      afNote.textContent = 'Registering a new entry writes features.json — that runs on your Mac only.';
+    } else {
+      roBanner.hidden = true;
+      afSave.disabled = false;
+    }
+  }
+
+  function post(url, payload) {
+    return fetch(url, {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok || j.error) throw new Error(j.error || ('HTTP ' + r.status));
+        return j;
+      });
+    });
+  }
+
+  document.addEventListener('click', function (ev) {
+    var btn = ev.target.closest ? ev.target.closest('button.sw') : null;
+    if (!btn || btn.disabled) return;
+    var key = btn.getAttribute('data-key'), env = btn.getAttribute('data-env');
+    var next = btn.getAttribute('aria-checked') !== 'true';
+    btn.disabled = true;
+    post('/api/flags/set', { key: key, env: env, value: next })
+      .then(function (j) {
+        STATE.flags = j.flags || STATE.flags;
+        render();
+        toast(key + ' · ' + env + ' → ' + (next ? 'ON' : 'off') + ' — saved. Runs on the dev site after deploy-dev.');
+      })
+      .catch(function (e) { btn.disabled = false; toast('Could not save: ' + e.message, true); });
+  });
+
+  afSave.addEventListener('click', function () {
+    function v(id) { return (document.getElementById(id).value || '').trim(); }
+    var key = v('afKey');
+    if (!/^[a-z0-9][a-z0-9_]{1,48}$/.test(key)) { toast('Key must be lowercase letters, digits or _', true); return; }
+    var payload = {
+      key: key, label: v('afLabel') || key, kind: document.getElementById('afKind').value,
+      status: document.getElementById('afStatus').value, description: v('afDesc'),
+      where: { screen: v('afScreen'), spot: v('afSpot'), file: v('afFile') },
+      dev: true, prod: false
+    };
+    if (v('afAdded')) payload.added = v('afAdded');
+    if (v('afDest')) payload.destination = v('afDest');
+    if (v('afUrl')) payload.url = v('afUrl');
+    afSave.disabled = true;
+    post('/api/flags/upsert', payload)
+      .then(function (j) {
+        STATE.flags = j.flags || STATE.flags;
+        render();
+        afSave.disabled = false;
+        addBox.open = false;
+        toast(key + (j.created ? ' registered' : ' updated') + ' — ON in dev, OFF in prod.');
+      })
+      .catch(function (e) { afSave.disabled = false; toast('Could not register: ' + e.message, true); });
+  });
+
   function showFallback() {
-    body.className = 'flags-fallback';
-    body.innerHTML =
+    featuresBody.className = 'flags-fallback';
+    featuresBody.innerHTML =
       'Could not reach <code>/api/flags/all</code> &mdash; the server is probably not running. ' +
-      'Start it with <code>run_oracle.command</code> (repo root). ' +
-      'Flags live in <code>Release Center/features.json</code>; known flags: ' +
-      '<strong>new_logo</strong>, <strong>dev_banner</strong>, <strong>highlight_inventory</strong>.';
+      'Start it with <code>run_oracle.command</code> (repo root), or <code>release-center.command</code> ' +
+      'for write access. The registry itself lives in <code>Release Center/features.json</code>.';
+    screensBody.className = 'flags-fallback';
+    screensBody.textContent = 'Screens load from the same endpoint — start the server to see them.';
+    afSave.disabled = true;
   }
 
   try {
-    fetch('/api/flags/all')
+    fetch('/api/flags/all', { credentials: 'same-origin' })
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(renderFlags)
+      .then(function (data) {
+        STATE.env = (data && data.env) || '';
+        STATE.admin = !!(data && data.admin);
+        STATE.flags = (data && data.flags) || {};
+        if (STATE.env) {
+          envChip.textContent = 'server env: ' + STATE.env + ' · ' + (STATE.admin ? 'admin (local cockpit)' : 'read-only');
+        }
+        render();
+      })
       .catch(showFallback);
   } catch (e) {
     showFallback();

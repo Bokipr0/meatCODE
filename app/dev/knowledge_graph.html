@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Last updated: 2026-08-15 · Fullstack Engineer · Dev Area KG screen: embeds /kg/kg_explorer.html full-height with fallback -->
+<!-- Last updated: 2026-08-15 · UI Engineer · Escape hatches standardised to the compare.html pattern: header now carries "← Back" (document history, falls back to the Dev Area hub) + "← Dev Area" + a single "MeatCODE product" route; duplicate Dev Area breadcrumb removed; on file:// the root-absolute links AND the iframe src are rewritten relative (../../kg/kg_explorer.html) so the explorer still loads from Finder. Prior 2026-08-15 · Fullstack Engineer · Dev Area KG screen: embeds /kg/kg_explorer.html full-height with fallback -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -38,9 +38,11 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); disp
 }
 .back-link { color: var(--wine-deep); text-decoration: none; font-weight: 700; font-size: 13px; }
 .back-link:hover { text-decoration: underline; }
-.crumb { font-size: 13px; color: var(--ink-faint); }
-.crumb a { color: var(--wine-deep); text-decoration: none; }
-.crumb a:hover { text-decoration: underline; }
+/* second escape: one step back in document history (distinct from leaving for the hub) */
+.step-back { font-size: 12.5px; color: var(--ink-faint); cursor: pointer; white-space: nowrap; }
+.step-back:hover { color: var(--wine); }
+.prod-link { font-size: 12.5px; color: var(--ink-faint); text-decoration: none; white-space: nowrap; }
+.prod-link:hover { color: var(--wine); }
 .title { font-weight: 700; font-size: 15px; color: var(--wine-deep); }
 .dev-badge {
   font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
@@ -65,8 +67,9 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); disp
 <body>
 
 <header class="dev-topbar">
-  <a class="back-link" href="/app/meatcode_mockup.html">&larr; MeatCODE</a>
-  <span class="crumb"><a href="/app/dev/index.html">Dev Area</a> /</span>
+  <span class="step-back" title="Back one step" onclick="stepBack()">&larr; Back</span>
+  <a class="back-link" href="/app/dev/index.html">&larr; Dev Area</a>
+  <a class="prod-link" href="/app/meatcode_mockup.html">MeatCODE product</a>
   <span class="title">Knowledge Graph</span>
   <span class="dev-badge">DEV AREA</span>
   <span class="src">embeds /kg/kg_explorer.html</span>
@@ -86,6 +89,34 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); disp
     </div>
   </div>
 </div>
+
+<script>
+/* ---------- escape hatches (same pattern as app/dev/compare.html) ----------
+   Links here are root-absolute (/app/…, /kg/…) so they resolve when
+   meatcode_server.py serves the repo root. Opened straight from Finder the page runs
+   on file://, where a root-absolute path would hit the disk root — this page sits in
+   <repo>/app/dev/, so the sibling file name alone is the correct relative path for
+   the hub, and '../..' + path for anything else in the repo (including the embedded
+   knowledge-graph explorer). */
+function devPath(file){ return (location.protocol === 'file:') ? file : '/app/dev/' + file; }
+function devGo(file){ location.href = devPath(file); }
+if (location.protocol === 'file:') {
+  document.querySelectorAll('a[href^="/"]').forEach(function (a) {
+    var h = a.getAttribute('href');
+    a.setAttribute('href', h.indexOf('/app/dev/') === 0 ? h.slice(9) : '../..' + h);
+  });
+  var kgf = document.getElementById('kgFrame');
+  if (kgf && kgf.getAttribute('src').charAt(0) === '/') {
+    kgf.setAttribute('src', '../..' + kgf.getAttribute('src'));
+  }
+}
+/* "← Back" = one step back in document history; if this page was opened cold
+   (no in-tab history) fall back to the Dev Area hub so it is never a dead end. */
+function stepBack(){
+  if (history.length > 1 && document.referrer) { history.back(); return; }
+  devGo('index.html');
+}
+</script>
 
 <script>
 (function () {

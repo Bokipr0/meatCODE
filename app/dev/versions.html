@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Last updated: 2026-08-15 · Fullstack Engineer · Versions screen: promoted prod-* snapshots from /api/release/history; read-only on hosted dev, rollback buttons live only on the local cockpit (admin flag) -->
+<!-- Last updated: 2026-08-15 · UI Engineer · Escape hatches standardised to the compare.html pattern: header now carries "← Back" (document history, falls back to the Dev Area hub) beside the existing "← Dev Area", and root-absolute links are rewritten to relative when the page is opened on file://. Prior 2026-08-15 · Fullstack Engineer · Versions screen: promoted prod-* snapshots from /api/release/history; read-only on hosted dev, rollback buttons live only on the local cockpit (admin flag) -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -41,6 +41,9 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
 }
 .back-link { color: var(--wine-deep); text-decoration: none; font-weight: 700; font-size: 14px; }
 .back-link:hover { text-decoration: underline; }
+/* second escape: one step back in document history (distinct from leaving for the hub) */
+.step-back { font-size: 12.5px; color: var(--ink-faint); cursor: pointer; white-space: nowrap; }
+.step-back:hover { color: var(--wine); }
 .brand-name { font-weight: 700; font-size: 20px; color: var(--wine-deep); }
 .dev-badge {
   font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
@@ -98,6 +101,7 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
 <body>
 
 <header class="dev-topbar">
+  <span class="step-back" title="Back one step" onclick="stepBack()">&larr; Back</span>
   <a class="back-link" href="/app/dev/index.html">&larr; Dev Area</a>
   <div class="brand-name">Versions</div>
   <span class="dev-badge">DEV AREA</span>
@@ -126,6 +130,29 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
     How releases work: <a href="/platform_docs/RELEASE_CENTER.md">platform_docs/RELEASE_CENTER.md</a>.
   </div>
 </div>
+
+<script>
+/* ---------- escape hatches (same pattern as app/dev/compare.html) ----------
+   Links here are root-absolute (/app/…, /platform_docs/…) so they resolve when the
+   server serves the repo root. Opened straight from Finder the page runs on file://,
+   where a root-absolute path would hit the disk root — this page sits in
+   <repo>/app/dev/, so the sibling file name alone is the correct relative path for
+   the hub, and '../..' + path for anything else in the repo. */
+function devPath(file){ return (location.protocol === 'file:') ? file : '/app/dev/' + file; }
+function devGo(file){ location.href = devPath(file); }
+if (location.protocol === 'file:') {
+  document.querySelectorAll('a[href^="/"]').forEach(function (a) {
+    var h = a.getAttribute('href');
+    a.setAttribute('href', h.indexOf('/app/dev/') === 0 ? h.slice(9) : '../..' + h);
+  });
+}
+/* "← Back" = one step back in document history; if this page was opened cold
+   (no in-tab history) fall back to the Dev Area hub so it is never a dead end. */
+function stepBack(){
+  if (history.length > 1 && document.referrer) { history.back(); return; }
+  devGo('index.html');
+}
+</script>
 
 <script>
 (function () {

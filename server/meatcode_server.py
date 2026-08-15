@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-# Last updated: 2026-08-15 · Fullstack Engineer · GET /api/release/history is now visible on the hosted
+# Last updated: 2026-08-15 · Fullstack Engineer · features.json became a REGISTRY (schema v2:
+#   kind/added/status/where/destination/url per entry, alongside the unchanged dev+prod booleans).
+#   save_flags() now preserves non-`flags` top-level keys (e.g. `_schema`) instead of clobbering them.
+#   NEW POST /api/flags/upsert (same RELEASE_CENTER=1 + loopback local-admin gate as /api/flags/set,
+#   404 anywhere else) creates or updates a whole registry entry — validated key/kind/status, string
+#   fields whitelisted, where={screen,spot,file}, dev/prod coerced to bool, sane defaults so a new
+#   entry is never half-formed. GET /api/flags/all already returned the FULL entry objects, so the
+#   Dev Area hub can render dates + locations; GET /api/flags still returns only per-env booleans and
+#   the ff-<key> body-class mechanism is untouched.
+# Prev 2026-08-15 · Fullstack Engineer · GET /api/release/history is now visible on the hosted
 #   DEV site too (gate: _local_admin_ok() OR APP_ENV=="dev"; production keeps the 404). Powers the new
 #   read-only app/dev/versions.html screen. Hardened _release_history for hosts without a usable git
 #   checkout (Render): fetch stays best-effort, for-each-ref failure → {"versions":[],"note":"history
@@ -203,6 +212,9 @@ def _resolve_repo_file(name):
     return hit
 
 def load_flags():
+    """The registry: {key: {label, description, kind, added, status, where, dev, prod, ...}}.
+    Only `dev`/`prod` are behavioural (they drive /api/flags → ff-<key> body classes);
+    every other key is descriptive metadata rendered by the Dev Area hub."""
     try:
         with open(_resolve_repo_file("features.json"), encoding="utf-8") as _f:
             data = json.load(_f)
@@ -211,9 +223,26 @@ def load_flags():
         return {}
 
 def save_flags(flags):
-    with open(_resolve_repo_file("features.json"), "w", encoding="utf-8") as _f:
-        json.dump({"flags": flags}, _f, indent=2, ensure_ascii=False)
+    """Write the registry back, PRESERVING any other top-level keys (e.g. `_schema`)."""
+    path = _resolve_repo_file("features.json")
+    doc = {}
+    try:
+        with open(path, encoding="utf-8") as _f:
+            existing = json.load(_f)
+        if isinstance(existing, dict):
+            doc = existing
+    except Exception:
+        doc = {}
+    doc["flags"] = flags
+    with open(path, "w", encoding="utf-8") as _f:
+        json.dump(doc, _f, indent=2, ensure_ascii=False)
         _f.write("\n")
+
+# Registry fields an /api/flags/upsert call is allowed to write. `dev`/`prod` are coerced
+# to booleans; `where` is a {screen, spot, file} object; everything else is a plain string.
+FLAG_TEXT_FIELDS = ("label", "description", "kind", "added", "updated", "status",
+                    "destination", "url", "note")
+FLAG_WHERE_FIELDS = ("screen", "spot", "file")
 API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 if not API_KEY:
     sys.stderr.write(
@@ -1183,6 +1212,43 @@ class Handler(SimpleHTTPRequestHandler):
             flags[key][env] = val
             save_flags(flags)
             return self._send_json({"ok": True, "flags": flags})
+        if path == "/api/flags/upsert":
+            # Create OR update a whole registry entry, so a new feature/screen can be
+            # registered from the Dev Area hub instead of hand-editing features.json.
+            body = self._read_json_body() or {}
+            key = str(body.get("key", "")).strip()
+            if not re.match(r"^[a-z0-9][a-z0-9_]{1,48}$", key):
+                return self._send_json({"error": "key must be lowercase a-z0-9_ (2-49 chars)"}, 400)
+            flags = load_flags()
+            entry = dict(flags.get(key) or {})
+            is_new = key not in flags
+            for f in FLAG_TEXT_FIELDS:
+                if f in body and body[f] is not None:
+                    entry[f] = str(body[f]).strip()
+            if "where" in body and isinstance(body["where"], dict):
+                where = dict(entry.get("where") or {})
+                for f in FLAG_WHERE_FIELDS:
+                    if f in body["where"] and body["where"][f] is not None:
+                        where[f] = str(body["where"][f]).strip()
+                entry["where"] = where
+            for env in ("dev", "prod"):
+                if env in body:
+                    entry[env] = bool(body[env])
+            # Sensible defaults so a new entry is never half-formed.
+            entry.setdefault("label", key)
+            entry.setdefault("kind", "feature")
+            entry.setdefault("status", "placeholder")
+            entry.setdefault("added", datetime.date.today().isoformat())
+            entry.setdefault("dev", True)
+            entry.setdefault("prod", False)
+            if entry.get("kind") not in ("feature", "screen"):
+                return self._send_json({"error": "kind must be 'feature' or 'screen'"}, 400)
+            if entry.get("status") not in ("live", "preview", "placeholder"):
+                return self._send_json({"error": "status must be live|preview|placeholder"}, 400)
+            flags[key] = entry
+            save_flags(flags)
+            return self._send_json({"ok": True, "created": is_new, "key": key,
+                                    "entry": entry, "flags": flags})
         if path in ("/api/release/deploy-dev", "/api/release/promote"):
             script = "deploy-dev.command" if path.endswith("deploy-dev") else "promote-to-prod.command"
             target = _resolve_repo_file(script)
@@ -1215,7 +1281,8 @@ class Handler(SimpleHTTPRequestHandler):
         path = urlparse(self.path).path
         # ── Local Release Center admin — exists ONLY on the local cockpit (RELEASE_CENTER=1
         #    + loopback); returns 404 anywhere else, so a hosted server can never be driven. ──
-        if path in ("/api/flags/set", "/api/release/deploy-dev", "/api/release/promote", "/api/release/rollback"):
+        if path in ("/api/flags/set", "/api/flags/upsert", "/api/release/deploy-dev",
+                    "/api/release/promote", "/api/release/rollback"):
             if not self._local_admin_ok():
                 self.send_error(404, "Not found"); return
             return self._handle_admin_post(path)

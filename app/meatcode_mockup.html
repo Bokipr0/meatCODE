@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<!-- Last updated: 2026-08-15 14:55 UTC · UI/UX Designer · FOUR changes (Lior's dev-area sprint). (1) ORACLE ATTACH (preview): paperclip button in the ask box next to the mic (#oracleAttachBtn + hidden #oracleFileInput); picking a file renders a removable filename chip (+ "preview" tag) in #oracleAttachRow above the ask controls. CLIENT-SIDE ONLY — nothing is uploaded and NO success/processing message is shown (tooltip: "Attach data or a paper (preview — processing coming soon)"). (2) DEV AREA BUTTON: a flask "Dev Area" link (→ /app/dev/index.html, same tab, plain <a>) authored statically next to the Inventory button on all 14 topbars; FEATURE-FLAGGED — .mc-devarea-btn is display:none unless body.ff-dev_area (set by the existing /api/flags load pass), so it stays off production until the flag flips. (3) HOME OFF THE NAV — Oracle is the landing again: empty hash → #oracle (setScene default), the brand/logo click → #oracle, and the load-time nav pass now REMOVES any Home chip instead of injecting one → top nav everywhere = Oracle · Research · Simulate. The #home scene + its wiring stay in the file but are unreachable from nav (harmless dead scene, cheap rollback; NAV_CAT/ROUTES 'home' entries left in place). (4) RESEARCH TILES: #research now shows THREE tiles — Juice · Lipid (both subtitled "aroma profiles inside", still → #research-sub) · Analytics (→ /app/dev/analytics.html, labelled a dev preview); the Matrix + Volatiles cards and the dashed "Looking for a protocol instead?" card are REMOVED (the #research-sub matrix/volatiles content + #toolbench stay intact off-scene); each tile now carries its own palette (Juice teal · Lipid coral · Analytics olive) whose card background DEEPENS to a darker shade of the same hue on hover (smooth background-color transition via .phase-card[data-phase] rules). · Prior 2026-07-22 14:16 UTC · UI/UX Designer · Home v3 (Lior's review) — TWO changes. (1) DATA OUT OF TOP NAV: the load-time nav pass now removes BOTH Map and Database chips (was: relabel Database→Data and keep) + still injects Home + reorders → net top nav EVERYWHERE = Home · Oracle · Research · Simulate. The Home "Data" TILE (→#database) and the #database scene + all in-content routes are kept — Data stays reachable, just not as an upper-category button. setScene's dynamic active-map no longer activates a Data chip (database/molecule-detail/protocol-detail leave the nav with nothing active, like #map); Oracle/Research/Simulate/Home still highlight. ['data','database'] left in ROUTES (harmless; the tile uses href). (2) INVENTORY = Option A slide-over drawer, built + wired: a compact "Inventory" button on Home (below the tiles) shows live counts and opens a right slide-over (backdrop + 3-way segmented control Articles · Protocols · Sentences; Esc/backdrop/× close; item cards + italic quote cards for sentences), reproduced from outputs/inventory_option_A_drawer.html on the canonical tokens. CLIENT-SIDE ONLY (one shared password, no per-user identity — like Lab Stash; no server store). Stores: Articles → NEW mc_saved_articles_v1 (a save/bookmark button on each #molecule-detail linked-paper row pushes {id,name,meta,href}; exposed window.mcSaveArticle); Protocols → NEW mc_saved_protocols_v1 (a "Save protocol" button on #protocol-detail); Sentences → the real Lab Stash via window.MCStash.list() ({id,text,q}) rendered as quote cards, removable via window.MCStash.remove(id). Counts = the three live store sizes, re-read on open / on entering #home / after any save. Clicks: article → opens its doi/url (else the molecule); protocol → #protocol-detail; sentence → reopens its source question in #oracle. All new storage versioned + try/catch, dedupe by id, cap 50. Prior Home v2 work preserved (mic dictation, 4 tiles, merged recents, molecule/protocol detail scenes) and Toolbench/MCStash, Lab Stash highlight-to-save, Oracle SSE/status, SESSION_EXPIRED/same-origin, no-page-scroll shell untouched. · Prior 2026-07-22 13:48 UTC · UI/UX Designer · Home v2 (Lior's annotated review) — NAV is now Home · Oracle · Data · Research · Simulate: the load-time nav pass (formerly "trim") now drops only Map, RELABELS the Database chip to "Data" (icon kept), still prepends a Home chip, and REORDERS every topbar to the canonical order; nav-active is now DYNAMIC (setScene maps scene→category: database/molecule-detail/protocol-detail→Data, research/research-sub/toolbench→Research, etc. and lights the matching chip in every topbar), replacing the old static per-topbar active; ROUTES gained ['data','database']. HOME: ask box gained a MIC (reuses the Oracle's Web Speech dictation via a shared mcMakeDictation() helper — en-US, interim→final append into #homeAskInput, hidden where unsupported); tiles are now FOUR (Oracle→#oracle, Data→#database, Research→#research, Simulate→#simulate); "Pick up where you left off" now merges recent CHATS + MOLECULES (mc_recent_molecules_v1) + PROTOCOLS (mc_recent_protocols_v1), most-recent-first, labelled by kind, seeded with a representative molecule + protocol when empty (no experts); rows route chat→#oracle, molecule→#molecule-detail, protocol→#protocol-detail. NEW SCENES: #molecule-detail fetches GET {API}/api/molecules/{id} (same-origin guard + credentials:'same-origin'; crumbs Data/Molecules/name, mono title, category·taste·odor meta, tag chips, Linked-papers card with per-paper Open→ via doi/url, cross-links Ask the Oracle→ / See on Map→; loading/empty/error states never blank the page; records the view into mc_recent_molecules_v1). #protocol-detail is a representative TEMPLATE (no protocol backend yet — static placeholder steps/papers; only crumb+title populated live from mc_protocol_focus_id/name; records into mc_recent_protocols_v1). All prior work preserved (Related-molecules chips, widened Oracle answer, Toolbench, Lab Stash, lean restyle, SSE streaming/status, SESSION_EXPIRED/same-origin, no-page-scroll shell); #database/#map scenes + in-content journeys intact (Map off the nav; Data back on it). · Prior 2026-07-22 13:23 UTC · UI/UX Designer · added Home landing module — a new #home scene is now the DEFAULT landing (empty hash → #home via setScene) and the MeatCODE logo routes to #home. Top nav everywhere is now Home · Oracle · Research · Simulate: #home authors its own topbar (Home active), and trimNav — which still drops the Database + Map chips — now also PREPENDS a "Home" chip (house SVG) to every other topbar; nav router gained ['home','home'] in ROUTES + 'home' in SCENES. Home is built on #research's app/topbar/canvas shell (no left rail; #home .canvas spans both columns) and reproduces meatcode_lean_v1's Home on this file's tokens (teal=--wine, coral=--brass), all rules scoped under #home/.home-*. It has a REAL typeable ask box (Enter or Ask → sets #oracleTextarea, routes to #oracle, and streams via askOracle()), three tiles routing to #oracle/#research/#simulate, and a "Pick up where you left off" list wired to the saved Oracle chats (live oracleChats / mcLoadOracleChats seeds; a row → mcOpenOracleChat(id) then #oracle), re-rendered on load and on entering #home. All prior work preserved (Related-molecules chips, widened Oracle answer, Toolbench/window.MCStash, Lab Stash, lean DB/Oracle restyle, advisory Oracle-notes, SSE streaming + status phase, SESSION_EXPIRED + credentials same-origin, no-page-scroll shell); #database/#map scenes + their in-content journeys still intact and still off the top nav. · Prior 2026-07-22 12:10 UTC · UI/UX Designer · TASK 1 — removed Database + Map from the TOP NAV: a small load-time JS pass drops any .domain chip whose exact label is "Database"/"Map" across all ~11 topbars (DRY, can't desync); the #database and #map scenes AND every in-content route into them (dock items, "See on Map →", breadcrumbs, the new Related-molecule chips) are kept fully intact — the screens stay reachable, just not as nav buttons. TASK 2 — widened the Oracle answer to ~1080px via #oracle .oracle-wrap max-width, holding .oracle-heading/.oracle-input/.oracle-starter-row to a centered 780px so only #oracleAnswerSlot / the .oracle-answer card fills the wider wrap; content stays centered (margin:auto) and the no-page-scroll fixed shell is untouched. TASK 3 — added a "Related molecules" teal molecule-pill row at the very end of each answer card (below prose, sources, follow-ups): on completion (finalizeAnswer, guarded so the double SSE done/stream-close fire only requests once) it calls GET {API_BASE}/api/molecule-suggestions?q=<question+answer>&limit=6 with credentials:'same-origin' and the typeof-API_BASE same-origin guard, renders the bare [{id,name,category,taste,mentions_count}] array as chips with loading/empty/error states (all try/catch-wrapped — any fetch/parse failure hides the row silently and never blanks the answer); clicking a chip deep-links into Database → Molecules via mc_db_tab + mc_db_focus_id/name + a prefilled #db-molecules-search (reuses the DB engine's maybeFocus). Only the additions above changed; Toolbench, Lab Stash, lean DB/Oracle restyle, SSE streaming + status phase, SESSION_EXPIRED/same-origin, and the advisory Oracle-notes pass are all preserved. · Prior 2026-07-21 14:40 UTC · advisory session · Oracle notes pass (from Lior's annotated screenshot): removed the "ORACLE" eyebrow; subtitle → "Every answer is based on a closed corpus with information you can access"; shorter one-line placeholder; input textarea auto-grows (overflow hidden, min-height 30px) so there's no scrollbar or wasted gap; starter chips are now showcase quick-suggestions (Maillard synthesis route · Mask beany off-notes · Sulfur notes in cooked beef · Boost roasted aroma); answer SOURCES moved BELOW the prose (was above), recolored to a BLUE palette, and collapsed to the first 2 with a "+N more" toggle. · Prior 2026-07-21 14:16 UTC · UI/UX Designer · Lean restyle (matches UI-UX Designer/meatcode_lean_v1.html). TASK A — Database molecules/experts/companies to the lean .filterbar + .tbl look: filter bar is now a surface-2 panel with a pill search + right-aligned sort; molecules category filter is live .fchip chips (All · real facets) that drive the hidden <select> so every fetch/pager/XLSX wire is reused; per-tab "Data / <Entity>" breadcrumb; columns reworked through the config-driven engine — Molecules = MOLECULE(mono) · CLASS(category) · SOURCES(mono mentions_count) · RELEVANCE(.db-bar from priority_score, 0–100); Experts = NAME · AFFILIATION · COUNTRY · H-INDEX(.db-bar, dynamic max, NO relevance column); Companies = NAME · COUNTRY · WEBSITE(link); Export moved below each table as a lean ghost "⤓ Export (.xlsx)". 50/page pagination + Toolbench bookmark on molecule rows preserved. TASK B — Oracle centre column to the lean look: ORACLE eyebrow + "Ask the Oracle" + corpus subtitle; ask box → .oracle-box proportions (1.5px line-strong, r20); answer card → .answer (r20, 15.5px/1.7); retrieved papers render as coral .ent.paper-style pills wired to the live SSE sources (no fabricated molecule/expert chips); follow-ups → lean "→" chips from the model's Follow-ups line; left Pinned/History rail, Lab Stash highlight-to-save, streaming + "Digging the MeatCODE database…" status phase, SESSION_EXPIRED + credentials same-origin, and no-page-scroll frame all preserved. Only CSS + HTML markup + the DB config-engine columns/chips changed; the Oracle/Lab-Stash/Toolbench script blocks are byte-identical. NOTE: the on-disk base was the 13:19 commit — the Full-Stack Engineer's 13:34 backup Export/Import (mc-backup / mcStashSnapshot) is NOT in this file and must be re-applied + committed. · Prior 2026-07-21 13:19 UTC · UI/UX Designer · (1+3) Every tab is a centered, fixed-height frame with NO page scroll: the app-shell grid (64px 1fr, 100vh, overflow:hidden) bounds each scene and each scene’s .canvas is the internal scroller (min-height:0 + overflow-y:auto). Map keeps canvas overflow:hidden for the globe. Oracle is now a bounded flex column — heading + ask box + starters stay pinned and ONLY #oracleAnswerSlot scrolls. Content stays horizontally centered via each wrap’s max-width + margin:auto. (2) The topbar search bar was removed on every scene and replaced by a Toolbench wrench button that opens a saved-items drawer with three persisted sections — Saved molecules (mc_saved_molecules_v1; bookmark button added to each Database molecules row), Saved sentences (mc_lab_stash_v1 via a new window.MCStash owner API), and Marked chats (pinned mc_oracle_history_v1). The redundant bottom-left “Lab Stash” button was removed; highlight-to-save still writes mc_lab_stash_v1. All three stores are versioned + try/catch-wrapped; molecules capped at 100. · Prior 2026-07-21: full-screen shell (grid 64px 1fr; dock/flow-bar hidden), bulletproof Ask re-enable (.finally + input-listener), verified caches. · Prior: 401/SESSION_EXPIRED “your sign-in expired” + credentials same-origin; “Digging the MeatCODE database…” status phase; Oracle default landing + brand→#oracle; nav Oracle·Research·Database·Simulate·Map; no topbar bell. -->
+<!-- Last updated: 2026-08-15 17:40 UTC · UI/UX Designer · ORACLE IS NOW A REAL CHAT (approved design ported from app/dev/oracle_redesign.html v11 onto the live product, on THIS file's tokens — no palette imported). (1) THREAD: the centre column of #oracle is a scrollable multi-turn conversation (#oracleThread, the only scroller in the column) instead of one replaceable answer. Each question renders as a right-aligned user bubble (.oracle-turn.user/.oracle-bubble, wine-mist) and each answer as its own card appended below — a follow-up APPENDS and auto-scrolls to the new turn, it never wipes the previous answer. The ask box + starters moved BELOW the thread into a docked .oracle-composer (attach + mic + Ask + Enter-to-send / Shift+Enter newline all unchanged). #oracleAnswerSlot is gone; `oracleSlot` is now re-pointed at the current turn by mcOpenAnswerTurn(), so setOracleLoading / setOracleError / streamSSE write into the newest turn unchanged. Because several answer cards now coexist, opening a turn RETIRES the previous turns' ids (data-was-id) and the id-based answer CSS (#oracleSourcesList…) moved onto .oracle-sources-list. (2) HEADER: the "ORACLE" eyebrow and the "Ask the Oracle" H1 are REMOVED (Lior — the nav already says Oracle); the grounding line stays IN FULL: "Every answer is grounded in the corpus (818 sources, keyword/FTS retrieval, relevance_llm ≥ 60) with sources you can open." (mono on the threshold). (3) REAL RETRIEVAL KEPT + EXTENDED: status → "Digging the MeatCODE database…", sources → the real paper pills with their real [id] citations (+ NEW: the additive per-source `claims` key renders as an honest claims list when present), chunk → streaming prose with teal [n] cite chips, done → finalize (guard intact, so the double done/stream-close can't double-fire), error → error card; NEW `consensus` handler renders an honest "N support · M oppose · K neutral" chip ONLY when the event actually arrives. Missing events change nothing (full backward compatibility). (4) HISTORY = CONVERSATIONS: mc_oracle_history_v1 records now carry turns:[{q,a}] (12 turns × 4000 chars caps, all try/catch); asking appends a turn to the ACTIVE conversation, clicking a rail entry REPLAYS that whole conversation into the thread, and a legacy/seed record with no stored answer says so instead of inventing one. A small "+ New chat" button in the composer starts a fresh conversation. The left Pinned/History rail itself is untouched (same markup, styling, pin + rename behaviour). Lab Stash highlight-to-save now spans the whole thread (host = #oracleThread), and the related-molecules chip row, SESSION_EXPIRED handling, credentials:'same-origin' + the typeof API_BASE guard, and the no-page-scroll shell are all preserved. · Prior 2026-08-15 14:55 UTC · UI/UX Designer · FOUR changes (Lior's dev-area sprint). (1) ORACLE ATTACH (preview): paperclip button in the ask box next to the mic (#oracleAttachBtn + hidden #oracleFileInput); picking a file renders a removable filename chip (+ "preview" tag) in #oracleAttachRow above the ask controls. CLIENT-SIDE ONLY — nothing is uploaded and NO success/processing message is shown (tooltip: "Attach data or a paper (preview — processing coming soon)"). (2) DEV AREA BUTTON: a flask "Dev Area" link (→ /app/dev/index.html, same tab, plain <a>) authored statically next to the Inventory button on all 14 topbars; FEATURE-FLAGGED — .mc-devarea-btn is display:none unless body.ff-dev_area (set by the existing /api/flags load pass), so it stays off production until the flag flips. (3) HOME OFF THE NAV — Oracle is the landing again: empty hash → #oracle (setScene default), the brand/logo click → #oracle, and the load-time nav pass now REMOVES any Home chip instead of injecting one → top nav everywhere = Oracle · Research · Simulate. The #home scene + its wiring stay in the file but are unreachable from nav (harmless dead scene, cheap rollback; NAV_CAT/ROUTES 'home' entries left in place). (4) RESEARCH TILES: #research now shows THREE tiles — Juice · Lipid (both subtitled "aroma profiles inside", still → #research-sub) · Analytics (→ /app/dev/analytics.html, labelled a dev preview); the Matrix + Volatiles cards and the dashed "Looking for a protocol instead?" card are REMOVED (the #research-sub matrix/volatiles content + #toolbench stay intact off-scene); each tile now carries its own palette (Juice teal · Lipid coral · Analytics olive) whose card background DEEPENS to a darker shade of the same hue on hover (smooth background-color transition via .phase-card[data-phase] rules). · Prior 2026-07-22 14:16 UTC · UI/UX Designer · Home v3 (Lior's review) — TWO changes. (1) DATA OUT OF TOP NAV: the load-time nav pass now removes BOTH Map and Database chips (was: relabel Database→Data and keep) + still injects Home + reorders → net top nav EVERYWHERE = Home · Oracle · Research · Simulate. The Home "Data" TILE (→#database) and the #database scene + all in-content routes are kept — Data stays reachable, just not as an upper-category button. setScene's dynamic active-map no longer activates a Data chip (database/molecule-detail/protocol-detail leave the nav with nothing active, like #map); Oracle/Research/Simulate/Home still highlight. ['data','database'] left in ROUTES (harmless; the tile uses href). (2) INVENTORY = Option A slide-over drawer, built + wired: a compact "Inventory" button on Home (below the tiles) shows live counts and opens a right slide-over (backdrop + 3-way segmented control Articles · Protocols · Sentences; Esc/backdrop/× close; item cards + italic quote cards for sentences), reproduced from outputs/inventory_option_A_drawer.html on the canonical tokens. CLIENT-SIDE ONLY (one shared password, no per-user identity — like Lab Stash; no server store). Stores: Articles → NEW mc_saved_articles_v1 (a save/bookmark button on each #molecule-detail linked-paper row pushes {id,name,meta,href}; exposed window.mcSaveArticle); Protocols → NEW mc_saved_protocols_v1 (a "Save protocol" button on #protocol-detail); Sentences → the real Lab Stash via window.MCStash.list() ({id,text,q}) rendered as quote cards, removable via window.MCStash.remove(id). Counts = the three live store sizes, re-read on open / on entering #home / after any save. Clicks: article → opens its doi/url (else the molecule); protocol → #protocol-detail; sentence → reopens its source question in #oracle. All new storage versioned + try/catch, dedupe by id, cap 50. Prior Home v2 work preserved (mic dictation, 4 tiles, merged recents, molecule/protocol detail scenes) and Toolbench/MCStash, Lab Stash highlight-to-save, Oracle SSE/status, SESSION_EXPIRED/same-origin, no-page-scroll shell untouched. · Prior 2026-07-22 13:48 UTC · UI/UX Designer · Home v2 (Lior's annotated review) — NAV is now Home · Oracle · Data · Research · Simulate: the load-time nav pass (formerly "trim") now drops only Map, RELABELS the Database chip to "Data" (icon kept), still prepends a Home chip, and REORDERS every topbar to the canonical order; nav-active is now DYNAMIC (setScene maps scene→category: database/molecule-detail/protocol-detail→Data, research/research-sub/toolbench→Research, etc. and lights the matching chip in every topbar), replacing the old static per-topbar active; ROUTES gained ['data','database']. HOME: ask box gained a MIC (reuses the Oracle's Web Speech dictation via a shared mcMakeDictation() helper — en-US, interim→final append into #homeAskInput, hidden where unsupported); tiles are now FOUR (Oracle→#oracle, Data→#database, Research→#research, Simulate→#simulate); "Pick up where you left off" now merges recent CHATS + MOLECULES (mc_recent_molecules_v1) + PROTOCOLS (mc_recent_protocols_v1), most-recent-first, labelled by kind, seeded with a representative molecule + protocol when empty (no experts); rows route chat→#oracle, molecule→#molecule-detail, protocol→#protocol-detail. NEW SCENES: #molecule-detail fetches GET {API}/api/molecules/{id} (same-origin guard + credentials:'same-origin'; crumbs Data/Molecules/name, mono title, category·taste·odor meta, tag chips, Linked-papers card with per-paper Open→ via doi/url, cross-links Ask the Oracle→ / See on Map→; loading/empty/error states never blank the page; records the view into mc_recent_molecules_v1). #protocol-detail is a representative TEMPLATE (no protocol backend yet — static placeholder steps/papers; only crumb+title populated live from mc_protocol_focus_id/name; records into mc_recent_protocols_v1). All prior work preserved (Related-molecules chips, widened Oracle answer, Toolbench, Lab Stash, lean restyle, SSE streaming/status, SESSION_EXPIRED/same-origin, no-page-scroll shell); #database/#map scenes + in-content journeys intact (Map off the nav; Data back on it). · Prior 2026-07-22 13:23 UTC · UI/UX Designer · added Home landing module — a new #home scene is now the DEFAULT landing (empty hash → #home via setScene) and the MeatCODE logo routes to #home. Top nav everywhere is now Home · Oracle · Research · Simulate: #home authors its own topbar (Home active), and trimNav — which still drops the Database + Map chips — now also PREPENDS a "Home" chip (house SVG) to every other topbar; nav router gained ['home','home'] in ROUTES + 'home' in SCENES. Home is built on #research's app/topbar/canvas shell (no left rail; #home .canvas spans both columns) and reproduces meatcode_lean_v1's Home on this file's tokens (teal=--wine, coral=--brass), all rules scoped under #home/.home-*. It has a REAL typeable ask box (Enter or Ask → sets #oracleTextarea, routes to #oracle, and streams via askOracle()), three tiles routing to #oracle/#research/#simulate, and a "Pick up where you left off" list wired to the saved Oracle chats (live oracleChats / mcLoadOracleChats seeds; a row → mcOpenOracleChat(id) then #oracle), re-rendered on load and on entering #home. All prior work preserved (Related-molecules chips, widened Oracle answer, Toolbench/window.MCStash, Lab Stash, lean DB/Oracle restyle, advisory Oracle-notes, SSE streaming + status phase, SESSION_EXPIRED + credentials same-origin, no-page-scroll shell); #database/#map scenes + their in-content journeys still intact and still off the top nav. · Prior 2026-07-22 12:10 UTC · UI/UX Designer · TASK 1 — removed Database + Map from the TOP NAV: a small load-time JS pass drops any .domain chip whose exact label is "Database"/"Map" across all ~11 topbars (DRY, can't desync); the #database and #map scenes AND every in-content route into them (dock items, "See on Map →", breadcrumbs, the new Related-molecule chips) are kept fully intact — the screens stay reachable, just not as nav buttons. TASK 2 — widened the Oracle answer to ~1080px via #oracle .oracle-wrap max-width, holding .oracle-heading/.oracle-input/.oracle-starter-row to a centered 780px so only #oracleAnswerSlot / the .oracle-answer card fills the wider wrap; content stays centered (margin:auto) and the no-page-scroll fixed shell is untouched. TASK 3 — added a "Related molecules" teal molecule-pill row at the very end of each answer card (below prose, sources, follow-ups): on completion (finalizeAnswer, guarded so the double SSE done/stream-close fire only requests once) it calls GET {API_BASE}/api/molecule-suggestions?q=<question+answer>&limit=6 with credentials:'same-origin' and the typeof-API_BASE same-origin guard, renders the bare [{id,name,category,taste,mentions_count}] array as chips with loading/empty/error states (all try/catch-wrapped — any fetch/parse failure hides the row silently and never blanks the answer); clicking a chip deep-links into Database → Molecules via mc_db_tab + mc_db_focus_id/name + a prefilled #db-molecules-search (reuses the DB engine's maybeFocus). Only the additions above changed; Toolbench, Lab Stash, lean DB/Oracle restyle, SSE streaming + status phase, SESSION_EXPIRED/same-origin, and the advisory Oracle-notes pass are all preserved. · Prior 2026-07-21 14:40 UTC · advisory session · Oracle notes pass (from Lior's annotated screenshot): removed the "ORACLE" eyebrow; subtitle → "Every answer is based on a closed corpus with information you can access"; shorter one-line placeholder; input textarea auto-grows (overflow hidden, min-height 30px) so there's no scrollbar or wasted gap; starter chips are now showcase quick-suggestions (Maillard synthesis route · Mask beany off-notes · Sulfur notes in cooked beef · Boost roasted aroma); answer SOURCES moved BELOW the prose (was above), recolored to a BLUE palette, and collapsed to the first 2 with a "+N more" toggle. · Prior 2026-07-21 14:16 UTC · UI/UX Designer · Lean restyle (matches UI-UX Designer/meatcode_lean_v1.html). TASK A — Database molecules/experts/companies to the lean .filterbar + .tbl look: filter bar is now a surface-2 panel with a pill search + right-aligned sort; molecules category filter is live .fchip chips (All · real facets) that drive the hidden <select> so every fetch/pager/XLSX wire is reused; per-tab "Data / <Entity>" breadcrumb; columns reworked through the config-driven engine — Molecules = MOLECULE(mono) · CLASS(category) · SOURCES(mono mentions_count) · RELEVANCE(.db-bar from priority_score, 0–100); Experts = NAME · AFFILIATION · COUNTRY · H-INDEX(.db-bar, dynamic max, NO relevance column); Companies = NAME · COUNTRY · WEBSITE(link); Export moved below each table as a lean ghost "⤓ Export (.xlsx)". 50/page pagination + Toolbench bookmark on molecule rows preserved. TASK B — Oracle centre column to the lean look: ORACLE eyebrow + "Ask the Oracle" + corpus subtitle; ask box → .oracle-box proportions (1.5px line-strong, r20); answer card → .answer (r20, 15.5px/1.7); retrieved papers render as coral .ent.paper-style pills wired to the live SSE sources (no fabricated molecule/expert chips); follow-ups → lean "→" chips from the model's Follow-ups line; left Pinned/History rail, Lab Stash highlight-to-save, streaming + "Digging the MeatCODE database…" status phase, SESSION_EXPIRED + credentials same-origin, and no-page-scroll frame all preserved. Only CSS + HTML markup + the DB config-engine columns/chips changed; the Oracle/Lab-Stash/Toolbench script blocks are byte-identical. NOTE: the on-disk base was the 13:19 commit — the Full-Stack Engineer's 13:34 backup Export/Import (mc-backup / mcStashSnapshot) is NOT in this file and must be re-applied + committed. · Prior 2026-07-21 13:19 UTC · UI/UX Designer · (1+3) Every tab is a centered, fixed-height frame with NO page scroll: the app-shell grid (64px 1fr, 100vh, overflow:hidden) bounds each scene and each scene’s .canvas is the internal scroller (min-height:0 + overflow-y:auto). Map keeps canvas overflow:hidden for the globe. Oracle is now a bounded flex column — heading + ask box + starters stay pinned and ONLY #oracleAnswerSlot scrolls. Content stays horizontally centered via each wrap’s max-width + margin:auto. (2) The topbar search bar was removed on every scene and replaced by a Toolbench wrench button that opens a saved-items drawer with three persisted sections — Saved molecules (mc_saved_molecules_v1; bookmark button added to each Database molecules row), Saved sentences (mc_lab_stash_v1 via a new window.MCStash owner API), and Marked chats (pinned mc_oracle_history_v1). The redundant bottom-left “Lab Stash” button was removed; highlight-to-save still writes mc_lab_stash_v1. All three stores are versioned + try/catch-wrapped; molecules capped at 100. · Prior 2026-07-21: full-screen shell (grid 64px 1fr; dock/flow-bar hidden), bulletproof Ask re-enable (.finally + input-listener), verified caches. · Prior: 401/SESSION_EXPIRED “your sign-in expired” + credentials same-origin; “Digging the MeatCODE database…” status phase; Oracle default landing + brand→#oracle; nav Oracle·Research·Database·Simulate·Map; no topbar bell. -->
 <title>MeatCODE · GFI Israel — flavor & aroma research</title>
 <meta name="viewport" content="width=1440" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -53,10 +53,10 @@
 }
 .brand-name::before { content: none; display: none; }
 /* ── Feature flag: new_logo (placeholder treatment) ──────────────────────────
-   The Release Center toggles body.ff-new-logo. Until the real new-logo asset is
+   The Release Center toggles body.ff-new_logo. Until the real new-logo asset is
    dropped in, this visibly restyles the wordmark so the switch is testable. */
-body.ff-new-logo .brand-logo{ background:linear-gradient(135deg, var(--brass,#b5651d), var(--wine,#6d2a3a)); color:#fff; }
-body.ff-new-logo .brand-name::after{ content:"new"; margin-left:6px; padding:1px 6px; font-size:9px; font-weight:700; letter-spacing:.04em; color:#fff; background:var(--brass,#b5651d); border-radius:999px; vertical-align:middle; text-transform:uppercase; }
+body.ff-new_logo .brand-logo{ background:linear-gradient(135deg, var(--brass,#b5651d), var(--wine,#6d2a3a)); color:#fff; }
+body.ff-new_logo .brand-name::after{ content:"new"; margin-left:6px; padding:1px 6px; font-size:9px; font-weight:700; letter-spacing:.04em; color:#fff; background:var(--brass,#b5651d); border-radius:999px; vertical-align:middle; text-transform:uppercase; }
 /* ── Feature flag: dev_banner — fixed "DEV" ribbon so staging is never mistaken for prod ── */
 #ffDevBanner{ display:none; position:fixed; top:8px; left:50%; transform:translateX(-50%); z-index:100000;
   background:var(--brass,#b5651d); color:#fff; font:700 11px -apple-system,BlinkMacSystemFont,sans-serif;
@@ -486,12 +486,15 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
   padding-top: 18px; border-top: 1px solid var(--line);
 }
 .oracle-evidence-label { font-size: 11px; font-weight: 700; color: var(--ink-faint); letter-spacing: 0.16em; text-transform: uppercase; }
-#oracleSourcesList { display: flex; flex-wrap: wrap; gap: 8px; }
+/* 2026-08-15 · these were #oracleSourcesList rules. The Oracle is a multi-turn thread
+   now, so every past turn's ids are retired when a new turn opens — the styling has to
+   ride on a CLASS or older answers in the thread would lose their source pills. */
+.oracle-sources-list { display: flex; flex-wrap: wrap; gap: 8px; }
 .oracle-cite { display: flex; align-items: center; gap: 12px; }
 /* In the answer card, retrieved papers render as compact BLUE pills; the [id] tag
    stays the clickable target that opens the paper modal. Only 2 show by default,
    with a "+N more" toggle (see streamSSE). */
-#oracleSourcesList .oracle-cite {
+.oracle-sources-list .oracle-cite {
   display: inline-flex; align-items: center; gap: 6px;
   max-width: 340px; padding: 6px 13px; border-radius: 100px;
   background: #E3EDF6;
@@ -501,18 +504,18 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
   background: var(--wine-mist); color: var(--wine);
   font-size: 12px; font-weight: 700;
 }
-#oracleSourcesList .oracle-cite-chip {
+.oracle-sources-list .oracle-cite-chip {
   padding: 0; background: none; color: #2A6497;
   font-size: 11.5px; font-weight: 700; border-radius: 0; flex-shrink: 0;
 }
-#oracleSourcesList .oracle-cite-chip:hover { background: none; color: #184766; text-decoration: underline; }
+.oracle-sources-list .oracle-cite-chip:hover { background: none; color: #184766; text-decoration: underline; }
 .oracle-cite-text { font-size: 13.5px; color: var(--ink-dim); }
-#oracleSourcesList .oracle-cite-text {
+.oracle-sources-list .oracle-cite-text {
   font-size: 12.5px; font-weight: 700; color: #2A6497;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
 }
 /* the collapsed extra sources + the toggle */
-#oracleSourcesList .oracle-cite-more { display: flex; flex-wrap: wrap; gap: 8px; flex-basis: 100%; }
+.oracle-sources-list .oracle-cite-more { display: flex; flex-wrap: wrap; gap: 8px; flex-basis: 100%; }
 .oracle-cite-expand {
   flex-basis: 100%; margin-top: 2px; padding: 2px 0; text-align: left;
   background: none; border: none; cursor: pointer;
@@ -2103,21 +2106,91 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
 .db-mol-save.saved svg { fill: var(--wine); }
 .db-mol-save:focus-visible { outline: 2px solid var(--wine); outline-offset: -2px; }
 
-/* ── 2026-07-21 · Oracle as a bounded flex column: heading + ask box + starters stay
-   fixed and ONLY the answer region (#oracleAnswerSlot) scrolls, so the page never grows. */
+/* ── 2026-08-15 · Oracle is a real CHAT (ported from app/dev/oracle_redesign.html v11).
+   The wrap is still a bounded flex column with NO page scroll: the grounding line and the
+   docked composer stay put and ONLY the conversation thread (#oracleThread) scrolls.
+   (Prior 2026-07-21: the same frame around a single #oracleAnswerSlot answer.) */
 #oracle .canvas { overflow: hidden; display: flex; flex-direction: column; }
 #oracle .oracle-wrap { display: flex; flex-direction: column; height: 100%; min-height: 0; width: 100%; max-width: 1080px; }
-/* 2026-07-22 · Widen the answer region (~1080px) so answers read wider, while the ask
-   box + heading + starters stay a narrower centered column (their prior ~760px width) so
-   they aren't stretched — only #oracleAnswerSlot / the answer card fills the wider wrap. */
-#oracle .oracle-heading, #oracle .oracle-input, #oracle .oracle-starter-row { flex: 0 0 auto; max-width: 780px; width: 100%; margin-left: auto; margin-right: auto; }
-#oracle #oracleAnswerSlot {
-  flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+#oracle .oracle-heading, #oracle .oracle-composer { flex: 0 0 auto; }
+/* No eyebrow / no "Ask the Oracle" H1 any more (the nav already says Oracle) — just the
+   grounding line, left-aligned above the conversation. */
+#oracle .oracle-heading { text-align: left; margin: 0 auto 12px; max-width: 900px; width: 100%; }
+#oracle .oracle-heading p { font-size: 13.5px; color: var(--ink-dim); line-height: 1.5; }
+#oracle .oracle-heading .mono { font-family: var(--mono); letter-spacing: -0.01em; }
+#oracle .oracle-input, #oracle .oracle-starter-row { max-width: 900px; width: 100%; margin-left: auto; margin-right: auto; }
+/* the composer docks under the thread */
+#oracle .oracle-composer { padding-top: 12px; border-top: 1px solid var(--line); }
+#oracle .oracle-composer .oracle-starter-row { margin: 0 auto 10px; }
+#oracle .oracle-composer .oracle-input { margin-bottom: 0; }
+
+/* ── the conversation thread — the ONLY scroller in the centre column ── */
+#oracle #oracleThread {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;
+  overscroll-behavior: contain; scroll-behavior: smooth;
+  display: flex; flex-direction: column; gap: 16px; padding: 2px 2px 20px;
   scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent;
 }
-#oracle #oracleAnswerSlot::-webkit-scrollbar { width: 11px; }
-#oracle #oracleAnswerSlot::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 100px; border: 3px solid var(--surface); }
-#oracle .oracle-answer { max-height: none; }
+#oracle #oracleThread::-webkit-scrollbar { width: 11px; }
+#oracle #oracleThread::-webkit-scrollbar-track { background: transparent; }
+#oracle #oracleThread::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 100px; border: 3px solid var(--surface); }
+/* turns share the composer's measure so the conversation reads as one column */
+#oracle #oracleThread > * { max-width: 900px; width: 100%; margin-left: auto; margin-right: auto; }
+/* inside a thread the CARD never scrolls on its own — the thread does */
+#oracle .oracle-answer { max-height: none; overflow: visible; }
+
+.oracle-turn { display: flex; flex-direction: column; }
+.oracle-turn.user { align-items: flex-end; }
+.oracle-turn.answer { align-items: stretch; }
+.oracle-who {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-faint); margin: 0 4px 5px 0;
+}
+.oracle-bubble {
+  max-width: 74%;
+  background: var(--wine-mist); color: var(--wine-deep);
+  border: 1px solid var(--wine-tint); border-radius: 16px 16px 5px 16px;
+  padding: 12px 16px; font-size: 14.5px; line-height: 1.55; font-weight: 700;
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+/* honest note for a conversation saved before answers were kept in the store */
+.oracle-turn-note {
+  background: var(--surface); border: 1.5px dashed var(--line-strong); border-radius: 16px;
+  padding: 14px 18px; font-size: 13px; line-height: 1.55; color: var(--ink-faint);
+}
+
+/* consensus chip — rendered ONLY when the server sends an `event: consensus` */
+.oracle-consensus {
+  display: inline-flex; align-items: center; gap: 9px; flex-wrap: wrap;
+  margin: 0 0 14px; padding: 6px 14px; border-radius: 100px;
+  background: var(--surface-2); border: 1px solid var(--line-strong);
+  font-size: 12px; font-weight: 700; color: var(--ink-dim);
+}
+.oracle-consensus .cs-lbl { letter-spacing: 0.13em; text-transform: uppercase; font-size: 10px; color: var(--ink-faint); }
+.oracle-consensus .cs { display: inline-flex; align-items: center; gap: 5px; }
+.oracle-consensus .cs b { font-family: var(--mono); letter-spacing: -0.01em; }
+.oracle-consensus .cs.support { color: var(--wine); }
+.oracle-consensus .cs.oppose  { color: #A5522F; }
+.oracle-consensus .cs.neutral { color: var(--ink-faint); }
+.oracle-consensus .cs-sep { color: var(--line-strong); }
+
+/* per-source claims — additive: only rendered when a source carries a `claims` key */
+.oracle-claims { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; flex-basis: 100%; }
+.oracle-claims-label { font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+.oracle-claim { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; line-height: 1.5; color: var(--ink-dim); }
+.oracle-claim .oracle-cite-chip { flex-shrink: 0; }
+
+/* "New chat" — the only way to start a fresh conversation now that asking appends */
+.oracle-newchat {
+  padding: 7px 13px; margin-right: 4px;
+  background: var(--wine-mist); border: 1.5px solid var(--wine-tint);
+  border-radius: 100px; font-size: 12.5px; font-weight: 700; color: var(--wine);
+  cursor: pointer; font-family: var(--round);
+}
+.oracle-newchat:hover { background: var(--wine-tint); color: var(--wine-deep); }
+.oracle-newchat:focus-visible { outline: 2px solid var(--wine); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) { #oracle #oracleThread { scroll-behavior: auto; } }
 
 /* ============ HOME landing (scene #home · added 2026-07-22) ============
    Adapted from UI-UX Designer/meatcode_lean_v1.html's Home scene onto THIS file's
@@ -2769,15 +2842,45 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
 
     <main class="canvas">
       <div class="oracle-wrap">
+        <!-- 2026-08-15 · Lior's decision: the "ORACLE" eyebrow and the "Ask the Oracle"
+             H1 are GONE (the nav already says Oracle and they pushed the conversation
+             down the page). The grounding line stays IN FULL — technical detail
+             included — exactly as approved in app/dev/oracle_redesign.html. -->
         <div class="oracle-heading">
-          <h1>Ask the Oracle</h1>
-          <p>Every answer is based on a closed corpus with information you can access.</p>
+          <p>Every answer is grounded in the corpus (818 sources, keyword/FTS retrieval, <span class="mono">relevance_llm &ge; 60</span>) with sources you can open.</p>
+        </div>
+
+        <!-- ===== THE CONVERSATION =====
+             Multi-turn thread: every question becomes a user bubble and every answer an
+             answer card filled by the LIVE SSE stream (status / sources / chunk /
+             consensus / done). Asking a follow-up APPENDS — it never wipes the previous
+             answer. This is the only scroller in the centre column; the rail keeps its
+             own. Lab Stash highlight-to-save is scoped to this element. -->
+        <!-- aria-live is OFF on purpose: the answer body is re-rendered on every streamed
+             chunk, which would make a live region announce the whole answer dozens of
+             times. The role still exposes it as a conversation log. -->
+        <div class="oracle-thread" id="oracleThread" role="log" aria-live="off" aria-label="Oracle conversation">
+          <div class="oracle-answer empty oracle-empty-state">
+            <div class="icon">·</div>
+            <div class="title">Waiting on your question</div>
+            <div class="hint">Pick a starter below or type your own. Every answer is built from papers retrieved out of the MeatCODE database — citations link straight to the source.</div>
+          </div>
+        </div>
+
+        <!-- ===== the composer, docked under the thread ===== -->
+        <div class="oracle-composer">
+        <div class="oracle-starter-row" id="oracleStarterRow">
+          <button type="button" class="oracle-newchat" id="oracleNewChatBtn" title="Start a new conversation">+ New chat</button>
+          <span class="oracle-starter" data-q="Walk me through the Maillard synthesis route to meaty aroma.">Maillard synthesis route</span>
+          <span class="oracle-starter" data-q="How do I mask beany off-notes in pea protein?">Mask beany off-notes</span>
+          <span class="oracle-starter" data-q="Which sulfur volatiles drive cooked-beef aroma?">Sulfur notes in cooked beef</span>
+          <span class="oracle-starter" data-q="What precursors boost roasted 2-acetyl-1-pyrroline aroma?">Boost roasted aroma</span>
         </div>
 
         <div class="oracle-input" id="oracleInputBox">
           <textarea
             class="oracle-textarea" id="oracleTextarea"
-            placeholder="e.g. What drives roasted notes in plant-based beef?"
+            placeholder="Ask a follow-up… e.g. What drives roasted notes in plant-based beef?"
             rows="1"></textarea>
           <!-- 2026-08-15 · Attach (preview): the chip for a picked file renders here, above
                the ask controls. Client-side only — no upload happens yet, so no success or
@@ -2817,22 +2920,7 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
                aria-pressed / aria-label instead. -->
           <div class="oracle-mic-status" id="oracleMicStatus" aria-hidden="true"></div>
         </div>
-
-        <div class="oracle-starter-row" id="oracleStarterRow">
-          <span class="oracle-starter" data-q="Walk me through the Maillard synthesis route to meaty aroma.">Maillard synthesis route</span>
-          <span class="oracle-starter" data-q="How do I mask beany off-notes in pea protein?">Mask beany off-notes</span>
-          <span class="oracle-starter" data-q="Which sulfur volatiles drive cooked-beef aroma?">Sulfur notes in cooked beef</span>
-          <span class="oracle-starter" data-q="What precursors boost roasted 2-acetyl-1-pyrroline aroma?">Boost roasted aroma</span>
-        </div>
-
-        <div id="oracleAnswerSlot">
-          <!-- starts empty; populated by JS as soon as the user asks -->
-          <div class="oracle-answer empty">
-            <div class="icon">·</div>
-            <div class="title">Waiting on your question</div>
-            <div class="hint">Pick a starter above or type your own. Every answer is built from papers retrieved out of the MeatCODE database — citations link straight to the source.</div>
-          </div>
-        </div>
+        </div><!-- /.oracle-composer -->
       </div>
     </main>
 
@@ -4705,7 +4793,12 @@ var API_BASE = (function () {
 var oracleAskBtn   = document.getElementById('oracleAskBtn');
 var oracleTextarea = document.getElementById('oracleTextarea');
 var oracleInputBox = document.getElementById('oracleInputBox');
-var oracleSlot     = document.getElementById('oracleAnswerSlot');
+var oracleThread   = document.getElementById('oracleThread');
+/* 2026-08-15 · The Oracle is a multi-turn chat now. `oracleSlot` is no longer one fixed
+   element — it's re-pointed at the CURRENT turn's answer holder by mcOpenAnswerTurn(),
+   so every existing writer (setOracleLoading / setOracleError / streamSSE) keeps working
+   unchanged and simply writes into the newest turn. */
+var oracleSlot     = null;
 var mcOracleActiveQuestion = '';   // last asked question, for the Related-molecules lookup
 
 if (oracleTextarea) {
@@ -4738,6 +4831,130 @@ document.querySelectorAll('.oracle-starter').forEach(function (s) {
 });
 
 /* ============================================================
+   2026-08-15 · THE ORACLE THREAD (ported from app/dev/oracle_redesign.html v11).
+   The centre column is a scrollable multi-turn conversation: a user bubble per
+   question, an answer card per answer. The answer card is still filled by the REAL
+   SSE stream — nothing here fabricates content.
+
+   Turn ids: the streaming code addresses its card by id (#oracleBody, #oraclePhase,
+   …). With several answers on screen those ids would collide, so opening a new turn
+   RETIRES the ids of every older turn (they become data-was-id="…"). All id-based CSS
+   for the answer card was moved onto classes for exactly this reason.
+   ============================================================ */
+var MC_TURN_IDS = ['oracleAnswer', 'oraclePhase', 'oraclePhaseLabel', 'oracleConsensus',
+                   'oracleBody', 'oracleSources', 'oracleSourcesList', 'oracleFollowups',
+                   'oracleRelated', 'oracleCiteMore', 'oracleCiteExpand'];
+
+function mcRetireTurnIds() {
+  MC_TURN_IDS.forEach(function (id) {
+    var el = document.getElementById(id);
+    var guard = 0;
+    while (el && guard++ < 200) {
+      el.removeAttribute('id');
+      el.setAttribute('data-was-id', id);
+      // a stale turn must never keep a spinning phase line
+      if (id === 'oraclePhase') el.style.display = 'none';
+      el = document.getElementById(id);
+    }
+  });
+}
+
+function mcClearOracleEmptyState() {
+  if (!oracleThread) return;
+  var empty = oracleThread.querySelector('.oracle-empty-state');
+  if (empty && empty.parentNode) empty.parentNode.removeChild(empty);
+}
+
+/* the question the person actually typed — always escaped */
+function mcAppendUserTurn(text) {
+  if (!oracleThread) return null;
+  mcClearOracleEmptyState();
+  var el = document.createElement('div');
+  el.className = 'oracle-turn user';
+  el.innerHTML = '<div class="oracle-who">You</div>' +
+                 '<div class="oracle-bubble">' + escapeHtml(text) + '</div>';
+  oracleThread.appendChild(el);
+  return el;
+}
+
+/* opens (and returns) a fresh answer holder at the end of the thread */
+function mcOpenAnswerTurn() {
+  if (!oracleThread) return null;
+  mcClearOracleEmptyState();
+  mcRetireTurnIds();
+  var el = document.createElement('div');
+  el.className = 'oracle-turn answer';
+  oracleThread.appendChild(el);
+  return el;
+}
+
+/* land on the newest exchange */
+function mcScrollThread(anchorEl) {
+  if (!oracleThread) return;
+  try {
+    if (anchorEl && anchorEl.scrollIntoView) { anchorEl.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+  } catch (e) {}
+  try { oracleThread.scrollTop = oracleThread.scrollHeight; } catch (e) {}
+}
+
+/* Replay a stored conversation. Only real, previously streamed text is rendered —
+   a turn with no stored answer says so instead of inventing one. */
+function mcRenderConversation(chat) {
+  if (!oracleThread || !chat) return;
+  oracleThread.innerHTML = '';
+  var turns = Array.isArray(chat.turns) && chat.turns.length
+    ? chat.turns
+    : (chat.q ? [{ q: chat.q, a: '' }] : []);
+  var anyAnswer = false;
+  turns.forEach(function (t) {
+    if (!t || !t.q) return;
+    mcAppendUserTurn(t.q);
+    var host = mcOpenAnswerTurn();
+    if (!host) return;
+    if (t.a) {
+      anyAnswer = true;
+      host.innerHTML = '<div class="oracle-answer"><h3>Answer</h3><div class="oracle-answer-body"></div></div>';
+      var body = host.querySelector('.oracle-answer-body');
+      body.innerHTML = renderAnswerHTML(t.a, {});
+      attachCiteHandlers(body);
+    } else {
+      host.innerHTML = '<div class="oracle-turn-note">This question was saved before answers were kept in your history — ' +
+                       'ask it again to get a fresh grounded answer.</div>';
+    }
+  });
+  mcRetireTurnIds();                  // a replayed thread owns no live ids
+  if (!turns.length) setOracleEmpty();
+  // Nothing to replay → put the question back in the box (the pre-chat behaviour).
+  if (!anyAnswer && turns.length && oracleTextarea) {
+    oracleTextarea.value = turns[turns.length - 1].q;
+    if (window.mcAutoGrowOracle) window.mcAutoGrowOracle();
+    try {
+      oracleTextarea.focus();
+      oracleTextarea.selectionStart = oracleTextarea.selectionEnd = oracleTextarea.value.length;
+    } catch (e) {}
+  }
+  window.mcOracleLastQuestion = turns.length ? turns[turns.length - 1].q : '';
+  mcOracleActiveQuestion = window.mcOracleLastQuestion || '';
+  mcActiveTurnRec = null;             // a replay is not an open turn
+  mcScrollThread();
+}
+
+/* Start a brand-new conversation (asking otherwise APPENDS to the active one). */
+function mcNewOracleChat() {
+  oracleActiveId = null;
+  mcActiveTurnRec = null;
+  mcOracleActiveQuestion = '';
+  if (oracleThread) oracleThread.innerHTML = '';
+  setOracleEmpty();
+  if (typeof renderOracleSidebar === 'function') renderOracleSidebar();
+  if (oracleTextarea) { try { oracleTextarea.focus(); } catch (e) {} }
+}
+(function wireNewChat() {
+  var b = document.getElementById('oracleNewChatBtn');
+  if (b) b.addEventListener('click', mcNewOracleChat);
+})();
+
+/* ============================================================
    v11 · Oracle sidebar — dynamic "pinned above history" rail.
    Asking a question pushes it into History (most recent first); the bookmark
    button promotes that chat up into Pinned and back down again. Persisted in
@@ -4746,6 +4963,12 @@ document.querySelectorAll('.oracle-starter').forEach(function (s) {
    ============================================================ */
 var MC_ORACLE_KEY = 'mc_oracle_history_v1';
 var MC_ORACLE_MAX = 25;          // per list, so the store can't grow unbounded
+/* 2026-08-15 · a chat is now a CONVERSATION: {id, q (first question = label), pinned, ts,
+   title?, turns:[{q, a}]}. Older records (no `turns`) still load — they just replay as a
+   single question with no stored answer. Caps keep localStorage from ballooning. */
+var MC_ORACLE_TURN_MAX = 12;     // turns kept per conversation
+var MC_ORACLE_ANS_MAX  = 4000;   // chars of answer text kept per turn
+var mcActiveTurnRec    = null;   // the turn record currently being streamed into
 
 /* Shown on a first visit / empty store so the rail is never blank. */
 var MC_ORACLE_SEED = [
@@ -4788,9 +5011,21 @@ function mcLoadOracleChats() {
         pinned: !!c.pinned,
         ts:     Number(c.ts) || 0
       };
-      // Optional display name. `q` always stays the real question so that
-      // click-to-repopulate and the dedupe in mcRecordOracleQuestion keep working.
+      // Optional display name. `q` always stays the FIRST real question so that the rail
+      // label, pin/unpin and the legacy single-question replay keep working.
       if (typeof c.title === 'string' && c.title.trim()) row.title = c.title.trim().slice(0, 120);
+      // Conversation turns (added 2026-08-15). Absent on older records — that's fine.
+      if (Array.isArray(c.turns)) {
+        var turns = [];
+        c.turns.forEach(function (t) {
+          if (!t || typeof t.q !== 'string' || !t.q.trim()) return;
+          turns.push({
+            q: t.q.trim().slice(0, 300),
+            a: (typeof t.a === 'string') ? t.a.slice(0, MC_ORACLE_ANS_MAX) : ''
+          });
+        });
+        if (turns.length) row.turns = turns.slice(-MC_ORACLE_TURN_MAX);
+      }
       clean.push(row);
     });
     return clean.length ? mcCapOracleChats(clean) : mcSeedOracleChats();
@@ -4913,38 +5148,48 @@ function mcToggleOracleChatPin(id) {
   mcSaveOracleChats();
   renderOracleSidebar(id);
 }
+/* 2026-08-15 · a rail entry now loads that WHOLE conversation into the thread
+   (it used to just re-populate the ask box with the one question). */
 function mcOpenOracleChat(id) {
   var chat = mcFindOracleChat(id);
   if (!chat) return;
   oracleActiveId = id;
-  if (oracleTextarea) {
-    oracleTextarea.value = chat.q;    // re-populate, don't auto-ask
-    try {
-      oracleTextarea.focus();
-      oracleTextarea.selectionStart = oracleTextarea.selectionEnd = oracleTextarea.value.length;
-    } catch (e) {}
-  }
+  if (typeof mcRenderConversation === 'function') mcRenderConversation(chat);
+  else if (oracleTextarea) { oracleTextarea.value = chat.q; }
   renderOracleSidebar();
 }
+/* Records the question against the ACTIVE conversation (appending a turn) and returns
+   that turn record so the answer can be filed into it when the stream finishes. With no
+   active conversation it opens a new one. */
 function mcRecordOracleQuestion(q) {
   q = String(q || '').trim();
-  if (!q) return;
+  if (!q) return null;
   window.mcOracleLastQuestion = q;      // the Lab Stash files snippets under this
-  var lower = q.toLowerCase(), existing = null;
-  for (var i = 0; i < oracleChats.length; i++) {
-    if (oracleChats[i].q.toLowerCase() === lower) { existing = oracleChats[i]; break; }
-  }
-  if (existing) {
-    existing.ts = Date.now();
-    oracleActiveId = existing.id;
+  var chat = oracleActiveId ? mcFindOracleChat(oracleActiveId) : null;
+  if (chat) {
+    if (!Array.isArray(chat.turns)) chat.turns = chat.q ? [{ q: chat.q, a: '' }] : [];
+    chat.turns.push({ q: q.slice(0, 300), a: '' });
+    if (chat.turns.length > MC_ORACLE_TURN_MAX) chat.turns = chat.turns.slice(-MC_ORACLE_TURN_MAX);
+    chat.ts = Date.now();
   } else {
-    var chat = { id: mcOracleId(), q: q.slice(0, 300), pinned: false, ts: Date.now() };
+    chat = { id: mcOracleId(), q: q.slice(0, 300), pinned: false, ts: Date.now(), turns: [{ q: q.slice(0, 300), a: '' }] };
     oracleChats.push(chat);
     oracleActiveId = chat.id;
   }
   oracleChats = mcCapOracleChats(oracleChats);
   mcSaveOracleChats();
   renderOracleSidebar(oracleActiveId);
+  return chat.turns[chat.turns.length - 1];
+}
+/* File the finished prose into the open turn. Idempotent — finalizeAnswer can fire twice
+   (SSE `done` + stream close) and a re-run just rewrites the same field. */
+function mcStoreTurnAnswer(text, turnRec) {
+  try {
+    var rec = turnRec || mcActiveTurnRec;
+    if (!rec) return;
+    rec.a = String(text || '').trim().slice(0, MC_ORACLE_ANS_MAX);
+    mcSaveOracleChats();
+  } catch (e) { /* never break the answer over persistence */ }
 }
 function mcWireOracleSidebar() {
   ['oraclePinnedList', 'oracleHistoryList'].forEach(function (id) {
@@ -5073,6 +5318,7 @@ var ORACLE_PHASE_RETRIEVING = 'Digging the MeatCODE database…';
 var ORACLE_PHASE_ANSWERING  = 'Writing your answer…';
 
 function setOracleLoading() {
+  if (!oracleSlot) return;
   oracleSlot.innerHTML =
     '<div class="oracle-answer">' +
       '<h3>Answer</h3>' +
@@ -5089,24 +5335,36 @@ function setOraclePhase(text) {
   var el = document.getElementById('oraclePhaseLabel');
   if (el) el.textContent = text;
 }
-function hideOraclePhase() {
-  var el = document.getElementById('oraclePhase');
+/* `scopeEl` = any element inside the turn being finished. Passing it keeps a slow stream
+   from hiding the phase line of a newer turn. */
+function hideOraclePhase(scopeEl) {
+  var el = null;
+  if (scopeEl && scopeEl.closest) {
+    var card = scopeEl.closest('.oracle-answer');
+    if (card) el = card.querySelector('#oraclePhase, [data-was-id="oraclePhase"]');
+  }
+  if (!el) el = document.getElementById('oraclePhase');
   if (el) el.style.display = 'none';
 }
 function setOracleError(msg) {
+  if (!oracleSlot) return;
   oracleSlot.innerHTML =
     '<div class="oracle-error">' +
       '<span class="badge">error</span>' +
       '<div>' + (msg || 'Something went wrong. Is the FastAPI server running on port 8000?') + '</div>' +
     '</div>';
+  mcScrollThread();
 }
+/* Resets the whole thread to its empty state (used by "+ New chat"). */
 function setOracleEmpty() {
-  oracleSlot.innerHTML =
-    '<div class="oracle-answer empty">' +
+  if (!oracleThread) return;
+  oracleThread.innerHTML =
+    '<div class="oracle-answer empty oracle-empty-state">' +
       '<div class="icon">·</div>' +
       '<div class="title">Waiting on your question</div>' +
-      '<div class="hint">Pick a starter above or type your own. Every answer is built from papers retrieved out of the MeatCODE database — citations link straight to the source.</div>' +
+      '<div class="hint">Pick a starter below or type your own. Every answer is built from papers retrieved out of the MeatCODE database — citations link straight to the source.</div>' +
     '</div>';
+  oracleSlot = null;
 }
 
 function askOracle() {
@@ -5116,10 +5374,16 @@ function askOracle() {
   mcOracleActiveQuestion = q;     // remember it for the Related-molecules lookup on completion
   stopOracleDictation();          // asking ends any in-progress dictation
   mcSetMicStatus('');
-  mcRecordOracleQuestion(q);      // drop it into the sidebar history
+  // Append the turn to the ACTIVE conversation (or open a new one) and keep the record so
+  // the streamed answer can be filed back into it.
+  mcActiveTurnRec = mcRecordOracleQuestion(q);
   oracleTextarea.value = '';      // reset the box for the next question (already captured above)
   if (window.mcAutoGrowOracle) window.mcAutoGrowOracle();   // shrink back to one line
+  // The thread APPENDS — a follow-up never wipes the previous answer.
+  var userTurnEl = mcAppendUserTurn(q);
+  oracleSlot = mcOpenAnswerTurn();
   setOracleLoading();
+  mcScrollThread(userTurnEl);
   oracleAskBtn.disabled = true;
 
   // Use fetch + ReadableStream to consume the SSE response. EventSource only
@@ -5152,7 +5416,10 @@ function askOracle() {
 }
 
 function streamSSE(res) {
-  // Prep the answer surface: heading + citations row + body + followups slot
+  // Prep the answer surface for THIS turn: heading + consensus slot + body + sources +
+  // followups + related. It is appended to the thread, so earlier answers stay put.
+  if (!oracleSlot) oracleSlot = mcOpenAnswerTurn();
+  if (!oracleSlot) return;
   oracleSlot.innerHTML =
     '<div class="oracle-answer" id="oracleAnswer">' +
       '<h3>Answer</h3>' +
@@ -5160,19 +5427,23 @@ function streamSSE(res) {
         '<span class="dot"></span><span class="dot"></span><span class="dot"></span>' +
         '<span class="label" id="oraclePhaseLabel">' + ORACLE_PHASE_RETRIEVING + '</span>' +
       '</div>' +
+      '<div id="oracleConsensus"></div>' +
       '<div id="oracleBody"></div>' +
       '<div class="oracle-evidence" id="oracleSources" style="margin-top: 16px;">' +
         '<div class="oracle-evidence-label">Sources</div>' +
-        '<div id="oracleSourcesList"></div>' +
+        '<div class="oracle-sources-list" id="oracleSourcesList"></div>' +
       '</div>' +
       '<div id="oracleFollowups"></div>' +
       '<div id="oracleRelated"></div>' +
     '</div>';
-  var bodyEl     = document.getElementById('oracleBody');
-  var sourcesEl  = document.getElementById('oracleSourcesList');
-  var followsEl  = document.getElementById('oracleFollowups');
-  var fullText   = '';
-  var citedIds   = {};   // id -> source object, for modal lookup
+  var bodyEl      = oracleSlot.querySelector('#oracleBody');
+  var sourcesEl   = oracleSlot.querySelector('#oracleSourcesList');
+  var followsEl   = oracleSlot.querySelector('#oracleFollowups');
+  var consensusEl = oracleSlot.querySelector('#oracleConsensus');
+  var relatedEl   = oracleSlot.querySelector('#oracleRelated');
+  var turnRec     = mcActiveTurnRec;   // pinned to THIS turn, so a slow stream can't
+  var fullText    = '';                // file its answer against a later question
+  var citedIds    = {};   // id -> source object, for modal lookup
 
   var reader  = res.body.getReader();
   var decoder = new TextDecoder();
@@ -5180,7 +5451,7 @@ function streamSSE(res) {
 
   return reader.read().then(function pump(chunk) {
     if (chunk.done) {
-      finalizeAnswer(fullText, bodyEl, followsEl, citedIds);
+      finalizeAnswer(fullText, bodyEl, followsEl, citedIds, relatedEl, turnRec);
       return;
     }
     buffer += decoder.decode(chunk.value, { stream: true });
@@ -5200,6 +5471,7 @@ function streamSSE(res) {
         if (!fullText) hideOraclePhase();
         fullText += data;
         bodyEl.innerHTML = renderAnswerHTML(fullText, citedIds);
+        mcThreadFollow();          // keep the growing answer in view if we're at the bottom
       } else if (event === 'status') {
         // Additive server event (older server builds simply never send it — the
         // local fallbacks below cover that case).
@@ -5226,9 +5498,33 @@ function streamSSE(res) {
               ? '<div class="oracle-cite-more" id="oracleCiteMore" style="display:none">' + arr.slice(2).map(citeHTML).join('') + '</div>' +
                 '<button type="button" class="oracle-cite-expand" id="oracleCiteExpand">+ ' + __extra + ' more source' + (__extra === 1 ? '' : 's') + '</button>'
               : '');
-          var __exp = document.getElementById('oracleCiteExpand');
+          // ADDITIVE `claims` key: when a source carries extracted claims, list them under
+          // the pills tagged with the same real [id]. Absent on older servers → nothing shows.
+          var __claims = [];
+          arr.forEach(function (s) {
+            if (!s || !s.claims) return;
+            var list = Array.isArray(s.claims) ? s.claims : [s.claims];
+            list.forEach(function (c) {
+              var txt = (c && typeof c === 'object') ? (c.text || c.claim || c.statement || '') : c;
+              txt = String(txt == null ? '' : txt).trim();
+              if (txt) __claims.push({ id: s.id, text: txt });
+            });
+          });
+          if (__claims.length) {
+            sourcesEl.innerHTML +=
+              '<div class="oracle-claims">' +
+                '<div class="oracle-claims-label">Claims from these sources</div>' +
+                __claims.slice(0, 6).map(function (c) {
+                  return '<div class="oracle-claim">' +
+                           '<span class="oracle-cite-chip" data-paper-id="' + escapeHtml(String(c.id)) + '">[' + escapeHtml(String(c.id)) + ']</span>' +
+                           '<span>' + escapeHtml(c.text) + '</span>' +
+                         '</div>';
+                }).join('') +
+              '</div>';
+          }
+          var __exp = sourcesEl.querySelector('#oracleCiteExpand');
           if (__exp) __exp.addEventListener('click', function () {
-            var m = document.getElementById('oracleCiteMore');
+            var m = sourcesEl.querySelector('#oracleCiteMore');
             if (m) m.style.display = 'flex';
             __exp.style.display = 'none';
           });
@@ -5243,8 +5539,33 @@ function streamSSE(res) {
           }
           attachCiteHandlers(sourcesEl);
         } catch (e) { /* ignore malformed */ }
+      } else if (event === 'consensus') {
+        // ADDITIVE server event. Rendered ONLY when it actually arrives, and only with the
+        // counts the server sent — nothing is inferred or invented.
+        try {
+          var cs  = JSON.parse(data) || {};
+          var num = function (a, b) {
+            var v = (cs[a] !== undefined) ? cs[a] : cs[b];
+            v = Number(v);
+            return isFinite(v) && v > 0 ? Math.round(v) : 0;
+          };
+          var sup = num('support', 'support_count');
+          var opp = num('oppose',  'oppose_count');
+          var neu = num('neutral', 'neutral_count');
+          if (consensusEl && (sup || opp || neu)) {
+            consensusEl.innerHTML =
+              '<div class="oracle-consensus" title="How the retrieved sources line up on this question">' +
+                '<span class="cs-lbl">Consensus</span>' +
+                '<span class="cs support"><b>' + sup + '</b> support</span>' +
+                '<span class="cs-sep">·</span>' +
+                '<span class="cs oppose"><b>' + opp + '</b> oppose</span>' +
+                '<span class="cs-sep">·</span>' +
+                '<span class="cs neutral"><b>' + neu + '</b> neutral</span>' +
+              '</div>';
+          }
+        } catch (e) { /* malformed / absent → no chip, never a fabricated one */ }
       } else if (event === 'done') {
-        finalizeAnswer(fullText, bodyEl, followsEl, citedIds);
+        finalizeAnswer(fullText, bodyEl, followsEl, citedIds, relatedEl, turnRec);
       } else if (event === 'error') {
         setOracleError(data);
       }
@@ -5253,8 +5574,18 @@ function streamSSE(res) {
   });
 }
 
-function finalizeAnswer(fullText, bodyEl, followsEl, citedIds) {
-  hideOraclePhase();
+/* Auto-follow a streaming answer, but only while the reader is already at the bottom —
+   scrolling up to re-read an earlier turn must not be yanked back down. */
+function mcThreadFollow() {
+  if (!oracleThread) return;
+  try {
+    var gap = oracleThread.scrollHeight - oracleThread.scrollTop - oracleThread.clientHeight;
+    if (gap < 160) oracleThread.scrollTop = oracleThread.scrollHeight;
+  } catch (e) {}
+}
+
+function finalizeAnswer(fullText, bodyEl, followsEl, citedIds, relatedEl, turnRec) {
+  hideOraclePhase(bodyEl);
   // Split off "Follow-ups:" line if present
   var match = fullText.match(/\n+\s*Follow-?ups?:\s*([\s\S]+)$/i);
   var mainText = fullText;
@@ -5281,9 +5612,12 @@ function finalizeAnswer(fullText, bodyEl, followsEl, citedIds) {
     });
   }
   attachCiteHandlers(bodyEl);
+  // Keep the finished answer in the conversation store so the rail can replay this thread.
+  mcStoreTurnAnswer(mainText, turnRec);
   // Once the answer has settled, surface related molecules from the same corpus. mainText is
   // the prose (follow-ups stripped) so the lookup reflects what was actually discussed.
-  mcFetchRelatedMolecules(mcOracleActiveQuestion, mainText);
+  mcFetchRelatedMolecules(mcOracleActiveQuestion, mainText, relatedEl);
+  mcThreadFollow();
 }
 
 /* ============================================================
@@ -5292,9 +5626,11 @@ function finalizeAnswer(fullText, bodyEl, followsEl, citedIds) {
    chips, or hide silently on empty/error. Clicking a chip routes into the Database molecules
    screen (the DB was removed from the top nav, so this is its in-content journey).
    ============================================================ */
-function mcFetchRelatedMolecules(question, answerText) {
+function mcFetchRelatedMolecules(question, answerText, rowEl) {
   try {
-    var row = document.getElementById('oracleRelated');
+    // rowEl is the CURRENT turn's row (passed in by streamSSE) — with several answers in
+    // the thread we must never write into another turn's card.
+    var row = rowEl || document.getElementById('oracleRelated');
     if (!row) return;
     // finalizeAnswer can fire twice (SSE 'done' event + stream close) — fetch only once.
     if (row.getAttribute('data-mc-state')) return;
@@ -5896,7 +6232,9 @@ window.rebuildExpertList = function () {};
   var STASH_KEY = 'mc_lab_stash_v1';
   var STASH_MAX = 100;
 
-  var answerHost = document.getElementById('oracleAnswerSlot');
+  // 2026-08-15 · the answer surface is the conversation THREAD now (was #oracleAnswerSlot):
+  // highlight-to-save works across every turn on screen.
+  var answerHost = document.getElementById('oracleThread');
   var stashBtn   = document.getElementById('mcStashBtn');
   if (!answerHost) return;
 
