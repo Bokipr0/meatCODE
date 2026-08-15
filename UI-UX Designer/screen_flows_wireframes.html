@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<!-- Last updated: 2026-08-15 14:59 UTC · UI/UX Designer · screen-flow wireframes (6 cross-nav flows) -->
+<!-- Last updated: 2026-08-15 · UI/UX Designer · screen-flow wireframes (6 cross-nav flows) + escape hatches: persistent "← Dev Area" and "← Back" in the shared topbar (present on every scene), Dev-Area crumb on every scene, file:// path rewrite for Finder-opened copies. -->
 <title>MeatCODE · Screen-Flow Wireframes (6 cross-nav flows)</title>
 <meta name="viewport" content="width=1440" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -32,16 +32,19 @@ small{font-size:inherit}
   display:flex;align-items:center;justify-content:space-between;
   height:60px;padding:0 26px;background:var(--surface);border-bottom:1px solid var(--line);
 }
-.brand{font-weight:700;font-size:19px;color:var(--teal);letter-spacing:.01em;width:230px;display:flex;align-items:center;gap:9px}
+.brand{font-weight:700;font-size:19px;color:var(--teal);letter-spacing:.01em;width:300px;flex:0 0 auto;display:flex;align-items:center;gap:9px}
 .brand .logo{width:26px;height:26px;border-radius:8px;background:var(--teal);color:#fff;display:grid;place-items:center;font-size:14px}
 .brand .wf-tag{font-size:10px;font-weight:700;color:var(--ink-faint);letter-spacing:.12em;text-transform:uppercase;border:1px dashed var(--wf);border-radius:6px;padding:2px 7px}
 .tabs{display:flex;gap:4px;background:var(--surface-2);padding:5px;border-radius:12px}
 .tab{padding:7px 16px;border-radius:9px;font-size:13.5px;color:var(--ink-dim);cursor:pointer;transition:.15s}
 .tab:hover{color:var(--teal)}
 .tab.active{background:var(--teal);color:#fff;font-weight:700;box-shadow:var(--shadow)}
-.topbar-right{width:230px;display:flex;justify-content:flex-end;gap:10px;align-items:center}
-.home-link{font-size:12.5px;color:var(--ink-faint);cursor:pointer;display:flex;align-items:center;gap:6px}
+.topbar-right{width:300px;flex:0 0 auto;display:flex;justify-content:flex-end;gap:10px;align-items:center}
+.home-link{font-size:12.5px;color:var(--ink-faint);cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap}
 .home-link:hover{color:var(--teal)}
+/* escape controls — back one step (in-file) / out to the Dev Area hub */
+.home-link.off{opacity:.34;pointer-events:none}
+.topbar-right .btn{box-shadow:none;white-space:nowrap}
 
 .canvas{max-width:1120px;margin:0 auto;padding:34px 32px 110px}
 .canvas.narrow{max-width:900px}
@@ -242,7 +245,9 @@ tr.row.hl td:first-child{box-shadow:inset 4px 0 0 var(--teal)}
     <a class="tab" data-cat="sim"      href="#sim">Simulate</a>
   </nav>
   <div class="topbar-right">
-    <span class="home-link" onclick="location.hash='#index'">&#8962; Flow Map</span>
+    <span class="home-link off" id="wfBackBtn" title="Back one screen inside the wireframe" onclick="wfBack()">&#8592; Back</span>
+    <span class="home-link" title="Back to the flow index" onclick="location.hash='#index'">&#8962; Flow Map</span>
+    <a class="btn ghost sm" data-devhome href="/app/dev/index.html" title="Leave the wireframe — back to the MeatCODE Dev Area">&#8592; Dev Area</a>
   </div>
 </header>
 
@@ -332,7 +337,7 @@ tr.row.hl td:first-child{box-shadow:inset 4px 0 0 var(--teal)}
 <!-- ============================================================ ORACLE ANSWER ============================================================ -->
 <section class="scene" id="oracle">
   <div class="canvas narrow">
-    <div class="crumbs"><a href="#index">Flow Map</a><span class="sep">/</span><span>Oracle answer</span></div>
+    <div class="crumbs"><a data-devhome href="/app/dev/index.html">Dev Area</a><span class="sep">/</span><a href="#index">Flow Map</a><span class="sep">/</span><span>Oracle answer</span></div>
 
     <!-- carry banner: arrives here from Flow 3 (Data -> Oracle) -->
     <div class="carry" id="oracleCarry">
@@ -394,7 +399,7 @@ tr.row.hl td:first-child{box-shadow:inset 4px 0 0 var(--teal)}
 <!-- ============================================================ RAW DATA TABLE ============================================================ -->
 <section class="scene" id="data">
   <div class="canvas">
-    <div class="crumbs"><a href="#index">Flow Map</a><span class="sep">/</span><a href="#index">Data</a><span class="sep">/</span><span id="dataCrumbLeaf">Molecules</span></div>
+    <div class="crumbs"><a data-devhome href="/app/dev/index.html">Dev Area</a><span class="sep">/</span><a href="#index">Flow Map</a><span class="sep">/</span><a href="#index">Data</a><span class="sep">/</span><span id="dataCrumbLeaf">Molecules</span></div>
 
     <!-- carry banner: arrives here from Flow 1 (Oracle), Flow 4 (Protocol), Flow 5 (Simulation) -->
     <div class="carry" id="dataCarry">
@@ -521,7 +526,7 @@ tr.row.hl td:first-child{box-shadow:inset 4px 0 0 var(--teal)}
 <!-- ============================================================ DATA COMPARISON (NET-NEW) ============================================================ -->
 <section class="scene" id="compare">
   <div class="canvas">
-    <div class="crumbs"><a href="#index">Flow Map</a><span class="sep">/</span><a href="#oracle">Oracle answer</a><span class="sep">/</span><span>Compare</span></div>
+    <div class="crumbs"><a data-devhome href="/app/dev/index.html">Dev Area</a><span class="sep">/</span><a href="#index">Flow Map</a><span class="sep">/</span><a href="#oracle">Oracle answer</a><span class="sep">/</span><span>Compare</span></div>
 
     <div class="carry coral on" id="compareCarry">
       <div class="ic">&#8646;</div>
@@ -590,7 +595,7 @@ tr.row.hl td:first-child{box-shadow:inset 4px 0 0 var(--teal)}
 <!-- ============================================================ PROTOCOL DETAIL ============================================================ -->
 <section class="scene" id="protocol">
   <div class="canvas">
-    <div class="crumbs"><a href="#index">Flow Map</a><span class="sep">/</span><span>Toolbench</span><span class="sep">/</span><span>Protocol</span></div>
+    <div class="crumbs"><a data-devhome href="/app/dev/index.html">Dev Area</a><span class="sep">/</span><a href="#index">Flow Map</a><span class="sep">/</span><span>Toolbench</span><span class="sep">/</span><span>Protocol</span></div>
 
     <div class="pr-head">
       <div>
@@ -653,7 +658,7 @@ tr.row.hl td:first-child{box-shadow:inset 4px 0 0 var(--teal)}
 <!-- ============================================================ SIMULATE (SETUP + RESULT) ============================================================ -->
 <section class="scene" id="sim">
   <div class="canvas">
-    <div class="crumbs"><a href="#index">Flow Map</a><span class="sep">/</span><span>Simulate</span><span class="preview-tag">Preview</span></div>
+    <div class="crumbs"><a data-devhome href="/app/dev/index.html">Dev Area</a><span class="sep">/</span><a href="#index">Flow Map</a><span class="sep">/</span><span>Simulate</span><span class="preview-tag">Preview</span></div>
 
     <!-- carry banner: arrives here from Flow 6 (Data -> Simulation) -->
     <div class="carry olive" id="simCarry">
@@ -751,6 +756,9 @@ tr.row.hl td:first-child{box-shadow:inset 4px 0 0 var(--teal)}
     <a onclick="location.hash='#sim'">5</a>
     <a onclick="location.hash='#data'">6</a>
   </div>
+  <div class="grp"><span class="glbl">exit</span>
+    <a data-devhome href="/app/dev/index.html">&#8592; Dev Area</a>
+  </div>
   <span class="x" onclick="document.getElementById('dev').style.display='none'">&times;</span>
 </nav>
 <div class="hhint">press <b>H</b> to toggle flow-bar</div>
@@ -758,6 +766,48 @@ tr.row.hl td:first-child{box-shadow:inset 4px 0 0 var(--teal)}
 <script>
 /* ---------- scene routing ---------- */
 var CAT = {index:'index', oracle:'oracle', data:'data', compare:'compare', protocol:'protocol', sim:'sim'};
+
+/* ---------- escape hatches: never trap the viewer in a scene ----------
+   Two distinct exits, both live in the shared topbar so no scene can lack them:
+     · "← Back"     — one step back inside the wireframe (falls back to the Flow Map)
+     · "← Dev Area" — all the way out to the MeatCODE Dev Area hub
+   The Dev Area href is root-absolute (/app/dev/index.html) so it resolves when
+   meatcode_server.py serves the repo root. Opened straight from Finder the page
+   runs on file://, where a root-absolute path would hit the disk root — so we
+   rewrite it to the correct relative path. This file lives in
+   <repo>/UI-UX Designer/, the hub in <repo>/app/dev/ → one level up: ../app/dev/index.html */
+function wfFixDevHomeLinks(){
+  if(location.protocol !== 'file:') return;
+  document.querySelectorAll('[data-devhome]').forEach(function(a){
+    a.setAttribute('href', '../app/dev/index.html');
+  });
+}
+wfFixDevHomeLinks();
+
+var wfSteps = 0;        /* in-file hash navigations since page load */
+var wfBackPending = false;
+
+function wfNoteNav(){
+  if(wfBackPending){ wfBackPending = false; wfSteps = Math.max(0, wfSteps - 1); }
+  else { wfSteps++; }
+  wfSyncBackBtn();
+}
+function wfSyncBackBtn(){
+  var b = document.getElementById('wfBackBtn');
+  if(!b) return;
+  var can = wfSteps > 0 || (location.hash||'#index') !== '#index';
+  b.classList.toggle('off', !can);
+}
+function wfBack(){
+  if(wfSteps > 0){
+    wfBackPending = true;
+    /* if history.back() lands outside this document the flag is harmless — clear it anyway */
+    setTimeout(function(){ wfBackPending = false; wfSyncBackBtn(); }, 500);
+    history.back();
+    return;
+  }
+  if((location.hash||'#index') !== '#index'){ location.hash = '#index'; }
+}
 
 /* ---------- context-handoff (carry) definitions: the heart of the wireframe ---------- */
 var CARRY = {
@@ -901,8 +951,9 @@ function setScene(){
   applyPending(h);
   window.scrollTo(0,0);
 }
-window.addEventListener('hashchange', setScene);
+window.addEventListener('hashchange', function(){ wfNoteNav(); setScene(); });
 setScene();
+wfSyncBackBtn();
 document.addEventListener('keydown', function(e){ if(e.key==='h'||e.key==='H'){ var d=document.getElementById('dev'); d.style.display = d.style.display==='none'?'flex':'none'; }});
 </script>
 </body>

@@ -2,11 +2,25 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<!-- Last updated: 2026-08-15 · UI/UX Designer · Oracle screen redesign (v10 proposal) —
-     static design artifact reproducing the approved Oracle scene from
-     UI-UX Designer/screen_flows_wireframes.html, upgraded with the v9 Oracle
-     history rail (Pinned + History). No backend calls; everything client-side. -->
-<title>MeatCODE · Oracle redesign (v10 proposal)</title>
+<!-- Last updated: 2026-08-15 · Fullstack/UI · Oracle redesign v11 — the single Q&A became a real
+     CHAT. The main column is now a scrollable conversation thread (#thread) of user turns +
+     Oracle answer cards, seeded with a 3-exchange conversation (roasted/meaty note in patties →
+     2-acetyl-1-pyrroline precursors → Maillard vs lipid oxidation). The ask box became a real
+     composer docked under the thread: typing + Ask/Enter appends a user turn plus a PREPARED
+     sample Oracle turn (explicitly labelled — no retrieval is wired in this artifact) and scrolls
+     to it. The LEFT RAIL IS UNCHANGED (Pinned + History, same labels, same styling, same pin
+     behaviour); clicking an entry now loads that WHOLE conversation into the thread instead of
+     swapping one answer. NEW in the ask box, on the same design tokens: a paperclip FILE ATTACH
+     (hidden input → removable filename chip with an honest "preview" tag; nothing is uploaded or
+     processed) and a MIC using the real Web Speech API (webkitSpeechRecognition||SpeechRecognition),
+     feature-detected — the button is disabled with an explanatory tooltip where unsupported and is
+     never faked; transcripts are inserted into the question field. Every prior interaction is
+     preserved: citation popovers, entity chips, the Compare affordance, the cross-navigate block,
+     the nav pills and ← Dev Area. Prior 2026-08-15 · UI/UX Designer · Oracle screen redesign
+     (v10 proposal) — static design artifact reproducing the approved Oracle scene from
+     UI-UX Designer/screen_flows_wireframes.html, upgraded with the v9 Oracle history rail
+     (Pinned + History). No backend calls; everything client-side. -->
+<title>MeatCODE · Oracle redesign (v11 chat)</title>
 <meta name="viewport" content="width=1440" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
@@ -23,7 +37,9 @@
   --wf:#B7AC97;
 }
 *{box-sizing:border-box}
-html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--round);-webkit-font-smoothing:antialiased;letter-spacing:.005em}
+html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--round);-webkit-font-smoothing:antialiased;letter-spacing:.005em}
+/* chat shell owns its own scrolling (thread scrolls, composer stays docked) */
+body{overflow:hidden}
 a{color:inherit;text-decoration:none}
 
 /* ---------- topbar shell (from screen_flows_wireframes.html) ---------- */
@@ -43,9 +59,9 @@ a{color:inherit;text-decoration:none}
 .home-link{font-size:12.5px;color:var(--ink-faint);cursor:pointer;display:flex;align-items:center;gap:6px}
 .home-link:hover{color:var(--teal)}
 
-/* ---------- page split: history rail + main canvas ---------- */
-.shell{display:grid;grid-template-columns:264px 1fr;min-height:calc(100vh - 60px)}
-.canvas{max-width:900px;margin:0 auto;padding:34px 32px 110px;width:100%}
+/* ---------- page split: history rail + chat canvas ---------- */
+.shell{display:grid;grid-template-columns:264px 1fr;height:calc(100vh - 60px);min-height:0}
+.canvas{max-width:900px;margin:0 auto;padding:0;width:100%;height:100%;display:flex;flex-direction:column;min-height:0}
 
 /* ---------- Oracle history rail (adapted from MeatCODE_mockup_v9 .context) ---------- */
 .context{
@@ -88,9 +104,9 @@ a{color:inherit;text-decoration:none}
 
 /* ---------- shared (from wireframes) ---------- */
 .eyebrow{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--teal)}
-.h1{font-size:29px;font-weight:700;letter-spacing:-.01em;margin:6px 0 0}
-.lead{font-size:15px;color:var(--ink-dim);margin:8px 0 0;line-height:1.55;max-width:760px}
-.crumbs{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-faint);margin-bottom:16px}
+.h1{font-size:25px;font-weight:700;letter-spacing:-.01em;margin:4px 0 0}
+.lead{font-size:13.5px;color:var(--ink-dim);margin:6px 0 0;line-height:1.5;max-width:760px}
+.crumbs{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-faint);margin-bottom:12px}
 .crumbs a{color:var(--teal);font-weight:700}
 .crumbs a:hover{text-decoration:underline}
 .crumbs .sep{color:var(--line-strong)}
@@ -102,12 +118,74 @@ a{color:inherit;text-decoration:none}
 .btn.coral{background:var(--coral)}.btn.coral:hover{background:#b06b4d}
 .btn.sm{padding:7px 13px;font-size:12px;border-radius:9px}
 
+/* ---------- chat layout ---------- */
+.canvas-head{flex:0 0 auto;padding:22px 32px 12px}
+.thread{
+  flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;
+  padding:6px 32px 26px;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth;
+}
+.composer{flex:0 0 auto;padding:12px 32px 20px;background:var(--bg);border-top:1px solid var(--line)}
+
+/* user turn */
+.turn{display:flex;flex-direction:column}
+.turn.user{align-items:flex-end}
+.turn.user .bubble{
+  max-width:74%;background:var(--mist);color:var(--teal-deep);
+  border:1px solid #CFE6E3;border-radius:16px 16px 5px 16px;
+  padding:12px 16px;font-size:14.5px;line-height:1.55;font-weight:700;
+  white-space:pre-wrap;overflow-wrap:anywhere;
+}
+.turn.user .who{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin:0 4px 5px 0}
+.turn.oracle{align-items:stretch}
+
 /* ---------- oracle (from wireframes) ---------- */
-.oracle-box{background:var(--surface);border:1.5px solid var(--line-strong);border-radius:18px;padding:18px 20px;box-shadow:var(--shadow)}
+.oracle-box{background:var(--surface);border:1.5px solid var(--line-strong);border-radius:18px;padding:14px 16px 12px;box-shadow:var(--shadow)}
+.oracle-box.focused{border-color:var(--teal-soft)}
 .oracle-box .qlabel{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px}
-.oracle-box .qrow{display:flex;align-items:flex-end;gap:14px}
-.oracle-box .q{font-size:17.5px;color:var(--ink);flex:1}
-.oracle-box .q .cur{color:var(--teal-soft)}
+.oracle-box .qrow{display:flex;align-items:flex-end;gap:12px}
+.oracle-box .q{
+  font-size:16.5px;color:var(--ink);flex:1 1 auto;min-width:0;
+  font-family:var(--round);background:none;border:0;outline:none;resize:none;
+  line-height:1.5;padding:4px 0 6px;max-height:132px;overflow-y:auto;
+}
+.oracle-box .q::placeholder{color:var(--ink-faint)}
+.ask-tools{display:flex;align-items:center;gap:8px;flex-shrink:0;padding-bottom:2px}
+.icon-btn{
+  width:36px;height:36px;padding:0;border-radius:50%;
+  border:1.5px solid var(--line-strong);background:var(--surface);color:var(--ink-dim);
+  cursor:pointer;display:grid;place-items:center;font-family:var(--round);
+  transition:background .16s ease,color .16s ease,border-color .16s ease;
+}
+.icon-btn svg{width:17px;height:17px}
+.icon-btn:hover:not(:disabled){border-color:var(--teal);color:var(--teal);background:var(--mist)}
+.icon-btn:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.icon-btn:disabled{opacity:.42;cursor:not-allowed}
+.icon-btn.on{border-color:var(--teal-soft);color:var(--teal);background:var(--mist)}
+.icon-btn.recording{background:var(--teal);border-color:var(--teal);color:#fff;animation:mc-mic-pulse 1.5s ease-out infinite}
+@keyframes mc-mic-pulse{
+  0%{box-shadow:0 0 0 0 rgba(0,115,110,.38)}
+  70%{box-shadow:0 0 0 9px rgba(0,115,110,0)}
+  100%{box-shadow:0 0 0 0 rgba(0,115,110,0)}
+}
+/* attachment chip — honest: nothing is uploaded or parsed in this static artifact */
+.attach-row{display:flex;flex-wrap:wrap;gap:8px;padding:2px 0 8px}
+.attach-row[hidden]{display:none}
+.attach-chip{
+  display:inline-flex;align-items:center;gap:8px;max-width:100%;
+  background:var(--mist);color:var(--teal-deep);border:1px solid #CFE6E3;
+  border-radius:100px;padding:5px 6px 5px 13px;font-size:12.5px;font-weight:700;
+}
+.attach-name{max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.attach-tag{font-size:9px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--ink-faint);border:1px dashed var(--wf);border-radius:6px;padding:1px 6px}
+.attach-x{
+  width:22px;height:22px;border-radius:50%;border:0;background:none;color:var(--teal-deep);
+  cursor:pointer;font-family:var(--round);font-size:14px;line-height:1;display:grid;place-items:center;
+}
+.attach-x:hover{background:#CFE6E3}
+.mic-status{display:none;font-size:12px;line-height:1.4;color:var(--teal-deep);padding:8px 2px 0}
+.mic-status.on{display:block}
+.mic-status.warn{color:#a5522f}
+
 .oracle-box.shake{animation:mc-shake .4s ease}
 @keyframes mc-shake{
   0%,100%{transform:translateX(0)}
@@ -116,12 +194,17 @@ a{color:inherit;text-decoration:none}
 }
 .ask-note{display:none;margin-top:10px;font-size:12px;font-weight:700;color:#a5522f;background:var(--coral-soft);border-radius:8px;padding:7px 12px}
 .ask-note.on{display:inline-block}
-.starters{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0}
+.starters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
 .starter{padding:7px 13px;border:1.5px solid var(--line-strong);border-radius:100px;font-size:12.5px;color:var(--ink-dim);cursor:pointer;background:none;font-family:var(--round)}
 .starter:hover{border-color:var(--teal);color:var(--teal);background:var(--mist)}
-.answer{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px 24px;margin-top:20px}
+.answer{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px 24px;margin-top:0}
 .answer h4{margin:0 0 12px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal)}
 .answer p{font-size:15px;line-height:1.7;margin:0 0 12px;color:var(--ink)}
+.answer p:last-child{margin-bottom:0}
+.sample-tag{
+  display:inline-block;margin:0 0 12px;font-size:10.5px;font-weight:700;letter-spacing:.06em;
+  color:#a5522f;background:var(--coral-soft);border-radius:7px;padding:4px 9px;
+}
 .cite{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--teal);background:var(--mist);border-radius:5px;padding:1px 5px;cursor:pointer;vertical-align:top}
 .cite:hover{background:var(--teal);color:#fff}
 .entities{border-top:1px solid var(--line);margin-top:14px;padding-top:16px}
@@ -133,12 +216,12 @@ a{color:inherit;text-decoration:none}
 .ent .tg{font-size:9px;opacity:.7;letter-spacing:.08em;text-transform:uppercase}
 .cmp-aff{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:100px;font-size:12px;font-weight:700;color:#a5522f;border:1.5px dashed var(--coral);background:none;font-family:var(--round);cursor:pointer}
 .cmp-aff:hover{background:var(--coral-soft)}
-.xnav{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px;padding:16px 18px;background:var(--surface-2);border:1px dashed var(--wf);border-radius:13px}
+.xnav{display:flex;flex-wrap:wrap;gap:12px;margin-top:6px;padding:16px 18px;background:var(--surface-2);border:1px dashed var(--wf);border-radius:13px}
 .xnav .xn-lbl{width:100%;font-size:10.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint)}
 
 /* ---------- citation / entity popover ---------- */
 .pop{
-  position:absolute;z-index:60;width:290px;
+  position:fixed;z-index:60;width:290px;
   background:var(--surface);border:1.5px solid var(--line-strong);border-radius:13px;
   padding:14px 16px;box-shadow:var(--shadow-lg);display:none;
 }
@@ -149,12 +232,16 @@ a{color:inherit;text-decoration:none}
 .pop .pl:hover{text-decoration:underline}
 .pop .px{position:absolute;top:8px;right:10px;font-size:13px;color:var(--ink-faint);cursor:pointer;border:none;background:none;font-family:var(--round)}
 .pop .px:hover{color:var(--ink)}
+@media (prefers-reduced-motion:reduce){
+  .thread{scroll-behavior:auto}
+  .icon-btn.recording{animation:none}
+}
 </style>
 </head>
 <body>
 
 <header class="topbar">
-  <div class="brand"><div class="logo">M</div>MeatCODE <span class="wf-tag">Static design &middot; v10 proposal</span></div>
+  <div class="brand"><div class="logo">M</div>MeatCODE <span class="wf-tag">Static design &middot; v11 chat</span></div>
   <nav class="tabs">
     <a class="tab" href="../../UI-UX%20Designer/screen_flows_wireframes.html#index">Flow Map</a>
     <a class="tab active" href="#" onclick="return false">Oracle</a>
@@ -170,7 +257,7 @@ a{color:inherit;text-decoration:none}
 
 <div class="shell">
 
-  <!-- ============ Oracle history rail (v9 pattern: Pinned above History) ============ -->
+  <!-- ============ Oracle history rail (v9 pattern: Pinned above History) — UNCHANGED ============ -->
   <aside class="context">
     <div class="oracle-rail-scroll">
       <div class="context-section">
@@ -182,47 +269,66 @@ a{color:inherit;text-decoration:none}
         <div class="context-list" id="historyList"></div>
       </div>
     </div>
-    <div class="rail-foot">Static demo rail &mdash; entries swap the answer on the right; the bookmark pins / unpins (client-side only).</div>
+    <div class="rail-foot">Static demo rail &mdash; entries load that whole conversation on the right; the bookmark pins / unpins (client-side only).</div>
   </aside>
 
-  <!-- ============ Main column: the approved Oracle screen ============ -->
+  <!-- ============ Main column: the Oracle chat ============ -->
   <main class="canvas">
-    <div class="crumbs">
-      <a href="../../UI-UX%20Designer/screen_flows_wireframes.html#index">Flow Map</a>
-      <span class="sep">/</span><span>Oracle answer</span>
-    </div>
 
-    <div class="eyebrow">Oracle</div>
-    <h1 class="h1">Ask the Oracle</h1>
-    <p class="lead">Every answer is grounded in the corpus (818 sources, keyword/FTS retrieval, <span class="mono">relevance_llm &ge; 60</span>) with sources you can open.</p>
-
-    <div class="oracle-box" id="oracleBox" style="margin-top:20px">
-      <div class="qlabel">Question</div>
-      <div class="qrow">
-        <div class="q"><span id="oracleQ">What drives the roasted, meaty note in plant-based patties?</span><span class="cur">&#9611;</span></div>
-        <button class="btn sm" id="askBtn" onclick="askPressed()">Ask &rarr;</button>
+    <div class="canvas-head">
+      <div class="crumbs">
+        <a href="../../UI-UX%20Designer/screen_flows_wireframes.html#index">Flow Map</a>
+        <span class="sep">/</span><span>Oracle chat</span>
       </div>
-      <div class="ask-note" id="askNote">Static design &mdash; retrieval not wired in this artifact</div>
-    </div>
-    <div class="starters">
-      <button class="starter" onclick="loadChat('ap')">Precursors for 2-acetyl-1-pyrroline</button>
-      <button class="starter" onclick="loadChat('beany')">Reduce beany off-notes in pea protein</button>
-      <button class="starter" onclick="loadChat('mvl')">Maillard vs lipid oxidation in analogs</button>
+      <div class="eyebrow">Oracle</div>
+      <h1 class="h1">Ask the Oracle</h1>
+      <p class="lead">Every answer is grounded in the corpus (818 sources, keyword/FTS retrieval, <span class="mono">relevance_llm &ge; 60</span>) with sources you can open.</p>
     </div>
 
-    <div class="answer">
-      <h4>Answer</h4>
-      <div id="answerBody"><!-- rendered by JS --></div>
-      <div class="entities">
-        <div class="lbl">Entities in this answer</div>
-        <div class="ent-row" id="entRow"><!-- rendered by JS --></div>
+    <!-- the conversation thread: user turn → Oracle answer card → user turn → … -->
+    <div class="thread" id="thread" role="log" aria-live="polite" aria-label="Oracle conversation"></div>
+
+    <div class="composer">
+      <div class="starters">
+        <button class="starter" onclick="askText('What are the precursors for 2-acetyl-1-pyrroline?', 'ap')">Precursors for 2-acetyl-1-pyrroline</button>
+        <button class="starter" onclick="askText('How do I reduce beany off-notes in pea protein?', 'beany')">Reduce beany off-notes in pea protein</button>
+        <button class="starter" onclick="askText('Maillard vs lipid oxidation — which matters more in analogs?', 'mvl')">Maillard vs lipid oxidation in analogs</button>
       </div>
-    </div>
 
-    <div class="xnav">
-      <div class="xn-lbl">Cross-navigate from this answer</div>
-      <a class="btn" href="../../UI-UX%20Designer/screen_flows_wireframes.html#data">&#9636; Show the underlying data <span style="opacity:.8;font-weight:400">&middot; Data table</span></a>
-      <a class="btn coral" href="compare.html">&#8646; Compare 2-AP vs methional <span style="opacity:.85;font-weight:400">&middot; Compare</span></a>
+      <div class="oracle-box" id="oracleBox">
+        <div class="qlabel">Question</div>
+        <!-- attachment chip renders here, above the ask controls -->
+        <div class="attach-row" id="attachRow" hidden></div>
+        <div class="qrow">
+          <textarea class="q" id="oracleQ" rows="1"
+                    placeholder="Ask a follow-up… e.g. What drives the roasted, meaty note in plant-based patties?"></textarea>
+          <div class="ask-tools">
+            <!-- FILE ATTACH — client-side only: shows a removable filename chip, uploads nothing -->
+            <input type="file" id="fileInput" hidden tabindex="-1" aria-hidden="true">
+            <button class="icon-btn" id="attachBtn" type="button"
+                    aria-label="Attach data or a paper (preview — no processing in this static design)"
+                    title="Attach data or a paper (preview — no processing in this static design)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+              </svg>
+            </button>
+            <!-- DICTATION — real Web Speech API; feature-detected, disabled with a tooltip where absent -->
+            <button class="icon-btn" id="micBtn" type="button" aria-pressed="false"
+                    aria-label="Dictate your question" title="Dictate your question">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="9" y="2.5" width="6" height="11" rx="3"/>
+                <path d="M5.5 11a6.5 6.5 0 0 0 13 0"/>
+                <line x1="12" y1="17.5" x2="12" y2="21"/>
+                <line x1="8.5" y1="21" x2="15.5" y2="21"/>
+              </svg>
+            </button>
+            <button class="btn sm" id="askBtn" onclick="askPressed()">Ask &rarr;</button>
+          </div>
+        </div>
+        <!-- Purely visual: repaints on every interim speech result, so it is not a live region. -->
+        <div class="mic-status" id="micStatus" aria-hidden="true"></div>
+        <div class="ask-note" id="askNote"></div>
+      </div>
     </div>
   </main>
 </div>
@@ -249,11 +355,11 @@ var CITES = {
   elmore2001:   { title: 'HS-SPME method development for cooked-meat volatile profiling', meta: 'Elmore et&nbsp;al. &middot; 2001 &middot; J. Chromatogr. A' }
 };
 
-/* each chat: q, paras (array of HTML with {{n:key}} cite tokens), ents, compare flag, pinned */
-var CHATS = {
+/* Each TURN is one Oracle answer: q (default phrasing), paras (HTML with {{n:key}} cite
+   tokens), ents, compare pair. Conversations below stitch turns into threads. */
+var TURNS = {
   roasted: {
     q: 'What drives the roasted, meaty note in plant-based patties?',
-    label: 'Roasted, meaty note in patties',
     paras: [
       'Roasted, meaty character in plant-based beef comes mainly from <b>Maillard chemistry</b> during cooking &mdash; reducing sugars reacting with amino acids and peptides to form sulfur- and nitrogen-bearing volatiles. The dominant impact compounds are <span class="mono">2-methyl-3-furanthiol</span> (meaty/brothy){{1:cerny1992}} and <span class="mono">2-acetyl-1-pyrroline</span> (roasted/popcorn){{2:hofmann1995}}, with <span class="mono">methional</span> adding a savoury, cooked-potato note via Strecker degradation of methionine{{3:mottram1998}}.',
       'Because analogs are lower in the right precursors than muscle, added <span class="mono">cysteine&ndash;ribose</span> systems and thiamine are common routes to boost the roasted, brothy profile. <b>Lipid oxidation</b> contributes fatty notes and cross-talks with the Maillard pathway.'
@@ -269,7 +375,6 @@ var CHATS = {
   },
   ap: {
     q: 'What are the precursors for 2-acetyl-1-pyrroline?',
-    label: 'Precursors for 2-AP',
     paras: [
       '<span class="mono">2-acetyl-1-pyrroline</span> (2-AP) forms when <b>proline</b> or <b>ornithine</b> reacts with sugar-fragmentation dicarbonyls such as <span class="mono">2-oxopropanal</span> during Maillard heating{{1:schieberle1991}}. The 1-pyrroline intermediate is the rate-limiting species; acetylation then yields the roasted-popcorn odorant.',
       'In analog systems, dosing <span class="mono">proline + reducing sugar</span> in the crust phase is the practical lever &mdash; 2-AP&rsquo;s odor threshold is extremely low (~0.02&nbsp;ppb), so small yields carry large sensory weight{{2:hofmann1995}}.'
@@ -283,7 +388,6 @@ var CHATS = {
   },
   beany: {
     q: 'How do I reduce beany off-notes in pea protein?',
-    label: 'Beany off-notes in pea protein',
     paras: [
       'Beany perception in pea protein is driven mostly by lipoxygenase-derived volatiles &mdash; <span class="mono">hexanal</span>, <span class="mono">2-pentylfuran</span> and <span class="mono">3-methyl-1-butanol</span> bound to the protein matrix{{1:murat2013}}. Heat-inactivating LOX early, then stripping bound volatiles (vacuum or SC-CO<sub>2</sub>), removes the largest share.',
       'Masking is the complementary route: driving <b>Maillard chemistry</b> in the crust raises roasted volatiles that perceptually suppress residual green notes{{2:mottram1998}}.'
@@ -297,7 +401,6 @@ var CHATS = {
   },
   mvl: {
     q: 'Maillard vs lipid oxidation — which matters more in analogs?',
-    label: 'Maillard vs lipid oxidation',
     paras: [
       'They answer different questions. <b>Maillard chemistry</b> supplies the species-typical roasted/meaty core (<span class="mono">2-methyl-3-furanthiol</span>, pyrazines){{1:mottram1998}}, while <b>lipid oxidation</b> supplies fatty, juicy amplitude (<span class="mono">hexanal</span>, decadienals) and feeds carbonyls back into the Maillard pool{{2:cerny1992}}.',
       'In analogs the practical gap is usually Maillard-side: plant matrices lack cysteine and ribose, so the meaty core under-delivers long before the fatty envelope does.'
@@ -311,7 +414,6 @@ var CHATS = {
   },
   thiamine: {
     q: 'Is thiamine a viable meaty-thiol precursor in analogs?',
-    label: 'Thiamine as thiol precursor',
     paras: [
       'Yes &mdash; thermal degradation of <b>thiamine</b> is a clean, label-friendly route to <span class="mono">2-methyl-3-furanthiol</span> and its dimer <span class="mono">bis(2-methyl-3-furyl) disulfide</span>, without needing free cysteine{{1:guth1994}}.',
       'Yields are pH-sensitive (best near pH&nbsp;5&ndash;6) and the disulfide dominates on storage, shifting the profile from brothy toward sulfurous &mdash; dose accordingly.'
@@ -325,7 +427,6 @@ var CHATS = {
   },
   gcms: {
     q: 'Which GC-MS protocol best captures cooked-beef volatiles?',
-    label: 'GC-MS protocol for beef volatiles',
     paras: [
       'The workhorse is <b>HS-SPME-GC-MS</b> with a <span class="mono">DVB/CAR/PDMS</span> fiber &mdash; 30&nbsp;min extraction at 50&nbsp;&deg;C balances recovery of thiols against artifact formation{{1:elmore2001}}.',
       'For the low-threshold sulfur species, pair it with SIDA quantitation anchored on the cysteine&ndash;ribose benchmark set{{2:hofmann1995}}. The full parameter sheet lives in the Protocol screen.'
@@ -339,26 +440,72 @@ var CHATS = {
   }
 };
 
+/* Conversations = what the rail lists. Each is an ordered list of turns; a turn may be
+   a bare TURNS id or {t:id, q:'follow-up phrasing'} so the thread reads like a real chat.
+   Labels are unchanged from v10 so the rail looks exactly as before. */
+var CONVOS = {
+  roasted: {
+    label: 'Roasted, meaty note in patties',
+    turns: [
+      'roasted',
+      { t: 'ap',  q: 'And which precursors actually form the 2-acetyl-1-pyrroline in that crust?' },
+      { t: 'mvl', q: 'Between Maillard and lipid oxidation, which one should I fix first in an analog?' }
+    ]
+  },
+  thiamine: {
+    label: 'Thiamine as thiol precursor',
+    turns: [
+      'thiamine',
+      { t: 'gcms', q: 'How would I verify that in the lab &mdash; which GC-MS protocol?' }
+    ]
+  },
+  ap:    { label: 'Precursors for 2-AP',            turns: ['ap'] },
+  beany: {
+    label: 'Beany off-notes in pea protein',
+    turns: [
+      'beany',
+      { t: 'roasted', q: 'Could I mask what is left by pushing the roasted Maillard notes harder?' }
+    ]
+  },
+  mvl:   { label: 'Maillard vs lipid oxidation',    turns: ['mvl'] },
+  gcms:  { label: 'GC-MS protocol for beef volatiles', turns: ['gcms'] }
+};
+
 /* rail order (client-side state) */
 var pinned   = ['roasted', 'thiamine'];
 var histList = ['ap', 'beany', 'mvl', 'gcms'];
 var activeId = 'roasted';
 
-/* ================= rendering ================= */
-function esc(s){ return s; } /* content is trusted static HTML written above */
+/* ================= thread rendering ================= */
+var threadEl = document.getElementById('thread');
 
-function renderAnswer(id) {
-  var c = CHATS[id];
-  activeId = id;
-  document.getElementById('oracleQ').innerHTML = c.q;
-  var html = '';
+function escHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/* user turn — the question text the person actually typed (escaped) */
+function appendUserTurn(text, isHtml) {
+  var el = document.createElement('div');
+  el.className = 'turn user';
+  el.innerHTML = '<div class="who">You</div><div class="bubble">' +
+                 (isHtml ? text : escHtml(text)) + '</div>';
+  threadEl.appendChild(el);
+  return el;
+}
+
+/* oracle turn — the v10 answer-card anatomy: prose + [n] cites + ENTITIES row */
+function appendOracleTurn(turnId, isPrepared) {
+  var c = TURNS[turnId];
+  if (!c) return null;
+
+  var body = '';
   c.paras.forEach(function (p) {
     /* swap {{n:key}} tokens into cite superscripts */
-    html += '<p>' + p.replace(/\{\{(\d+):(\w+)\}\}/g, function (_, n, key) {
+    body += '<p>' + p.replace(/\{\{(\d+):(\w+)\}\}/g, function (_, n, key) {
       return '<span class="cite" onclick="showCitePop(event, \'' + key + '\')">[' + n + ']</span>';
     }) + '</p>';
   });
-  document.getElementById('answerBody').innerHTML = html;
 
   var er = '';
   c.ents.forEach(function (e) {
@@ -373,13 +520,66 @@ function renderAnswer(id) {
   if (c.compare) {
     er += '<a class="cmp-aff" href="compare.html" title="' + c.compare[0] + ' vs ' + c.compare[1] + '">&#8646; Compare these two &rarr;</a>';
   }
-  document.getElementById('entRow').innerHTML = er;
-  renderRail();
-  hidePop();
+
+  var el = document.createElement('div');
+  el.className = 'turn oracle';
+  el.setAttribute('data-turn', turnId);
+  el.innerHTML =
+    '<div class="answer">' +
+      '<h4>Answer</h4>' +
+      (isPrepared ? '<div class="sample-tag">Prepared sample &mdash; retrieval is not wired in this static design</div>' : '') +
+      '<div class="ans-body">' + body + '</div>' +
+      '<div class="entities">' +
+        '<div class="lbl">Entities in this answer</div>' +
+        '<div class="ent-row">' + er + '</div>' +
+      '</div>' +
+    '</div>';
+  threadEl.appendChild(el);
+  return el;
 }
 
+/* the cross-navigate block follows the newest answer in the thread */
+function appendXnav(turnId) {
+  var old = document.getElementById('xnav');
+  if (old && old.parentNode) old.parentNode.removeChild(old);
+
+  var c = TURNS[turnId] || {};
+  var pair = c.compare || ['2-AP', 'methional'];
+  var el = document.createElement('div');
+  el.className = 'xnav';
+  el.id = 'xnav';
+  el.innerHTML =
+    '<div class="xn-lbl">Cross-navigate from this answer</div>' +
+    '<a class="btn" href="' + WF + '#data">&#9636; Show the underlying data <span style="opacity:.8;font-weight:400">&middot; Data table</span></a>' +
+    '<a class="btn coral" href="compare.html">&#8646; Compare ' + pair[0] + ' vs ' + pair[1] +
+      ' <span style="opacity:.85;font-weight:400">&middot; Compare</span></a>';
+  threadEl.appendChild(el);
+}
+
+/* render a whole conversation into the thread */
+function renderConvo(id) {
+  var convo = CONVOS[id];
+  if (!convo) return;
+  activeId = id;
+  threadEl.innerHTML = '';
+  var lastTurn = null;
+  convo.turns.forEach(function (t) {
+    var tid = (typeof t === 'string') ? t : t.t;
+    var q   = (typeof t === 'string') ? TURNS[tid].q : t.q;
+    appendUserTurn(q, true);           /* seeded questions are trusted static HTML */
+    appendOracleTurn(tid, false);
+    lastTurn = tid;
+  });
+  appendXnav(lastTurn);
+  renderRail();
+  hidePop();
+  /* land on the newest exchange, like reopening a chat */
+  threadEl.scrollTop = threadEl.scrollHeight;
+}
+
+/* ================= rail (unchanged markup + behaviour) ================= */
 function railRow(id) {
-  var c = CHATS[id];
+  var c = CONVOS[id];
   var isPinned = pinned.indexOf(id) !== -1;
   return '<div class="context-item' + (id === activeId ? ' active' : '') + '" onclick="loadChat(\'' + id + '\')">' +
          '<span class="dot"></span><span class="ctx-text">' + c.label + '</span>' +
@@ -392,7 +592,8 @@ function renderRail() {
 }
 
 /* ================= interactions ================= */
-function loadChat(id) { renderAnswer(id); }
+/* a rail entry now loads the WHOLE conversation, not a single answer */
+function loadChat(id) { renderConvo(id); }
 
 function togglePin(id) {
   var pi = pinned.indexOf(id);
@@ -405,26 +606,230 @@ function togglePin(id) {
   renderRail();
 }
 
-function askPressed() {
-  var box = document.getElementById('oracleBox');
-  var note = document.getElementById('askNote');
-  box.classList.remove('shake');
-  void box.offsetWidth;               /* restart animation */
-  box.classList.add('shake');
-  note.classList.add('on');
-  clearTimeout(askPressed._t);
-  askPressed._t = setTimeout(function () { note.classList.remove('on'); }, 2600);
+/* which prepared answer to serve for a freely typed question */
+var ALT_ORDER = ['ap', 'mvl', 'beany', 'thiamine', 'gcms', 'roasted'];
+var altCursor = 0;
+function pickTurn(text) {
+  var q = String(text || '').toLowerCase();
+  if (/thiamin/.test(q))                                   return 'thiamine';
+  if (/gc-?\s?ms|spme|protocol|method|instrument/.test(q))  return 'gcms';
+  if (/bean|pea protein|off-?note|green|hexanal/.test(q))   return 'beany';
+  if (/pyrrolin|2-ap|popcorn|precursor|proline/.test(q))    return 'ap';
+  if (/lipid|oxidation|maillard|which matters/.test(q))     return 'mvl';
+  if (/roast|meaty|patt|burger|beef/.test(q))               return 'roasted';
+  var id = ALT_ORDER[altCursor % ALT_ORDER.length];
+  altCursor++;
+  return id;
 }
+
+function showAskNote(msg, isWarning) {
+  var note = document.getElementById('askNote');
+  note.textContent = msg;
+  note.style.color = isWarning ? '#a5522f' : '#a5522f';
+  note.classList.add('on');
+  clearTimeout(showAskNote._t);
+  showAskNote._t = setTimeout(function () { note.classList.remove('on'); }, 3200);
+}
+
+/* append a user turn + a prepared Oracle turn, then scroll to it */
+function askText(text, forcedTurnId) {
+  text = String(text || '').trim();
+  if (!text) return;
+  var tid = forcedTurnId || pickTurn(text);
+  var userEl = appendUserTurn(text, false);
+  appendOracleTurn(tid, true);
+  appendXnav(tid);
+  hidePop();
+  try { userEl.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  catch (e) { threadEl.scrollTop = threadEl.scrollHeight; }
+  showAskNote('Prepared sample answer — retrieval is not wired in this static design artifact.');
+}
+
+function askPressed() {
+  var ta  = document.getElementById('oracleQ');
+  var box = document.getElementById('oracleBox');
+  var text = ta.value.trim();
+  if (!text) {
+    box.classList.remove('shake');
+    void box.offsetWidth;               /* restart animation */
+    box.classList.add('shake');
+    showAskNote('Type a question first — then the thread appends a prepared sample answer.', true);
+    ta.focus();
+    return;
+  }
+  askText(text);
+  ta.value = '';
+  autoGrow(ta);
+  ta.focus();
+}
+
+/* ---------- composer: auto-grow + Enter to ask ---------- */
+function autoGrow(ta) {
+  ta.style.height = 'auto';
+  ta.style.height = Math.min(ta.scrollHeight, 132) + 'px';
+}
+(function initComposer() {
+  var ta  = document.getElementById('oracleQ');
+  var box = document.getElementById('oracleBox');
+  if (!ta) return;
+  autoGrow(ta);
+  ta.addEventListener('input', function () { autoGrow(ta); });
+  ta.addEventListener('focus', function () { box.classList.add('focused'); });
+  ta.addEventListener('blur',  function () { box.classList.remove('focused'); });
+  ta.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); askPressed(); }
+  });
+})();
+
+/* ---------- file attach (honest: nothing is uploaded or parsed) ---------- */
+(function initAttach() {
+  var btn   = document.getElementById('attachBtn');
+  var input = document.getElementById('fileInput');
+  var row   = document.getElementById('attachRow');
+  if (!btn || !input || !row) return;
+
+  function clearAttach() {
+    try { input.value = ''; } catch (e) {}
+    row.innerHTML = '';
+    row.hidden = true;
+    btn.classList.remove('on');
+  }
+  function renderChip(file) {
+    row.innerHTML = '';
+    var chip = document.createElement('span');
+    chip.className = 'attach-chip';
+    chip.title = file.name + ' — shown as a preview only; this static design does not read or upload it';
+    var name = document.createElement('span');
+    name.className = 'attach-name';
+    name.textContent = file.name;               /* textContent → no HTML-injection risk */
+    var tag = document.createElement('span');
+    tag.className = 'attach-tag';
+    tag.textContent = 'preview';
+    var x = document.createElement('button');
+    x.type = 'button';
+    x.className = 'attach-x';
+    x.setAttribute('aria-label', 'Remove attachment');
+    x.title = 'Remove attachment';
+    x.textContent = '×';
+    x.addEventListener('click', clearAttach);
+    chip.appendChild(name); chip.appendChild(tag); chip.appendChild(x);
+    row.appendChild(chip);
+    row.hidden = false;
+    btn.classList.add('on');
+  }
+  btn.addEventListener('click', function () { input.click(); });
+  input.addEventListener('change', function () {
+    var f = input.files && input.files[0];
+    if (f) renderChip(f); else clearAttach();
+  });
+})();
+
+/* ---------- dictation: the real Web Speech API, feature-detected ---------- */
+var micBtn    = document.getElementById('micBtn');
+var micStatus = document.getElementById('micStatus');
+var mcRec     = null;
+var mcRecOn   = false;
+
+function setMicStatus(text, isWarning) {
+  if (!micStatus) return;
+  micStatus.textContent = text || '';
+  micStatus.classList.toggle('on', !!text);
+  micStatus.classList.toggle('warn', !!isWarning);
+}
+function setMicRecording(on) {
+  mcRecOn = !!on;
+  if (!micBtn) return;
+  micBtn.classList.toggle('recording', mcRecOn);
+  micBtn.setAttribute('aria-pressed', mcRecOn ? 'true' : 'false');
+  var lbl = mcRecOn ? 'Stop dictating' : 'Dictate your question';
+  micBtn.setAttribute('aria-label', lbl);
+  micBtn.setAttribute('title', lbl);
+}
+function insertTranscript(text) {
+  var ta = document.getElementById('oracleQ');
+  if (!ta) return;
+  text = String(text || '').trim();
+  if (!text) return;
+  var cur = ta.value;
+  ta.value = (cur && !/\s$/.test(cur)) ? (cur + ' ' + text) : (cur + text);
+  autoGrow(ta);
+  try { ta.selectionStart = ta.selectionEnd = ta.value.length; } catch (e) {}
+}
+function stopDictation() {
+  if (mcRec && mcRecOn) { try { mcRec.stop(); } catch (e) {} }
+  setMicRecording(false);
+}
+(function initDictation() {
+  if (!micBtn) return;
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    /* unsupported browser → an honest disabled control with an explanatory tooltip,
+       never a fake recorder */
+    micBtn.disabled = true;
+    micBtn.setAttribute('aria-disabled', 'true');
+    micBtn.setAttribute('aria-label', 'Dictation is not supported in this browser');
+    micBtn.setAttribute('title', 'Dictation is not supported in this browser (needs the Web Speech API — try Chrome or Edge)');
+    return;
+  }
+  micBtn.addEventListener('click', function () {
+    if (mcRecOn) { stopDictation(); return; }
+    if (!mcRec) {
+      try { mcRec = new SR(); }
+      catch (e) {
+        micBtn.disabled = true;
+        micBtn.setAttribute('title', 'Dictation could not start in this browser');
+        return;
+      }
+      mcRec.lang           = 'en-US';
+      mcRec.continuous     = true;
+      mcRec.interimResults = true;
+      mcRec.onstart = function () {
+        setMicRecording(true);
+        setMicStatus('Listening… click the mic again to stop.');
+      };
+      mcRec.onresult = function (ev) {
+        var interim = '';
+        for (var i = ev.resultIndex; i < ev.results.length; i++) {
+          var res = ev.results[i];
+          if (res.isFinal) insertTranscript(res[0].transcript);
+          else interim += res[0].transcript;
+        }
+        interim = interim.trim();
+        setMicStatus(interim ? ('… ' + interim) : 'Listening… click the mic again to stop.');
+      };
+      mcRec.onerror = function (ev) {
+        var code = (ev && ev.error) || '';
+        setMicRecording(false);
+        if (code === 'not-allowed' || code === 'service-not-allowed') {
+          setMicStatus('Microphone blocked. Allow mic access for this page, then try again.', true);
+        } else if (code === 'no-speech') {
+          setMicStatus('Didn\'t catch that — try again.', true);
+        } else if (code !== 'aborted') {
+          setMicStatus('Dictation stopped unexpectedly. Try again.', true);
+        } else {
+          setMicStatus('');
+        }
+      };
+      mcRec.onend = function () {
+        setMicRecording(false);
+        if (micStatus && /Listening/.test(micStatus.textContent || '')) setMicStatus('');
+      };
+    }
+    try { mcRec.start(); }
+    catch (e) { setMicStatus('Dictation could not start. Try again.', true); }
+  });
+})();
 
 /* ---------- popover ---------- */
 function placePop(ev) {
   var pop = document.getElementById('pop');
   pop.classList.add('on');
-  var x = ev.pageX, y = ev.pageY;
-  var w = 290;
-  if (x + w + 24 > document.documentElement.scrollWidth) x = x - w - 8;
-  pop.style.left = x + 10 + 'px';
-  pop.style.top  = y + 12 + 'px';
+  var x = ev.clientX, y = ev.clientY;
+  var w = 290, h = pop.offsetHeight || 130;
+  if (x + w + 24 > window.innerWidth)  x = x - w - 8;
+  if (y + h + 24 > window.innerHeight) y = Math.max(8, y - h - 12);
+  pop.style.left = Math.max(8, x + 10) + 'px';
+  pop.style.top  = Math.max(8, y + 12) + 'px';
 }
 function showCitePop(ev, key) {
   ev.stopPropagation();
@@ -447,10 +852,10 @@ function hidePop() { document.getElementById('pop').classList.remove('on'); }
 document.addEventListener('click', function (ev) {
   if (!ev.target.closest('#pop') && !ev.target.closest('.cite') && !ev.target.closest('.ent')) hidePop();
 });
-document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') hidePop(); });
+document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') { hidePop(); stopDictation(); } });
 
-/* boot */
-renderAnswer('roasted');
+/* boot: the seeded 3-exchange conversation */
+renderConvo('roasted');
 </script>
 </body>
 </html>

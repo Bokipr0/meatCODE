@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Last updated: 2026-08-15 · Fullstack Engineer · COMPARE screen ported from UI-UX Designer/screen_flows_wireframes.html (#compare scene) into the dev zone as a standalone static screen. Demo data only — no fetches. -->
+<!-- Last updated: 2026-08-15 · UI/UX Designer · COMPARE screen (ported by Fullstack Engineer from UI-UX Designer/screen_flows_wireframes.html #compare scene) — demo data only, no fetches. Escape hatches added: "← Back" (document history, falls back to the Dev Area) beside the existing "← Dev Area" link, plus a file:// path rewrite so the /app/dev/ links also work when opened straight from Finder. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -30,8 +30,11 @@ a{color:inherit;text-decoration:none}
   display:flex;align-items:center;gap:14px;
   height:60px;padding:0 26px;background:var(--surface);border-bottom:1px solid var(--line);
 }
-.back-link{color:var(--teal-deep);font-weight:700;font-size:14px}
+.back-link{color:var(--teal-deep);font-weight:700;font-size:14px;white-space:nowrap}
 .back-link:hover{text-decoration:underline}
+/* second escape: one step back in document history (distinct from leaving for the hub) */
+.step-back{font-size:12.5px;color:var(--ink-faint);cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.step-back:hover{color:var(--teal)}
 .brand{font-weight:700;font-size:19px;color:var(--teal);letter-spacing:.01em;display:flex;align-items:center;gap:9px}
 .brand .logo{width:26px;height:26px;border-radius:8px;background:var(--teal);color:#fff;display:grid;place-items:center;font-size:14px}
 .dev-tag{font-size:10px;font-weight:700;color:var(--ink-faint);letter-spacing:.12em;text-transform:uppercase;border:1px dashed var(--wf);border-radius:6px;padding:2px 7px}
@@ -88,6 +91,7 @@ a{color:inherit;text-decoration:none}
 <body>
 
 <header class="topbar">
+  <span class="step-back" title="Back one step" onclick="stepBack()">&larr; Back</span>
   <a class="back-link" href="/app/dev/index.html">&larr; Dev Area</a>
   <div class="brand"><div class="logo">M</div>MeatCODE <span class="dev-tag">Dev screen</span></div>
   <span class="placeholder-chip">PLACEHOLDER &middot; demo data</span>
@@ -115,7 +119,7 @@ a{color:inherit;text-decoration:none}
   <div class="cmp-grid" id="cmpGrid" style="margin-top:22px"></div>
 
   <div class="cmp-actions">
-    <button class="btn ghost" onclick="location.href='/app/dev/oracle_redesign.html'">&larr; Back to the Oracle answer</button>
+    <button class="btn ghost" onclick="devGo('oracle_redesign.html')">&larr; Back to the Oracle answer</button>
     <button class="btn" onclick="location.href='../../UI-UX%20Designer/screen_flows_wireframes.html#data'">&#9636; Open both in the Data table</button>
     <button class="btn ghost sm" id="addThirdBtn" onclick="addThird()">+ Add a third molecule</button>
   </div>
@@ -127,6 +131,25 @@ a{color:inherit;text-decoration:none}
 </div>
 
 <script>
+/* ---------- escape hatches ----------
+   Links here are root-absolute (/app/dev/…) so they resolve when meatcode_server.py
+   serves the repo root. Opened straight from Finder the page runs on file://, where
+   a root-absolute path would hit the disk root — this page already sits in
+   <repo>/app/dev/, so the sibling file name alone is the correct relative path. */
+function devPath(file){ return (location.protocol === 'file:') ? file : '/app/dev/' + file; }
+function devGo(file){ location.href = devPath(file); }
+if(location.protocol === 'file:'){
+  document.querySelectorAll('a[href^="/app/dev/"]').forEach(function(a){
+    a.setAttribute('href', a.getAttribute('href').replace('/app/dev/',''));
+  });
+}
+/* "← Back" = one step back in document history; if this page was opened cold
+   (no in-tab history) fall back to the Dev Area hub so it is never a dead end. */
+function stepBack(){
+  if(history.length > 1 && document.referrer){ history.back(); return; }
+  devGo('index.html');
+}
+
 /* Static demo model — exact values from the wireframe's compare scene, plus an
    optional third column (methionine) added client-side. */
 var ATTRIBUTES = [
