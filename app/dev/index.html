@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Last updated: 2026-08-15 · Fullstack Engineer · Dev Area hub: feature flags (read-only), screens, documents, user screen flows -->
+<!-- Last updated: 2026-08-15 · Fullstack Engineer · added Screens cards for Oracle redesign (v10 proposal) + Compare screen, and a new Versions section → versions.html (prod snapshot history / rollback). Prev: Dev Area hub: feature flags (read-only), screens, documents, user screen flows -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -147,6 +147,16 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
         <p>Analytical methods overview: GC-MS, HPLC, olfactory, NMR, spectroscopy.</p>
         <span class="path">/app/dev/analytics.html</span>
       </a>
+      <a class="card" href="/app/dev/oracle_redesign.html">
+        <h3>Oracle redesign (v10 proposal)</h3>
+        <p>Proposed next iteration of the Oracle answer screen &mdash; entities, cross-nav, compare handoff.</p>
+        <span class="path">/app/dev/oracle_redesign.html</span>
+      </a>
+      <a class="card" href="/app/dev/compare.html">
+        <h3>Compare screen</h3>
+        <p>Side-by-side molecule comparison (Flow 2: Oracle &rarr; compare). Placeholder &mdash; demo data.</p>
+        <span class="path">/app/dev/compare.html</span>
+      </a>
       <div class="card empty">
         <h3>+ Next screen</h3>
         <p>Add your next dev screen here &mdash; drop a new HTML file in app/dev/ and link it.</p>
@@ -191,6 +201,18 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
       <div class="flow"><span class="flow-node">Protocols</span><span class="flow-arrow"></span><span class="flow-node data">Data</span><span class="flow-label">F4 · method &rarr; results</span></div>
       <div class="flow"><span class="flow-node">Simulation</span><span class="flow-arrow"></span><span class="flow-node data">Data</span><span class="flow-label">F5 · prediction &rarr; ground truth</span></div>
       <div class="flow"><span class="flow-node data">Data</span><span class="flow-arrow"></span><span class="flow-node">Simulation</span><span class="flow-label">F6 · observation &rarr; model</span></div>
+    </div>
+  </section>
+
+  <!-- ─── 5 · Versions ─── -->
+  <section class="section" id="versions">
+    <div class="section-head"><h2>Versions</h2><span class="hint">promoted prod snapshots · live from /api/release/history</span></div>
+    <div class="grid">
+      <a class="card" href="/app/dev/versions.html">
+        <h3>Production version history</h3>
+        <p>Every promoted snapshot, newest-first, with the live one marked. Rollback buttons are active on the local cockpit only &mdash; read-only on the hosted dev site.</p>
+        <span class="path">/app/dev/versions.html</span>
+      </a>
     </div>
   </section>
 </div>

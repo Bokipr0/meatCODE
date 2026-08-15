@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<!-- Last updated: 2026-08-15 · UI/UX Designer · Oracle screen redesign (v10 proposal) —
+     static design artifact reproducing the approved Oracle scene from
+     UI-UX Designer/screen_flows_wireframes.html, upgraded with the v9 Oracle
+     history rail (Pinned + History). No backend calls; everything client-side. -->
+<title>MeatCODE · Oracle redesign (v10 proposal)</title>
+<meta name="viewport" content="width=1440" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAF6EF; --surface:#fff; --surface-2:#F7F0E0;
+  --teal:#00736E; --teal-deep:#015A56; --teal-soft:#4FA59F; --mist:#E0F0EE;
+  --coral:#C77E5F; --coral-soft:#F2D7C8; --olive:#7A8C5F; --olive-soft:#E4E9D6;
+  --ink:#1A1A1A; --ink-dim:#4A4A4A; --ink-faint:#8A8A8A;
+  --line:#E9E1D4; --line-strong:#D8CEBC;
+  --shadow:0 4px 16px rgba(0,67,64,.06); --shadow-lg:0 12px 34px rgba(0,67,64,.12);
+  --round:"Varela Round","Heebo",system-ui,-apple-system,sans-serif;
+  --mono:"SF Mono","JetBrains Mono",ui-monospace,Menlo,monospace;
+  --wf:#B7AC97;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--round);-webkit-font-smoothing:antialiased;letter-spacing:.005em}
+a{color:inherit;text-decoration:none}
+
+/* ---------- topbar shell (from screen_flows_wireframes.html) ---------- */
+.topbar{
+  position:sticky;top:0;z-index:20;
+  display:flex;align-items:center;justify-content:space-between;
+  height:60px;padding:0 26px;background:var(--surface);border-bottom:1px solid var(--line);
+}
+.brand{font-weight:700;font-size:19px;color:var(--teal);letter-spacing:.01em;width:300px;display:flex;align-items:center;gap:9px}
+.brand .logo{width:26px;height:26px;border-radius:8px;background:var(--teal);color:#fff;display:grid;place-items:center;font-size:14px}
+.brand .wf-tag{font-size:10px;font-weight:700;color:var(--ink-faint);letter-spacing:.12em;text-transform:uppercase;border:1px dashed var(--wf);border-radius:6px;padding:2px 7px;white-space:nowrap}
+.tabs{display:flex;gap:4px;background:var(--surface-2);padding:5px;border-radius:12px}
+.tab{padding:7px 16px;border-radius:9px;font-size:13.5px;color:var(--ink-dim);cursor:pointer;transition:.15s}
+.tab:hover{color:var(--teal)}
+.tab.active{background:var(--teal);color:#fff;font-weight:700;box-shadow:var(--shadow)}
+.topbar-right{width:300px;display:flex;justify-content:flex-end;gap:10px;align-items:center}
+.home-link{font-size:12.5px;color:var(--ink-faint);cursor:pointer;display:flex;align-items:center;gap:6px}
+.home-link:hover{color:var(--teal)}
+
+/* ---------- page split: history rail + main canvas ---------- */
+.shell{display:grid;grid-template-columns:264px 1fr;min-height:calc(100vh - 60px)}
+.canvas{max-width:900px;margin:0 auto;padding:34px 32px 110px;width:100%}
+
+/* ---------- Oracle history rail (adapted from MeatCODE_mockup_v9 .context) ---------- */
+.context{
+  background:var(--surface);border-right:1px solid var(--line);
+  padding:22px 16px 18px;display:flex;flex-direction:column;gap:18px;min-height:0;
+  position:sticky;top:60px;height:calc(100vh - 60px);overflow:hidden;
+}
+.oracle-rail-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:18px}
+.context-section{display:flex;flex-direction:column;gap:6px;min-height:0}
+.context-label{font-size:10px;font-weight:700;letter-spacing:.16em;color:var(--ink-faint);text-transform:uppercase;padding:0 6px 4px}
+.context-list{display:flex;flex-direction:column;gap:3px}
+.context-item{
+  display:flex;align-items:center;gap:9px;
+  padding:3px 3px 3px 10px;min-height:40px;border-radius:9px;
+  font-size:13px;color:var(--ink-dim);cursor:pointer;
+}
+.context-item:hover{background:var(--surface-2)}
+.context-item .dot{width:6px;height:6px;border-radius:50%;background:var(--ink-faint);flex-shrink:0}
+.context-item.active{background:var(--mist);color:var(--teal-deep);font-weight:700}
+.context-item.active .dot{background:var(--teal)}
+.context-item .ctx-text{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.save-ico{
+  display:inline-block;margin-left:auto;width:34px;height:34px;border-radius:9px;flex-shrink:0;
+  background:transparent;border:0;cursor:pointer;position:relative;padding:0;
+  -webkit-appearance:none;appearance:none;transition:background .15s ease;
+}
+.save-ico::before{
+  content:"";position:absolute;inset:7px;
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18' fill='none' stroke='%238A8A8A' stroke-width='1.5'><path d='M4 3h10v12l-5-3-5 3z'/></svg>") center/contain no-repeat;
+  opacity:.7;transition:.15s;
+}
+.save-ico:hover{background:var(--mist)}
+.save-ico:hover::before{opacity:1}
+.save-ico.saved::before{
+  background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18' fill='%2300736E' stroke='%2300736E' stroke-width='1.5'><path d='M4 3h10v12l-5-3-5 3z'/></svg>") center/contain no-repeat;
+  opacity:1;
+}
+.save-ico:focus-visible{outline:2px solid var(--teal);outline-offset:-2px}
+.rail-foot{flex-shrink:0;border-top:1px dashed var(--line);padding-top:12px;font-size:11px;color:var(--ink-faint);line-height:1.5;padding-left:6px;padding-right:6px}
+
+/* ---------- shared (from wireframes) ---------- */
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--teal)}
+.h1{font-size:29px;font-weight:700;letter-spacing:-.01em;margin:6px 0 0}
+.lead{font-size:15px;color:var(--ink-dim);margin:8px 0 0;line-height:1.55;max-width:760px}
+.crumbs{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-faint);margin-bottom:16px}
+.crumbs a{color:var(--teal);font-weight:700}
+.crumbs a:hover{text-decoration:underline}
+.crumbs .sep{color:var(--line-strong)}
+.mono{font-family:var(--mono);letter-spacing:-.01em}
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--teal);color:#fff;border:none;border-radius:11px;padding:11px 20px;font-weight:700;font-size:13.5px;font-family:var(--round);cursor:pointer;box-shadow:var(--shadow)}
+.btn:hover{background:var(--teal-deep)}
+.btn.ghost{background:transparent;color:var(--teal);box-shadow:none;border:1.5px solid var(--teal)}
+.btn.ghost:hover{background:var(--mist)}
+.btn.coral{background:var(--coral)}.btn.coral:hover{background:#b06b4d}
+.btn.sm{padding:7px 13px;font-size:12px;border-radius:9px}
+
+/* ---------- oracle (from wireframes) ---------- */
+.oracle-box{background:var(--surface);border:1.5px solid var(--line-strong);border-radius:18px;padding:18px 20px;box-shadow:var(--shadow)}
+.oracle-box .qlabel{font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px}
+.oracle-box .qrow{display:flex;align-items:flex-end;gap:14px}
+.oracle-box .q{font-size:17.5px;color:var(--ink);flex:1}
+.oracle-box .q .cur{color:var(--teal-soft)}
+.oracle-box.shake{animation:mc-shake .4s ease}
+@keyframes mc-shake{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-7px)} 40%{transform:translateX(6px)}
+  60%{transform:translateX(-4px)} 80%{transform:translateX(3px)}
+}
+.ask-note{display:none;margin-top:10px;font-size:12px;font-weight:700;color:#a5522f;background:var(--coral-soft);border-radius:8px;padding:7px 12px}
+.ask-note.on{display:inline-block}
+.starters{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0}
+.starter{padding:7px 13px;border:1.5px solid var(--line-strong);border-radius:100px;font-size:12.5px;color:var(--ink-dim);cursor:pointer;background:none;font-family:var(--round)}
+.starter:hover{border-color:var(--teal);color:var(--teal);background:var(--mist)}
+.answer{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px 24px;margin-top:20px}
+.answer h4{margin:0 0 12px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal)}
+.answer p{font-size:15px;line-height:1.7;margin:0 0 12px;color:var(--ink)}
+.cite{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--teal);background:var(--mist);border-radius:5px;padding:1px 5px;cursor:pointer;vertical-align:top}
+.cite:hover{background:var(--teal);color:#fff}
+.entities{border-top:1px solid var(--line);margin-top:14px;padding-top:16px}
+.entities .lbl{font-size:11px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:10px}
+.ent-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ent{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:100px;font-size:12.5px;font-weight:700;cursor:pointer;border:1px solid transparent}
+.ent.mol{background:var(--mist);color:var(--teal)} .ent.paper{background:var(--coral-soft);color:#a5522f} .ent.exp{background:var(--olive-soft);color:#5f6f45}
+.ent:hover{filter:brightness(.97);border-color:currentColor}
+.ent .tg{font-size:9px;opacity:.7;letter-spacing:.08em;text-transform:uppercase}
+.cmp-aff{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:100px;font-size:12px;font-weight:700;color:#a5522f;border:1.5px dashed var(--coral);background:none;font-family:var(--round);cursor:pointer}
+.cmp-aff:hover{background:var(--coral-soft)}
+.xnav{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px;padding:16px 18px;background:var(--surface-2);border:1px dashed var(--wf);border-radius:13px}
+.xnav .xn-lbl{width:100%;font-size:10.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint)}
+
+/* ---------- citation / entity popover ---------- */
+.pop{
+  position:absolute;z-index:60;width:290px;
+  background:var(--surface);border:1.5px solid var(--line-strong);border-radius:13px;
+  padding:14px 16px;box-shadow:var(--shadow-lg);display:none;
+}
+.pop.on{display:block}
+.pop .pt{font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.4}
+.pop .pm{font-size:11.5px;color:var(--ink-faint);margin-top:4px}
+.pop .pl{display:inline-block;margin-top:10px;font-size:12px;font-weight:700;color:var(--teal)}
+.pop .pl:hover{text-decoration:underline}
+.pop .px{position:absolute;top:8px;right:10px;font-size:13px;color:var(--ink-faint);cursor:pointer;border:none;background:none;font-family:var(--round)}
+.pop .px:hover{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><div class="logo">M</div>MeatCODE <span class="wf-tag">Static design &middot; v10 proposal</span></div>
+  <nav class="tabs">
+    <a class="tab" href="../../UI-UX%20Designer/screen_flows_wireframes.html#index">Flow Map</a>
+    <a class="tab active" href="#" onclick="return false">Oracle</a>
+    <a class="tab" href="../../UI-UX%20Designer/screen_flows_wireframes.html#data">Data</a>
+    <a class="tab" href="compare.html">Compare</a>
+    <a class="tab" href="../../UI-UX%20Designer/screen_flows_wireframes.html#protocol">Protocol</a>
+    <a class="tab" href="../../UI-UX%20Designer/screen_flows_wireframes.html#sim">Simulate</a>
+  </nav>
+  <div class="topbar-right">
+    <a class="home-link" href="index.html">&larr; Dev Area</a>
+  </div>
+</header>
+
+<div class="shell">
+
+  <!-- ============ Oracle history rail (v9 pattern: Pinned above History) ============ -->
+  <aside class="context">
+    <div class="oracle-rail-scroll">
+      <div class="context-section">
+        <div class="context-label">Pinned Chats</div>
+        <div class="context-list" id="pinnedList"></div>
+      </div>
+      <div class="context-section">
+        <div class="context-label">Oracle History</div>
+        <div class="context-list" id="historyList"></div>
+      </div>
+    </div>
+    <div class="rail-foot">Static demo rail &mdash; entries swap the answer on the right; the bookmark pins / unpins (client-side only).</div>
+  </aside>
+
+  <!-- ============ Main column: the approved Oracle screen ============ -->
+  <main class="canvas">
+    <div class="crumbs">
+      <a href="../../UI-UX%20Designer/screen_flows_wireframes.html#index">Flow Map</a>
+      <span class="sep">/</span><span>Oracle answer</span>
+    </div>
+
+    <div class="eyebrow">Oracle</div>
+    <h1 class="h1">Ask the Oracle</h1>
+    <p class="lead">Every answer is grounded in the corpus (818 sources, keyword/FTS retrieval, <span class="mono">relevance_llm &ge; 60</span>) with sources you can open.</p>
+
+    <div class="oracle-box" id="oracleBox" style="margin-top:20px">
+      <div class="qlabel">Question</div>
+      <div class="qrow">
+        <div class="q"><span id="oracleQ">What drives the roasted, meaty note in plant-based patties?</span><span class="cur">&#9611;</span></div>
+        <button class="btn sm" id="askBtn" onclick="askPressed()">Ask &rarr;</button>
+      </div>
+      <div class="ask-note" id="askNote">Static design &mdash; retrieval not wired in this artifact</div>
+    </div>
+    <div class="starters">
+      <button class="starter" onclick="loadChat('ap')">Precursors for 2-acetyl-1-pyrroline</button>
+      <button class="starter" onclick="loadChat('beany')">Reduce beany off-notes in pea protein</button>
+      <button class="starter" onclick="loadChat('mvl')">Maillard vs lipid oxidation in analogs</button>
+    </div>
+
+    <div class="answer">
+      <h4>Answer</h4>
+      <div id="answerBody"><!-- rendered by JS --></div>
+      <div class="entities">
+        <div class="lbl">Entities in this answer</div>
+        <div class="ent-row" id="entRow"><!-- rendered by JS --></div>
+      </div>
+    </div>
+
+    <div class="xnav">
+      <div class="xn-lbl">Cross-navigate from this answer</div>
+      <a class="btn" href="../../UI-UX%20Designer/screen_flows_wireframes.html#data">&#9636; Show the underlying data <span style="opacity:.8;font-weight:400">&middot; Data table</span></a>
+      <a class="btn coral" href="compare.html">&#8646; Compare 2-AP vs methional <span style="opacity:.85;font-weight:400">&middot; Compare</span></a>
+    </div>
+  </main>
+</div>
+
+<!-- popover (citations / paper / expert chips) -->
+<div class="pop" id="pop">
+  <button class="px" onclick="hidePop()">&times;</button>
+  <div class="pt" id="popTitle"></div>
+  <div class="pm" id="popMeta"></div>
+  <a class="pl" id="popLink" href="../../UI-UX%20Designer/screen_flows_wireframes.html#data">Open in Data table &rarr;</a>
+</div>
+
+<script>
+/* ================= static chat store ================= */
+var WF = '../../UI-UX%20Designer/screen_flows_wireframes.html';
+
+var CITES = {
+  cerny1992:    { title: 'Evaluation of potent odorants in cooked beef by aroma extract dilution analysis', meta: 'Cerny &amp; Grosch &middot; 1992 &middot; Z. Lebensm. Unters. Forsch.' },
+  hofmann1995:  { title: 'Evaluation of the key odorants in a thermally treated cysteine&ndash;ribose model system', meta: 'Hofmann &amp; Schieberle &middot; 1995 &middot; J. Agric. Food Chem.' },
+  mottram1998:  { title: 'Flavour formation in meat and meat products: a review', meta: 'Mottram &middot; 1998 &middot; Food Chemistry' },
+  schieberle1991:{ title: 'Primary odorants in popcorn: 2-acetyl-1-pyrroline formation from proline', meta: 'Schieberle &middot; 1991 &middot; J. Agric. Food Chem.' },
+  murat2013:    { title: 'Characterisation of odour-active compounds in pea protein isolates', meta: 'Murat et&nbsp;al. &middot; 2013 &middot; Food Chemistry' },
+  guth1994:     { title: 'Thiamine degradation as a source of meat-like sulfur odorants', meta: 'Guth &amp; Grosch &middot; 1994 &middot; J. Agric. Food Chem.' },
+  elmore2001:   { title: 'HS-SPME method development for cooked-meat volatile profiling', meta: 'Elmore et&nbsp;al. &middot; 2001 &middot; J. Chromatogr. A' }
+};
+
+/* each chat: q, paras (array of HTML with {{n:key}} cite tokens), ents, compare flag, pinned */
+var CHATS = {
+  roasted: {
+    q: 'What drives the roasted, meaty note in plant-based patties?',
+    label: 'Roasted, meaty note in patties',
+    paras: [
+      'Roasted, meaty character in plant-based beef comes mainly from <b>Maillard chemistry</b> during cooking &mdash; reducing sugars reacting with amino acids and peptides to form sulfur- and nitrogen-bearing volatiles. The dominant impact compounds are <span class="mono">2-methyl-3-furanthiol</span> (meaty/brothy){{1:cerny1992}} and <span class="mono">2-acetyl-1-pyrroline</span> (roasted/popcorn){{2:hofmann1995}}, with <span class="mono">methional</span> adding a savoury, cooked-potato note via Strecker degradation of methionine{{3:mottram1998}}.',
+      'Because analogs are lower in the right precursors than muscle, added <span class="mono">cysteine&ndash;ribose</span> systems and thiamine are common routes to boost the roasted, brothy profile. <b>Lipid oxidation</b> contributes fatty notes and cross-talks with the Maillard pathway.'
+    ],
+    ents: [
+      { t: 'mol', n: '2-methyl-3-furanthiol' },
+      { t: 'mol', n: '2-acetyl-1-pyrroline' },
+      { t: 'mol', n: 'methional' },
+      { t: 'paper', n: 'Hofmann &amp; Schieberle 1995', cite: 'hofmann1995' },
+      { t: 'exp', n: 'A. Yamamoto', meta: 'Expert &middot; Maillard flavor chemistry &middot; 12 corpus papers &middot; Tokyo Univ. of Agriculture' }
+    ],
+    compare: ['2-acetyl-1-pyrroline', 'methional']
+  },
+  ap: {
+    q: 'What are the precursors for 2-acetyl-1-pyrroline?',
+    label: 'Precursors for 2-AP',
+    paras: [
+      '<span class="mono">2-acetyl-1-pyrroline</span> (2-AP) forms when <b>proline</b> or <b>ornithine</b> reacts with sugar-fragmentation dicarbonyls such as <span class="mono">2-oxopropanal</span> during Maillard heating{{1:schieberle1991}}. The 1-pyrroline intermediate is the rate-limiting species; acetylation then yields the roasted-popcorn odorant.',
+      'In analog systems, dosing <span class="mono">proline + reducing sugar</span> in the crust phase is the practical lever &mdash; 2-AP&rsquo;s odor threshold is extremely low (~0.02&nbsp;ppb), so small yields carry large sensory weight{{2:hofmann1995}}.'
+    ],
+    ents: [
+      { t: 'mol', n: '2-acetyl-1-pyrroline' },
+      { t: 'mol', n: 'proline' },
+      { t: 'paper', n: 'Schieberle 1991', cite: 'schieberle1991' }
+    ],
+    compare: null
+  },
+  beany: {
+    q: 'How do I reduce beany off-notes in pea protein?',
+    label: 'Beany off-notes in pea protein',
+    paras: [
+      'Beany perception in pea protein is driven mostly by lipoxygenase-derived volatiles &mdash; <span class="mono">hexanal</span>, <span class="mono">2-pentylfuran</span> and <span class="mono">3-methyl-1-butanol</span> bound to the protein matrix{{1:murat2013}}. Heat-inactivating LOX early, then stripping bound volatiles (vacuum or SC-CO<sub>2</sub>), removes the largest share.',
+      'Masking is the complementary route: driving <b>Maillard chemistry</b> in the crust raises roasted volatiles that perceptually suppress residual green notes{{2:mottram1998}}.'
+    ],
+    ents: [
+      { t: 'mol', n: 'hexanal' },
+      { t: 'mol', n: '2-pentylfuran' },
+      { t: 'paper', n: 'Murat et al. 2013', cite: 'murat2013' }
+    ],
+    compare: null
+  },
+  mvl: {
+    q: 'Maillard vs lipid oxidation — which matters more in analogs?',
+    label: 'Maillard vs lipid oxidation',
+    paras: [
+      'They answer different questions. <b>Maillard chemistry</b> supplies the species-typical roasted/meaty core (<span class="mono">2-methyl-3-furanthiol</span>, pyrazines){{1:mottram1998}}, while <b>lipid oxidation</b> supplies fatty, juicy amplitude (<span class="mono">hexanal</span>, decadienals) and feeds carbonyls back into the Maillard pool{{2:cerny1992}}.',
+      'In analogs the practical gap is usually Maillard-side: plant matrices lack cysteine and ribose, so the meaty core under-delivers long before the fatty envelope does.'
+    ],
+    ents: [
+      { t: 'mol', n: '2-methyl-3-furanthiol' },
+      { t: 'mol', n: 'hexanal' },
+      { t: 'paper', n: 'Mottram 1998', cite: 'mottram1998' }
+    ],
+    compare: ['2-methyl-3-furanthiol', 'hexanal']
+  },
+  thiamine: {
+    q: 'Is thiamine a viable meaty-thiol precursor in analogs?',
+    label: 'Thiamine as thiol precursor',
+    paras: [
+      'Yes &mdash; thermal degradation of <b>thiamine</b> is a clean, label-friendly route to <span class="mono">2-methyl-3-furanthiol</span> and its dimer <span class="mono">bis(2-methyl-3-furyl) disulfide</span>, without needing free cysteine{{1:guth1994}}.',
+      'Yields are pH-sensitive (best near pH&nbsp;5&ndash;6) and the disulfide dominates on storage, shifting the profile from brothy toward sulfurous &mdash; dose accordingly.'
+    ],
+    ents: [
+      { t: 'mol', n: '2-methyl-3-furanthiol' },
+      { t: 'mol', n: 'bis(2-furfuryl) disulfide' },
+      { t: 'paper', n: 'Guth &amp; Grosch 1994', cite: 'guth1994' }
+    ],
+    compare: null
+  },
+  gcms: {
+    q: 'Which GC-MS protocol best captures cooked-beef volatiles?',
+    label: 'GC-MS protocol for beef volatiles',
+    paras: [
+      'The workhorse is <b>HS-SPME-GC-MS</b> with a <span class="mono">DVB/CAR/PDMS</span> fiber &mdash; 30&nbsp;min extraction at 50&nbsp;&deg;C balances recovery of thiols against artifact formation{{1:elmore2001}}.',
+      'For the low-threshold sulfur species, pair it with SIDA quantitation anchored on the cysteine&ndash;ribose benchmark set{{2:hofmann1995}}. The full parameter sheet lives in the Protocol screen.'
+    ],
+    ents: [
+      { t: 'mol', n: '2-furfurylthiol' },
+      { t: 'mol', n: 'methional' },
+      { t: 'paper', n: 'Elmore et al. 2001', cite: 'elmore2001' }
+    ],
+    compare: null
+  }
+};
+
+/* rail order (client-side state) */
+var pinned   = ['roasted', 'thiamine'];
+var histList = ['ap', 'beany', 'mvl', 'gcms'];
+var activeId = 'roasted';
+
+/* ================= rendering ================= */
+function esc(s){ return s; } /* content is trusted static HTML written above */
+
+function renderAnswer(id) {
+  var c = CHATS[id];
+  activeId = id;
+  document.getElementById('oracleQ').innerHTML = c.q;
+  var html = '';
+  c.paras.forEach(function (p) {
+    /* swap {{n:key}} tokens into cite superscripts */
+    html += '<p>' + p.replace(/\{\{(\d+):(\w+)\}\}/g, function (_, n, key) {
+      return '<span class="cite" onclick="showCitePop(event, \'' + key + '\')">[' + n + ']</span>';
+    }) + '</p>';
+  });
+  document.getElementById('answerBody').innerHTML = html;
+
+  var er = '';
+  c.ents.forEach(function (e) {
+    if (e.t === 'mol') {
+      er += '<a class="ent mol" href="' + WF + '#data"><span class="tg">Molecule</span> ' + e.n + '</a>';
+    } else if (e.t === 'paper') {
+      er += '<span class="ent paper" onclick="showCitePop(event, \'' + e.cite + '\')"><span class="tg">Paper</span> ' + e.n + '</span>';
+    } else {
+      er += '<span class="ent exp" onclick="showExpPop(event, \'' + e.n + '\', \'' + (e.meta || '') + '\')"><span class="tg">Expert</span> ' + e.n + '</span>';
+    }
+  });
+  if (c.compare) {
+    er += '<a class="cmp-aff" href="compare.html" title="' + c.compare[0] + ' vs ' + c.compare[1] + '">&#8646; Compare these two &rarr;</a>';
+  }
+  document.getElementById('entRow').innerHTML = er;
+  renderRail();
+  hidePop();
+}
+
+function railRow(id) {
+  var c = CHATS[id];
+  var isPinned = pinned.indexOf(id) !== -1;
+  return '<div class="context-item' + (id === activeId ? ' active' : '') + '" onclick="loadChat(\'' + id + '\')">' +
+         '<span class="dot"></span><span class="ctx-text">' + c.label + '</span>' +
+         '<button class="save-ico' + (isPinned ? ' saved' : '') + '" title="' + (isPinned ? 'Unpin' : 'Pin') + '" ' +
+         'onclick="event.stopPropagation(); togglePin(\'' + id + '\')"></button></div>';
+}
+function renderRail() {
+  document.getElementById('pinnedList').innerHTML  = pinned.map(railRow).join('') || '<div style="font-size:12px;color:var(--ink-faint);padding:4px 10px">No pinned chats yet.</div>';
+  document.getElementById('historyList').innerHTML = histList.map(railRow).join('') || '<div style="font-size:12px;color:var(--ink-faint);padding:4px 10px">No history yet.</div>';
+}
+
+/* ================= interactions ================= */
+function loadChat(id) { renderAnswer(id); }
+
+function togglePin(id) {
+  var pi = pinned.indexOf(id);
+  if (pi !== -1) { pinned.splice(pi, 1); histList.unshift(id); }
+  else {
+    var hi = histList.indexOf(id);
+    if (hi !== -1) histList.splice(hi, 1);
+    pinned.unshift(id);
+  }
+  renderRail();
+}
+
+function askPressed() {
+  var box = document.getElementById('oracleBox');
+  var note = document.getElementById('askNote');
+  box.classList.remove('shake');
+  void box.offsetWidth;               /* restart animation */
+  box.classList.add('shake');
+  note.classList.add('on');
+  clearTimeout(askPressed._t);
+  askPressed._t = setTimeout(function () { note.classList.remove('on'); }, 2600);
+}
+
+/* ---------- popover ---------- */
+function placePop(ev) {
+  var pop = document.getElementById('pop');
+  pop.classList.add('on');
+  var x = ev.pageX, y = ev.pageY;
+  var w = 290;
+  if (x + w + 24 > document.documentElement.scrollWidth) x = x - w - 8;
+  pop.style.left = x + 10 + 'px';
+  pop.style.top  = y + 12 + 'px';
+}
+function showCitePop(ev, key) {
+  ev.stopPropagation();
+  var c = CITES[key];
+  document.getElementById('popTitle').innerHTML = c.title;
+  document.getElementById('popMeta').innerHTML  = c.meta;
+  var l = document.getElementById('popLink');
+  l.style.display = 'inline-block';
+  l.href = WF + '#data';
+  placePop(ev);
+}
+function showExpPop(ev, name, meta) {
+  ev.stopPropagation();
+  document.getElementById('popTitle').innerHTML = name;
+  document.getElementById('popMeta').innerHTML  = meta || 'Expert in the MeatCODE network';
+  document.getElementById('popLink').style.display = 'none';
+  placePop(ev);
+}
+function hidePop() { document.getElementById('pop').classList.remove('on'); }
+document.addEventListener('click', function (ev) {
+  if (!ev.target.closest('#pop') && !ev.target.closest('.cite') && !ev.target.closest('.ent')) hidePop();
+});
+document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') hidePop(); });
+
+/* boot */
+renderAnswer('roasted');
+</script>
+</body>
+</html>

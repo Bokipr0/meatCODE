@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-# Last updated: 2026-08-15 · Algorithm Expert · consensus + claims layer on the Oracle stream.
+# Last updated: 2026-08-15 · Fullstack Engineer · GET /api/release/history is now visible on the hosted
+#   DEV site too (gate: _local_admin_ok() OR APP_ENV=="dev"; production keeps the 404). Powers the new
+#   read-only app/dev/versions.html screen. Hardened _release_history for hosts without a usable git
+#   checkout (Render): fetch stays best-effort, for-each-ref failure → {"versions":[],"note":"history
+#   unavailable on this host"} instead of a 500, current commit falls back origin/main → HEAD. The
+#   rollback POST is untouched and stays strictly local-admin (hosted boxes have no git push creds).
+# Prev 2026-08-15 · Algorithm Expert · consensus + claims layer on the Oracle stream.
 #   (1) NEW additive SSE `event: consensus` on POST /api/ask — after the answer finishes streaming, ONE
 #       small Haiku call classifies each retrieved source's main_claim as agree/oppose/neutral toward the
 #       answer's central claim; payload {"agree":n,"oppose":n,"neutral":n,"per_source":[{id,stance}]},
@@ -667,8 +673,10 @@ class Handler(SimpleHTTPRequestHandler):
             # Full dev+prod matrix — powers the Release Center dashboard.
             return self._send_json({"env": APP_ENV, "admin": self._local_admin_ok(), "flags": load_flags()})
         if path == "/api/release/history":
-            # Promoted snapshots + which is live. Local cockpit only (needs git).
-            if not self._local_admin_ok():
+            # Promoted snapshots + which is live. READ-ONLY, so it's also visible on the
+            # hosted DEV site (powers app/dev/versions.html); production keeps the 404.
+            # The rollback POST stays strictly local-admin — a hosted box has no push creds.
+            if not (self._local_admin_ok() or APP_ENV == "dev"):
                 return self._send_json({"error": "not found"}, 404)
             return self._release_history()
         if path == "/api/version":
@@ -1111,25 +1119,56 @@ class Handler(SimpleHTTPRequestHandler):
             return None
 
     def _release_history(self):
-        """List promoted snapshots (prod-* tags) newest-first + which one is live."""
+        """List promoted snapshots (prod-* tags) newest-first + which one is live.
+
+        Degrades gracefully on hosts without a usable git checkout (e.g. the Render
+        container may lack git, the .git dir, or an `origin` remote): the fetch is
+        best-effort, we fall back to listing LOCAL tags, and if even that fails we
+        return {"versions": [], "note": "history unavailable on this host"} — never a 500.
+        """
         try:
-            subprocess.run(["git", "-C", REPO_ROOT, "fetch", "origin", "--tags", "--quiet"],
-                           capture_output=True, text=True, timeout=25)
+            try:
+                # Best-effort refresh of tags — fine to fail (no network / no origin).
+                subprocess.run(["git", "-C", REPO_ROOT, "fetch", "origin", "--tags", "--quiet"],
+                               capture_output=True, text=True, timeout=25)
+            except Exception:
+                pass
+            fmt = "%(refname:short)\t%(creatordate:format:%Y-%m-%d %H:%M)\t%(objectname:short)\t%(subject)"
+            r = subprocess.run(["git", "-C", REPO_ROOT, "for-each-ref", "--sort=-creatordate",
+                                "--format", fmt, "refs/tags/prod-*"],
+                               capture_output=True, text=True, timeout=15)
+            if r.returncode != 0:
+                # Not a git checkout at all → honest empty answer, not an error.
+                return self._send_json({"current": None, "current_commit": "",
+                                        "versions": [], "note": "history unavailable on this host"})
+            versions = []
+            for line in r.stdout.splitlines():
+                p = line.split("\t")
+                if len(p) >= 3:
+                    versions.append({"tag": p[0], "date": p[1], "commit": p[2],
+                                     "subject": (p[3] if len(p) > 3 else "")})
+            cur = ""
+            try:
+                cur = subprocess.run(["git", "-C", REPO_ROOT, "rev-parse", "--short", "origin/main"],
+                                     capture_output=True, text=True, timeout=15).stdout.strip()
+                if not cur or " " in cur:   # "origin/main" missing → rev-parse error text
+                    cur = ""
+            except Exception:
+                cur = ""
+            if not cur:
+                try:
+                    # No origin/main ref — use HEAD (what this host is actually running).
+                    cur = subprocess.run(["git", "-C", REPO_ROOT, "rev-parse", "--short", "HEAD"],
+                                         capture_output=True, text=True, timeout=15).stdout.strip()
+                except Exception:
+                    cur = ""
+            current_tag = next((v["tag"] for v in versions if v["commit"] == cur), None)
+            return self._send_json({"current": current_tag, "current_commit": cur,
+                                    "versions": versions})
         except Exception:
-            pass
-        fmt = "%(refname:short)\t%(creatordate:format:%Y-%m-%d %H:%M)\t%(objectname:short)\t%(subject)"
-        r = subprocess.run(["git", "-C", REPO_ROOT, "for-each-ref", "--sort=-creatordate",
-                            "--format", fmt, "refs/tags/prod-*"], capture_output=True, text=True)
-        versions = []
-        for line in r.stdout.splitlines():
-            p = line.split("\t")
-            if len(p) >= 3:
-                versions.append({"tag": p[0], "date": p[1], "commit": p[2],
-                                 "subject": (p[3] if len(p) > 3 else "")})
-        cur = subprocess.run(["git", "-C", REPO_ROOT, "rev-parse", "--short", "origin/main"],
-                             capture_output=True, text=True).stdout.strip()
-        current_tag = next((v["tag"] for v in versions if v["commit"] == cur), None)
-        return self._send_json({"current": current_tag, "current_commit": cur, "versions": versions})
+            # Missing git binary (FileNotFoundError) or anything else unexpected.
+            return self._send_json({"current": None, "current_commit": "",
+                                    "versions": [], "note": "history unavailable on this host"})
 
     def _handle_admin_post(self, path):
         """Release Center actions — reachable only after _local_admin_ok() passes."""

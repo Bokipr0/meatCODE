@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<!-- Last updated: 2026-08-15 · Fullstack Engineer · COMPARE screen ported from UI-UX Designer/screen_flows_wireframes.html (#compare scene) into the dev zone as a standalone static screen. Demo data only — no fetches. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MeatCODE · Dev Area · Compare</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+<style>
+/* ── tokens: 1:1 with UI-UX Designer/screen_flows_wireframes.html ── */
+:root{
+  --bg:#FAF6EF; --surface:#fff; --surface-2:#F7F0E0;
+  --teal:#00736E; --teal-deep:#015A56; --teal-soft:#4FA59F; --mist:#E0F0EE;
+  --coral:#C77E5F; --coral-soft:#F2D7C8; --olive:#7A8C5F; --olive-soft:#E4E9D6;
+  --ink:#1A1A1A; --ink-dim:#4A4A4A; --ink-faint:#8A8A8A;
+  --line:#E9E1D4; --line-strong:#D8CEBC;
+  --shadow:0 4px 16px rgba(0,67,64,.06); --shadow-lg:0 12px 34px rgba(0,67,64,.12);
+  --round:"Varela Round","Heebo",system-ui,-apple-system,sans-serif;
+  --mono:"SF Mono","JetBrains Mono",ui-monospace,Menlo,monospace;
+  --wf:#B7AC97;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--round);-webkit-font-smoothing:antialiased;letter-spacing:.005em}
+a{color:inherit;text-decoration:none}
+
+/* topbar shell (dev-zone frame) */
+.topbar{
+  position:sticky;top:0;z-index:20;
+  display:flex;align-items:center;gap:14px;
+  height:60px;padding:0 26px;background:var(--surface);border-bottom:1px solid var(--line);
+}
+.back-link{color:var(--teal-deep);font-weight:700;font-size:14px}
+.back-link:hover{text-decoration:underline}
+.brand{font-weight:700;font-size:19px;color:var(--teal);letter-spacing:.01em;display:flex;align-items:center;gap:9px}
+.brand .logo{width:26px;height:26px;border-radius:8px;background:var(--teal);color:#fff;display:grid;place-items:center;font-size:14px}
+.dev-tag{font-size:10px;font-weight:700;color:var(--ink-faint);letter-spacing:.12em;text-transform:uppercase;border:1px dashed var(--wf);border-radius:6px;padding:2px 7px}
+.placeholder-chip{margin-left:auto;font-family:var(--mono);font-size:11px;color:#a5522f;background:var(--coral-soft);border-radius:6px;padding:3px 9px;font-weight:700}
+
+.canvas{max-width:1120px;margin:0 auto;padding:34px 32px 110px}
+
+/* shared */
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--teal)}
+.h1{font-size:29px;font-weight:700;letter-spacing:-.01em;margin:6px 0 0}
+.lead{font-size:15px;color:var(--ink-dim);margin:8px 0 0;line-height:1.55;max-width:760px}
+.crumbs{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-faint);margin-bottom:16px}
+.crumbs a{color:var(--teal);font-weight:700}
+.crumbs .sep{color:var(--line-strong)}
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--teal);color:#fff;border:none;border-radius:11px;padding:11px 20px;font-weight:700;font-size:13.5px;font-family:var(--round);cursor:pointer;box-shadow:var(--shadow)}
+.btn:hover{background:var(--teal-deep)}
+.btn.ghost{background:transparent;color:var(--teal);box-shadow:none;border:1.5px solid var(--teal)}
+.btn.ghost:hover{background:var(--mist)}
+.btn.sm{padding:7px 13px;font-size:12px;border-radius:9px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.newtag{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#a5522f;background:var(--coral-soft);border-radius:6px;padding:2px 7px;vertical-align:middle;margin-left:8px}
+
+/* carry banner (Flow-2 context handoff) */
+.carry{display:flex;align-items:flex-start;gap:14px;background:var(--surface);border:1.5px solid var(--coral);border-left-width:5px;border-radius:13px;padding:14px 18px;margin-bottom:20px;box-shadow:var(--shadow)}
+.carry .ic{width:30px;height:30px;border-radius:9px;background:var(--coral-soft);color:var(--coral);display:grid;place-items:center;flex-shrink:0;margin-top:1px}
+.carry .body{flex:1}
+.carry .flowtag{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
+.carry .msg{font-size:14px;font-weight:700;color:var(--ink);margin-top:2px}
+.carry .payload{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.carry .payload .pc{font-family:var(--mono);font-size:11.5px;font-weight:700;background:var(--coral-soft);color:#a5522f;border-radius:100px;padding:4px 11px}
+.carry .clear{font-size:11.5px;color:var(--ink-faint);cursor:pointer;align-self:center}
+.carry .clear:hover{color:var(--teal)}
+
+/* compare grid */
+.cmp-grid{display:grid;grid-template-columns:200px 1fr 1fr;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-top:8px}
+.cmp-grid.cols-3{grid-template-columns:200px 1fr 1fr 1fr}
+.cmp-grid .ch{background:var(--surface-2);padding:16px 18px;border-bottom:1px solid var(--line)}
+.cmp-grid .ch.rowlabel{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
+.cmp-grid .cell{padding:14px 18px;border-bottom:1px solid var(--line);font-size:13.5px;color:var(--ink)}
+.cmp-grid .rowlabel-c{padding:14px 18px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);background:#FCFAF4;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint)}
+.cmp-grid .cell.mid{border-right:1px solid var(--line)}
+.cmp-grid .ch.mid{border-right:1px solid var(--line)}
+.cmp-head-mol{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--teal-deep)}
+.cmp-head-sub{font-size:11.5px;color:var(--ink-dim);margin-top:3px}
+.cmp-grid .cell b{color:var(--teal-deep)}
+.cmp-diff{display:inline-block;font-size:10px;font-weight:700;color:#a5522f;background:var(--coral-soft);border-radius:5px;padding:1px 6px;margin-left:6px}
+.cmp-prec{display:inline-block;font-size:10px;font-weight:700;color:#5f6f45;background:var(--olive-soft);border-radius:5px;padding:1px 6px;margin-left:6px}
+.cmp-actions{display:flex;gap:12px;margin-top:20px;flex-wrap:wrap}
+
+.demo-note{background:var(--surface-2);border:1px dashed var(--wf);border-radius:12px;padding:13px 17px;font-size:12.5px;color:var(--ink-dim);line-height:1.55;margin-top:24px}
+.demo-note b{color:var(--ink)}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="back-link" href="/app/dev/index.html">&larr; Dev Area</a>
+  <div class="brand"><div class="logo">M</div>MeatCODE <span class="dev-tag">Dev screen</span></div>
+  <span class="placeholder-chip">PLACEHOLDER &middot; demo data</span>
+</header>
+
+<div class="canvas">
+  <div class="crumbs"><a href="/app/dev/index.html">Dev Area</a><span class="sep">/</span><a href="/app/dev/oracle_redesign.html">Oracle answer</a><span class="sep">/</span><span>Compare</span></div>
+
+  <div class="carry" id="compareCarry">
+    <div class="ic">&#8646;</div>
+    <div class="body">
+      <div class="flowtag">Flow 2 &middot; Oracle &rarr; Data comparison</div>
+      <div class="msg">Comparing 2 entities carried from the Oracle answer</div>
+      <div class="payload" id="carryPayload">
+        <span class="pc">2-acetyl-1-pyrroline</span><span class="pc">methional</span>
+      </div>
+    </div>
+    <a class="clear" href="/app/dev/oracle_redesign.html">back to answer</a>
+  </div>
+
+  <div class="eyebrow">Compare <span class="newtag">new screen</span></div>
+  <h1 class="h1">Side-by-side comparison</h1>
+  <p class="lead">A net-new screen: two (or more) molecules the Oracle discussed, aligned row-by-row so differences are legible at a glance. Add a third column, swap an entity, or compare a beef reference against a prototype.</p>
+
+  <div class="cmp-grid" id="cmpGrid" style="margin-top:22px"></div>
+
+  <div class="cmp-actions">
+    <button class="btn ghost" onclick="location.href='/app/dev/oracle_redesign.html'">&larr; Back to the Oracle answer</button>
+    <button class="btn" onclick="location.href='../../UI-UX%20Designer/screen_flows_wireframes.html#data'">&#9636; Open both in the Data table</button>
+    <button class="btn ghost sm" id="addThirdBtn" onclick="addThird()">+ Add a third molecule</button>
+  </div>
+
+  <div class="demo-note">
+    <b>Placeholder / demo data</b> &mdash; all values on this screen are static wireframe demo values (no API calls).
+    Ported from <span style="font-family:var(--mono)">UI-UX Designer/screen_flows_wireframes.html</span> &middot; #compare scene.
+  </div>
+</div>
+
+<script>
+/* Static demo model — exact values from the wireframe's compare scene, plus an
+   optional third column (methionine) added client-side. */
+var ATTRIBUTES = [
+  'Chemical class', 'Aroma descriptor', 'Odor threshold', 'Formation route',
+  'Key precursors', 'Sources in corpus', 'Shared reference'
+];
+
+var MOLECULES = [
+  {
+    name: '2-acetyl-1-pyrroline',
+    sub: 'Impact compound A &middot; from citation [2]',
+    cells: [
+      'Pyrroline (N-heterocycle)',
+      'Popcorn &middot; roasted-cereal',
+      '<b>~0.02 ppb</b>',
+      'Proline + reducing sugar (Maillard / Strecker)',
+      'proline, ornithine, reducing sugar',
+      '<b>31</b> papers',
+      'Hofmann &amp; Schieberle 1995'
+    ]
+  },
+  {
+    name: 'methional',
+    sub: 'Impact compound B &middot; from citation [3]',
+    cells: [
+      'Aldehyde &middot; sulfur-bearing',
+      'Cooked-potato &middot; savoury <span class="cmp-diff">differs</span>',
+      '<b>~0.2 ppb</b> <span class="cmp-diff">10&times; higher</span>',
+      'Strecker degradation of methionine <span class="cmp-diff">differs</span>',
+      'methionine, dicarbonyls',
+      '<b>24</b> papers',
+      'Hofmann &amp; Schieberle 1995'
+    ]
+  }
+];
+
+var THIRD = {
+  name: 'methionine',
+  sub: 'Precursor &middot; added manually',
+  cells: [
+    'Amino acid &middot; sulfur-bearing <span class="cmp-prec">precursor</span>',
+    '&mdash; (non-volatile reactant)',
+    '&mdash; <span class="cmp-prec">n/a</span>',
+    'Substrate of Strecker degradation &rarr; methional',
+    '&mdash; (is itself the precursor)',
+    '<b>19</b> papers',
+    'Mottram 1998'
+  ]
+};
+
+var cols = MOLECULES.slice();
+
+function render() {
+  var grid = document.getElementById('cmpGrid');
+  grid.className = 'cmp-grid' + (cols.length >= 3 ? ' cols-3' : '');
+
+  var html = '<div class="ch rowlabel">Attribute</div>';
+  cols.forEach(function (m, i) {
+    var mid = (i < cols.length - 1) ? ' mid' : '';
+    html += '<div class="ch' + mid + '"><div class="cmp-head-mol">' + m.name + '</div>' +
+            '<div class="cmp-head-sub">' + m.sub + '</div></div>';
+  });
+
+  ATTRIBUTES.forEach(function (attr, r) {
+    html += '<div class="rowlabel-c">' + attr + '</div>';
+    cols.forEach(function (m, i) {
+      var mid = (i < cols.length - 1) ? ' mid' : '';
+      html += '<div class="cell' + mid + '">' + m.cells[r] + '</div>';
+    });
+  });
+
+  grid.innerHTML = html;
+}
+
+function addThird() {
+  if (cols.length >= 3) return;
+  cols.push(THIRD);
+  var btn = document.getElementById('addThirdBtn');
+  btn.disabled = true;
+  btn.textContent = 'methionine added (demo max: 3)';
+  var payload = document.getElementById('carryPayload');
+  payload.innerHTML += '<span class="pc">methionine</span>';
+  document.querySelector('#compareCarry .msg').textContent =
+    'Comparing 3 entities — 2 carried from the Oracle answer + 1 added here';
+  render();
+}
+
+render();
+</script>
+</body>
+</html>

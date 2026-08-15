@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<!-- Last updated: 2026-08-15 · Fullstack Engineer · Versions screen: promoted prod-* snapshots from /api/release/history; read-only on hosted dev, rollback buttons live only on the local cockpit (admin flag) -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MeatCODE · Dev Area · Versions</title>
+<style>
+:root {
+  /* ── GFI Israel · seaweed teal palette (mirrors app/dev/index.html) ── */
+  --bg:           #FAF6EF;
+  --bg-deep:      #F2EBDA;
+  --surface:      #FFFFFF;
+  --surface-2:    #F7F0E0;
+  --wine:         #00736E;
+  --wine-deep:    #015A56;
+  --wine-soft:    #4FA59F;
+  --wine-tint:    #B5DDD8;
+  --wine-mist:    #E0F0EE;
+  --ink:          #1A1A1A;
+  --ink-dim:      #4A4A4A;
+  --ink-faint:    #8A8A8A;
+  --line:         #E5DDD0;
+  --line-strong:  #D2C8B5;
+  --brass:        #C77E5F;
+  --brass-soft:   #F2D7C8;
+  --olive:        #7A8C5F;
+  --olive-soft:   #D6DCC4;
+  --shadow:       0 4px 16px rgba(0, 67, 64, 0.08);
+  --shadow-lg:    0 10px 32px rgba(0, 67, 64, 0.12);
+  --round:        "Varela Round", "Heebo", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono:         "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--round); background: var(--bg); color: var(--ink); min-height: 100vh; }
+
+.dev-topbar {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 26px; background: var(--surface);
+  border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 10;
+}
+.back-link { color: var(--wine-deep); text-decoration: none; font-weight: 700; font-size: 14px; }
+.back-link:hover { text-decoration: underline; }
+.brand-name { font-weight: 700; font-size: 20px; color: var(--wine-deep); }
+.dev-badge {
+  font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+  color: #fff; background: repeating-linear-gradient(45deg, var(--brass), var(--brass) 10px, #B06A4C 10px, #B06A4C 20px);
+  padding: 4px 10px; border-radius: 5px;
+}
+.env-chip { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
+
+.wrap { max-width: 900px; margin: 0 auto; padding: 34px 26px 70px; }
+.hero h1 { font-size: 26px; color: var(--wine-deep); margin-bottom: 6px; }
+.hero p { color: var(--ink-dim); font-size: 14px; max-width: 640px; margin-bottom: 24px; }
+
+.banner {
+  display: none; background: var(--surface-2); border: 1px dashed var(--line-strong);
+  border-radius: 10px; padding: 12px 16px; font-size: 13px; color: var(--ink-dim); margin-bottom: 20px;
+}
+.banner.on { display: block; }
+.banner b { color: var(--wine-deep); }
+.banner code { font-family: var(--mono); font-size: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; }
+
+.versions-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+.v-row {
+  display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center;
+  padding: 15px 18px; border-bottom: 1px solid var(--line);
+}
+.v-row:last-child { border-bottom: none; }
+.v-row.live { background: var(--wine-mist); }
+.v-tag { font-family: var(--mono); font-weight: 700; font-size: 14px; color: var(--wine-deep); }
+.v-meta { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); margin-top: 3px; }
+.v-subject { font-size: 12.5px; color: var(--ink-dim); margin-top: 4px; }
+.live-badge {
+  display: inline-block; font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: #fff; background: var(--wine); border-radius: 999px;
+  padding: 3px 10px; margin-left: 10px; vertical-align: middle;
+}
+.rollback-btn {
+  font-family: var(--round); font-size: 12.5px; font-weight: 700; color: #8A4B30;
+  background: var(--brass-soft); border: 1px solid #E0BBA6; border-radius: 9px;
+  padding: 8px 14px; cursor: pointer; white-space: nowrap;
+}
+.rollback-btn:hover:not(:disabled) { background: #EDC5B0; }
+.rollback-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.v-state { padding: 20px 18px; font-size: 13.5px; color: var(--ink-dim); }
+.v-state code { font-family: var(--mono); font-size: 12px; }
+
+.result-line { display: none; margin-top: 16px; font-size: 13px; padding: 11px 15px; border-radius: 9px; }
+.result-line.on { display: block; }
+.result-line.ok { background: var(--wine-mist); border: 1px solid var(--wine-tint); color: var(--wine-deep); }
+.result-line.err { background: var(--brass-soft); border: 1px solid #E0BBA6; color: #8A4B30; }
+
+.foot-note { margin-top: 22px; font-size: 12px; color: var(--ink-faint); line-height: 1.5; }
+.foot-note a { color: var(--wine-deep); }
+</style>
+</head>
+<body>
+
+<header class="dev-topbar">
+  <a class="back-link" href="/app/dev/index.html">&larr; Dev Area</a>
+  <div class="brand-name">Versions</div>
+  <span class="dev-badge">DEV AREA</span>
+  <span class="env-chip" id="envChip">promoted snapshots &middot; /api/release/history</span>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>Production version history</h1>
+    <p>Every Promote saves a <code>prod-*</code> snapshot tag. The list below is newest-first; the one marked <b>live now</b> is what production is running.</p>
+  </div>
+
+  <div class="banner" id="readonlyBanner">
+    <b>Read-only here</b> &mdash; rollbacks run from your Mac: <code>release-center.command</code> (or press <b>H</b>).
+  </div>
+
+  <div class="versions-card">
+    <div class="v-state" id="stateBox">Loading version history&hellip;</div>
+    <div id="versionsBody"></div>
+  </div>
+
+  <div class="result-line" id="resultLine"></div>
+
+  <div class="foot-note">
+    Snapshots are git tags on the repo (<span style="font-family:var(--mono)">prod-YYYY-MM-DD-HHMM</span>), created by Promote.
+    How releases work: <a href="/platform_docs/RELEASE_CENTER.md">platform_docs/RELEASE_CENTER.md</a>.
+  </div>
+</div>
+
+<script>
+(function () {
+  var stateBox = document.getElementById('stateBox');
+  var listBox = document.getElementById('versionsBody');
+  var banner = document.getElementById('readonlyBanner');
+  var resultLine = document.getElementById('resultLine');
+  var isAdmin = false;
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function showResult(msg, ok) {
+    resultLine.textContent = msg;
+    resultLine.className = 'result-line on ' + (ok ? 'ok' : 'err');
+  }
+
+  function renderHistory(data) {
+    var versions = (data && data.versions) || [];
+    var note = data && data.note;
+    var current = data && data.current;
+
+    if (!versions.length) {
+      stateBox.innerHTML = note
+        ? 'Version history is not available on this host <span style="color:var(--ink-faint)">(' + esc(note) + ')</span>.'
+        : 'No snapshots yet &mdash; one is saved each time you <b>Promote</b>.';
+      return;
+    }
+
+    stateBox.style.display = 'none';
+    var html = '';
+    versions.forEach(function (v) {
+      var isLive = current ? (v.tag === current) : false;
+      html +=
+        '<div class="v-row' + (isLive ? ' live' : '') + '">' +
+          '<div>' +
+            '<span class="v-tag">' + esc(v.tag) + '</span>' +
+            (isLive ? '<span class="live-badge">live now</span>' : '') +
+            '<div class="v-meta">' + esc(v.date) + ' &middot; commit ' + esc(v.commit) + '</div>' +
+            (v.subject ? '<div class="v-subject">' + esc(v.subject) + '</div>' : '') +
+          '</div>' +
+          (isLive
+            ? '<span style="font-size:12px;color:var(--ink-faint)">current production</span>'
+            : '<button class="rollback-btn" data-tag="' + esc(v.tag) + '"' +
+              (isAdmin ? '' : ' disabled title="Read-only here — rollbacks run from your Mac: release-center.command (or press H)"') +
+              '>Re-migrate production to this version</button>') +
+        '</div>';
+    });
+    listBox.innerHTML = html;
+
+    if (isAdmin) {
+      Array.prototype.forEach.call(listBox.querySelectorAll('.rollback-btn'), function (btn) {
+        btn.addEventListener('click', function () { doRollback(btn.getAttribute('data-tag'), btn); });
+      });
+    }
+  }
+
+  function doRollback(tag, btn) {
+    if (!confirm('Re-migrate PRODUCTION to snapshot ' + tag + '?\n\nThis force-pushes that snapshot to main and redeploys the public site.')) return;
+    btn.disabled = true;
+    btn.textContent = 'Rolling back…';
+    fetch('/api/release/rollback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tag: tag })
+    })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (res) {
+        if (res.ok && res.body && res.body.ok) {
+          showResult('Production rolled back to ' + tag + '. Render will redeploy from that commit in a few minutes.', true);
+        } else {
+          showResult('Rollback failed: ' + ((res.body && res.body.error) || 'unknown error'), false);
+        }
+        btn.disabled = false;
+        btn.textContent = 'Re-migrate production to this version';
+      })
+      .catch(function () {
+        showResult('Rollback failed: could not reach the server.', false);
+        btn.disabled = false;
+        btn.textContent = 'Re-migrate production to this version';
+      });
+  }
+
+  function loadHistory() {
+    fetch('/api/release/history')
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(renderHistory)
+      .catch(function (e) {
+        stateBox.innerHTML =
+          'Could not load <code>/api/release/history</code> (' + esc(e.message) + '). ' +
+          'On production this endpoint is intentionally hidden; on dev, check that the server is running.';
+      });
+  }
+
+  // Check write powers ONCE, then render — the admin flag decides whether the
+  // rollback buttons are live (local cockpit) or disabled (hosted dev, read-only).
+  fetch('/api/flags/all')
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (data) {
+      isAdmin = !!(data && data.admin);
+      if (!isAdmin) banner.classList.add('on');
+      var chip = document.getElementById('envChip');
+      if (data && data.env) chip.textContent = 'server env: ' + data.env + (isAdmin ? ' · local cockpit (write powers)' : ' · read-only');
+    })
+    .catch(function () {
+      isAdmin = false;
+      banner.classList.add('on');
+    })
+    .then(loadHistory);
+})();
+</script>
+</body>
+</html>

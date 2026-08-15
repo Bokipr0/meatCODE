@@ -6,6 +6,11 @@
 
 _Last updated: 2026-08-15 · Project Coordinator — 5-agent run (Lior's task list): flagged Dev Area (app/dev/) + Oracle attach preview + Home off nav + Research tiles · molecule canonical IDs + tailored abstracts + topic fill · consensus SSE + claims layer + RAG eval baseline. Also today: screen-flow design pass (A2, `UI-UX Designer/`). See AGENT_UPDATE_LOG.md_
 
+## Lior review follow-ups — 2026-08-15 evening (awaiting deploy-dev)
+- **Neon DEV branch synced with prod enrichment** (migration 0009 + values copied by id: CAS 110 · CIDs 20 · junk 1 · abstracts 30 · source_topics 569). Root cause of "CAS missing": enrichment had only reached the production branch; Lior was viewing dev. `.env.dev` now points local runs at the dev branch.
+- **Oracle v10 static redesign** — `app/dev/oracle_redesign.html`: the approved wireframe Oracle look + v9 history rail, fully clickable (chips/citations/entities/rail all forward), honestly labelled static.
+- **Dev zone gained Versions + Compare** — `app/dev/versions.html` (prod snapshot list + "re-migrate to this version"; live rollback only on the local cockpit, read-only banner on hosted dev) and `app/dev/compare.html` (Flow-2 side-by-side port). Server: `GET /api/release/history` now readable when `APP_ENV=dev` (prod 404; writes stay local-admin; git-less hosts degrade gracefully).
+
 ## 5-agent run — Lior's task list — shipped to the repo 2026-08-15 (awaiting deploy-dev)
 - **Mockup** (`app/meatcode_mockup.html`): Oracle **attach button (client-side preview**, honest tooltip, no fake upload) · **Dev Area button** on all 14 topbars gated behind **`ff-dev_area`** (flag added to `Release Center/features.json`, ON dev / OFF prod) · **Home removed from nav — Oracle is the landing again** (#home kept in-file, unreachable) · **Research = Juice · Lipid · Analytics** tiles with same-hue darkening hover (Matrix/Volatiles tiles removed, scenes intact).
 - **Dev Area** (`app/dev/`, new, static): hub (Features = live flags read-only · Screens · Documents · the 6 user screen flows as diagrams) + **knowledge-graph screen** (embeds `/kg/kg_explorer.html`) + **Meat Fingerprint placeholder** (canvas radar, loudly labelled demo) + **Analytics zone** (GC-MS/HPLC/Olfactory/NMR/Spectroscopy cards, honest status chips).
