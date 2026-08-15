@@ -950,15 +950,64 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
 }
 .oracle-starter:hover { border-color: var(--wine); color: var(--wine); background: var(--wine-mist); }
 
+/* ── Oracle landing (empty thread) ─────────────────────────────────────────
+   This is the first thing anyone sees in the Oracle, so it should read as a
+   deliberate welcome, not as a component still waiting to load. It fills the
+   whole thread area (no dashed cut-off box adrift in white space), centres
+   itself vertically, and disappears the moment the first question is asked. */
 .oracle-answer.empty {
+  /* #oracleThread is a flex-sized scroll container with a definite height, so
+     min-height:100% makes the welcome occupy the WHOLE chat area and centre in it. */
+  min-height: 100%; box-sizing: border-box;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 60px 30px; text-align: center;
-  background: var(--surface); border: 1.5px dashed var(--line-strong);
+  padding: 32px 30px; text-align: center;
+  background: transparent; border: none; box-shadow: none;
   color: var(--ink-faint);
+  animation: mcWelcomeIn .45s ease both;
 }
-.oracle-answer.empty .icon { font-size: 36px; margin-bottom: 8px; opacity: 0.4; }
-.oracle-answer.empty .title { font-size: 14px; font-weight: 700; color: var(--ink-dim); margin-bottom: 4px; }
-.oracle-answer.empty .hint { font-size: 12.5px; line-height: 1.5; max-width: 340px; }
+/* The thread caps its children at 900px for readable answers; the welcome is a
+   full-bleed landing, so it opts out. */
+#oracle #oracleThread > .oracle-answer.empty { max-width: none; }
+@keyframes mcWelcomeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.oracle-answer.empty .icon {
+  width: 54px; height: 54px; margin: 0 auto 18px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; font-weight: 700; font-family: var(--mono);
+  color: #fff; background: var(--wine); opacity: 1;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--wine) 28%, transparent);
+}
+.oracle-answer.empty .title {
+  font-size: 26px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--ink); margin-bottom: 10px;
+}
+.oracle-answer.empty .hint {
+  font-size: 14.5px; line-height: 1.65; color: var(--ink-dim);
+  max-width: 520px; margin-bottom: 26px;
+}
+/* Three quiet capability lines — they tell a first-time visitor what this
+   thing actually is without shouting, and they fill the width honestly. */
+.oracle-welcome-points {
+  display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+  max-width: 720px; width: 100%;
+}
+.oracle-welcome-points .pt {
+  flex: 1 1 190px; max-width: 230px; text-align: left;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 14px; padding: 14px 16px;
+}
+.oracle-welcome-points .pt b {
+  display: block; font-size: 13px; font-weight: 700; color: var(--wine); margin-bottom: 3px;
+}
+.oracle-welcome-points .pt span { font-size: 12.5px; line-height: 1.5; color: var(--ink-dim); }
+.oracle-answer.empty .kick {
+  margin-top: 24px; font-size: 13px; color: var(--ink-faint);
+}
+@media (max-height: 720px) {
+  /* Short viewports: keep the welcome from crowding the composer. */
+  .oracle-answer.empty { padding: 18px 24px; }
+  .oracle-answer.empty .title { font-size: 21px; }
+  .oracle-welcome-points { display: none; }
+}
 
 .oracle-loading {
   display: flex; gap: 6px; padding: 20px 28px; align-items: center;
@@ -2860,10 +2909,19 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
              chunk, which would make a live region announce the whole answer dozens of
              times. The role still exposes it as a conversation log. -->
         <div class="oracle-thread" id="oracleThread" role="log" aria-live="off" aria-label="Oracle conversation">
+          <!-- LANDING STATE. Fills the whole thread until the first question is asked,
+               then mcClearOracleEmptyState() removes it and the turns take over.
+               setOracleEmpty() re-creates this markup for "+ New chat" — keep the two in sync. -->
           <div class="oracle-answer empty oracle-empty-state">
-            <div class="icon">·</div>
-            <div class="title">Waiting on your question</div>
-            <div class="hint">Pick a starter below or type your own. Every answer is built from papers retrieved out of the MeatCODE database — citations link straight to the source.</div>
+            <div class="icon">M</div>
+            <div class="title">Welcome to the MeatCODE Oracle</div>
+            <div class="hint">Ask anything about meaty flavour, aroma compounds or the chemistry behind them. Every answer is built from papers retrieved out of the MeatCODE database — and every citation links straight back to the source.</div>
+            <div class="oracle-welcome-points">
+              <div class="pt"><b>Grounded, not guessed</b><span>Answers come from our own curated corpus, with the papers shown alongside.</span></div>
+              <div class="pt"><b>Follow the thread</b><span>Ask follow-ups — the conversation builds instead of starting over.</span></div>
+              <div class="pt"><b>Check the evidence</b><span>Open any cited paper, save a passage, or explore the related molecules.</span></div>
+            </div>
+            <div class="kick">Pick a starter below, or just type your question.</div>
           </div>
         </div>
 
@@ -5358,11 +5416,18 @@ function setOracleError(msg) {
 /* Resets the whole thread to its empty state (used by "+ New chat"). */
 function setOracleEmpty() {
   if (!oracleThread) return;
+  /* Keep this markup in sync with the static landing state in the #oracle scene. */
   oracleThread.innerHTML =
     '<div class="oracle-answer empty oracle-empty-state">' +
-      '<div class="icon">·</div>' +
-      '<div class="title">Waiting on your question</div>' +
-      '<div class="hint">Pick a starter below or type your own. Every answer is built from papers retrieved out of the MeatCODE database — citations link straight to the source.</div>' +
+      '<div class="icon">M</div>' +
+      '<div class="title">Welcome to the MeatCODE Oracle</div>' +
+      '<div class="hint">Ask anything about meaty flavour, aroma compounds or the chemistry behind them. Every answer is built from papers retrieved out of the MeatCODE database — and every citation links straight back to the source.</div>' +
+      '<div class="oracle-welcome-points">' +
+        '<div class="pt"><b>Grounded, not guessed</b><span>Answers come from our own curated corpus, with the papers shown alongside.</span></div>' +
+        '<div class="pt"><b>Follow the thread</b><span>Ask follow-ups — the conversation builds instead of starting over.</span></div>' +
+        '<div class="pt"><b>Check the evidence</b><span>Open any cited paper, save a passage, or explore the related molecules.</span></div>' +
+      '</div>' +
+      '<div class="kick">Pick a starter below, or just type your question.</div>' +
     '</div>';
   oracleSlot = null;
 }
