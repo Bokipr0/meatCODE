@@ -1,0 +1,49 @@
+{
+  "_stamp": "2026-08-16 14:50 UTC · Data Engineer · Research chip→taxonomy-slug map; all 40 distinct slugs validated vs the bible (0 corrections); backing hints from branch richness + priority/level.",
+  "_source": "db/taxonomy/keywords_topics.json",
+  "_note": "topic_slugs are validated to exist in the taxonomy bible; live counts are returned by GET /api/corpus at runtime. 'backing' is a coverage HINT (strong|medium|thin) from branch richness + topic priority/level, NOT a live count — the UI must grey a chip when /api/corpus returns 0 regardless of this hint. See db/CORPUS_FILTER_NOTES.md.",
+  "_validated_against": "db/taxonomy/keywords_topics.json (91 keywords, 5 branches)",
+  "_chip_count": 24,
+  "_slugs_corrected": 0,
+  "phases": {
+    "juice": {
+      "label": "Juice",
+      "chips": [
+        { "id": "juice-aqueous-maillard", "label": "Aqueous Maillard pathways", "topic_slugs": ["primary_sugars", "amino_acids", "strecker_degradation_topic"], "branches": ["flavor_chemistry"], "backing": "medium" },
+        { "id": "juice-plant-volatiles", "label": "Plant-juice volatiles", "topic_slugs": ["lipoxygenase_pathway", "plant_based_proteins"], "branches": ["flavor_chemistry", "meat_analogs"], "backing": "thin" },
+        { "id": "juice-hydrolysate-flavor", "label": "Hydrolysate flavor", "topic_slugs": ["hvp_topic", "yeast_extract_topic", "enzymatic_processing"], "branches": ["flavor_ingredients"], "backing": "medium" },
+        { "id": "juice-free-amino-acids", "label": "Free amino-acid pools", "topic_slugs": ["amino_acids", "peptide"], "branches": ["flavor_chemistry"], "backing": "thin" },
+        { "id": "juice-sugar-acid", "label": "Sugar-acid equilibria", "topic_slugs": ["primary_sugars", "caramelization_topic"], "branches": ["flavor_chemistry"], "backing": "medium" },
+        { "id": "juice-salt-buffering", "label": "Salt + buffering effects", "topic_slugs": ["salt_enhancers", "brining"], "branches": ["flavor_ingredients", "meat_science"], "backing": "medium" },
+        { "id": "juice-polar-topnotes", "label": "Polar top-notes", "topic_slugs": ["pyrazine_chemistry", "furan_chemistry"], "branches": ["flavor_chemistry"], "backing": "thin" },
+        { "id": "juice-bitterness", "label": "Bitterness compounds", "topic_slugs": ["bitter_blockers"], "branches": ["flavor_ingredients"], "backing": "thin" },
+        { "id": "juice-bouillon-aroma", "label": "Bouillon-style aroma", "topic_slugs": ["reaction_flavors_topic", "meat_aroma"], "branches": ["flavor_ingredients", "meat_science"], "backing": "medium" }
+      ]
+    },
+    "lipid": {
+      "label": "Lipid",
+      "chips": [
+        { "id": "lipid-oxidation-aldehydes", "label": "Lipid-oxidation aldehydes", "topic_slugs": ["lipid_oxidation_topic", "beta_oxidation"], "branches": ["flavor_chemistry"], "backing": "medium" },
+        { "id": "lipid-fat-soluble-topnotes", "label": "Fat-soluble top-notes", "topic_slugs": ["structured_fats_topic", "lipid_oxidation_topic"], "branches": ["flavor_ingredients", "flavor_chemistry"], "backing": "medium" },
+        { "id": "lipid-frying-chemistry", "label": "Frying chemistry", "topic_slugs": ["lipid_oxidation_topic", "thermal"], "branches": ["flavor_chemistry", "meat_science"], "backing": "medium" },
+        { "id": "lipid-maillard-crosstalk", "label": "Lipid × Maillard cross-talk", "topic_slugs": ["maillard_lipid"], "branches": ["flavor_chemistry"], "backing": "thin" },
+        { "id": "lipid-hydroperoxide", "label": "Hydroperoxide pathways", "topic_slugs": ["lipoxygenase_pathway", "lipid_oxidation_topic"], "branches": ["flavor_chemistry"], "backing": "medium" },
+        { "id": "lipid-methyl-ketones", "label": "Methyl ketones", "topic_slugs": ["beta_oxidation"], "branches": ["flavor_chemistry"], "backing": "thin" },
+        { "id": "lipid-lactones", "label": "Lactones", "topic_slugs": ["lipid_oxidation_topic"], "branches": ["flavor_chemistry"], "backing": "thin" },
+        { "id": "lipid-cholesterol-oxidation", "label": "Cholesterol oxidation", "topic_slugs": ["lipid_oxidation_topic"], "branches": ["flavor_chemistry"], "backing": "thin" },
+        { "id": "lipid-rancidity-markers", "label": "Rancidity markers", "topic_slugs": ["lipid_oxidation_topic"], "branches": ["flavor_chemistry"], "backing": "thin" }
+      ]
+    },
+    "analytics": {
+      "label": "Analytics",
+      "chips": [
+        { "id": "analytics-gcms", "label": "GC-MS", "topic_slugs": ["gcms_topic", "hs_spme_topic", "gc_olfactometry"], "branches": ["analytics"], "backing": "strong" },
+        { "id": "analytics-hplc-lcms", "label": "HPLC / LC-MS", "topic_slugs": ["hplc_topic", "lcms_topic"], "branches": ["analytics"], "backing": "strong" },
+        { "id": "analytics-olfactory-sensory", "label": "Olfactory / Sensory", "topic_slugs": ["gc_olfactometry", "sniffing_topic", "aeda", "qda", "threshold_testing", "consumer_panel_topic"], "branches": ["analytics"], "backing": "strong" },
+        { "id": "analytics-nmr", "label": "NMR", "topic_slugs": ["nmr"], "branches": ["analytics"], "backing": "medium" },
+        { "id": "analytics-mass-spec", "label": "Mass spec / Spectroscopy", "topic_slugs": ["mass_spectrometry", "ftir"], "branches": ["analytics"], "backing": "strong" },
+        { "id": "analytics-omics", "label": "Omics", "topic_slugs": ["metabolomics_topic", "proteomics_topic", "lipidomics_topic", "volatilomics", "peptidomics_topic"], "branches": ["analytics"], "backing": "strong" }
+      ]
+    }
+  }
+}

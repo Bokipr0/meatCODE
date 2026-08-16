@@ -1,5 +1,31 @@
 #!/usr/bin/env python3
-# Last updated: 2026-08-15 · Fullstack Engineer · features.json became a REGISTRY (schema v2:
+# Last updated: 2026-08-16 14:46 UTC · Full-Stack · GET /api/corpus + POST /api/compare + /api/molecule-profile alias
+#   (1) NEW auth-gated GET /api/corpus?phase=<juice|lipid|analytics>&topics=<slug,...> — drives the
+#       Research sub-topic chips + Analytics scene + the Oracle "explore the lipid corpus" demo. Hardcoded
+#       PHASE→taxonomy-slug sets (CORPUS_PHASES, all real slugs from db/taxonomy/keywords_topics.json);
+#       returns live per-slug counts + every phase slug's live count (phase_topics) + DEDUPED totals
+#       (papers via source_topics, molecules via source_molecules) + up to 50 rows ordered by relevance_llm.
+#       Labels come from the taxonomy bible (not hardcoded). SELECT-only; unknown phase → 400; empty
+#       topics ⇒ whole phase set. (2) NEW auth-gated POST /api/compare — aligns 1–2 molecule profiles side
+#       by side ({"id"} or {"name"}), REUSING the /api/molecules/{id} query (factored into _molecule_detail);
+#       a corpus miss echoes {..., in_corpus:false} + a `note`, never inventing chemistry. (3) NEW GET
+#       /api/molecule-profile/{id} — thin contract alias returning the IDENTICAL payload as
+#       /api/molecules/{id} (both call _molecule_detail — no duplicated SQL; distinct prefix, so neither
+#       route shadows the other). All additive + SELECT-only; the Maillard mock path was verified (server
+#       wiring intact + flag prod-off), not rebuilt.
+# Prev 2026-08-16 · Fullstack Engineer · Maillard chemistry simulator wired in behind the
+#   NEW `maillard_sim` flag (additive; flag off → the routes 404 as if absent). This service runs on
+#   Render `runtime: python` and CANNOT spawn Docker, so the simulator lives OUTSIDE it:
+#   server/maillard/adapter.py (pure stdlib) fronts three backends — mock (deterministic, always
+#   labelled "mode":"mock" + synthetic:true), http (a SEPARATE Render `runtime: docker` service at
+#   MAILLARD_URL — see the commented block in render.yaml), cli (local `docker`, dev only).
+#   NEW auth-gated routes, all behind the flag: POST /api/simulate (validate → job → wait up to
+#   MAILLARD_SYNC_WAIT=8s inline → 200 with the full result, else 202 {job_id, poll}),
+#   GET /api/simulate/{job_id} (poll; in-memory job table, 1h TTL, JOB_NOT_FOUND after a restart),
+#   GET /api/simulate/health (active backend + reachability + job counts). Runs are capped by a
+#   BoundedSemaphore (MAILLARD_MAX_CONCURRENCY=4). Errors use one normalised envelope with
+#   machine-readable codes mapped onto HTTP status. Wire contract: server/maillard/CONTRACT.md.
+# Prev 2026-08-15 · Fullstack Engineer · features.json became a REGISTRY (schema v2:
 #   kind/added/status/where/destination/url per entry, alongside the unchanged dev+prod booleans).
 #   save_flags() now preserves non-`flags` top-level keys (e.g. `_schema`) instead of clobbering them.
 #   NEW POST /api/flags/upsert (same RELEASE_CENTER=1 + loopback local-admin gate as /api/flags/set,
@@ -96,6 +122,13 @@ Endpoints
   GET  /api/molecules[?q=&category=&sort=name|popularity&limit=]  Database tab: molecules
                                  (mentions_count = COUNT from source_molecules)
   GET  /api/molecules/{id}      single molecule (detail page): fields + mentions_count + linked papers
+  GET  /api/molecule-profile/{id}  contract alias — IDENTICAL payload to /api/molecules/{id}
+  POST /api/compare             align 1–2 molecule profiles side by side (body {"items":[{id}|{name}]});
+                                 reuses the /api/molecules/{id} query; misses echo in_corpus:false (no
+                                 fabricated chemistry) → {ok, columns[], fields[{key,label,a,b,differs}], note?}
+  GET  /api/corpus?phase=juice|lipid|analytics[&topics=slug,slug]  Research sub-topic chips / Analytics /
+                                 Oracle lipid-corpus demo: per-slug + deduped counts over sources⋈source_topics
+                                 ⋈topics + up to 50 rows by relevance_llm. Unknown phase → 400
   GET  /api/molecule-suggestions[?q=&limit=&exclude=id,id,...]  context-aware molecule chips for the
                                  Oracle answer panel: bare array ranked by molecules named in `q`, then
                                  whose chemical family (category) appears in `q`, then top by mentions_count
@@ -106,6 +139,11 @@ Endpoints
                                  experts.org_type (currently [] — see NOTE at top of file)
   GET  /api/db-facets?entity=molecules|experts|companies|sources  filter-dropdown options
                                  (countries / categories / topics / year range) per entity
+  POST /api/simulate            Maillard chemistry simulation — submit (flag `maillard_sim`).
+                                 200 + full result if it finished within MAILLARD_SYNC_WAIT,
+                                 else 202 {job_id, poll}. Contract: server/maillard/CONTRACT.md
+  GET  /api/simulate/{job_id}   poll a simulation job (202 while running, 200 when done)
+  GET  /api/simulate/health     which Maillard backend is active (mock/http/cli) + reachability
   GET  /api/papers/{id}         single paper (citation modal)
   GET  /api/papers/recent[?limit=]  recent papers (dashboard rows)
   GET  /api/templates           lists deployed Claude Design templates in app/templates/
@@ -131,7 +169,7 @@ If you'd rather keep the key in a file: drop a `.env` next to this script with
 ANTHROPIC_API_KEY=sk-ant-...  on its own line. The script reads it automatically.
 """
 
-import os, sys, json, re, threading, base64, hmac, datetime, subprocess, glob
+import os, sys, json, re, threading, base64, hmac, datetime, subprocess, glob, time, uuid
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
@@ -280,6 +318,187 @@ def pg_rows(sql, params=()):
             return [dict(r) for r in cur.fetchall()]
     finally:
         conn.close()
+
+
+# ─── Research corpus (GET /api/corpus): PHASE → taxonomy-slug sets ────
+# Hardcoded per the shared contract (the UI + Data build to the SAME three sets): each
+# Research phase maps to a fixed set of taxonomy slugs — all real slugs from the bible
+# db/taxonomy/keywords_topics.json. Only the SET is hardcoded here (it is the contract);
+# the human labels are loaded FROM the taxonomy below, never hardcoded (CLAUDE.md's rule),
+# and every count/total is a live Neon query. Unknown phase → 400.
+CORPUS_PHASES = {
+    "juice": [
+        "primary_sugars", "amino_acids", "strecker_degradation_topic",
+        "lipoxygenase_pathway", "plant_based_proteins", "hvp_topic",
+        "yeast_extract_topic", "enzymatic_processing", "peptide",
+        "caramelization_topic", "salt_enhancers", "brining", "pyrazine_chemistry",
+        "furan_chemistry", "bitter_blockers", "reaction_flavors_topic", "meat_aroma",
+    ],
+    "lipid": [
+        "lipid_oxidation_topic", "beta_oxidation", "structured_fats_topic",
+        "thermal", "maillard_lipid", "lipoxygenase_pathway",
+    ],
+    "analytics": [
+        "gcms_topic", "hs_spme_topic", "gc_olfactometry", "hplc_topic", "lcms_topic",
+        "sniffing_topic", "aeda", "qda", "threshold_testing", "consumer_panel_topic",
+        "nmr", "mass_spectrometry", "ftir", "metabolomics_topic", "proteomics_topic",
+        "lipidomics_topic", "volatilomics", "peptidomics_topic",
+    ],
+}
+
+
+def _load_topic_labels():
+    """slug → human topic_name, read ONCE from the taxonomy bible so phase_topics labels
+    stay governed by db/taxonomy/keywords_topics.json (never hardcoded — CLAUDE.md's rule).
+    Best-effort: on any failure the caller falls back to a prettified slug, so a missing or
+    rewritten taxonomy file can never break /api/corpus."""
+    path = os.path.join(REPO_ROOT, "db", "taxonomy", "keywords_topics.json")
+    labels = {}
+    try:
+        with open(path, encoding="utf-8") as _f:
+            for row in json.load(_f):
+                slug = (row.get("topic_slug") or "").strip()
+                name = (row.get("topic_name") or "").strip()
+                if slug and name:
+                    labels[slug] = name
+    except Exception as _e:
+        sys.stderr.write("[corpus] topic-label load skipped: %s\n" % str(_e)[:200])
+    return labels
+
+
+TOPIC_LABELS = _load_topic_labels()
+
+
+def _topic_label(slug):
+    """Human label for a slug — taxonomy topic_name when known, else a prettified slug."""
+    return TOPIC_LABELS.get(slug) or slug.replace("_topic", "").replace("_", " ").capitalize()
+
+
+# ─── POST /api/compare: field alignment spec ─────────────────────────
+# Preferred row ORDER + display labels. Any key present on a molecule profile but NOT
+# listed here is still surfaced (prettified) — so the day /api/molecules/{id} grows a
+# cas_number / pubchem_cid / formula, compare adopts it with zero change here. The SKIP
+# set is structural keys that must never become a comparison row.
+COMPARE_FIELD_ORDER = [
+    ("name", "Name"),
+    ("category", "Class"),
+    ("taste", "Taste / descriptor"),
+    ("cas_number", "CAS number"),
+    ("pubchem_cid", "PubChem CID"),
+    ("formula", "Formula"),
+    ("use_notes", "Use notes"),
+    ("mentions_count", "Corpus mentions"),
+]
+COMPARE_FIELD_SKIP = {"id", "papers", "in_corpus"}
+
+
+# ─── Maillard chemistry simulator (flag: maillard_sim) ───────────────
+# The simulator is a Docker prototype. This service is deployed on Render with
+# `runtime: python` and CANNOT spawn containers, so the simulator never runs in-process:
+# server/maillard/adapter.py talks to it over HTTP (a SEPARATE Render `runtime: docker`
+# service — see render.yaml), or via local `docker` in dev, or returns clearly-labelled
+# mock data. Everything here is additive and gated by BOTH the site password and the
+# `maillard_sim` flag; flag off → the routes 404 as if they don't exist.
+# Wire contract: server/maillard/CONTRACT.md.
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
+try:
+    from maillard import adapter as maillard_adapter
+except Exception as _e:                      # never let a missing/broken adapter stop the server
+    maillard_adapter = None
+    sys.stderr.write("[maillard] adapter unavailable: %s\n" % str(_e)[:200])
+
+MAILLARD_SYNC_WAIT      = float(os.environ.get("MAILLARD_SYNC_WAIT", "8"))    # s waited inline before 202
+MAILLARD_JOB_TTL        = float(os.environ.get("MAILLARD_JOB_TTL", "3600"))   # s a finished job is kept
+MAILLARD_MAX_JOBS       = 200
+MAILLARD_MAX_CONCURRENCY = int(os.environ.get("MAILLARD_MAX_CONCURRENCY", "4"))
+
+# In-memory job table. Deliberately NOT durable: a 1–10 s chemistry run is cheap to redo, and
+# adding Redis/Postgres for it would be scope the validation year doesn't need. A job id that
+# didn't survive a restart comes back as JOB_NOT_FOUND, which the UI treats as "resubmit".
+_maillard_jobs = {}
+_maillard_lock = threading.Lock()
+_maillard_slots = threading.BoundedSemaphore(max(1, MAILLARD_MAX_CONCURRENCY))
+# job_id → Event, so the submitting request can wait inline for a fast run instead of polling.
+_maillard_events = {}
+_maillard_events_lock = threading.Lock()
+
+
+def _flag_on(key):
+    """True if `key` is enabled for THIS environment in features.json."""
+    try:
+        return bool(load_flags().get(key, {}).get(APP_ENV, False))
+    except Exception:
+        return False
+
+
+def _maillard_prune():
+    """Drop expired jobs, then hard-cap the table (oldest first)."""
+    now = time.time()
+    dead = [j for j, v in _maillard_jobs.items()
+            if v["status"] in ("done", "error") and now - v["finished_at"] > MAILLARD_JOB_TTL]
+    for j in dead:
+        _maillard_jobs.pop(j, None)
+    if len(_maillard_jobs) > MAILLARD_MAX_JOBS:
+        for j, _v in sorted(_maillard_jobs.items(), key=lambda kv: kv[1]["submitted_at"])[
+                :len(_maillard_jobs) - MAILLARD_MAX_JOBS]:
+            _maillard_jobs.pop(j, None)
+
+
+def _maillard_worker(job_id, request):
+    """Run one simulation off the request thread. Never raises."""
+    acquired = _maillard_slots.acquire(timeout=max(5.0, MAILLARD_SYNC_WAIT * 4))
+    try:
+        if not acquired:
+            result = maillard_adapter.error(
+                "TIMEOUT", "Simulator is saturated (%d concurrent runs); try again shortly."
+                % MAILLARD_MAX_CONCURRENCY, retryable=True)
+        else:
+            result = maillard_adapter.run(request)
+    except Exception as e:                    # belt and braces — the adapter already guards
+        result = {"ok": False, "mode": "unknown",
+                  "error": {"code": "INTERNAL_ERROR", "message": str(e)[:200], "retryable": False}}
+    finally:
+        if acquired:
+            _maillard_slots.release()
+    with _maillard_lock:
+        job = _maillard_jobs.get(job_id)
+        if job is not None:
+            job["result"] = result
+            job["status"] = "done" if result.get("ok") else "error"
+            job["finished_at"] = time.time()
+        _maillard_prune()
+    with _maillard_events_lock:
+        ev = _maillard_events.pop(job_id, None)
+    if ev:
+        ev.set()
+
+
+def _maillard_error_status(code):
+    """Map a contract error code onto the HTTP status the UI branches on."""
+    return {
+        "INVALID_REQUEST": 400, "INVALID_PRECURSOR": 400, "PARAM_OUT_OF_BOUNDS": 400,
+        "JOB_NOT_FOUND": 404, "SIMULATOR_UNAVAILABLE": 503, "TIMEOUT": 504,
+        "SIMULATOR_ERROR": 502, "INTERNAL_ERROR": 500,
+    }.get(code, 500)
+
+
+def _maillard_job_view(job_id, job):
+    """The public shape of a job — either the in-progress envelope or the full result."""
+    if job["status"] in ("queued", "running"):
+        return {
+            "ok": True, "status": job["status"], "job_id": job_id,
+            "poll": "/api/simulate/" + job_id,
+            "submitted_at": job["submitted_iso"],
+            "elapsed_ms": int((time.time() - job["submitted_at"]) * 1000),
+            "mode": job["mode"],
+        }, 202
+    result = dict(job["result"])
+    result["job_id"] = job_id
+    result["status"] = job["status"]
+    if result.get("ok"):
+        return result, 200
+    return result, _maillard_error_status((result.get("error") or {}).get("code"))
 
 
 # ─── Oracle retrieval (grounded RAG) ──────────────────────────────────
@@ -701,6 +920,43 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/flags/all":
             # Full dev+prod matrix — powers the Release Center dashboard.
             return self._send_json({"env": APP_ENV, "admin": self._local_admin_ok(), "flags": load_flags()})
+        # ── Maillard simulator (flag-gated; see server/maillard/CONTRACT.md) ──
+        if path == "/api/simulate/health" or path.startswith("/api/simulate/"):
+            if not _flag_on("maillard_sim"):
+                return self._send_json({"error": "not found"}, 404)
+            if maillard_adapter is None:
+                return self._send_json(
+                    {"ok": False, "mode": "unavailable",
+                     "error": {"code": "SIMULATOR_UNAVAILABLE",
+                               "message": "Maillard adapter failed to load on this server.",
+                               "retryable": False}}, 503)
+            if path == "/api/simulate/health":
+                try:
+                    info = maillard_adapter.health()
+                except Exception as e:
+                    info = {"ok": False, "mode": "unknown", "detail": str(e)[:200]}
+                with _maillard_lock:
+                    info["jobs"] = {
+                        "tracked": len(_maillard_jobs),
+                        "running": sum(1 for j in _maillard_jobs.values()
+                                       if j["status"] in ("queued", "running")),
+                    }
+                info["max_concurrency"] = MAILLARD_MAX_CONCURRENCY
+                info["sync_wait_s"] = MAILLARD_SYNC_WAIT
+                return self._send_json(info, 200 if info.get("ok") else 503)
+            # /api/simulate/{job_id} — poll
+            job_id = path[len("/api/simulate/"):].strip("/")
+            with _maillard_lock:
+                job = _maillard_jobs.get(job_id)
+                view = _maillard_job_view(job_id, job) if job else None
+            if view is None:
+                return self._send_json(
+                    {"ok": False, "mode": maillard_adapter.mode(),
+                     "error": {"code": "JOB_NOT_FOUND",
+                               "message": "Unknown or expired job id — resubmit the simulation.",
+                               "retryable": False}}, 404)
+            body, code = view
+            return self._send_json(body, code)
         if path == "/api/release/history":
             # Promoted snapshots + which is live. READ-ONLY, so it's also visible on the
             # hosted DEV site (powers app/dev/versions.html); production keeps the 404.
@@ -886,32 +1142,103 @@ class Handler(SimpleHTTPRequestHandler):
             if m:
                 # Single-molecule detail page. Sits AFTER the exact `path == "/api/molecules"`
                 # list branch above and matches only a numeric id segment, so the bare
-                # /api/molecules list endpoint is never shadowed. Two SELECT-only queries.
-                mid = int(m.group(1))
-                # (1) the molecule row + mentions_count — same COUNT-from-source_molecules
-                #     LEFT JOIN pattern as /api/molecules, narrowed to this id.
+                # /api/molecules list endpoint is never shadowed. The SQL lives once in
+                # _molecule_detail() so /api/molecule-profile/{id} + POST /api/compare reuse it.
+                molecule = self._molecule_detail(int(m.group(1)))
+                return self._send_json(
+                    molecule if molecule is not None else {"error": "not found"},
+                    200 if molecule is not None else 404)
+
+            m = re.match(r"^/api/molecule-profile/(\d+)$", path)
+            if m:
+                # Contract alias — the UI codes against this name and gets the byte-for-byte
+                # SAME payload as /api/molecules/{id} (both call _molecule_detail; no duplicated
+                # SQL). Distinct prefix from /api/molecules, so neither route shadows the other.
+                molecule = self._molecule_detail(int(m.group(1)))
+                return self._send_json(
+                    molecule if molecule is not None else {"error": "not found"},
+                    200 if molecule is not None else 404)
+
+            if path == "/api/corpus":
+                # Research sub-topic chips + the Analytics scene + the Oracle "explore the
+                # lipid corpus" demo. `phase` → a fixed taxonomy-slug set (CORPUS_PHASES);
+                # `topics` (CSV) narrows the selection, filtered to THIS phase's set (empty ⇒
+                # whole phase). All counts/totals are live from sources ⋈ source_topics ⋈
+                # topics (by slug) — the same junction the /api/sources topic filter uses.
+                phase = (qs.get("phase") or [""])[0].strip().lower()
+                if phase not in CORPUS_PHASES:
+                    return self._send_json({"error": "unknown phase " + (phase or "(none)")}, 400)
+                phase_slugs = CORPUS_PHASES[phase]
+
+                # Echo the resolved selection: requested slugs kept only if in this phase's set
+                # (unknown / other-phase slugs ignored), deduped, order preserved; empty ⇒ all.
+                requested = []
+                for raw in (qs.get("topics") or [""])[0].split(","):
+                    s = raw.strip()
+                    if s and s in phase_slugs and s not in requested:
+                        requested.append(s)
+                selected = requested if requested else list(phase_slugs)
+
+                # (A) live COUNT(DISTINCT source) per slug across the WHOLE phase — drives
+                #     phase_topics (UI enables/greys each chip); `counts` is the same numbers
+                #     restricted to the selection. LEFT JOINs so a 0-source slug returns 0
+                #     (and a slug absent from `topics` defaults to 0 when assembled below).
+                count_rows = pg_rows(
+                    "SELECT t.slug AS slug, COUNT(DISTINCT s.id) AS count "
+                    "FROM topics t "
+                    "LEFT JOIN source_topics st ON st.topic_id = t.id "
+                    "LEFT JOIN sources s ON s.id = st.source_id "
+                    "WHERE t.slug = ANY(%s) GROUP BY t.slug",
+                    (phase_slugs,))
+                count_by_slug = {r["slug"]: int(r["count"]) for r in count_rows}
+                phase_topics = [
+                    {"slug": slug, "label": _topic_label(slug),
+                     "count": count_by_slug.get(slug, 0)}
+                    for slug in phase_slugs
+                ]
+                counts = {slug: count_by_slug.get(slug, 0) for slug in selected}
+
+                # (B) totals.papers — DISTINCT sources across the selection (deduped, so a
+                #     paper tagged to two selected slugs is counted once).
+                papers_rows = pg_rows(
+                    "SELECT COUNT(DISTINCT s.id) AS papers FROM sources s "
+                    "JOIN source_topics st ON st.source_id = s.id "
+                    "JOIN topics t ON t.id = st.topic_id "
+                    "WHERE t.slug = ANY(%s)",
+                    (selected,))
+                papers = int(papers_rows[0]["papers"]) if papers_rows else 0
+
+                # (C) totals.molecules — DISTINCT molecules linked (via source_molecules) to
+                #     those same sources. The join exists, so this is a real count, not invented.
+                mol_rows = pg_rows(
+                    "SELECT COUNT(DISTINCT sm.molecule_id) AS molecules FROM source_molecules sm "
+                    "WHERE sm.source_id IN (SELECT st.source_id FROM source_topics st "
+                    "JOIN topics t ON t.id = st.topic_id WHERE t.slug = ANY(%s))",
+                    (selected,))
+                molecules = int(mol_rows[0]["molecules"]) if mol_rows else 0
+
+                # (D) rows — sources in the selection, best relevance first, capped 50. Each
+                #     row's `topics` = which of the SELECTED slugs that source carries.
                 rows = pg_rows(
-                    "SELECT m.id, m.name, m.category, m.taste, m.use_notes, "
-                    "COALESCE(sm.mentions_count, 0)::int AS mentions_count "
-                    "FROM molecules m "
-                    "LEFT JOIN (SELECT molecule_id, COUNT(*) AS mentions_count "
-                    "FROM source_molecules GROUP BY molecule_id) sm ON sm.molecule_id = m.id "
-                    "WHERE m.id = %s",
-                    (mid,))
-                if not rows:
-                    return self._send_json({"error": "not found"}, 404)
-                molecule = rows[0]
-                # (2) the sources LINKED to this molecule via the source_molecules junction
-                #     (join source_molecules → sources on source_id), most-relevant/most-
-                #     recent first, capped at 10 for the detail panel.
-                molecule["papers"] = pg_rows(
-                    "SELECT s.id, s.name, s.year, s.journal, s.doi, s.url "
-                    "FROM source_molecules sm JOIN sources s ON s.id = sm.source_id "
-                    "WHERE sm.molecule_id = %s "
-                    "ORDER BY s.priority_score DESC NULLS LAST, s.year DESC NULLS LAST, s.id DESC "
-                    "LIMIT 10",
-                    (mid,))
-                return self._send_json(molecule)
+                    "SELECT s.id, s.name AS title, s.year, s.authors, s.relevance_llm, "
+                    "ARRAY(SELECT t2.slug FROM source_topics st2 "
+                    "JOIN topics t2 ON t2.id = st2.topic_id "
+                    "WHERE st2.source_id = s.id AND t2.slug = ANY(%s) ORDER BY t2.slug) AS topics "
+                    "FROM sources s "
+                    "WHERE EXISTS (SELECT 1 FROM source_topics st JOIN topics t "
+                    "ON t.id = st.topic_id WHERE st.source_id = s.id AND t.slug = ANY(%s)) "
+                    "ORDER BY s.relevance_llm DESC NULLS LAST, s.id DESC LIMIT 50",
+                    (selected, selected))
+
+                return self._send_json({
+                    "ok": True,
+                    "phase": phase,
+                    "topics": selected,
+                    "counts": counts,
+                    "phase_topics": phase_topics,
+                    "totals": {"papers": papers, "molecules": molecules},
+                    "rows": rows,
+                })
 
             if path == "/api/molecule-suggestions":
                 # Context-aware molecule chips for the Oracle answer panel: given the
@@ -1140,6 +1467,136 @@ class Handler(SimpleHTTPRequestHandler):
             pass
         return out
 
+    # ─── molecule detail (shared by GET /api/molecules/{id}, its alias, and compare) ───
+    def _molecule_detail(self, mid):
+        """The single-molecule detail payload: the molecule row + mentions_count + up to 10
+        linked papers. This is the ONE home of that SQL — GET /api/molecules/{id}, the
+        GET /api/molecule-profile/{id} alias, and POST /api/compare all call it, so the shape
+        is guaranteed identical everywhere. Returns the dict, or None when the id is absent
+        (callers turn None into a 404 / an in_corpus:false column). SELECT-only; two queries."""
+        rows = pg_rows(
+            "SELECT m.id, m.name, m.category, m.taste, m.use_notes, "
+            "COALESCE(sm.mentions_count, 0)::int AS mentions_count "
+            "FROM molecules m "
+            "LEFT JOIN (SELECT molecule_id, COUNT(*) AS mentions_count "
+            "FROM source_molecules GROUP BY molecule_id) sm ON sm.molecule_id = m.id "
+            "WHERE m.id = %s",
+            (mid,))
+        if not rows:
+            return None
+        molecule = rows[0]
+        # Sources linked to this molecule via source_molecules → sources, most-relevant /
+        # most-recent first, capped at 10 for the detail panel.
+        molecule["papers"] = pg_rows(
+            "SELECT s.id, s.name, s.year, s.journal, s.doi, s.url "
+            "FROM source_molecules sm JOIN sources s ON s.id = sm.source_id "
+            "WHERE sm.molecule_id = %s "
+            "ORDER BY s.priority_score DESC NULLS LAST, s.year DESC NULLS LAST, s.id DESC "
+            "LIMIT 10",
+            (mid,))
+        return molecule
+
+    def _resolve_molecule_id_by_name(self, name):
+        """Resolve a molecule NAME to its id, mirroring the /api/molecule-suggestions name
+        match: case-insensitive EXACT first, else the best substring match (most-mentioned
+        wins the tie). Returns an int id, or None when nothing matches — the caller then
+        echoes in_corpus:false rather than invent chemistry. SELECT-only."""
+        name = (name or "").strip()
+        if not name:
+            return None
+        exact = pg_rows(
+            "SELECT id FROM molecules WHERE lower(name) = lower(%s) ORDER BY id ASC LIMIT 1",
+            (name,))
+        if exact:
+            return exact[0]["id"]
+        best = pg_rows(
+            "SELECT m.id, COALESCE(sm.mentions_count, 0)::int AS mentions_count "
+            "FROM molecules m "
+            "LEFT JOIN (SELECT molecule_id, COUNT(*) AS mentions_count "
+            "FROM source_molecules GROUP BY molecule_id) sm ON sm.molecule_id = m.id "
+            "WHERE m.name ILIKE %s "
+            "ORDER BY mentions_count DESC NULLS LAST, m.id ASC LIMIT 1",
+            ("%" + name + "%",))
+        return best[0]["id"] if best else None
+
+    def _compare_fields(self, columns):
+        """Flatten 1–2 profile columns into aligned rows [{key,label,a,b,differs}]. The field
+        set = the COMPARE_FIELD_ORDER keys that at least one column actually has, then any
+        other profile key (prettified) — so a future cas_number/pubchem_cid on the molecule
+        payload surfaces automatically. `differs` is set only when there are two columns and
+        their values are unequal."""
+        label_of = dict(COMPARE_FIELD_ORDER)
+        keys = []
+        for k, _label in COMPARE_FIELD_ORDER:
+            if any(k in c for c in columns):
+                keys.append(k)
+        for c in columns:
+            for k in c.keys():
+                if k in COMPARE_FIELD_SKIP or k in keys:
+                    continue
+                keys.append(k)
+        a_col = columns[0] if columns else {}
+        b_col = columns[1] if len(columns) > 1 else None
+        fields = []
+        for k in keys:
+            a = a_col.get(k)
+            b = b_col.get(k) if b_col is not None else None
+            fields.append({
+                "key": k,
+                "label": label_of.get(k) or k.replace("_", " ").title(),
+                "a": a,
+                "b": b,
+                "differs": bool(b_col is not None and a != b),
+            })
+        return fields
+
+    def _handle_compare_post(self):
+        """POST /api/compare — align 1–2 molecule profiles side by side. Each item is
+        {"id":<int>} (looked up via _molecule_detail — the SAME SQL as /api/molecules/{id})
+        or {"name":"<str>"} (resolved via _resolve_molecule_id_by_name). A corpus miss echoes
+        {..., in_corpus:false} and sets `note`; chemistry is NEVER invented. Cap 2 items."""
+        if not DATABASE_URL:
+            return self._send_json({"error": "DATABASE_URL not configured"}, 503)
+        body = self._read_json_body()
+        if not isinstance(body, dict):
+            return self._send_json({"error": "body must be a JSON object"}, 400)
+        items = body.get("items")
+        if not isinstance(items, list) or not items:
+            return self._send_json(
+                {"error": "items must be a non-empty list of 1-2 entries"}, 400)
+        items = items[:2]                        # cap at 2 (contract)
+        try:
+            columns = []
+            any_missing = False
+            for it in items:
+                if not isinstance(it, dict):
+                    columns.append({"in_corpus": False}); any_missing = True; continue
+                if it.get("id") is not None:
+                    try:
+                        mol = self._molecule_detail(int(it["id"]))
+                    except (TypeError, ValueError):
+                        mol = None
+                    if mol is None:
+                        columns.append({"id": it.get("id"), "in_corpus": False}); any_missing = True
+                    else:
+                        mol["in_corpus"] = True; columns.append(mol)
+                elif it.get("name"):
+                    mid = self._resolve_molecule_id_by_name(str(it["name"]))
+                    mol = self._molecule_detail(mid) if mid is not None else None
+                    if mol is None:
+                        columns.append({"name": str(it["name"]), "in_corpus": False}); any_missing = True
+                    else:
+                        mol["in_corpus"] = True; columns.append(mol)
+                else:
+                    columns.append({"in_corpus": False}); any_missing = True
+            out = {"ok": True, "columns": columns, "fields": self._compare_fields(columns)}
+            if any_missing:
+                out["note"] = ("One or more items were not found in the MeatCODE corpus; "
+                               "only corpus-backed molecules are shown.")
+            return self._send_json(out)
+        except Exception as e:
+            return self._send_json({"error": "database error: " + str(e)[:200]}, 503)
+
     def _read_json_body(self):
         length = int(self.headers.get("Content-Length", 0))
         try:
@@ -1277,6 +1734,65 @@ class Handler(SimpleHTTPRequestHandler):
             return self._send_json({"ok": True, "rolled_back_to": tag})
         return self._send_json({"error": "not found"}, 404)
 
+    def _handle_simulate_post(self):
+        """POST /api/simulate — submit → (fast) result, or (slow) job id to poll.
+
+        A run is 1–10 s and Monte-Carlo settings can exceed that, so this deliberately does
+        NOT pretend to be instant: the job always goes to a worker thread, this request waits
+        up to MAILLARD_SYNC_WAIT for it, and returns 200 + the full result if it finished or
+        202 + {job_id, poll} if it didn't. One code path, two honest outcomes."""
+        if not _flag_on("maillard_sim"):
+            return self._send_json({"error": "not found"}, 404)
+        if maillard_adapter is None:
+            return self._send_json(
+                {"ok": False, "mode": "unavailable",
+                 "error": {"code": "SIMULATOR_UNAVAILABLE",
+                           "message": "Maillard adapter failed to load on this server.",
+                           "retryable": False}}, 503)
+        body = self._read_json_body()
+        if body is None:
+            return self._send_json(
+                {"ok": False, "mode": maillard_adapter.mode(),
+                 "error": {"code": "INVALID_REQUEST", "message": "Body is not valid JSON.",
+                           "retryable": False}}, 400)
+        # Validate BEFORE creating a job, so bad input fails instantly with a field-level error
+        # instead of costing a thread and a simulator slot.
+        try:
+            _normalised, err = maillard_adapter.validate(body)
+        except Exception as e:
+            return self._send_json(
+                {"ok": False, "mode": maillard_adapter.mode(),
+                 "error": {"code": "INTERNAL_ERROR", "message": str(e)[:200], "retryable": False}}, 500)
+        if err:
+            return self._send_json(err, _maillard_error_status(err["error"]["code"]))
+
+        job_id = uuid.uuid4().hex[:16]
+        now = time.time()
+        done_event = threading.Event()
+        with _maillard_events_lock:
+            _maillard_events[job_id] = done_event
+        with _maillard_lock:
+            _maillard_jobs[job_id] = {
+                "status": "running", "result": None, "submitted_at": now,
+                "submitted_iso": datetime.datetime.now(datetime.timezone.utc)
+                                  .isoformat(timespec="seconds"),
+                "finished_at": now, "mode": maillard_adapter.mode(),
+            }
+            _maillard_prune()
+        threading.Thread(target=_maillard_worker, args=(job_id, body), daemon=True).start()
+
+        done_event.wait(timeout=max(0.0, MAILLARD_SYNC_WAIT))
+        with _maillard_lock:
+            job = _maillard_jobs.get(job_id)
+            view = _maillard_job_view(job_id, job) if job else None
+        if view is None:                       # pruned mid-flight — vanishingly unlikely
+            return self._send_json(
+                {"ok": False, "mode": maillard_adapter.mode(),
+                 "error": {"code": "INTERNAL_ERROR", "message": "Job disappeared.",
+                           "retryable": True}}, 500)
+        resp, code = view
+        return self._send_json(resp, code)
+
     def do_POST(self):
         path = urlparse(self.path).path
         # ── Local Release Center admin — exists ONLY on the local cockpit (RELEASE_CENTER=1
@@ -1288,6 +1804,14 @@ class Handler(SimpleHTTPRequestHandler):
             return self._handle_admin_post(path)
         if not self._authorized():
             return self._deny()
+        # ── Maillard simulator submit (flag-gated) — thin same-origin proxy so the browser
+        #    never talks to the separate simulator service directly (no CORS, no 2nd credential). ──
+        if path == "/api/simulate":
+            return self._handle_simulate_post()
+        # ── Molecule comparison — auth-gated, SELECT-only; reuses the /api/molecules/{id}
+        #    query (via _molecule_detail) so a compared profile == its detail-page profile. ──
+        if path == "/api/compare":
+            return self._handle_compare_post()
         if path != "/api/ask":
             self.send_error(404, "POST not supported for " + path); return
 

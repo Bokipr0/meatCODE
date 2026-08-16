@@ -43,10 +43,11 @@
       "status": "live",
       "where": {
         "screen": "All screens",
-        "spot": "Fixed ribbon pinned to the top-centre of the viewport, above the top bar (#ffDevBanner).",
+        "spot": "Was a fixed ribbon pinned to the top-centre of the viewport, above the top bar (#ffDevBanner).",
         "file": "app/meatcode_mockup.html"
       },
-      "dev": true,
+      "note": "2026-08-16: the #ffDevBanner element + its CSS were removed from app/meatcode_mockup.html at Lior's request, so this flag is now INERT (nothing renders even when ON). Retire this entry, or re-add the ribbon element if the staging-vs-prod visual signal is wanted back.",
+      "dev": false,
       "prod": false
     },
     "highlight_inventory": {
@@ -75,6 +76,21 @@
         "file": "app/meatcode_mockup.html"
       },
       "note": "Never promote to prod. Individual screens graduate by getting their own flag flipped, not by shipping the Dev Area.",
+      "dev": true,
+      "prod": false
+    },
+    "maillard_sim": {
+      "label": "Maillard simulator",
+      "description": "Call the Maillard chemistry simulator from MeatCODE: submit precursors + conditions, get ranked compounds with yields (ppb), confidence intervals and reaction-family attribution.",
+      "kind": "feature",
+      "added": "2026-08-16",
+      "status": "preview",
+      "where": {
+        "screen": "API only — no UI wired yet",
+        "spot": "Backend routes POST /api/simulate, GET /api/simulate/{job_id}, GET /api/simulate/health. Flag OFF makes all three 404.",
+        "file": "server/meatcode_server.py + server/maillard/adapter.py (contract: server/maillard/CONTRACT.md)"
+      },
+      "note": "Runs in MAILLARD_MODE=mock by default — deterministic SYNTHETIC output, every response marked \"mode\":\"mock\" and synthetic:true. The real simulator is a Docker prototype and a Render runtime:python service cannot spawn Docker, so production needs the separate runtime:docker service commented into render.yaml (then MAILLARD_MODE=http). Keep prod false until that service exists.",
       "dev": true,
       "prod": false
     },

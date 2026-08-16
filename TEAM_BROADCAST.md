@@ -1,12 +1,31 @@
 # 📣 TEAM BROADCAST — MeatCODE
 
-_From: Project Coordinator (with Lior) · As of: **2026-08-15**_
+_From: Project Coordinator (with Lior) · As of: **2026-08-16**_
 
 > Standing notification channel for the whole agent team. The Coordinator refreshes this whenever there's
 > progress every agent should know. **Read this at the start of your session** (after CLAUDE.md +
 > PROJECT_STATE.md). Full history is in `AGENT_UPDATE_LOG.md`; this is the short "what you need to know now."
 
 ---
+
+## 🧩 2026-08-16 (pm) · ORACLE CAPABILITY DEMOS + LIVE CORPUS FILTER + FIRST-CLASS ANALYTICS — landed in the repo, awaiting deploy-dev
+A 4-lane parallel run shipped Lior's demo-polish sprint (full detail: AGENT_UPDATE_LOG.md top entry; state: PROJECT_STATE.md). What every agent must know now:
+- **NEW `GET /api/corpus?phase=<juice|lipid|analytics>&topics=<slugs>`** is the corpus-filter endpoint — per-slug + `phase_topics` live counts, deduped `totals`, ≤50 rows. It drives the Research sub-topic chips, the new Analytics scene, and the Oracle "explore the lipid corpus" demo. Additive; other UIs may ignore it.
+- **NEW `POST /api/compare`** (1–2 molecule profiles side-by-side; corpus misses return `in_corpus:false`) + **`GET /api/molecule-profile/{id}`** (alias of `/api/molecules/{id}`). These power the inline Oracle "Compare molecules" demo (renders inside the chat — never navigates away) — a real backend-backed version of screen-flow **Flow 2 (Comparison)**.
+- **Research chips are live:** `#research-sub` juice/lipid sub-cards carry `data-topics` (real taxonomy slugs — see `db/research_chip_map.json`), toggle multi-select, and re-query the corpus on every change; 0-count chips grey out. **UI/UX: reuse this pattern when you touch Research — don't re-hardcode counts.**
+- **Analytics is a first-class `#analytics` scene** now (not Dev-Area-only), reachable from the Research "Analytics" tile. Still **preview** on real-but-partial data (GC-MS = Meaty Volatile Library real; others thinner) — keep the honest labels.
+- **The 4 Oracle starter chips are capability demos** (Maillard route · lipid corpus · simulate · compare). The **simulate demo is the MOCK path** (`synthetic:true`) — the synthetic banner is mandatory; never present it as chemistry.
+- **The `dev_banner` "DEV · staging" ribbon was removed** from the mockup (Lior's request); the `dev_banner` flag is now inert (cleanup follow-up).
+- **Open decision (Lior):** `/api/corpus` counts are **ungated**; Data recommends the `relevance_llm≥60` Oracle gate so Research and the Oracle count the same corpus (one-line change; MVP_BOARD decision #9).
+- **Still the critical path: B1 (deploy) + B2 (quarantine write-back).** These demos are invisible to reviewers until B1 lands.
+
+## 🧪 2026-08-16 · MAILLARD SIMULATOR — architecture settled, backend live in mock mode
+Lior's Maillard chemistry simulator now has a designed path into MeatCODE. Full design of record: `platform_docs/MAILLARD_INTEGRATION.md` · wire contract: `server/maillard/CONTRACT.md` · journey wireframe: `UI-UX Designer/maillard_sim_wireframe.html`.
+- **Hard constraint every lane must respect:** production is Render `runtime: python` and **cannot spawn Docker**. The simulator must be its own `runtime: docker` service (or a local dev container), reached through the same-origin **`/api/simulate`** proxy — never called directly from the browser.
+- **`POST /api/simulate` · `GET /api/simulate/{job_id}` · `GET /api/simulate/health` exist now**, behind auth + the `maillard_sim` flag (OFF in prod → 404). Default `MAILLARD_MODE=mock`: deterministic, and every response is stamped `synthetic:true` with a disclaimer. **Never present mock output as chemistry.**
+- Submit→poll, not WebSocket: fast runs return inline (≤8 s), slow ones return `202` + a job id.
+- **⚠️ Known mismatch to fix before building the UI:** the wireframe uses **mM**; the contract accepts only `mg, g, mmol, mol, ppm, ppb, percent`, and the key is `ph` (lowercase). Align these first or every submit 400s.
+- **Scope discipline:** Advisory's recommendation is **Phase 1 only, flagged, on demo data** for 31 Aug; prod `#simulate` keeps its synthetic label. **B1 (deploy) and B2 (write-back) still outrank this** — a simulator inside an undeployed app demos to nobody.
 
 ## 🚀 2026-08-15 · 5-AGENT RUN LANDED — Dev Area · consensus · canonical IDs · eval baseline · Oracle-first
 All five lanes shipped Lior's task list in one parallel run (full detail: AGENT_UPDATE_LOG.md top entry; state: PROJECT_STATE.md). What every agent must know:

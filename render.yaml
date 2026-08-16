@@ -25,3 +25,51 @@ services:
         value: 3.12.4
       - key: APP_ENV
         value: prod          # this is the PUBLIC site. The meatcode-dev service sets APP_ENV=dev instead.
+      # ── Maillard chemistry simulator (feature flag: maillard_sim) ──
+      # `mock` = deterministic, clearly-labelled synthetic output; NOTHING real is called.
+      # Leave it at mock until the maillard-sim service below is actually enabled; then set
+      # MAILLARD_MODE=http and uncomment the MAILLARD_URL block underneath it.
+      - key: MAILLARD_MODE
+        value: mock
+      # - key: MAILLARD_URL          # ← uncomment together with the maillard-sim service below
+      #   fromService:
+      #     type: pweb
+      #     name: maillard-sim
+      #     property: hostport       # Render's private network address, e.g. maillard-sim:10000
+      #                              # (private service → not reachable from the internet; only
+      #                              #  meatcode-oracle can call it, which is the point: the
+      #                              #  browser always goes through /api/simulate on this service)
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  NOT YET ENABLED — Maillard chemistry simulator service.
+#
+#  Why a SECOND service at all: meatcode-oracle runs `runtime: python`, and a Render python
+#  web service cannot spawn Docker containers. The simulator is a Docker prototype
+#  (github.com/PabloAMC/Maillard, container `maillard_validation`), so it has to be its own
+#  `runtime: docker` service that meatcode-oracle calls over Render's private network.
+#
+#  Everything below is COMMENTED OUT on purpose. Nothing about the existing service changes
+#  until Lior decides to turn this on. To enable:
+#    1. Uncomment this whole block AND the MAILLARD_URL block above.
+#    2. Set MAILLARD_MODE=http on meatcode-oracle.
+#    3. Point `repo`/`dockerfilePath` at wherever the simulator image is actually built from
+#       (either a fork of the Maillard repo with a small HTTP wrapper exposing
+#       POST /simulate + GET /health per server/maillard/CONTRACT.md, or a submodule here).
+#    4. Flip the `maillard_sim` flag's `prod` to true in Release Center/features.json.
+#  Until then MAILLARD_MODE stays `mock` and /api/simulate returns labelled synthetic data.
+#
+#  - type: pserv                 # PRIVATE service: no public URL, only reachable in-network
+#    name: maillard-sim
+#    runtime: docker
+#    plan: starter               # bump if Monte-Carlo runs get heavy; 1-10 s CPU-bound per run
+#    branch: main
+#    repo: https://github.com/PabloAMC/Maillard   # ← confirm / replace with the wrapped fork
+#    dockerfilePath: ./Dockerfile
+#    dockerContext: .
+#    healthCheckPath: /health
+#    envVars:
+#      - key: PORT
+#        value: 10000
+#      - key: MAILLARD_MAX_WORKERS
+#        value: 4
+# ─────────────────────────────────────────────────────────────────────────────

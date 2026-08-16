@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<!-- Last updated: 2026-08-15 17:40 UTC · UI/UX Designer · ORACLE IS NOW A REAL CHAT (approved design ported from app/dev/oracle_redesign.html v11 onto the live product, on THIS file's tokens — no palette imported). (1) THREAD: the centre column of #oracle is a scrollable multi-turn conversation (#oracleThread, the only scroller in the column) instead of one replaceable answer. Each question renders as a right-aligned user bubble (.oracle-turn.user/.oracle-bubble, wine-mist) and each answer as its own card appended below — a follow-up APPENDS and auto-scrolls to the new turn, it never wipes the previous answer. The ask box + starters moved BELOW the thread into a docked .oracle-composer (attach + mic + Ask + Enter-to-send / Shift+Enter newline all unchanged). #oracleAnswerSlot is gone; `oracleSlot` is now re-pointed at the current turn by mcOpenAnswerTurn(), so setOracleLoading / setOracleError / streamSSE write into the newest turn unchanged. Because several answer cards now coexist, opening a turn RETIRES the previous turns' ids (data-was-id) and the id-based answer CSS (#oracleSourcesList…) moved onto .oracle-sources-list. (2) HEADER: the "ORACLE" eyebrow and the "Ask the Oracle" H1 are REMOVED (Lior — the nav already says Oracle); the grounding line stays IN FULL: "Every answer is grounded in the corpus (818 sources, keyword/FTS retrieval, relevance_llm ≥ 60) with sources you can open." (mono on the threshold). (3) REAL RETRIEVAL KEPT + EXTENDED: status → "Digging the MeatCODE database…", sources → the real paper pills with their real [id] citations (+ NEW: the additive per-source `claims` key renders as an honest claims list when present), chunk → streaming prose with teal [n] cite chips, done → finalize (guard intact, so the double done/stream-close can't double-fire), error → error card; NEW `consensus` handler renders an honest "N support · M oppose · K neutral" chip ONLY when the event actually arrives. Missing events change nothing (full backward compatibility). (4) HISTORY = CONVERSATIONS: mc_oracle_history_v1 records now carry turns:[{q,a}] (12 turns × 4000 chars caps, all try/catch); asking appends a turn to the ACTIVE conversation, clicking a rail entry REPLAYS that whole conversation into the thread, and a legacy/seed record with no stored answer says so instead of inventing one. A small "+ New chat" button in the composer starts a fresh conversation. The left Pinned/History rail itself is untouched (same markup, styling, pin + rename behaviour). Lab Stash highlight-to-save now spans the whole thread (host = #oracleThread), and the related-molecules chip row, SESSION_EXPIRED handling, credentials:'same-origin' + the typeof API_BASE guard, and the no-page-scroll shell are all preserved. · Prior 2026-08-15 14:55 UTC · UI/UX Designer · FOUR changes (Lior's dev-area sprint). (1) ORACLE ATTACH (preview): paperclip button in the ask box next to the mic (#oracleAttachBtn + hidden #oracleFileInput); picking a file renders a removable filename chip (+ "preview" tag) in #oracleAttachRow above the ask controls. CLIENT-SIDE ONLY — nothing is uploaded and NO success/processing message is shown (tooltip: "Attach data or a paper (preview — processing coming soon)"). (2) DEV AREA BUTTON: a flask "Dev Area" link (→ /app/dev/index.html, same tab, plain <a>) authored statically next to the Inventory button on all 14 topbars; FEATURE-FLAGGED — .mc-devarea-btn is display:none unless body.ff-dev_area (set by the existing /api/flags load pass), so it stays off production until the flag flips. (3) HOME OFF THE NAV — Oracle is the landing again: empty hash → #oracle (setScene default), the brand/logo click → #oracle, and the load-time nav pass now REMOVES any Home chip instead of injecting one → top nav everywhere = Oracle · Research · Simulate. The #home scene + its wiring stay in the file but are unreachable from nav (harmless dead scene, cheap rollback; NAV_CAT/ROUTES 'home' entries left in place). (4) RESEARCH TILES: #research now shows THREE tiles — Juice · Lipid (both subtitled "aroma profiles inside", still → #research-sub) · Analytics (→ /app/dev/analytics.html, labelled a dev preview); the Matrix + Volatiles cards and the dashed "Looking for a protocol instead?" card are REMOVED (the #research-sub matrix/volatiles content + #toolbench stay intact off-scene); each tile now carries its own palette (Juice teal · Lipid coral · Analytics olive) whose card background DEEPENS to a darker shade of the same hue on hover (smooth background-color transition via .phase-card[data-phase] rules). · Prior 2026-07-22 14:16 UTC · UI/UX Designer · Home v3 (Lior's review) — TWO changes. (1) DATA OUT OF TOP NAV: the load-time nav pass now removes BOTH Map and Database chips (was: relabel Database→Data and keep) + still injects Home + reorders → net top nav EVERYWHERE = Home · Oracle · Research · Simulate. The Home "Data" TILE (→#database) and the #database scene + all in-content routes are kept — Data stays reachable, just not as an upper-category button. setScene's dynamic active-map no longer activates a Data chip (database/molecule-detail/protocol-detail leave the nav with nothing active, like #map); Oracle/Research/Simulate/Home still highlight. ['data','database'] left in ROUTES (harmless; the tile uses href). (2) INVENTORY = Option A slide-over drawer, built + wired: a compact "Inventory" button on Home (below the tiles) shows live counts and opens a right slide-over (backdrop + 3-way segmented control Articles · Protocols · Sentences; Esc/backdrop/× close; item cards + italic quote cards for sentences), reproduced from outputs/inventory_option_A_drawer.html on the canonical tokens. CLIENT-SIDE ONLY (one shared password, no per-user identity — like Lab Stash; no server store). Stores: Articles → NEW mc_saved_articles_v1 (a save/bookmark button on each #molecule-detail linked-paper row pushes {id,name,meta,href}; exposed window.mcSaveArticle); Protocols → NEW mc_saved_protocols_v1 (a "Save protocol" button on #protocol-detail); Sentences → the real Lab Stash via window.MCStash.list() ({id,text,q}) rendered as quote cards, removable via window.MCStash.remove(id). Counts = the three live store sizes, re-read on open / on entering #home / after any save. Clicks: article → opens its doi/url (else the molecule); protocol → #protocol-detail; sentence → reopens its source question in #oracle. All new storage versioned + try/catch, dedupe by id, cap 50. Prior Home v2 work preserved (mic dictation, 4 tiles, merged recents, molecule/protocol detail scenes) and Toolbench/MCStash, Lab Stash highlight-to-save, Oracle SSE/status, SESSION_EXPIRED/same-origin, no-page-scroll shell untouched. · Prior 2026-07-22 13:48 UTC · UI/UX Designer · Home v2 (Lior's annotated review) — NAV is now Home · Oracle · Data · Research · Simulate: the load-time nav pass (formerly "trim") now drops only Map, RELABELS the Database chip to "Data" (icon kept), still prepends a Home chip, and REORDERS every topbar to the canonical order; nav-active is now DYNAMIC (setScene maps scene→category: database/molecule-detail/protocol-detail→Data, research/research-sub/toolbench→Research, etc. and lights the matching chip in every topbar), replacing the old static per-topbar active; ROUTES gained ['data','database']. HOME: ask box gained a MIC (reuses the Oracle's Web Speech dictation via a shared mcMakeDictation() helper — en-US, interim→final append into #homeAskInput, hidden where unsupported); tiles are now FOUR (Oracle→#oracle, Data→#database, Research→#research, Simulate→#simulate); "Pick up where you left off" now merges recent CHATS + MOLECULES (mc_recent_molecules_v1) + PROTOCOLS (mc_recent_protocols_v1), most-recent-first, labelled by kind, seeded with a representative molecule + protocol when empty (no experts); rows route chat→#oracle, molecule→#molecule-detail, protocol→#protocol-detail. NEW SCENES: #molecule-detail fetches GET {API}/api/molecules/{id} (same-origin guard + credentials:'same-origin'; crumbs Data/Molecules/name, mono title, category·taste·odor meta, tag chips, Linked-papers card with per-paper Open→ via doi/url, cross-links Ask the Oracle→ / See on Map→; loading/empty/error states never blank the page; records the view into mc_recent_molecules_v1). #protocol-detail is a representative TEMPLATE (no protocol backend yet — static placeholder steps/papers; only crumb+title populated live from mc_protocol_focus_id/name; records into mc_recent_protocols_v1). All prior work preserved (Related-molecules chips, widened Oracle answer, Toolbench, Lab Stash, lean restyle, SSE streaming/status, SESSION_EXPIRED/same-origin, no-page-scroll shell); #database/#map scenes + in-content journeys intact (Map off the nav; Data back on it). · Prior 2026-07-22 13:23 UTC · UI/UX Designer · added Home landing module — a new #home scene is now the DEFAULT landing (empty hash → #home via setScene) and the MeatCODE logo routes to #home. Top nav everywhere is now Home · Oracle · Research · Simulate: #home authors its own topbar (Home active), and trimNav — which still drops the Database + Map chips — now also PREPENDS a "Home" chip (house SVG) to every other topbar; nav router gained ['home','home'] in ROUTES + 'home' in SCENES. Home is built on #research's app/topbar/canvas shell (no left rail; #home .canvas spans both columns) and reproduces meatcode_lean_v1's Home on this file's tokens (teal=--wine, coral=--brass), all rules scoped under #home/.home-*. It has a REAL typeable ask box (Enter or Ask → sets #oracleTextarea, routes to #oracle, and streams via askOracle()), three tiles routing to #oracle/#research/#simulate, and a "Pick up where you left off" list wired to the saved Oracle chats (live oracleChats / mcLoadOracleChats seeds; a row → mcOpenOracleChat(id) then #oracle), re-rendered on load and on entering #home. All prior work preserved (Related-molecules chips, widened Oracle answer, Toolbench/window.MCStash, Lab Stash, lean DB/Oracle restyle, advisory Oracle-notes, SSE streaming + status phase, SESSION_EXPIRED + credentials same-origin, no-page-scroll shell); #database/#map scenes + their in-content journeys still intact and still off the top nav. · Prior 2026-07-22 12:10 UTC · UI/UX Designer · TASK 1 — removed Database + Map from the TOP NAV: a small load-time JS pass drops any .domain chip whose exact label is "Database"/"Map" across all ~11 topbars (DRY, can't desync); the #database and #map scenes AND every in-content route into them (dock items, "See on Map →", breadcrumbs, the new Related-molecule chips) are kept fully intact — the screens stay reachable, just not as nav buttons. TASK 2 — widened the Oracle answer to ~1080px via #oracle .oracle-wrap max-width, holding .oracle-heading/.oracle-input/.oracle-starter-row to a centered 780px so only #oracleAnswerSlot / the .oracle-answer card fills the wider wrap; content stays centered (margin:auto) and the no-page-scroll fixed shell is untouched. TASK 3 — added a "Related molecules" teal molecule-pill row at the very end of each answer card (below prose, sources, follow-ups): on completion (finalizeAnswer, guarded so the double SSE done/stream-close fire only requests once) it calls GET {API_BASE}/api/molecule-suggestions?q=<question+answer>&limit=6 with credentials:'same-origin' and the typeof-API_BASE same-origin guard, renders the bare [{id,name,category,taste,mentions_count}] array as chips with loading/empty/error states (all try/catch-wrapped — any fetch/parse failure hides the row silently and never blanks the answer); clicking a chip deep-links into Database → Molecules via mc_db_tab + mc_db_focus_id/name + a prefilled #db-molecules-search (reuses the DB engine's maybeFocus). Only the additions above changed; Toolbench, Lab Stash, lean DB/Oracle restyle, SSE streaming + status phase, SESSION_EXPIRED/same-origin, and the advisory Oracle-notes pass are all preserved. · Prior 2026-07-21 14:40 UTC · advisory session · Oracle notes pass (from Lior's annotated screenshot): removed the "ORACLE" eyebrow; subtitle → "Every answer is based on a closed corpus with information you can access"; shorter one-line placeholder; input textarea auto-grows (overflow hidden, min-height 30px) so there's no scrollbar or wasted gap; starter chips are now showcase quick-suggestions (Maillard synthesis route · Mask beany off-notes · Sulfur notes in cooked beef · Boost roasted aroma); answer SOURCES moved BELOW the prose (was above), recolored to a BLUE palette, and collapsed to the first 2 with a "+N more" toggle. · Prior 2026-07-21 14:16 UTC · UI/UX Designer · Lean restyle (matches UI-UX Designer/meatcode_lean_v1.html). TASK A — Database molecules/experts/companies to the lean .filterbar + .tbl look: filter bar is now a surface-2 panel with a pill search + right-aligned sort; molecules category filter is live .fchip chips (All · real facets) that drive the hidden <select> so every fetch/pager/XLSX wire is reused; per-tab "Data / <Entity>" breadcrumb; columns reworked through the config-driven engine — Molecules = MOLECULE(mono) · CLASS(category) · SOURCES(mono mentions_count) · RELEVANCE(.db-bar from priority_score, 0–100); Experts = NAME · AFFILIATION · COUNTRY · H-INDEX(.db-bar, dynamic max, NO relevance column); Companies = NAME · COUNTRY · WEBSITE(link); Export moved below each table as a lean ghost "⤓ Export (.xlsx)". 50/page pagination + Toolbench bookmark on molecule rows preserved. TASK B — Oracle centre column to the lean look: ORACLE eyebrow + "Ask the Oracle" + corpus subtitle; ask box → .oracle-box proportions (1.5px line-strong, r20); answer card → .answer (r20, 15.5px/1.7); retrieved papers render as coral .ent.paper-style pills wired to the live SSE sources (no fabricated molecule/expert chips); follow-ups → lean "→" chips from the model's Follow-ups line; left Pinned/History rail, Lab Stash highlight-to-save, streaming + "Digging the MeatCODE database…" status phase, SESSION_EXPIRED + credentials same-origin, and no-page-scroll frame all preserved. Only CSS + HTML markup + the DB config-engine columns/chips changed; the Oracle/Lab-Stash/Toolbench script blocks are byte-identical. NOTE: the on-disk base was the 13:19 commit — the Full-Stack Engineer's 13:34 backup Export/Import (mc-backup / mcStashSnapshot) is NOT in this file and must be re-applied + committed. · Prior 2026-07-21 13:19 UTC · UI/UX Designer · (1+3) Every tab is a centered, fixed-height frame with NO page scroll: the app-shell grid (64px 1fr, 100vh, overflow:hidden) bounds each scene and each scene’s .canvas is the internal scroller (min-height:0 + overflow-y:auto). Map keeps canvas overflow:hidden for the globe. Oracle is now a bounded flex column — heading + ask box + starters stay pinned and ONLY #oracleAnswerSlot scrolls. Content stays horizontally centered via each wrap’s max-width + margin:auto. (2) The topbar search bar was removed on every scene and replaced by a Toolbench wrench button that opens a saved-items drawer with three persisted sections — Saved molecules (mc_saved_molecules_v1; bookmark button added to each Database molecules row), Saved sentences (mc_lab_stash_v1 via a new window.MCStash owner API), and Marked chats (pinned mc_oracle_history_v1). The redundant bottom-left “Lab Stash” button was removed; highlight-to-save still writes mc_lab_stash_v1. All three stores are versioned + try/catch-wrapped; molecules capped at 100. · Prior 2026-07-21: full-screen shell (grid 64px 1fr; dock/flow-bar hidden), bulletproof Ask re-enable (.finally + input-listener), verified caches. · Prior: 401/SESSION_EXPIRED “your sign-in expired” + credentials same-origin; “Digging the MeatCODE database…” status phase; Oracle default landing + brand→#oracle; nav Oracle·Research·Database·Simulate·Map; no topbar bell. -->
+<!-- Last updated: 2026-08-16 14:46 UTC · UI/UX Designer · Research live-corpus chips + Analytics scene + Oracle demo chips + dev-banner removal. (T3) removed #ffDevBanner + its CSS (no dangling refs). (T1) #research-sub juice/lipid sub-cards carry data-topics (taxonomy slugs), are a real toggle multi-select (default 3 picked), and live-query GET /api/corpus (debounced 250ms) → count line from totals.{molecules,papers} + per-card source counts from phase_topics (0-source cards honestly greyed + unselectable); loading/empty/error/not-deployed states; selection stashed to localStorage.mc_research_topics for #database. (T4) the 4 Oracle starter chips are capability demos now (data-demo, dispatched by a delegated handler; the generic starter→askOracle handler skips data-demo chips): (a) Maillard route schematic strip + the EXISTING grounded askOracle(); (b) inline lipid-corpus card (GET /api/corpus?phase=lipid); (c) inline simulator card (canned POST /api/simulate) with the MANDATORY synthetic banner + disclaimer, honest 404→"enable maillard_sim"; (d) inline compare card (POST /api/compare, 1–2 molecules, diff via fields[].differs, user-entered labelling) — none navigate away; askOracle()/SSE untouched. (T2) Analytics is a first-class #analytics scene now (4-region shell, Research active) with 6 live-corpus method chips (data-topics from the ANALYTICS map, multi-select+deselect, results panel + per-card counts); the #research Analytics tile routes to #analytics (dev/analytics.html dependency dropped); setScene NAV_CAT + the nav SCENES list register it. New CSS: .mc-demo-*/.mc-route-*/.mc-synth-banner/.mc-cmp-*/#analytics (tokens only). · Prior 2026-08-15 17:40 UTC · UI/UX Designer · ORACLE IS NOW A REAL CHAT (approved design ported from app/dev/oracle_redesign.html v11 onto the live product, on THIS file's tokens — no palette imported). (1) THREAD: the centre column of #oracle is a scrollable multi-turn conversation (#oracleThread, the only scroller in the column) instead of one replaceable answer. Each question renders as a right-aligned user bubble (.oracle-turn.user/.oracle-bubble, wine-mist) and each answer as its own card appended below — a follow-up APPENDS and auto-scrolls to the new turn, it never wipes the previous answer. The ask box + starters moved BELOW the thread into a docked .oracle-composer (attach + mic + Ask + Enter-to-send / Shift+Enter newline all unchanged). #oracleAnswerSlot is gone; `oracleSlot` is now re-pointed at the current turn by mcOpenAnswerTurn(), so setOracleLoading / setOracleError / streamSSE write into the newest turn unchanged. Because several answer cards now coexist, opening a turn RETIRES the previous turns' ids (data-was-id) and the id-based answer CSS (#oracleSourcesList…) moved onto .oracle-sources-list. (2) HEADER: the "ORACLE" eyebrow and the "Ask the Oracle" H1 are REMOVED (Lior — the nav already says Oracle); the grounding line stays IN FULL: "Every answer is grounded in the corpus (818 sources, keyword/FTS retrieval, relevance_llm ≥ 60) with sources you can open." (mono on the threshold). (3) REAL RETRIEVAL KEPT + EXTENDED: status → "Digging the MeatCODE database…", sources → the real paper pills with their real [id] citations (+ NEW: the additive per-source `claims` key renders as an honest claims list when present), chunk → streaming prose with teal [n] cite chips, done → finalize (guard intact, so the double done/stream-close can't double-fire), error → error card; NEW `consensus` handler renders an honest "N support · M oppose · K neutral" chip ONLY when the event actually arrives. Missing events change nothing (full backward compatibility). (4) HISTORY = CONVERSATIONS: mc_oracle_history_v1 records now carry turns:[{q,a}] (12 turns × 4000 chars caps, all try/catch); asking appends a turn to the ACTIVE conversation, clicking a rail entry REPLAYS that whole conversation into the thread, and a legacy/seed record with no stored answer says so instead of inventing one. A small "+ New chat" button in the composer starts a fresh conversation. The left Pinned/History rail itself is untouched (same markup, styling, pin + rename behaviour). Lab Stash highlight-to-save now spans the whole thread (host = #oracleThread), and the related-molecules chip row, SESSION_EXPIRED handling, credentials:'same-origin' + the typeof API_BASE guard, and the no-page-scroll shell are all preserved. · Prior 2026-08-15 14:55 UTC · UI/UX Designer · FOUR changes (Lior's dev-area sprint). (1) ORACLE ATTACH (preview): paperclip button in the ask box next to the mic (#oracleAttachBtn + hidden #oracleFileInput); picking a file renders a removable filename chip (+ "preview" tag) in #oracleAttachRow above the ask controls. CLIENT-SIDE ONLY — nothing is uploaded and NO success/processing message is shown (tooltip: "Attach data or a paper (preview — processing coming soon)"). (2) DEV AREA BUTTON: a flask "Dev Area" link (→ /app/dev/index.html, same tab, plain <a>) authored statically next to the Inventory button on all 14 topbars; FEATURE-FLAGGED — .mc-devarea-btn is display:none unless body.ff-dev_area (set by the existing /api/flags load pass), so it stays off production until the flag flips. (3) HOME OFF THE NAV — Oracle is the landing again: empty hash → #oracle (setScene default), the brand/logo click → #oracle, and the load-time nav pass now REMOVES any Home chip instead of injecting one → top nav everywhere = Oracle · Research · Simulate. The #home scene + its wiring stay in the file but are unreachable from nav (harmless dead scene, cheap rollback; NAV_CAT/ROUTES 'home' entries left in place). (4) RESEARCH TILES: #research now shows THREE tiles — Juice · Lipid (both subtitled "aroma profiles inside", still → #research-sub) · Analytics (→ /app/dev/analytics.html, labelled a dev preview); the Matrix + Volatiles cards and the dashed "Looking for a protocol instead?" card are REMOVED (the #research-sub matrix/volatiles content + #toolbench stay intact off-scene); each tile now carries its own palette (Juice teal · Lipid coral · Analytics olive) whose card background DEEPENS to a darker shade of the same hue on hover (smooth background-color transition via .phase-card[data-phase] rules). · Prior 2026-07-22 14:16 UTC · UI/UX Designer · Home v3 (Lior's review) — TWO changes. (1) DATA OUT OF TOP NAV: the load-time nav pass now removes BOTH Map and Database chips (was: relabel Database→Data and keep) + still injects Home + reorders → net top nav EVERYWHERE = Home · Oracle · Research · Simulate. The Home "Data" TILE (→#database) and the #database scene + all in-content routes are kept — Data stays reachable, just not as an upper-category button. setScene's dynamic active-map no longer activates a Data chip (database/molecule-detail/protocol-detail leave the nav with nothing active, like #map); Oracle/Research/Simulate/Home still highlight. ['data','database'] left in ROUTES (harmless; the tile uses href). (2) INVENTORY = Option A slide-over drawer, built + wired: a compact "Inventory" button on Home (below the tiles) shows live counts and opens a right slide-over (backdrop + 3-way segmented control Articles · Protocols · Sentences; Esc/backdrop/× close; item cards + italic quote cards for sentences), reproduced from outputs/inventory_option_A_drawer.html on the canonical tokens. CLIENT-SIDE ONLY (one shared password, no per-user identity — like Lab Stash; no server store). Stores: Articles → NEW mc_saved_articles_v1 (a save/bookmark button on each #molecule-detail linked-paper row pushes {id,name,meta,href}; exposed window.mcSaveArticle); Protocols → NEW mc_saved_protocols_v1 (a "Save protocol" button on #protocol-detail); Sentences → the real Lab Stash via window.MCStash.list() ({id,text,q}) rendered as quote cards, removable via window.MCStash.remove(id). Counts = the three live store sizes, re-read on open / on entering #home / after any save. Clicks: article → opens its doi/url (else the molecule); protocol → #protocol-detail; sentence → reopens its source question in #oracle. All new storage versioned + try/catch, dedupe by id, cap 50. Prior Home v2 work preserved (mic dictation, 4 tiles, merged recents, molecule/protocol detail scenes) and Toolbench/MCStash, Lab Stash highlight-to-save, Oracle SSE/status, SESSION_EXPIRED/same-origin, no-page-scroll shell untouched. · Prior 2026-07-22 13:48 UTC · UI/UX Designer · Home v2 (Lior's annotated review) — NAV is now Home · Oracle · Data · Research · Simulate: the load-time nav pass (formerly "trim") now drops only Map, RELABELS the Database chip to "Data" (icon kept), still prepends a Home chip, and REORDERS every topbar to the canonical order; nav-active is now DYNAMIC (setScene maps scene→category: database/molecule-detail/protocol-detail→Data, research/research-sub/toolbench→Research, etc. and lights the matching chip in every topbar), replacing the old static per-topbar active; ROUTES gained ['data','database']. HOME: ask box gained a MIC (reuses the Oracle's Web Speech dictation via a shared mcMakeDictation() helper — en-US, interim→final append into #homeAskInput, hidden where unsupported); tiles are now FOUR (Oracle→#oracle, Data→#database, Research→#research, Simulate→#simulate); "Pick up where you left off" now merges recent CHATS + MOLECULES (mc_recent_molecules_v1) + PROTOCOLS (mc_recent_protocols_v1), most-recent-first, labelled by kind, seeded with a representative molecule + protocol when empty (no experts); rows route chat→#oracle, molecule→#molecule-detail, protocol→#protocol-detail. NEW SCENES: #molecule-detail fetches GET {API}/api/molecules/{id} (same-origin guard + credentials:'same-origin'; crumbs Data/Molecules/name, mono title, category·taste·odor meta, tag chips, Linked-papers card with per-paper Open→ via doi/url, cross-links Ask the Oracle→ / See on Map→; loading/empty/error states never blank the page; records the view into mc_recent_molecules_v1). #protocol-detail is a representative TEMPLATE (no protocol backend yet — static placeholder steps/papers; only crumb+title populated live from mc_protocol_focus_id/name; records into mc_recent_protocols_v1). All prior work preserved (Related-molecules chips, widened Oracle answer, Toolbench, Lab Stash, lean restyle, SSE streaming/status, SESSION_EXPIRED/same-origin, no-page-scroll shell); #database/#map scenes + in-content journeys intact (Map off the nav; Data back on it). · Prior 2026-07-22 13:23 UTC · UI/UX Designer · added Home landing module — a new #home scene is now the DEFAULT landing (empty hash → #home via setScene) and the MeatCODE logo routes to #home. Top nav everywhere is now Home · Oracle · Research · Simulate: #home authors its own topbar (Home active), and trimNav — which still drops the Database + Map chips — now also PREPENDS a "Home" chip (house SVG) to every other topbar; nav router gained ['home','home'] in ROUTES + 'home' in SCENES. Home is built on #research's app/topbar/canvas shell (no left rail; #home .canvas spans both columns) and reproduces meatcode_lean_v1's Home on this file's tokens (teal=--wine, coral=--brass), all rules scoped under #home/.home-*. It has a REAL typeable ask box (Enter or Ask → sets #oracleTextarea, routes to #oracle, and streams via askOracle()), three tiles routing to #oracle/#research/#simulate, and a "Pick up where you left off" list wired to the saved Oracle chats (live oracleChats / mcLoadOracleChats seeds; a row → mcOpenOracleChat(id) then #oracle), re-rendered on load and on entering #home. All prior work preserved (Related-molecules chips, widened Oracle answer, Toolbench/window.MCStash, Lab Stash, lean DB/Oracle restyle, advisory Oracle-notes, SSE streaming + status phase, SESSION_EXPIRED + credentials same-origin, no-page-scroll shell); #database/#map scenes + their in-content journeys still intact and still off the top nav. · Prior 2026-07-22 12:10 UTC · UI/UX Designer · TASK 1 — removed Database + Map from the TOP NAV: a small load-time JS pass drops any .domain chip whose exact label is "Database"/"Map" across all ~11 topbars (DRY, can't desync); the #database and #map scenes AND every in-content route into them (dock items, "See on Map →", breadcrumbs, the new Related-molecule chips) are kept fully intact — the screens stay reachable, just not as nav buttons. TASK 2 — widened the Oracle answer to ~1080px via #oracle .oracle-wrap max-width, holding .oracle-heading/.oracle-input/.oracle-starter-row to a centered 780px so only #oracleAnswerSlot / the .oracle-answer card fills the wider wrap; content stays centered (margin:auto) and the no-page-scroll fixed shell is untouched. TASK 3 — added a "Related molecules" teal molecule-pill row at the very end of each answer card (below prose, sources, follow-ups): on completion (finalizeAnswer, guarded so the double SSE done/stream-close fire only requests once) it calls GET {API_BASE}/api/molecule-suggestions?q=<question+answer>&limit=6 with credentials:'same-origin' and the typeof-API_BASE same-origin guard, renders the bare [{id,name,category,taste,mentions_count}] array as chips with loading/empty/error states (all try/catch-wrapped — any fetch/parse failure hides the row silently and never blanks the answer); clicking a chip deep-links into Database → Molecules via mc_db_tab + mc_db_focus_id/name + a prefilled #db-molecules-search (reuses the DB engine's maybeFocus). Only the additions above changed; Toolbench, Lab Stash, lean DB/Oracle restyle, SSE streaming + status phase, SESSION_EXPIRED/same-origin, and the advisory Oracle-notes pass are all preserved. · Prior 2026-07-21 14:40 UTC · advisory session · Oracle notes pass (from Lior's annotated screenshot): removed the "ORACLE" eyebrow; subtitle → "Every answer is based on a closed corpus with information you can access"; shorter one-line placeholder; input textarea auto-grows (overflow hidden, min-height 30px) so there's no scrollbar or wasted gap; starter chips are now showcase quick-suggestions (Maillard synthesis route · Mask beany off-notes · Sulfur notes in cooked beef · Boost roasted aroma); answer SOURCES moved BELOW the prose (was above), recolored to a BLUE palette, and collapsed to the first 2 with a "+N more" toggle. · Prior 2026-07-21 14:16 UTC · UI/UX Designer · Lean restyle (matches UI-UX Designer/meatcode_lean_v1.html). TASK A — Database molecules/experts/companies to the lean .filterbar + .tbl look: filter bar is now a surface-2 panel with a pill search + right-aligned sort; molecules category filter is live .fchip chips (All · real facets) that drive the hidden <select> so every fetch/pager/XLSX wire is reused; per-tab "Data / <Entity>" breadcrumb; columns reworked through the config-driven engine — Molecules = MOLECULE(mono) · CLASS(category) · SOURCES(mono mentions_count) · RELEVANCE(.db-bar from priority_score, 0–100); Experts = NAME · AFFILIATION · COUNTRY · H-INDEX(.db-bar, dynamic max, NO relevance column); Companies = NAME · COUNTRY · WEBSITE(link); Export moved below each table as a lean ghost "⤓ Export (.xlsx)". 50/page pagination + Toolbench bookmark on molecule rows preserved. TASK B — Oracle centre column to the lean look: ORACLE eyebrow + "Ask the Oracle" + corpus subtitle; ask box → .oracle-box proportions (1.5px line-strong, r20); answer card → .answer (r20, 15.5px/1.7); retrieved papers render as coral .ent.paper-style pills wired to the live SSE sources (no fabricated molecule/expert chips); follow-ups → lean "→" chips from the model's Follow-ups line; left Pinned/History rail, Lab Stash highlight-to-save, streaming + "Digging the MeatCODE database…" status phase, SESSION_EXPIRED + credentials same-origin, and no-page-scroll frame all preserved. Only CSS + HTML markup + the DB config-engine columns/chips changed; the Oracle/Lab-Stash/Toolbench script blocks are byte-identical. NOTE: the on-disk base was the 13:19 commit — the Full-Stack Engineer's 13:34 backup Export/Import (mc-backup / mcStashSnapshot) is NOT in this file and must be re-applied + committed. · Prior 2026-07-21 13:19 UTC · UI/UX Designer · (1+3) Every tab is a centered, fixed-height frame with NO page scroll: the app-shell grid (64px 1fr, 100vh, overflow:hidden) bounds each scene and each scene’s .canvas is the internal scroller (min-height:0 + overflow-y:auto). Map keeps canvas overflow:hidden for the globe. Oracle is now a bounded flex column — heading + ask box + starters stay pinned and ONLY #oracleAnswerSlot scrolls. Content stays horizontally centered via each wrap’s max-width + margin:auto. (2) The topbar search bar was removed on every scene and replaced by a Toolbench wrench button that opens a saved-items drawer with three persisted sections — Saved molecules (mc_saved_molecules_v1; bookmark button added to each Database molecules row), Saved sentences (mc_lab_stash_v1 via a new window.MCStash owner API), and Marked chats (pinned mc_oracle_history_v1). The redundant bottom-left “Lab Stash” button was removed; highlight-to-save still writes mc_lab_stash_v1. All three stores are versioned + try/catch-wrapped; molecules capped at 100. · Prior 2026-07-21: full-screen shell (grid 64px 1fr; dock/flow-bar hidden), bulletproof Ask re-enable (.finally + input-listener), verified caches. · Prior: 401/SESSION_EXPIRED “your sign-in expired” + credentials same-origin; “Digging the MeatCODE database…” status phase; Oracle default landing + brand→#oracle; nav Oracle·Research·Database·Simulate·Map; no topbar bell. -->
 <title>MeatCODE · GFI Israel — flavor & aroma research</title>
 <meta name="viewport" content="width=1440" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -57,12 +57,6 @@
    dropped in, this visibly restyles the wordmark so the switch is testable. */
 body.ff-new_logo .brand-logo{ background:linear-gradient(135deg, var(--brass,#b5651d), var(--wine,#6d2a3a)); color:#fff; }
 body.ff-new_logo .brand-name::after{ content:"new"; margin-left:6px; padding:1px 6px; font-size:9px; font-weight:700; letter-spacing:.04em; color:#fff; background:var(--brass,#b5651d); border-radius:999px; vertical-align:middle; text-transform:uppercase; }
-/* ── Feature flag: dev_banner — fixed "DEV" ribbon so staging is never mistaken for prod ── */
-#ffDevBanner{ display:none; position:fixed; top:8px; left:50%; transform:translateX(-50%); z-index:100000;
-  background:var(--brass,#b5651d); color:#fff; font:700 11px -apple-system,BlinkMacSystemFont,sans-serif;
-  letter-spacing:.08em; text-transform:uppercase; padding:4px 12px; border-radius:999px;
-  box-shadow:0 2px 8px rgba(0,0,0,.2); pointer-events:none; }
-body.ff-dev_banner #ffDevBanner{ display:block; }
 /* ── Feature flag: highlight_inventory — draw attention to the Inventory button ── */
 body.ff-highlight_inventory .mc-toolbench-btn{ box-shadow:0 0 0 2px var(--brass,#b5651d); background:rgba(181,101,29,.12); }
 /* GFI co-brand: lift the logo before everything and make it the visual anchor */
@@ -851,6 +845,19 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
 .sub-actions { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; }
 .sub-actions .count { font-size: 13px; color: var(--ink-dim); }
 .sub-actions .count b { color: var(--wine); }
+.sub-actions .count.loading { color: var(--ink-faint); }
+.sub-actions .count.preview { color: var(--brass); }
+/* per-card live-corpus count badge (driven by /api/corpus phase_topics) */
+.sub-card-count {
+  display: inline-block; margin-top: 11px;
+  font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: 0.03em;
+  color: var(--wine-deep); background: var(--wine-mist); border: 1px solid var(--wine-tint);
+  border-radius: 999px; padding: 2px 9px;
+}
+.sub-card-count.empty { color: var(--ink-faint); background: var(--surface-2); border-color: var(--line-strong); }
+/* honestly-greyed card: this sub-topic has zero sources in the current corpus slice */
+.sub-card.sub-card-zero { opacity: 0.5; cursor: not-allowed; }
+.sub-card.sub-card-zero:hover { border-color: var(--line); background: var(--surface); }
 
 /* ── Database table ── */
 .db-wrap { max-width: 1100px; margin: 0 auto; }
@@ -2929,10 +2936,14 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
         <div class="oracle-composer">
         <div class="oracle-starter-row" id="oracleStarterRow">
           <button type="button" class="oracle-newchat" id="oracleNewChatBtn" title="Start a new conversation">+ New chat</button>
-          <span class="oracle-starter" data-q="Walk me through the Maillard synthesis route to meaty aroma.">Maillard synthesis route</span>
-          <span class="oracle-starter" data-q="How do I mask beany off-notes in pea protein?">Mask beany off-notes</span>
-          <span class="oracle-starter" data-q="Which sulfur volatiles drive cooked-beef aroma?">Sulfur notes in cooked beef</span>
-          <span class="oracle-starter" data-q="What precursors boost roasted 2-acetyl-1-pyrroline aroma?">Boost roasted aroma</span>
+          <!-- 2026-08-16 · capability demos (replace the old plain quick-questions). Each has its
+               own handler (see the "Oracle capability demos" script); (a) draws a schematic then
+               runs the real grounded askOracle(), (b)/(c)/(d) append an inline live card to the
+               thread. data-demo (not data-q) so the generic starter→askOracle handler skips them. -->
+          <span class="oracle-starter" data-demo="maillard" title="Reaction-route schematic + a grounded, cited answer">Maillard synthesis route</span>
+          <span class="oracle-starter" data-demo="lipid-corpus" title="Live slice of the lipid corpus">Explore the lipid corpus</span>
+          <span class="oracle-starter" data-demo="simulate" title="Run the Maillard simulator (synthetic preview)">Predict with the simulator</span>
+          <span class="oracle-starter" data-demo="compare" title="Compare 1–2 molecule profiles inline">Compare molecules</span>
         </div>
 
         <div class="oracle-input" id="oracleInputBox">
@@ -3223,14 +3234,14 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
             </div>
             <div class="phase-cta">Open sub-topics →</div>
           </div>
-          <!-- 2026-08-15 · Analytics tile (dev preview) — plain link into the dev-area
-               analytics page for now; a first-class Analytics scene comes later. -->
-          <div class="phase-card" data-phase="analytics" onclick="location.href='/app/dev/analytics.html';">
+          <!-- 2026-08-16 · Analytics tile — now routes to the in-product #analytics scene
+               (was a plain link into /app/dev/analytics.html; that dev dependency is dropped). -->
+          <div class="phase-card" data-phase="analytics" onclick="location.hash='#analytics';">
             <div class="phase-icon" style="background:var(--olive-soft);color:#3A4A25;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px;"><path d="M4 20h16"/><path d="M6.5 20v-6"/><path d="M11.5 20V9.5"/><path d="M16.5 20v-8"/><path d="M21 20V4.5"/><path d="M6.5 10.5l5-4 4.5 3 4.5-5"/></svg></div>
             <div class="phase-body">
               <h3>Analytics</h3>
-              <div class="phase-tag">Corpus dashboards · preview</div>
-              <p>Corpus-wide trends, molecule and source breakdowns. Opens the analytics workbench in the dev area for now.</p>
+              <div class="phase-tag">Corpus dashboards · analytical methods</div>
+              <p>Corpus-wide trends plus the analytical methods behind the data — GC-MS, HPLC, olfactory, NMR and more, each a live slice of the corpus.</p>
             </div>
             <div class="phase-cta">Open analytics →</div>
           </div>
@@ -3311,27 +3322,30 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
         <div class="breadcrumb"><a>Research</a> · <a id="phaseCrumb">Juice</a> · <span>Pick your sub-topics</span></div>
         <h1 class="h1">Narrow it down to what you care about</h1>
         <p class="muted" id="subIntro">Pick as many as you like — we'll build the database around just these.</p>
+        <!-- 2026-08-16 · juice sub-cards now carry data-topics (taxonomy slugs) and are live-selectable;
+             .chosen = a real, toggleable selection (default: 3 pre-picked). Per-card counts + the count
+             line below are driven by GET /api/corpus. -->
         <div class="sub-grid sub-grid-phase" data-phase="juice" style="display:none;">
-          <div class="sub-card chosen"><div class="sub-card-tick"></div><h4>Aqueous Maillard pathways</h4><p>Cysteine + ribose chemistry in water — the cleanest model system.</p></div>
-          <div class="sub-card"><h4>Plant-juice volatiles</h4><p>Vegetable and fruit juice aroma — terpenes, aldehydes, esters.</p><div class="sub-card-tick"></div></div>
-          <div class="sub-card chosen"><div class="sub-card-tick"></div><h4>Hydrolysate flavor</h4><p>Yeast extract, HVP, MSG and the umami toolkit.</p></div>
-          <div class="sub-card"><h4>Free amino-acid pools</h4><p>What's in solution and what it becomes after heat.</p><div class="sub-card-tick"></div></div>
-          <div class="sub-card chosen"><div class="sub-card-tick"></div><h4>Sugar-acid equilibria</h4><p>Glucose, fructose, sucrose × organic acid balance.</p></div>
-          <div class="sub-card"><h4>Salt + buffering effects</h4><p>pH control and ionic strength as flavor levers.</p><div class="sub-card-tick"></div></div>
-          <div class="sub-card"><h4>Polar top-notes</h4><p>Water-soluble impact compounds — pyrazines, furanones.</p><div class="sub-card-tick"></div></div>
-          <div class="sub-card"><h4>Bitterness compounds</h4><p>Cucurbitacins, naringenin, tannins — the gatekeepers.</p><div class="sub-card-tick"></div></div>
-          <div class="sub-card"><h4>Bouillon-style aroma</h4><p>Broth, stock, and concentrate flavor architecture.</p><div class="sub-card-tick"></div></div>
+          <div class="sub-card chosen" data-topics="primary_sugars,amino_acids,strecker_degradation_topic"><h4>Aqueous Maillard pathways</h4><p>Cysteine + ribose chemistry in water — the cleanest model system.</p><div class="sub-card-tick"></div></div>
+          <div class="sub-card" data-topics="lipoxygenase_pathway,plant_based_proteins"><h4>Plant-juice volatiles</h4><p>Vegetable and fruit juice aroma — terpenes, aldehydes, esters.</p><div class="sub-card-tick"></div></div>
+          <div class="sub-card chosen" data-topics="hvp_topic,yeast_extract_topic,enzymatic_processing"><h4>Hydrolysate flavor</h4><p>Yeast extract, HVP, MSG and the umami toolkit.</p><div class="sub-card-tick"></div></div>
+          <div class="sub-card" data-topics="amino_acids,peptide"><h4>Free amino-acid pools</h4><p>What's in solution and what it becomes after heat.</p><div class="sub-card-tick"></div></div>
+          <div class="sub-card chosen" data-topics="primary_sugars,caramelization_topic"><h4>Sugar-acid equilibria</h4><p>Glucose, fructose, sucrose × organic acid balance.</p><div class="sub-card-tick"></div></div>
+          <div class="sub-card" data-topics="salt_enhancers,brining"><h4>Salt + buffering effects</h4><p>pH control and ionic strength as flavor levers.</p><div class="sub-card-tick"></div></div>
+          <div class="sub-card" data-topics="pyrazine_chemistry,furan_chemistry"><h4>Polar top-notes</h4><p>Water-soluble impact compounds — pyrazines, furanones.</p><div class="sub-card-tick"></div></div>
+          <div class="sub-card" data-topics="bitter_blockers"><h4>Bitterness compounds</h4><p>Cucurbitacins, naringenin, tannins — the gatekeepers.</p><div class="sub-card-tick"></div></div>
+          <div class="sub-card" data-topics="reaction_flavors_topic,meat_aroma"><h4>Bouillon-style aroma</h4><p>Broth, stock, and concentrate flavor architecture.</p><div class="sub-card-tick"></div></div>
         </div>
         <div class="sub-grid sub-grid-phase" data-phase="lipid" style="display:none;">
-          <div class="sub-card chosen"><div class="sub-card-tick"></div><h4>Lipid-oxidation aldehydes</h4><p>Hexanal, nonanal, 2,4-decadienal — the rancid set.</p></div>
-          <div class="sub-card"><h4>Fat-soluble top-notes</h4><p>Vitamin E loss, carotenoid degradation, β-ionone.</p><div class="sub-card-tick"></div></div>
-          <div class="sub-card chosen"><div class="sub-card-tick"></div><h4>Frying chemistry</h4><p>Acrolein, polymer formation, deep-fry off-flavor.</p></div>
-          <div class="sub-card"><h4>Lipid × Maillard cross-talk</h4><p>Where the two pathways meet — adducts and synergies.</p><div class="sub-card-tick"></div></div>
-          <div class="sub-card chosen"><div class="sub-card-tick"></div><h4>Hydroperoxide pathways</h4><p>13-HPOD, 9-HPOD, LOX-driven volatile generation.</p></div>
-          <div class="sub-card"><h4>Methyl ketones</h4><p>2-heptanone, 2-undecanone — dairy and cured notes.</p><div class="sub-card-tick"></div></div>
-          <div class="sub-card"><h4>Lactones</h4><p>γ- and δ-lactones — peach, coconut, creamy.</p><div class="sub-card-tick"></div></div>
-          <div class="sub-card"><h4>Cholesterol oxidation</h4><p>COPs, oxysterols and their meat-aroma footprint.</p><div class="sub-card-tick"></div></div>
-          <div class="sub-card"><h4>Rancidity markers</h4><p>TBARS, peroxide value, hexanal threshold tracking.</p><div class="sub-card-tick"></div></div>
+          <div class="sub-card chosen" data-topics="lipid_oxidation_topic,beta_oxidation"><h4>Lipid-oxidation aldehydes</h4><p>Hexanal, nonanal, 2,4-decadienal — the rancid set.</p><div class="sub-card-tick"></div></div>
+          <div class="sub-card" data-topics="structured_fats_topic,lipid_oxidation_topic"><h4>Fat-soluble top-notes</h4><p>Vitamin E loss, carotenoid degradation, β-ionone.</p><div class="sub-card-tick"></div></div>
+          <div class="sub-card chosen" data-topics="lipid_oxidation_topic,thermal"><h4>Frying chemistry</h4><p>Acrolein, polymer formation, deep-fry off-flavor.</p><div class="sub-card-tick"></div></div>
+          <div class="sub-card" data-topics="maillard_lipid"><h4>Lipid × Maillard cross-talk</h4><p>Where the two pathways meet — adducts and synergies.</p><div class="sub-card-tick"></div></div>
+          <div class="sub-card chosen" data-topics="lipoxygenase_pathway,lipid_oxidation_topic"><h4>Hydroperoxide pathways</h4><p>13-HPOD, 9-HPOD, LOX-driven volatile generation.</p><div class="sub-card-tick"></div></div>
+          <div class="sub-card" data-topics="beta_oxidation"><h4>Methyl ketones</h4><p>2-heptanone, 2-undecanone — dairy and cured notes.</p><div class="sub-card-tick"></div></div>
+          <div class="sub-card" data-topics="lipid_oxidation_topic"><h4>Lactones</h4><p>γ- and δ-lactones — peach, coconut, creamy.</p><div class="sub-card-tick"></div></div>
+          <div class="sub-card" data-topics="lipid_oxidation_topic"><h4>Cholesterol oxidation</h4><p>COPs, oxysterols and their meat-aroma footprint.</p><div class="sub-card-tick"></div></div>
+          <div class="sub-card" data-topics="lipid_oxidation_topic"><h4>Rancidity markers</h4><p>TBARS, peroxide value, hexanal threshold tracking.</p><div class="sub-card-tick"></div></div>
         </div>
         <div class="sub-grid sub-grid-phase" data-phase="matrix" style="display:none;">
           <div class="sub-card chosen"><div class="sub-card-tick"></div><h4>Protein-flavor binding</h4><p>β-lactoglobulin, soy, pea — what they grab and hold.</p></div>
@@ -3356,8 +3370,117 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
           <div class="sub-card"><h4>Lactones</h4><p>Stone-fruit, creamy, coconut — when they show up in meat.</p><div class="sub-card-tick"></div></div>
         </div>
         <div class="sub-actions">
-          <div class="count"><b>3</b> sub-topics picked · estimated <b>127</b> molecules, <b>43</b> papers</div>
-          <button class="btn-primary" onclick="try{localStorage.setItem('mc_db_tab','molecules');}catch(e){} location.hash='#database'">Generate database →</button>
+          <div class="count" id="subCount"><b>0</b> sub-topics picked</div>
+          <button class="btn-primary" id="subGenBtn" onclick="try{window.mcStashResearchTopics&&window.mcStashResearchTopics();localStorage.setItem('mc_db_tab','molecules');}catch(e){} location.hash='#database'">Generate database →</button>
+        </div>
+      </div>
+    </main>
+
+    <footer class="dock">
+      <div class="dock-item"><div class="dock-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="12" height="2.5" rx="0.5"/><rect x="3" y="8" width="12" height="2.5" rx="0.5"/><rect x="3" y="12" width="12" height="2.5" rx="0.5"/></svg></div><div class="dock-text"><small>open</small>Database</div></div>
+      <div class="dock-item"><div class="dock-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 2l5 3v8l-5 3-5-3V5z"/><path d="M9 2v14"/><path d="M4 5l5 3 5-3"/></svg></div><div class="dock-text"><small>navigate</small>Map</div></div>
+      <div class="dock-item"><div class="dock-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3l1.8 4.5L15 9l-4.2 1.5L9 15l-1.8-4.5L3 9l4.2-1.5z"/></svg></div><div class="dock-text"><small>personalized</small>For You</div></div>
+      <div class="dock-item"><div class="dock-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="9" r="6"/><path d="M9 12v-1.5c0-.8.7-1 1.3-1.5.6-.5 1-1 1-1.7C11.3 6.3 10.3 5.5 9 5.5s-2.3.8-2.3 1.8"/><circle cx="9" cy="14.5" r="0.5"/></svg></div><div class="dock-text"><small>help</small>Guide & Tips</div></div>
+    </footer>
+  </div>
+</section>
+
+
+<!-- ==================== SCENE 6b :: Analytics (in-product; ports app/dev/analytics.html) ==================== -->
+<!-- 2026-08-16 · UI/UX · first-class Analytics scene (was a link to /app/dev/analytics.html).
+     Same 4-region app-shell as #research-sub, Research active in the nav. Each method card is a
+     LIVE corpus chip: data-topics = ANALYTICS taxonomy slugs; click = multi-select + deselect →
+     GET /api/corpus?phase=analytics&topics=<union> → counts + top rows in the results panel.
+     Honest preview labelling kept (only GC-MS has reference data today). Wiring: mcAnalytics IIFE. -->
+<section class="scene" id="analytics">
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
+      <div class="domains">
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
+        <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
+        <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
+      </div>
+      <div class="topbar-right">
+        <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
+        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span>Inventory</span>
+          <span class="mc-tb-count" hidden>0</span>
+        </button>
+      </div>
+    </header>
+
+    <aside class="context">
+      <div class="context-section">
+        <div class="context-label">Analytics</div>
+        <div class="context-item active"><div class="dot" style="background:var(--wine)"></div>Analytical methods</div>
+        <div class="context-item" id="anRailPicked"><div class="dot"></div>0 methods selected</div>
+      </div>
+      <div class="context-section">
+        <div class="context-label">Honest status</div>
+        <div class="context-item"><div class="dot" style="background:var(--olive)"></div>GC-MS · data exists</div>
+        <div class="context-item"><div class="dot"></div>Others · planned / thin</div>
+      </div>
+
+      <div class="user-card">
+        <div class="user-avatar">
+          <svg class="avatar-svg" viewBox="0 0 44 44">
+            <rect width="44" height="44" fill="#F4DFDB"/>
+            <path d="M4 44 C 6 34, 14 30, 22 30 C 30 30, 38 34, 40 44 Z" fill="#7E2E2E"/>
+            <path d="M18 32 L22 36 L26 32" fill="none" stroke="#FBF4EE" stroke-width="1.2"/>
+            <rect x="19" y="26" width="6" height="6" fill="#E8B89A"/>
+            <ellipse cx="22" cy="20" rx="8" ry="9" fill="#E8B89A"/>
+            <path d="M14 19 C 14 12, 18 10, 22 10 C 26 10, 30 12, 30 19 C 30 16, 28 14, 22 14 C 17 14, 15 16, 14 19 Z" fill="#3A2A1F"/>
+            <circle cx="19" cy="20.5" r="2" fill="none" stroke="#2A1F1F" stroke-width="0.8"/>
+            <circle cx="25" cy="20.5" r="2" fill="none" stroke="#2A1F1F" stroke-width="0.8"/>
+            <line x1="21" y1="20.5" x2="23" y2="20.5" stroke="#2A1F1F" stroke-width="0.8"/>
+            <path d="M20 24 Q 22 25.5, 24 24" stroke="#7E2E2E" stroke-width="0.9" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="user-meta">
+          <div class="user-name">Lior Teper</div>
+          <div class="user-role">Researcher · MSc</div>
+          <div class="user-org">Tel Aviv University</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="canvas">
+      <div class="an-wrap">
+        <div class="breadcrumb"><a onclick="location.hash='#research'">Research</a> · <span>Analytics</span></div>
+        <h1 class="h1">Analytical methods across the corpus</h1>
+        <p class="muted" style="font-size:14px;color:var(--ink-dim);max-width:680px;line-height:1.55;">The measurement families MeatCODE speaks. Click a method to pull its live slice of the corpus. Status chips are honest: only <b>GC-MS</b> has reference data today (the Meaty Volatile Library) — the others are planned or thin. Pick as many as you like; click again to deselect.</p>
+        <div class="an-methods" id="anMethods">
+          <div class="an-method has-data" data-topics="gcms_topic,hs_spme_topic,gc_olfactometry">
+            <div class="an-method-top"><h3>GC-MS<span class="abbr">gas chromatography–mass spectrometry</span></h3><span class="an-chip data">DATA EXISTS</span></div>
+            <p>Separates and identifies the volatile compounds behind aroma — the workhorse for profiling meaty top-notes.</p>
+          </div>
+          <div class="an-method" data-topics="hplc_topic,lcms_topic">
+            <div class="an-method-top"><h3>HPLC / LC-MS<span class="abbr">liquid chromatography (– mass spec)</span></h3><span class="an-chip planned">PLANNED</span></div>
+            <p>Quantifies non-volatile taste and precursor molecules — amino acids, sugars, nucleotides — the inputs cooking turns into flavor.</p>
+          </div>
+          <div class="an-method" data-topics="gc_olfactometry,sniffing_topic,aeda,qda,threshold_testing,consumer_panel_topic">
+            <div class="an-method-top"><h3>Olfactory / Sensory<span class="abbr">GC-O · AEDA · QDA · panels</span></h3><span class="an-chip planned">PLANNED</span></div>
+            <p>Puts human noses on the data — which detected compounds actually smell, how intense, and what descriptor they evoke.</p>
+          </div>
+          <div class="an-method" data-topics="nmr">
+            <div class="an-method-top"><h3>NMR<span class="abbr">¹H / ¹³C nuclear magnetic resonance</span></h3><span class="an-chip planned">PLANNED</span></div>
+            <p>Resolves molecular structure and tracks reaction chemistry — confirming what a Maillard system actually produced.</p>
+          </div>
+          <div class="an-method" data-topics="mass_spectrometry,ftir">
+            <div class="an-method-top"><h3>Mass spec / Spectroscopy<span class="abbr">MS · FT-IR · optical</span></h3><span class="an-chip planned">PLANNED</span></div>
+            <p>Fast structural and optical readouts of browning, oxidation and pigment state — process-level signals alongside the deep methods.</p>
+          </div>
+          <div class="an-method" data-topics="metabolomics_topic,proteomics_topic,lipidomics_topic,volatilomics,peptidomics_topic">
+            <div class="an-method-top"><h3>Omics<span class="abbr">metabo · proteo · lipido · volatilo</span></h3><span class="an-chip planned">PLANNED</span></div>
+            <p>Whole-profile fingerprinting — the untargeted layer that maps how precursor pools and volatiles shift together.</p>
+          </div>
+        </div>
+        <div class="an-results" id="anResults">
+          <div class="mc-demo-loading">Pick a method above to pull its corpus slice.</div>
         </div>
       </div>
     </main>
@@ -4309,7 +4432,7 @@ function setScene() {
      "Database"→"Data" and injects Home, so the final nav highlights correctly. */
   var NAV_CAT = {
     home: 'home', oracle: 'oracle',
-    research: 'research', 'research-sub': 'research', toolbench: 'research', 'toolbench-tools': 'research',
+    research: 'research', 'research-sub': 'research', analytics: 'research', toolbench: 'research', 'toolbench-tools': 'research',
     simulate: 'simulate'
     /* database / molecule-detail / protocol-detail / map → no active chip (Data is not a top-nav button) */
   };
@@ -4881,6 +5004,7 @@ if (oracleTextarea) {
 if (oracleAskBtn) oracleAskBtn.addEventListener('click', askOracle);
 
 document.querySelectorAll('.oracle-starter').forEach(function (s) {
+  if (s.getAttribute('data-demo')) return;   // capability demos have their own handler (mcOracleDemos)
   s.addEventListener('click', function () {
     var q = s.getAttribute('data-q');
     if (oracleTextarea) oracleTextarea.value = q;
@@ -6083,6 +6207,146 @@ document.addEventListener('click', function (e) {
   }
   window.addEventListener('hashchange', applyPhase);
   applyPhase();
+})();
+
+
+/* ═══ 2026-08-16 · #research-sub · live-corpus sub-topic chips (UI/UX) ══════════════════
+   The juice/lipid sub-cards are a real, toggleable multi-select now (were decorative).
+   On entering the scene and on every toggle we query
+     GET /api/corpus?phase=<mc_phase>&topics=<union-of-selected-slugs>
+   (debounced ~250 ms) and re-render: the count line from totals.{molecules,papers} +
+   "N sub-topics picked", and a per-card source count from phase_topics — 0-source cards
+   are honestly greyed and made unselectable. The endpoint 404s until deploy, so every
+   state (loading / empty / error / not-deployed) is handled: it never blanks or crashes.
+   Selection is stashed to localStorage.mc_research_topics for the Database scene. Only the
+   juice + lipid grids are wired; the dead matrix/volatiles grids are never shown or touched. */
+(function () {
+  function api() { return (typeof API_BASE !== 'undefined') ? API_BASE : 'http://127.0.0.1:8000'; }
+  function activePhase() { try { return localStorage.getItem('mc_phase') || 'juice'; } catch (e) { return 'juice'; } }
+  function activeGrid() { return document.querySelector('.sub-grid-phase[data-phase="' + activePhase() + '"]'); }
+  function isLiveCard(card) {
+    var g = (card && card.closest) ? card.closest('.sub-grid-phase') : null;
+    if (!g) return false;
+    var p = g.getAttribute('data-phase');
+    return (p === 'juice' || p === 'lipid');
+  }
+  function cardSlugs(card) {
+    return (card.getAttribute('data-topics') || '').split(',')
+      .map(function (s) { return s.trim(); }).filter(Boolean);
+  }
+  function selectedCards() {
+    var g = activeGrid();
+    return g ? Array.prototype.slice.call(g.querySelectorAll('.sub-card.chosen')) : [];
+  }
+  function selectedSlugs() {
+    var set = {};
+    selectedCards().forEach(function (c) { cardSlugs(c).forEach(function (s) { set[s] = 1; }); });
+    return Object.keys(set);
+  }
+  /* the "Generate database →" button carries the picked topics into #database */
+  window.mcStashResearchTopics = function () {
+    try { localStorage.setItem('mc_research_topics', selectedSlugs().join(',')); } catch (e) {}
+  };
+
+  function setCount(html, cls) {
+    var el = document.getElementById('subCount'); if (!el) return;
+    el.className = 'count' + (cls ? ' ' + cls : '');
+    el.innerHTML = html;
+  }
+  function pickedLabel() {
+    var n = selectedCards().length;
+    return '<b>' + n + '</b> sub-topic' + (n === 1 ? '' : 's') + ' picked';
+  }
+
+  /* per-card source-count badge (create-once), driven by phase_topics */
+  function ensureBadge(card) {
+    var b = card.querySelector('.sub-card-count');
+    if (!b) { b = document.createElement('span'); b.className = 'sub-card-count'; card.appendChild(b); }
+    return b;
+  }
+  function clearBadges() {
+    var g = activeGrid(); if (!g) return;
+    g.querySelectorAll('.sub-card').forEach(function (c) {
+      var b = c.querySelector('.sub-card-count'); if (b) b.remove();
+      c.classList.remove('sub-card-zero');
+    });
+  }
+  function applyPhaseTopics(phaseTopics) {
+    var g = activeGrid(); if (!g) return;
+    var counts = {};
+    (phaseTopics || []).forEach(function (t) { if (t && t.slug != null) counts[t.slug] = (t.count | 0); });
+    g.querySelectorAll('.sub-card').forEach(function (c) {
+      var slugs = cardSlugs(c), total = 0, known = false;
+      slugs.forEach(function (s) { if (Object.prototype.hasOwnProperty.call(counts, s)) { known = true; total += counts[s]; } });
+      var b = ensureBadge(c);
+      if (!known) { b.textContent = '—'; b.classList.add('empty'); c.classList.remove('sub-card-zero'); return; }
+      b.textContent = total + (total === 1 ? ' source' : ' sources');
+      b.classList.toggle('empty', total === 0);
+      if (total === 0) {
+        c.classList.add('sub-card-zero');
+        c.classList.remove('chosen');   /* honest: a zero-source slice cannot be selected */
+      } else {
+        c.classList.remove('sub-card-zero');
+      }
+    });
+  }
+
+  /* the corpus query (debounced, race-guarded) */
+  var timer = null, seq = 0;
+  function refresh() {
+    if (location.hash !== '#research-sub') return;
+    var phase = activePhase();
+    var slugs = selectedSlugs();
+    setCount(pickedLabel() + ' · sizing the slice…', 'loading');
+    var url = api() + '/api/corpus?phase=' + encodeURIComponent(phase) +
+              (slugs.length ? '&topics=' + encodeURIComponent(slugs.join(',')) : '');
+    var mine = ++seq;
+    fetch(url, { credentials: 'same-origin' })
+      .then(function (r) {
+        if (r.status === 404) throw new Error('NOT_DEPLOYED');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (d) {
+        if (mine !== seq) return;                 /* a newer request superseded this one */
+        if (!d || d.ok === false) throw new Error('BAD');
+        if (d.phase_topics) applyPhaseTopics(d.phase_topics);
+        var tot = d.totals || {};
+        var mol = (tot.molecules != null) ? tot.molecules : '—';
+        var pap = (tot.papers != null) ? tot.papers : '—';
+        setCount(pickedLabel() + ' · <b>' + mol + '</b> molecules, <b>' + pap + '</b> papers', '');
+      })
+      .catch(function (e) {
+        if (mine !== seq) return;
+        clearBadges();
+        if (String(e && e.message) === 'NOT_DEPLOYED') {
+          setCount(pickedLabel() + ' · corpus preview loads once the API is deployed', 'preview');
+        } else {
+          setCount(pickedLabel() + ' · corpus API is not reachable yet', 'preview');
+        }
+      });
+  }
+  function refreshDebounced() { if (timer) clearTimeout(timer); timer = setTimeout(refresh, 250); }
+
+  /* toggle behaviour — event delegation so it survives grid show/hide */
+  document.addEventListener('click', function (e) {
+    var card = e.target.closest && e.target.closest('.sub-card');
+    if (!card || !isLiveCard(card)) return;
+    if (card.classList.contains('sub-card-zero')) return;   /* greyed = not selectable */
+    card.classList.toggle('chosen');
+    setCount(pickedLabel(), 'loading');                     /* instant N feedback; totals follow */
+    refreshDebounced();
+  }, false);
+
+  /* run when the scene shows */
+  function onScene() {
+    if (location.hash !== '#research-sub') return;
+    setCount(pickedLabel(), '');
+    refreshDebounced();
+  }
+  window.addEventListener('hashchange', onScene);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onScene);
+  else onScene();
 })();
 
 
@@ -7659,7 +7923,7 @@ window.rebuildExpertList = function () {};
    the explicit onclick= hash-jumps there), not from a top-level pill. */
 (function () {
   var SCENES = ['home','onboarding','onboarding-refine','dashboard','oracle','map','research',
-                'research-sub','database','molecule-detail','protocol-detail','toolbench','toolbench-tools','simulate'];
+                'research-sub','analytics','database','molecule-detail','protocol-detail','toolbench','toolbench-tools','simulate'];
   // longest / multi-word phrases first so 'community map' wins over 'map'
   var ROUTES = [
     ['home','home'],
@@ -8184,7 +8448,6 @@ window.rebuildExpertList = function () {};
   #rcFrame{ flex:1; border:none; width:100%; }
 </style>
 <div id="rcHint">Press H · Release Center</div>
-<div id="ffDevBanner">DEV · staging</div>
 <div id="rcOverlay" aria-hidden="true">
   <div id="rcPanel" role="dialog" aria-label="Release Center">
     <div id="rcBar"><span>MeatCODE · Release Center</span><button type="button" id="rcClose">Close (H / Esc)</button></div>
@@ -8215,6 +8478,523 @@ window.rebuildExpertList = function () {};
       .then(function(v){ var env=(v&&v.env)||'prod'; if(env==='dev'||env==='local') enable(); })
       .catch(function(){});
   }catch(e){}
+})();
+</script>
+
+<style>
+/* ── 2026-08-16 · Oracle capability-demo cards + Analytics scene (UI/UX). Tokens only. ── */
+/* shared demo card (appended inline into #oracleThread and reused by the Analytics results panel) */
+.mc-demo-card{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; box-shadow:var(--shadow); }
+.mc-demo-card h4{ margin:0 0 4px; font-size:15px; color:var(--wine-deep); font-weight:700; }
+.mc-demo-sub{ font-size:12.5px; color:var(--ink-dim); margin:0 0 14px; line-height:1.5; }
+.mc-demo-note{ font-size:11.5px; color:var(--ink-faint); }
+.mc-demo-loading{ font-size:13px; color:var(--ink-faint); }
+.mc-demo-error{ font-size:13px; color:#8A4B30; background:var(--brass-soft); border:1px solid #E0BBA6; border-radius:10px; padding:9px 12px; }
+.mc-demo-link{ display:inline-block; margin-top:12px; font-size:13px; font-weight:700; color:var(--wine); cursor:pointer; text-decoration:none; }
+.mc-demo-link:hover{ text-decoration:underline; }
+/* (a) reaction-route schematic strip */
+.mc-route{ display:flex; align-items:stretch; gap:6px; overflow-x:auto; padding:4px 0 2px; }
+.mc-route-step{ flex:0 0 auto; min-width:132px; max-width:184px; background:var(--wine-mist); border:1px solid var(--wine-tint); border-radius:12px; padding:9px 11px; }
+.mc-route-step .k{ font-family:var(--mono); font-size:9px; letter-spacing:.08em; text-transform:uppercase; color:var(--wine-soft); font-weight:700; }
+.mc-route-step .v{ font-size:12px; color:var(--ink); font-weight:700; margin-top:3px; line-height:1.3; }
+.mc-route-step .d{ font-size:10.5px; color:var(--ink-dim); margin-top:3px; line-height:1.35; }
+.mc-route-arrow{ align-self:center; color:var(--wine-soft); font-size:15px; font-weight:700; flex:0 0 auto; }
+/* (c) MANDATORY synthetic banner for mock simulator output */
+.mc-synth-banner{ display:flex; align-items:center; gap:8px; background:var(--brass-soft); color:#8A4B30; border:1px solid #E0BBA6; border-radius:10px; padding:8px 12px; margin:0 0 10px; font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:.04em; }
+.mc-synth-banner .dotmark{ width:8px; height:8px; border-radius:50%; background:var(--brass); flex:0 0 auto; }
+/* compound / off-note rows (c) */
+.mc-cmp-row{ display:flex; align-items:baseline; gap:8px; padding:6px 0; border-top:1px solid var(--line); }
+.mc-cmp-rank{ font-family:var(--mono); font-size:11px; color:var(--ink-faint); flex:0 0 20px; }
+.mc-cmp-name{ font-family:var(--mono); font-size:12.5px; color:var(--ink); font-weight:700; }
+.mc-cmp-desc{ font-size:11.5px; color:var(--ink-dim); }
+.mc-cmp-metric{ margin-left:auto; font-family:var(--mono); font-size:11.5px; color:var(--wine-deep); white-space:nowrap; }
+/* corpus rows + stat tiles (b + Analytics) */
+.mc-topic-chip{ display:inline-block; font-family:var(--mono); font-size:10.5px; font-weight:700; color:var(--wine-deep); background:var(--wine-mist); border:1px solid var(--wine-tint); border-radius:999px; padding:2px 9px; margin:0 6px 6px 0; }
+.mc-row{ padding:8px 0; border-top:1px solid var(--line); }
+.mc-row .t{ font-size:13px; color:var(--ink); font-weight:600; line-height:1.4; }
+.mc-row .m{ font-size:11.5px; color:var(--ink-faint); margin-top:2px; }
+.mc-stat{ display:inline-block; margin-right:22px; }
+.mc-stat b{ font-size:19px; color:var(--wine-deep); }
+.mc-stat span{ font-size:11px; color:var(--ink-faint); display:block; }
+/* (d) compare grid */
+.mc-cmp-form{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+.mc-cmp-form input{ flex:1 1 170px; min-width:120px; padding:8px 11px; border:1.5px solid var(--line-strong); border-radius:10px; font-size:13px; font-family:var(--round); background:var(--surface); color:var(--ink); }
+.mc-cmp-form input:focus{ outline:none; border-color:var(--wine); box-shadow:0 0 0 3px var(--wine-mist); }
+.mc-cmp-form button{ padding:8px 16px; border:none; border-radius:10px; background:var(--wine); color:#fff; font-weight:700; font-size:13px; cursor:pointer; font-family:var(--round); }
+.mc-cmp-form button:hover{ background:var(--wine-deep); }
+.mc-cmp-cols{ display:grid; gap:0; margin-top:4px; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+.mc-cmp-cols.mc-cmp-1{ grid-template-columns:150px 1fr; }
+.mc-cmp-cols.mc-cmp-2{ grid-template-columns:150px 1fr 1fr; }
+.mc-cmp-cols .h{ font-weight:700; font-size:12.5px; color:var(--wine-deep); padding:9px 11px; background:var(--wine-mist); border-bottom:1px solid var(--wine-tint); }
+.mc-cmp-cols .f{ font-size:11.5px; color:var(--ink-faint); padding:8px 11px; border-bottom:1px solid var(--line); background:var(--surface-2); }
+.mc-cmp-cols .c{ font-size:12.5px; color:var(--ink); padding:8px 11px; border-bottom:1px solid var(--line); }
+.mc-cmp-cols .c.diff{ background:var(--wine-mist); font-weight:700; color:var(--wine-deep); }
+.mc-userentered{ font-family:var(--mono); font-size:9.5px; color:var(--brass); font-weight:700; }
+/* ── Analytics scene ── */
+#analytics .an-wrap{ max-width:1000px; margin:0 auto; }
+#analytics .an-methods{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:14px; margin:18px 0; }
+#analytics .an-method{ background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--wine); border-radius:14px; padding:15px 17px; cursor:pointer; box-shadow:var(--shadow); transition:border-color .15s, background .15s; }
+#analytics .an-method:hover{ border-color:var(--wine-tint); }
+#analytics .an-method.chosen{ border-color:var(--wine); background:var(--wine-mist); }
+#analytics .an-method.has-data{ border-left-color:var(--olive); }
+#analytics .an-method.an-zero{ opacity:.5; cursor:not-allowed; }
+#analytics .an-method-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:6px; }
+#analytics .an-method h3{ font-size:14.5px; color:var(--wine-deep); margin:0; line-height:1.25; }
+#analytics .an-method .abbr{ display:block; font-family:var(--mono); font-size:9px; color:var(--ink-faint); margin-top:3px; font-weight:400; letter-spacing:.02em; }
+#analytics .an-method p{ font-size:12px; color:var(--ink-dim); line-height:1.5; margin:0; }
+#analytics .an-chip{ font-family:var(--mono); font-size:9px; font-weight:700; letter-spacing:.05em; padding:3px 8px; border-radius:999px; white-space:nowrap; flex:0 0 auto; }
+#analytics .an-chip.data{ background:var(--olive-soft); border:1px solid var(--olive); color:#4A5A33; }
+#analytics .an-chip.planned{ background:var(--surface-2); border:1px solid var(--line-strong); color:var(--ink-faint); }
+#analytics .an-count{ display:inline-block; margin-top:9px; font-family:var(--mono); font-size:10px; font-weight:700; color:var(--wine-deep); background:var(--wine-mist); border:1px solid var(--wine-tint); border-radius:999px; padding:2px 8px; }
+#analytics .an-count.empty{ color:var(--ink-faint); background:var(--surface-2); border-color:var(--line-strong); }
+#analytics .an-results{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; box-shadow:var(--shadow); }
+</style>
+<script>
+/* ═══ 2026-08-16 · Oracle capability demos (a–d) + Analytics scene wiring (UI/UX) ═══════
+   Four starter chips are capability demos now. (a) draws a reaction-route schematic then runs
+   the EXISTING grounded askOracle(); (b)/(c)/(d) append an inline live card to #oracleThread
+   (reusing mcOpenAnswerTurn) and never navigate away. askOracle() + the SSE handlers are
+   untouched. All fetches use the same-origin API base + credentials:'same-origin', and every
+   card handles loading / empty / error / not-deployed honestly. Mock simulator output ALWAYS
+   shows the mandatory "synthetic — not a real simulation" banner. */
+(function () {
+  function api()  { return (typeof API_BASE !== 'undefined') ? API_BASE : 'http://127.0.0.1:8000'; }
+  function esc(s) { return (typeof escapeHtml === 'function') ? escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s); }
+
+  /* append a card into the thread reusing the existing turn-append mechanism */
+  function appendDemoCard(innerHTML) {
+    if (typeof mcOpenAnswerTurn !== 'function') return null;
+    var host = mcOpenAnswerTurn();
+    if (!host) return null;
+    host.innerHTML = innerHTML;
+    if (typeof mcScrollThread === 'function') mcScrollThread(host);
+    return host;
+  }
+
+  /* ---- shared render helpers ---- */
+  function fmtNum(n) {
+    var x = Number(n);
+    if (!isFinite(x)) return String(n);
+    if (x >= 100) return String(Math.round(x));
+    return String(Math.round(x * 10) / 10);
+  }
+  function statHTML(tot) {
+    tot = tot || {};
+    var p = (tot.papers != null) ? tot.papers : '—';
+    var m = (tot.molecules != null) ? tot.molecules : '—';
+    return '<div><span class="mc-stat"><b>' + esc(String(p)) + '</b><span>papers</span></span>' +
+           '<span class="mc-stat"><b>' + esc(String(m)) + '</b><span>molecules</span></span></div>';
+  }
+  function topTopicsHTML(pt, n) {
+    if (!Array.isArray(pt) || !pt.length) return '';
+    return pt.slice().filter(function (t) { return t; })
+      .sort(function (a, b) { return (b.count | 0) - (a.count | 0); })
+      .slice(0, n || 8)
+      .map(function (t) { return '<span class="mc-topic-chip">' + esc(t.label || t.slug || '') + ' · ' + (t.count | 0) + '</span>'; })
+      .join('');
+  }
+  function rowsHTML(rows, n) {
+    if (!Array.isArray(rows) || !rows.length) return '';
+    return rows.slice(0, n || 4).map(function (r) {
+      if (!r) return '';
+      var meta = [];
+      if (r.year != null) meta.push(esc(String(r.year)));
+      if (r.authors) meta.push(esc(String(r.authors)));
+      return '<div class="mc-row"><div class="t">' + esc(String(r.title || 'Untitled')) + '</div>' +
+             (meta.length ? '<div class="m">' + meta.join(' · ') + '</div>' : '') + '</div>';
+    }).join('');
+  }
+  function notDeployedHTML() { return '<div class="mc-demo-error">Corpus preview loads once the API is deployed.</div>'; }
+
+  function corpusFetch(phase, topics, cb) {
+    var url = api() + '/api/corpus?phase=' + encodeURIComponent(phase) +
+              (topics && topics.length ? '&topics=' + encodeURIComponent(topics.join(',')) : '');
+    fetch(url, { credentials: 'same-origin' }).then(function (r) {
+      if (r.status === 404) { cb('NOT_DEPLOYED'); return null; }
+      if (!r.ok) { cb('HTTP ' + r.status); return null; }
+      return r.json().then(function (j) { cb(null, j); });
+    }).catch(function (e) { cb(String(e && e.message ? e.message : e)); });
+  }
+
+  /* ---- (a) Maillard synthesis route: schematic strip + the real grounded answer ---- */
+  function demoMaillard() {
+    var steps = [
+      ['Precursors', 'reducing sugars + amino acids', 'glucose · ribose · cysteine · methionine'],
+      ['Amadori / Heyns', 'glycosylamine rearrangement', 'the first stable intermediates'],
+      ['Fragmentation', 'Strecker + sugar fragmentation', 'α-dicarbonyls · aldehydes · H₂S · NH₃'],
+      ['Heterocycles', 'ring formation & recombination', 'pyrazines · furans · furanthiols'],
+      ['Meaty aroma', 'impact odorants', '2-methyl-3-furanthiol · MFT · 2-AP']
+    ];
+    var strip = steps.map(function (s, i) {
+      var arrow = (i < steps.length - 1) ? '<div class="mc-route-arrow">→</div>' : '';
+      return '<div class="mc-route-step"><div class="k">' + esc(s[0]) + '</div>' +
+             '<div class="v">' + esc(s[1]) + '</div><div class="d">' + esc(s[2]) + '</div></div>' + arrow;
+    }).join('');
+    appendDemoCard(
+      '<div class="mc-demo-card">' +
+        '<h4>Maillard synthesis route → meaty aroma</h4>' +
+        '<p class="mc-demo-sub">Reaction topology (textbook schematic — not from the corpus). The grounded, cited answer streams below.</p>' +
+        '<div class="mc-route">' + strip + '</div>' +
+      '</div>'
+    );
+    if (typeof oracleTextarea !== 'undefined' && oracleTextarea) {
+      oracleTextarea.value = 'Walk me through the Maillard reaction route that generates meaty aroma — from sugar and amino-acid precursors through Amadori/Heyns and Strecker degradation to the key aroma heterocycles (pyrazines, furans, furanthiols). Cite the corpus.';
+    }
+    if (typeof askOracle === 'function') askOracle();
+  }
+
+  /* ---- (b) Explore the lipid corpus: inline card over GET /api/corpus?phase=lipid ---- */
+  function demoLipidCorpus() {
+    var host = appendDemoCard(
+      '<div class="mc-demo-card">' +
+        '<h4>Explore the lipid corpus</h4>' +
+        '<p class="mc-demo-sub">A live slice of everything tagged to the lipid phase.</p>' +
+        '<div class="mc-demo-body"><div class="mc-demo-loading">Loading the lipid corpus…</div></div>' +
+      '</div>'
+    );
+    if (!host) return;
+    var body = host.querySelector('.mc-demo-body');
+    corpusFetch('lipid', null, function (err, d) {
+      if (!body) return;
+      if (err === 'NOT_DEPLOYED') { body.innerHTML = notDeployedHTML(); return; }
+      if (err || !d || d.ok === false) { body.innerHTML = '<div class="mc-demo-error">Corpus API is not reachable yet — the lipid slice loads once it is deployed.</div>'; return; }
+      var chips = topTopicsHTML(d.phase_topics, 8);
+      var rows = rowsHTML(d.rows, 4);
+      body.innerHTML =
+        statHTML(d.totals) +
+        (chips ? '<div style="margin:12px 0 2px;">' + chips + '</div>' : '') +
+        (rows ? '<div style="margin-top:8px;">' + rows + '</div>' : '<div class="mc-demo-note">No sample papers returned.</div>') +
+        '<a class="mc-demo-link" data-seeresearch="lipid">See in Research →</a>';
+      var link = body.querySelector('[data-seeresearch]');
+      if (link) link.addEventListener('click', function () {
+        try { localStorage.setItem('mc_phase', 'lipid'); } catch (e) {}
+        location.hash = '#research-sub';
+      });
+    });
+  }
+
+  /* ---- (c) Predict with the simulator: canned POST /api/simulate + mandatory synthetic banner ---- */
+  function demoSimulate() {
+    var host = appendDemoCard(
+      '<div class="mc-demo-card">' +
+        '<h4>Predict with the Maillard simulator</h4>' +
+        '<p class="mc-demo-sub">Canned “beef-broth base” request — D-glucose · D-ribose · L-cysteine · L-methionine, pH 5.6, 140 °C, 30 min.</p>' +
+        '<div class="mc-demo-body"><div class="mc-demo-loading">Running the simulator…</div></div>' +
+      '</div>'
+    );
+    if (!host) return;
+    var body = host.querySelector('.mc-demo-body');
+    var reqBody = {
+      precursors: {
+        sugars: [{ name: 'D-glucose', amount: 180, unit: 'mg' }, { name: 'D-ribose', amount: 60, unit: 'mg' }],
+        amino_acids: [{ name: 'L-cysteine', amount: 120, unit: 'mg' }, { name: 'L-methionine', amount: 40, unit: 'mg' }]
+      },
+      conditions: { ph: 5.6, temperature_c: 140, time_min: 30, matrix: 'aqueous' },
+      options: { top_compounds: 6 },
+      label: 'beef-broth base'
+    };
+    simulate(reqBody, function (err, d) {
+      if (!body) return;
+      if (err === 'NOT_DEPLOYED') {
+        body.innerHTML = '<div class="mc-demo-error">Simulator preview — enable the <b>maillard_sim</b> flag in the Release Center to run it.</div>';
+        return;
+      }
+      if (err || !d) { body.innerHTML = '<div class="mc-demo-error">Simulator is not reachable right now. Try again once it is deployed.</div>'; return; }
+      body.innerHTML = renderSimulate(d);
+    });
+  }
+  function simulate(reqBody, cb) {
+    fetch(api() + '/api/simulate', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(reqBody)
+    }).then(function (r) {
+      if (r.status === 404) { cb('NOT_DEPLOYED'); return null; }
+      if (r.status === 202) { return r.json().then(function (j) { pollSimulate(j && j.poll, j && j.job_id, cb, 0); }); }
+      if (!r.ok) { return r.text().then(function (t) { cb(t || ('HTTP ' + r.status)); }); }
+      return r.json().then(function (j) { cb(null, j); });
+    }).catch(function (e) { cb(String(e && e.message ? e.message : e)); });
+  }
+  function pollSimulate(pollUrl, jobId, cb, tries) {
+    if (tries > 10) { cb('TIMEOUT'); return; }
+    var url = pollUrl ? (api() + pollUrl) : (api() + '/api/simulate/' + jobId);
+    setTimeout(function () {
+      fetch(url, { credentials: 'same-origin' }).then(function (r) {
+        if (r.status === 404) { cb('NOT_DEPLOYED'); return null; }
+        if (r.status === 202) { pollSimulate(pollUrl, jobId, cb, tries + 1); return null; }
+        if (!r.ok) { return r.text().then(function (t) { cb(t || ('HTTP ' + r.status)); }); }
+        return r.json().then(function (j) {
+          if (j && j.status === 'running') { pollSimulate(pollUrl, jobId, cb, tries + 1); return; }
+          cb(null, j);
+        });
+      }).catch(function (e) { cb(String(e && e.message ? e.message : e)); });
+    }, 1200);
+  }
+  function renderSimulate(d) {
+    if (!d || d.ok === false) {
+      var em = (d && d.error && d.error.message) ? d.error.message : 'The simulator reported a failure.';
+      return '<div class="mc-demo-error">' + esc(em) + '</div>';
+    }
+    var out = '';
+    if (d.synthetic) {
+      out += '<div class="mc-synth-banner"><span class="dotmark"></span>SYNTHETIC — NOT A REAL SIMULATION</div>';
+      if (d.disclaimer) out += '<p class="mc-demo-note" style="margin:-4px 0 12px;">' + esc(d.disclaimer) + '</p>';
+    }
+    var mode = d.mode ? (' · ' + esc(String(d.mode)) + ' backend') : '';
+    var comps = Array.isArray(d.compounds) ? d.compounds : [];
+    if (comps.length) {
+      out += '<div class="mc-demo-note" style="margin:2px 0 4px;">Ranked compounds' + mode + '</div>';
+      comps.forEach(function (c) {
+        if (!c) return;
+        var y = (c.yield_ppb != null) ? (fmtNum(c.yield_ppb) + ' ppb') : '—';
+        var conf = (c.confidence != null) ? (Math.round(c.confidence * 100) + '% conf') : '';
+        out += '<div class="mc-cmp-row">' +
+                 '<span class="mc-cmp-rank">' + esc(String(c.rank != null ? c.rank : '')) + '</span>' +
+                 '<span><span class="mc-cmp-name">' + esc(String(c.name || 'unnamed')) + '</span>' +
+                   (c.descriptor ? ' <span class="mc-cmp-desc">' + esc(String(c.descriptor)) + '</span>' : '') + '</span>' +
+                 '<span class="mc-cmp-metric">' + esc(y) + (conf ? ' · ' + esc(conf) : '') + '</span>' +
+               '</div>';
+      });
+    } else {
+      out += '<div class="mc-demo-note">No compounds returned.</div>';
+    }
+    var offs = Array.isArray(d.off_notes) ? d.off_notes : [];
+    if (offs.length) {
+      out += '<div class="mc-demo-note" style="margin:12px 0 4px;">Off-notes</div>';
+      offs.forEach(function (o) {
+        if (!o) return;
+        var lvl = o.level ? esc(String(o.level)) : '';
+        var risk = (o.risk != null) ? esc(Math.round(o.risk * 100) + '% risk') : '';
+        out += '<div class="mc-cmp-row"><span class="mc-cmp-name">' + esc(String(o.tag || 'off-note')) + '</span>' +
+               (o.descriptor ? ' <span class="mc-cmp-desc">' + esc(String(o.descriptor)) + '</span>' : '') +
+               '<span class="mc-cmp-metric">' + risk + (lvl ? ' · ' + lvl : '') + '</span></div>';
+      });
+    }
+    return out;
+  }
+
+  /* ---- (d) Compare molecules: inline form → POST /api/compare, side-by-side, no navigation ---- */
+  function demoCompare() {
+    var host = appendDemoCard(
+      '<div class="mc-demo-card">' +
+        '<h4>Compare molecules</h4>' +
+        '<p class="mc-demo-sub">Enter 1–2 molecules (name, or a corpus id). One shows its profile; two show the diff.</p>' +
+        '<div class="mc-cmp-form">' +
+          '<input type="text" class="mc-cmp-a" placeholder="e.g. 2-methyl-3-furanthiol" aria-label="Molecule A">' +
+          '<input type="text" class="mc-cmp-b" placeholder="e.g. 2-acetyl-1-pyrroline (optional)" aria-label="Molecule B">' +
+          '<button type="button" class="mc-cmp-go">Compare</button>' +
+        '</div>' +
+        '<div class="mc-demo-body"></div>' +
+      '</div>'
+    );
+    if (!host) return;
+    var body = host.querySelector('.mc-demo-body');
+    var inA = host.querySelector('.mc-cmp-a');
+    var inB = host.querySelector('.mc-cmp-b');
+    var btn = host.querySelector('.mc-cmp-go');
+    function run() {
+      var a = (inA && inA.value || '').trim();
+      var b = (inB && inB.value || '').trim();
+      if (!a && !b) { body.innerHTML = '<div class="mc-demo-error">Enter at least one molecule.</div>'; return; }
+      var items = [];
+      [a, b].forEach(function (v) {
+        if (!v) return;
+        if (/^\d+$/.test(v)) items.push({ id: parseInt(v, 10) });
+        else items.push({ name: v });
+      });
+      body.innerHTML = '<div class="mc-demo-loading">Comparing…</div>';
+      fetch(api() + '/api/compare', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: items })
+      }).then(function (r) {
+        if (r.status === 404) throw new Error('NOT_DEPLOYED');
+        if (!r.ok) return r.text().then(function (t) { throw new Error(t || ('HTTP ' + r.status)); });
+        return r.json();
+      }).then(function (d) {
+        body.innerHTML = renderCompare(d);
+      }).catch(function (e) {
+        var m = String(e && e.message ? e.message : e);
+        if (m === 'NOT_DEPLOYED') body.innerHTML = '<div class="mc-demo-error">Compare preview — the comparison API loads once it is deployed.</div>';
+        else body.innerHTML = '<div class="mc-demo-error">' + esc(m) + '</div>';
+      });
+    }
+    if (btn) btn.addEventListener('click', run);
+    [inA, inB].forEach(function (el) {
+      if (el) el.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); run(); } });
+    });
+    if (inA) { try { inA.focus(); } catch (e) {} }
+  }
+  function colHeader(col) {
+    if (!col) return '—';
+    var name = col.name || col.title || ('#' + (col.id != null ? col.id : '?'));
+    var tag = (col.in_corpus === false) ? ' <span class="mc-userentered">user-entered</span>' : '';
+    return esc(String(name)) + tag;
+  }
+  function fmtCell(v) {
+    if (v == null || v === '') return '—';
+    if (Array.isArray(v)) return v.join(', ');
+    return String(v);
+  }
+  function renderCompare(d) {
+    if (!d || d.ok === false) return '<div class="mc-demo-error">' + esc((d && d.note) || 'Nothing to compare.') + '</div>';
+    var cols = Array.isArray(d.columns) ? d.columns : [];
+    var fields = Array.isArray(d.fields) ? d.fields : [];
+    if (!cols.length) return '<div class="mc-demo-error">No molecule profile returned.</div>';
+    var two = cols.length >= 2;
+    var grid = '<div class="mc-cmp-cols ' + (two ? 'mc-cmp-2' : 'mc-cmp-1') + '">';
+    grid += '<div class="h"></div><div class="h">' + colHeader(cols[0]) + '</div>' + (two ? '<div class="h">' + colHeader(cols[1]) + '</div>' : '');
+    fields.forEach(function (f) {
+      if (!f) return;
+      var diff = two && f.differs;
+      grid += '<div class="f">' + esc(String(f.label || f.key || '')) + '</div>';
+      grid += '<div class="c' + (diff ? ' diff' : '') + '">' + esc(fmtCell(f.a)) + '</div>';
+      if (two) grid += '<div class="c' + (diff ? ' diff' : '') + '">' + esc(fmtCell(f.b)) + '</div>';
+    });
+    grid += '</div>';
+    return grid + (d.note ? '<div class="mc-demo-note" style="margin-top:10px;">' + esc(String(d.note)) + '</div>' : '');
+  }
+
+  /* ---- dispatch: the 4 capability chips (data-demo) ---- */
+  document.addEventListener('click', function (e) {
+    var chip = e.target.closest && e.target.closest('.oracle-starter[data-demo]');
+    if (!chip) return;
+    e.preventDefault();
+    var kind = chip.getAttribute('data-demo');
+    if (kind === 'maillard') demoMaillard();
+    else if (kind === 'lipid-corpus') demoLipidCorpus();
+    else if (kind === 'simulate') demoSimulate();
+    else if (kind === 'compare') demoCompare();
+  }, false);
+})();
+
+
+/* ═══ 2026-08-16 · #analytics scene · live-corpus method chips (UI/UX) ═══════════════════
+   Each .an-method carries data-topics (ANALYTICS taxonomy slugs). Click = multi-select /
+   deselect → GET /api/corpus?phase=analytics&topics=<union> → totals + top topics + a few
+   rows in #anResults. phase_topics drives a per-card source count; 0-source cards are honestly
+   greyed + made unselectable. Endpoint 404s until deploy → honest preview state, never blank. */
+(function () {
+  function api()  { return (typeof API_BASE !== 'undefined') ? API_BASE : 'http://127.0.0.1:8000'; }
+  function esc(s) { return (typeof escapeHtml === 'function') ? escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s); }
+  function gridEl()    { return document.getElementById('anMethods'); }
+  function resultsEl() { return document.getElementById('anResults'); }
+  function cards()     { var g = gridEl(); return g ? Array.prototype.slice.call(g.querySelectorAll('.an-method')) : []; }
+  function cardSlugs(c) { return (c.getAttribute('data-topics') || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean); }
+  function chosen()    { return cards().filter(function (c) { return c.classList.contains('chosen'); }); }
+  function selectedSlugs() {
+    var set = {}; chosen().forEach(function (c) { cardSlugs(c).forEach(function (s) { set[s] = 1; }); });
+    return Object.keys(set);
+  }
+  function updateRail() {
+    var el = document.getElementById('anRailPicked'); if (!el) return;
+    var n = chosen().length;
+    el.innerHTML = '<div class="dot"' + (n ? ' style="background:var(--wine)"' : '') + '></div>' + n + ' method' + (n === 1 ? '' : 's') + ' selected';
+  }
+  function ensureBadge(c) { var b = c.querySelector('.an-count'); if (!b) { b = document.createElement('span'); b.className = 'an-count'; c.appendChild(b); } return b; }
+  function clearBadges() { cards().forEach(function (c) { var b = c.querySelector('.an-count'); if (b) b.remove(); c.classList.remove('an-zero'); }); }
+  function applyPhaseTopics(pt) {
+    var counts = {};
+    (pt || []).forEach(function (t) { if (t && t.slug != null) counts[t.slug] = (t.count | 0); });
+    cards().forEach(function (c) {
+      var slugs = cardSlugs(c), total = 0, known = false;
+      slugs.forEach(function (s) { if (Object.prototype.hasOwnProperty.call(counts, s)) { known = true; total += counts[s]; } });
+      var b = ensureBadge(c);
+      if (!known) { b.textContent = '—'; b.classList.add('empty'); c.classList.remove('an-zero'); return; }
+      b.textContent = total + (total === 1 ? ' source' : ' sources');
+      b.classList.toggle('empty', total === 0);
+      if (total === 0) { c.classList.add('an-zero'); c.classList.remove('chosen'); }
+      else { c.classList.remove('an-zero'); }
+    });
+  }
+  function topTopics(pt, n) {
+    if (!Array.isArray(pt) || !pt.length) return '';
+    return pt.slice().filter(function (t) { return t; })
+      .sort(function (a, b) { return (b.count | 0) - (a.count | 0); }).slice(0, n || 10)
+      .map(function (t) { return '<span class="mc-topic-chip">' + esc(t.label || t.slug || '') + ' · ' + (t.count | 0) + '</span>'; }).join('');
+  }
+  function rowsList(rows, n) {
+    if (!Array.isArray(rows) || !rows.length) return '';
+    return rows.slice(0, n || 6).map(function (r) {
+      if (!r) return '';
+      var meta = [];
+      if (r.year != null) meta.push(esc(String(r.year)));
+      if (r.authors) meta.push(esc(String(r.authors)));
+      return '<div class="mc-row"><div class="t">' + esc(String(r.title || 'Untitled')) + '</div>' +
+             (meta.length ? '<div class="m">' + meta.join(' · ') + '</div>' : '') + '</div>';
+    }).join('');
+  }
+  function statLine(tot) {
+    tot = tot || {};
+    var p = (tot.papers != null) ? tot.papers : '—';
+    var m = (tot.molecules != null) ? tot.molecules : '—';
+    return '<div><span class="mc-stat"><b>' + esc(String(p)) + '</b><span>papers</span></span>' +
+           '<span class="mc-stat"><b>' + esc(String(m)) + '</b><span>molecules</span></span></div>';
+  }
+  function corpusGet(slugs, cb) {
+    var url = api() + '/api/corpus?phase=analytics' + (slugs && slugs.length ? '&topics=' + encodeURIComponent(slugs.join(',')) : '');
+    fetch(url, { credentials: 'same-origin' }).then(function (res) {
+      if (res.status === 404) { cb('NOT_DEPLOYED'); return null; }
+      if (!res.ok) { cb('HTTP ' + res.status); return null; }
+      return res.json().then(function (j) { cb(null, j); });
+    }).catch(function (e) { cb(String(e && e.message ? e.message : e)); });
+  }
+
+  var timer = null, seq = 0;
+  function renderResults(d) {
+    var r = resultsEl(); if (!r) return;
+    var chips = topTopics(d.phase_topics, 10);
+    var rows = rowsList(d.rows, 6);
+    var n = chosen().length;
+    r.innerHTML =
+      '<div class="mc-demo-note" style="margin-bottom:8px;">' + n + ' method' + (n === 1 ? '' : 's') + ' selected · live corpus slice</div>' +
+      statLine(d.totals) +
+      (chips ? '<div style="margin:12px 0 2px;">' + chips + '</div>' : '') +
+      (rows ? '<div style="margin-top:8px;">' + rows + '</div>' : '<div class="mc-demo-note">No sample papers in this slice.</div>');
+  }
+  function loadPhaseCounts() {
+    var mine = ++seq;
+    corpusGet([], function (err, d) {
+      if (mine !== seq) return;
+      if (err || !d || d.ok === false) return;   /* endpoint not deployed → leave badges empty */
+      if (d.phase_topics) applyPhaseTopics(d.phase_topics);
+    });
+  }
+  function refresh() {
+    var r = resultsEl(); if (!r) return;
+    updateRail();
+    var slugs = selectedSlugs();
+    if (!slugs.length) {
+      clearBadges();
+      r.innerHTML = '<div class="mc-demo-loading">Pick a method above to pull its corpus slice.</div>';
+      loadPhaseCounts();
+      return;
+    }
+    r.innerHTML = '<div class="mc-demo-loading">Loading the corpus slice…</div>';
+    var mine = ++seq;
+    corpusGet(slugs, function (err, d) {
+      if (mine !== seq) return;
+      if (err === 'NOT_DEPLOYED') { clearBadges(); r.innerHTML = '<div class="mc-demo-error">Corpus preview loads once the API is deployed.</div>'; return; }
+      if (err || !d || d.ok === false) { clearBadges(); r.innerHTML = '<div class="mc-demo-error">Corpus API is not reachable yet.</div>'; return; }
+      if (d.phase_topics) applyPhaseTopics(d.phase_topics);
+      renderResults(d);
+    });
+  }
+  function refreshDebounced() { if (timer) clearTimeout(timer); timer = setTimeout(refresh, 250); }
+
+  document.addEventListener('click', function (e) {
+    var c = e.target.closest && e.target.closest('#analytics .an-method');
+    if (!c) return;
+    if (c.classList.contains('an-zero')) return;   /* greyed = not selectable */
+    c.classList.toggle('chosen');
+    updateRail();
+    refreshDebounced();
+  }, false);
+
+  function onScene() { if (location.hash !== '#analytics') return; refresh(); }
+  window.addEventListener('hashchange', onScene);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onScene);
+  else onScene();
 })();
 </script>
 </body>
