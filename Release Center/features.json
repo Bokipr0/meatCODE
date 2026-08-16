@@ -124,7 +124,7 @@
       "destination": "Research tile → Analytics (already linked from the mockup's Research screen, labelled preview).",
       "url": "/app/dev/analytics.html",
       "dev": true,
-      "prod": false
+      "prod": true
     },
     "compare": {
       "label": "Compare screen",
@@ -174,7 +174,7 @@
       "destination": "Dev Area only — approved patterns get ported into app/meatcode_mockup.html; the thread itself needs multi-turn retrieval before it graduates.",
       "url": "/app/dev/oracle_redesign.html",
       "dev": true,
-      "prod": false
+      "prod": true
     }
   }
 }
