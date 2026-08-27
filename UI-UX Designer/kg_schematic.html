@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<!-- kg_schematic.html · MeatCODE claim-based knowledge graph · v1 · 2026-08-16 · UI/UX Designer.
+     Presentation-grade one-page schematic for projection. Self-contained: no libraries, no fonts,
+     no network requests, no JavaScript. Tokens copied from app/meatcode_mockup.html :root
+     (teal --wine family, coral --brass, olive). Numbers are the verified 2026-08-16 audit figures. -->
+<title>MeatCODE — claim-based knowledge graph · v1 · 2026-08-16</title>
+<meta name="viewport" content="width=1440" />
+<style>
+:root{
+  --bg:#FAF6EF; --bg-deep:#F2EBDA; --surface:#FFFFFF; --surface-2:#F7F0E0;
+  --wine:#00736E; --wine-deep:#015A56; --wine-soft:#4FA59F; --wine-tint:#B5DDD8; --wine-mist:#E0F0EE;
+  --ink:#1A1A1A; --ink-dim:#4A4A4A; --ink-faint:#8A8A8A;
+  --line:#E5DDD0; --line-strong:#D2C8B5;
+  --brass:#C77E5F; --brass-soft:#F2D7C8; --olive:#7A8C5F; --olive-soft:#D6DCC4;
+  --round:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:"SF Mono","JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--round);font-size:14px;line-height:1.45;
+     -webkit-font-smoothing:antialiased}
+.page{max-width:1680px;margin:0 auto;padding:28px 34px 40px}
+
+/* ── title block ── */
+.title{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;
+       border-bottom:2px solid var(--wine);padding-bottom:12px;margin-bottom:22px}
+.title h1{margin:0;font-size:26px;font-weight:700;letter-spacing:-.01em;color:var(--wine-deep)}
+.title .sub{font-size:13px;color:var(--ink-dim);margin-top:3px}
+.title .stamp{font-family:var(--mono);font-size:11px;color:var(--ink-faint);text-align:right;white-space:nowrap}
+
+.sec{margin:0 0 26px}
+.sec-h{display:flex;align-items:baseline;gap:10px;margin:0 0 12px}
+.sec-n{font-family:var(--mono);font-size:11px;font-weight:700;color:#fff;background:var(--wine);
+       border-radius:3px;padding:2px 7px;letter-spacing:.06em}
+.sec-t{font-size:15px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--wine-deep)}
+.sec-d{font-size:12.5px;color:var(--ink-dim)}
+
+.card{background:var(--surface);border:1px solid var(--line-strong);border-radius:8px}
+.mono{font-family:var(--mono)}
+
+/* ── 0. HERO — the wordless triplet. Deliberately almost text-free: this is the shape
+      of the idea, and every later band is a magnification of the diamond in the middle. ── */
+.hero{margin-bottom:34px}
+.hero-frame{background:var(--surface);border:1px solid var(--line-strong);border-radius:10px;
+            padding:52px 40px 30px}
+.hero-row{display:flex;align-items:center;justify-content:center;gap:0}
+.ent{display:flex;flex-direction:column;align-items:center;gap:12px;width:190px;flex:none}
+.ent-dot{width:82px;height:82px;border-radius:50%;border:2.5px solid var(--wine);background:var(--wine-mist)}
+.ent-lbl{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+.bridge{display:flex;align-items:center;flex:1;min-width:220px;max-width:420px}
+.bridge-line{flex:1;height:2px;background:var(--line-strong)}
+/* The claim "sticker": soft, fully rounded — deliberately the friendliest shape on the page,
+   because it is the thing we want the eye to land on. */
+.claim-hex{width:132px;height:112px;flex:none;display:flex;align-items:center;justify-content:center;
+           background:var(--brass);color:#fff;border-radius:40px;
+           box-shadow:0 2px 0 rgba(0,0,0,.06)}
+.claim-hex-in{text-align:center;line-height:1.25}
+.claim-mark{font-size:20px;opacity:.9}
+.claim-lbl{font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;margin-top:3px}
+.hero-foot{display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;
+           margin-top:38px;padding-top:20px;border-top:1px dashed var(--line-strong);
+           font-family:var(--mono);font-size:13px}
+.hero-old{color:var(--ink-faint);text-decoration:line-through;text-decoration-color:var(--brass)}
+.hero-vs{font-family:var(--round);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+.hero-new{color:var(--wine-deep);font-weight:700}
+.hero-arrow{color:var(--line-strong);letter-spacing:-.1em}
+.hero-cap{text-align:center;font-size:12.5px;color:var(--ink-dim);margin-top:12px}
+
+/* ── open-question styling for the weight band (§4): the factors are candidates, not decisions ── */
+.pbox.open{border-style:dashed;border-color:var(--brass);background:#FDF7F3}
+.pbox.open .pv{color:var(--brass);font-size:26px}
+
+/* ── shared chips / nodes (were introduced with the removed three-layer band) ── */
+.layers{display:grid;grid-template-columns:150px 1fr;gap:0 16px;align-items:stretch}
+.lname{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);
+       display:flex;align-items:center;justify-content:flex-end;text-align:right}
+.lrow{border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);padding:12px 16px;
+      display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.lrow.claims{border:2px solid var(--wine);background:var(--wine-mist);padding:18px 16px}
+.lconn{grid-column:2;height:26px;display:flex;align-items:center;justify-content:center;
+       font-family:var(--mono);font-size:11px;color:var(--ink-faint);position:relative}
+.lconn span{background:var(--bg);padding:0 8px;z-index:1}
+.lconn::before{content:"";position:absolute;left:0;right:0;top:50%;border-top:1px dashed var(--line-strong)}
+.chip{border:1px solid var(--line-strong);border-radius:4px;background:var(--surface-2);
+      padding:4px 9px;font-size:12px;font-family:var(--mono);color:var(--ink-dim);white-space:nowrap}
+.chip.t{border-color:var(--wine-soft);background:#fff;color:var(--wine-deep)}
+.chip.c{border-color:var(--brass);background:#fff;color:var(--brass)}
+.chip.o{border-color:var(--olive);background:#fff;color:var(--olive)}
+.cnode{border:1.5px solid var(--wine);background:#fff;border-radius:6px;padding:7px 12px;
+       font-family:var(--mono);font-size:12.5px;color:var(--wine-deep);font-weight:700}
+.lbl-strong{font-size:13px;font-weight:700;color:var(--wine-deep)}
+
+/* ── 2 & 3 side blocks ── */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
+.three{display:grid;grid-template-columns:1.05fr 1.35fr;gap:22px;align-items:stretch}
+
+/* anatomy */
+.anat{padding:18px 20px}
+.anat-hd{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;
+         padding-bottom:10px;border-bottom:1px solid var(--line)}
+.anat-hd .id{font-family:var(--mono);font-size:11px;color:var(--ink-faint)}
+.anat-hd .nm{font-size:14px;font-weight:700;color:var(--wine-deep);letter-spacing:.02em}
+.field{display:grid;grid-template-columns:132px 1fr;gap:10px;align-items:start;padding:6px 0;
+       border-bottom:1px dotted var(--line)}
+.field:last-child{border-bottom:0}
+.fk{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);padding-top:2px}
+.fv{font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+.fv .kw{color:var(--wine);font-weight:700}
+.null .fk,.null .fv{color:var(--ink-faint)}
+.nullbox{display:inline-block;border:1px dashed var(--ink-faint);border-radius:4px;background:repeating-linear-gradient(
+   -45deg,transparent,transparent 5px,#F0EDE6 5px,#F0EDE6 6px);padding:3px 8px;color:var(--ink-faint);
+   font-family:var(--mono);font-size:12px}
+/* a FILLED condition/measurement value — the target shape, so it reads solid, not hatched */
+.valbox{display:inline-block;border:1px solid var(--wine-tint);border-radius:4px;background:var(--wine-mist);
+   padding:3px 8px;color:var(--wine-deep);font-family:var(--mono);font-size:12px;margin:1px 0}
+.honest{margin-top:12px;border-left:3px solid var(--brass);background:#FDF4EF;padding:8px 12px;
+        font-size:12.5px;color:var(--ink-dim)}
+.honest b{color:var(--brass)}
+
+/* flat vs reified */
+.vs{display:grid;grid-template-columns:1fr 40px 1fr;gap:0;align-items:stretch}
+.vs-col{padding:16px 18px}
+.vs-col.flat{border:1px dashed var(--line-strong);border-radius:8px;background:#FBF8F2}
+.vs-col.reif{border:2px solid var(--wine);border-radius:8px;background:#fff}
+.vs-tag{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px}
+.vs-col.flat .vs-tag{color:var(--ink-faint)}
+.vs-col.reif .vs-tag{color:var(--wine)}
+.vs-mid{display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--ink-faint);
+        font-family:var(--mono)}
+.flat-graph{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:18px 0 16px}
+.ent{border:1px solid var(--line-strong);border-radius:20px;background:#fff;padding:6px 12px;
+     font-family:var(--mono);font-size:12.5px}
+.ent.mol{border-color:var(--wine-soft);color:var(--wine-deep)}
+.ent.od{border-color:var(--brass);color:var(--brass)}
+.arrowlbl{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);white-space:nowrap}
+.miss{list-style:none;margin:0;padding:0}
+.miss li{font-size:12.5px;color:var(--ink-dim);padding:3px 0 3px 20px;position:relative}
+.miss li::before{content:"×";position:absolute;left:2px;top:2px;color:var(--brass);font-weight:700;font-family:var(--mono)}
+.gain li::before{content:"✓";color:var(--wine)}
+.mini{border:1.5px solid var(--wine);border-radius:6px;background:var(--wine-mist);padding:10px 12px;margin:6px 0 12px}
+.mini .row{display:grid;grid-template-columns:96px 1fr;gap:8px;font-family:var(--mono);font-size:12px;padding:2px 0}
+.mini .row b{font-family:var(--round);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+             color:var(--wine-deep);font-weight:700;padding-top:2px}
+.punch{margin-top:10px;font-size:13px;font-weight:700;color:var(--wine-deep)}
+.punch.warn{color:var(--brass)}
+
+/* ── 4. weight pipeline ── */
+.pipe{display:flex;align-items:stretch;gap:0;flex-wrap:nowrap;overflow:hidden}
+.pbox{flex:1 1 0;border:1px solid var(--line-strong);border-radius:6px;background:#fff;padding:10px 8px;
+      text-align:center;min-width:0}
+.pbox .pk{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);
+          line-height:1.25}
+.pbox .pv{font-family:var(--mono);font-size:17px;font-weight:700;color:var(--wine);margin-top:5px}
+.pbox .pe{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);margin-top:3px}
+.pbox.pen{border-color:var(--brass);background:#FDF4EF}
+.pbox.pen .pv{color:var(--brass)}
+.pop{flex:0 0 34px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);
+     font-size:17px;color:var(--ink-faint)}
+.pbox.out{flex:0 0 150px;border:2px solid var(--wine);background:var(--wine-mist)}
+.pbox.out .pv{font-size:24px;color:var(--wine-deep)}
+.pnote{margin-top:8px;font-size:12px;color:var(--ink-faint);font-family:var(--mono)}
+
+/* ── 5. contradiction ── */
+.contra{display:grid;grid-template-columns:170px 1fr 170px;gap:18px;align-items:center}
+.pole{border:1.5px solid var(--line-strong);border-radius:20px;background:#fff;padding:10px 12px;text-align:center;
+      font-family:var(--mono);font-size:13px}
+.pole.subj{border-color:var(--wine-soft);color:var(--wine-deep)}
+.pole.obj{border-color:var(--brass);color:var(--brass)}
+.stack{display:grid;gap:10px}
+.cl{border:1.5px solid var(--wine);border-radius:6px;background:#fff;padding:9px 13px;
+    display:grid;grid-template-columns:74px 1fr 128px 64px;gap:10px;align-items:center;font-size:12.5px}
+.cl.opp{border-color:var(--brass)}
+.cl .pol{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--wine);text-align:center;
+         border:1px solid var(--wine-tint);border-radius:4px;padding:2px 0;background:var(--wine-mist)}
+.cl.opp .pol{color:var(--brass);border-color:var(--brass-soft);background:#FDF0E9}
+.cl .cond{font-family:var(--mono);font-size:12px;color:var(--ink-dim)}
+.cl .src{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint)}
+.cl .w{font-family:var(--mono);font-size:13px;font-weight:700;text-align:right}
+.clash{display:flex;align-items:center;gap:8px;margin:2px 0 2px;padding-left:2px}
+.clash .bolt{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--brass);
+             border:1px solid var(--brass);border-radius:4px;padding:1px 7px;background:#FDF0E9}
+.clash .txt{font-size:12.5px;color:var(--ink-dim)}
+.caveat{margin-top:12px;border-left:3px solid var(--olive);background:#F4F6EE;padding:8px 12px;font-size:12.5px;color:var(--ink-dim)}
+.caveat b{color:var(--olive)}
+
+/* ── 6. numbers strip ── */
+.nums{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--line-strong);
+      border-radius:8px;overflow:hidden;background:#fff}
+.n{padding:12px 16px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.n:nth-child(4n){border-right:0}
+.n:nth-child(n+5){border-bottom:0}
+.n .v{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--wine-deep);line-height:1.1}
+.n .k{font-size:11.5px;color:var(--ink-dim);margin-top:4px}
+.n.gap{background:#FDF4EF}
+.n.gap .v{color:var(--brass)}
+.foot{margin-top:18px;padding-top:10px;border-top:1px solid var(--line);display:flex;justify-content:space-between;
+      gap:16px;font-family:var(--mono);font-size:11px;color:var(--ink-faint)}
+.legend{display:flex;gap:16px;align-items:center;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--ink-faint)}
+.legend i{display:inline-block;width:22px;height:0;border-top:2px solid var(--wine);vertical-align:middle;margin-right:5px;font-style:normal}
+.legend i.d{border-top:1px dashed var(--ink-faint)}
+.legend i.c{border-top:2px solid var(--brass)}
+@media print{ body{background:#fff} .page{padding:12px} }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── TITLE ── -->
+  <div class="title">
+    <div>
+      <h1>MeatCODE — claim-based knowledge graph</h1>
+      <div class="sub">Why the graph stores <b>claims</b>, not edges: every assertion carries who said it, under what conditions, measured how, and how much we trust it.</div>
+    </div>
+    <div class="stamp">v1 · 2026-08-16<br>schematic · not to scale</div>
+  </div>
+
+  <!-- ── 6. HONEST NUMBERS ── -->
+  <div class="sec">
+    <div class="sec-h"><span class="sec-n">1</span><span class="sec-t">What we actually have · 2026-08-16</span>
+      <span class="sec-d">teal = built · coral = the gap we are arguing about</span></div>
+    <div class="nums">
+      <div class="n"><div class="v">818</div><div class="k">sources ingested</div></div>
+      <div class="n"><div class="v">799</div><div class="k">molecules</div></div>
+      <div class="n gap"><div class="v">2,263</div><div class="k">molecule→odour edges with <b>no conditions, no provenance, no weight</b></div></div>
+      <div class="n"><div class="v">712 + 23</div><div class="k">bridge: mined + curated links</div></div>
+      <div class="n gap"><div class="v">13% / 34%</div><div class="k">of molecules / of papers actually connected</div></div>
+      <div class="n"><div class="v">45</div><div class="k">curated claims (the whole reified layer, today)</div></div>
+      <div class="n gap"><div class="v">1</div><div class="k">claim stored per paper — papers hold <b>5–20</b></div></div>
+      <div class="n gap"><div class="v">210 · 34</div><div class="k">molecules needing identity review · duplicate InChIKey groups</div></div>
+    </div>
+  </div>
+
+  <!-- ── 0. THE SHAPE — the wordless hero. Everything below is a deep-dive on THIS. ── -->
+  <div class="sec hero">
+    <div class="hero-frame">
+      <div class="hero-row">
+        <!-- entity A -->
+        <div class="ent">
+          <div class="ent-dot"></div>
+          <div class="ent-lbl">molecule</div>
+        </div>
+
+        <!-- the bridge: a claim, not a word -->
+        <div class="bridge">
+          <div class="bridge-line"></div>
+          <div class="claim-hex">
+            <div class="claim-hex-in">
+              <div class="claim-mark">◆</div>
+              <div class="claim-lbl">claim</div>
+            </div>
+          </div>
+          <div class="bridge-line"></div>
+        </div>
+
+        <!-- entity B -->
+        <div class="ent">
+          <div class="ent-dot"></div>
+          <div class="ent-lbl">molecule</div>
+        </div>
+      </div>
+
+      <div class="hero-foot">
+        <span class="hero-old">molecule <span class="hero-arrow">──────▶</span> molecule</span>
+        <span class="hero-vs">is not</span>
+        <span class="hero-new">molecule <span class="hero-arrow">───</span> ◆ <span class="hero-arrow">───</span> molecule</span>
+      </div>
+    </div>
+    <div class="hero-cap">The connection <b>is</b> the claim. Everything below explains what lives inside that diamond.</div>
+  </div>
+
+  <!-- ── 2 + 3 ── -->
+  <div class="three sec">
+
+    <!-- 2. ANATOMY -->
+    <div>
+      <div class="sec-h"><span class="sec-n">2</span><span class="sec-t">Claim node, exploded</span></div>
+      <div class="card anat">
+        <div class="anat-hd">
+          <span class="nm">CLAIM</span><span class="id">id 000041 · created 2026-08-04</span>
+        </div>
+        <div class="field"><span class="fk">Subject</span><span class="fv">molecule · 2-methyl-3-furanthiol</span></div>
+        <div class="field"><span class="fk">Predicate</span><span class="fv"><span class="kw">formed_by</span></span></div>
+        <div class="field"><span class="fk">Object</span><span class="fv">pathway · cysteine + ribose (Maillard)</span></div>
+        <div class="field"><span class="fk">Conditions</span><span class="fv">
+            <span class="valbox">aqueous model · 0.1 M phosphate</span> <span class="valbox">pH 5.6</span>
+            <span class="valbox">140 °C</span> <span class="valbox">30 min</span>
+            <span class="valbox">k ≈ 0.021 min⁻¹</span></span></div>
+        <div class="field"><span class="fk">Measurement</span><span class="fv">
+            <span class="valbox">SPME–GC-MS / GC-O</span> <span class="valbox">118 µg·kg⁻¹</span>
+            <span class="valbox">OAV ≈ 16,900</span></span></div>
+        <div class="field"><span class="fk">Evidence</span><span class="fv">source #0712 · study_type=<i>experimental</i> · tier 1</span></div>
+        <div class="field"><span class="fk">Weight</span><span class="fv"><b style="color:var(--wine)">w = ?</b> · recomputed on new evidence</span></div>
+        <div class="honest">This is the <b>target shape</b> — a claim you could reproduce in a lab. Illustrative values.
+          Today most of our claims carry <b>none</b> of the conditions or measurement fields.</div>
+      </div>
+    </div>
+
+    <!-- 3. FLAT vs REIFIED -->
+    <div>
+      <div class="sec-h"><span class="sec-n">3</span><span class="sec-t">Flat edge vs reified claim</span>
+        <span class="sec-d">same fact, twice</span></div>
+      <div class="vs" style="height:calc(100% - 34px)">
+        <div class="vs-col flat">
+          <div class="vs-tag">A · what we have today (2,263 edges)</div>
+          <div class="flat-graph">
+            <span class="ent mol">2-methyl-3-furanthiol</span>
+            <span class="arrowlbl">—— contributes_to ——▶</span>
+            <span class="ent od">meaty</span>
+          </div>
+          <ul class="miss">
+            <li>no author, no paper — cannot be cited</li>
+            <li>no conditions — true in what matrix? at what pH?</li>
+            <li>no measurement — sensory panel or a guess?</li>
+            <li>no weight — one anecdote outranks nothing</li>
+            <li>two papers disagreeing collapse into one arrow</li>
+          </ul>
+          <div class="punch warn">Unfalsifiable. You cannot argue with an arrow.</div>
+        </div>
+        <div class="vs-mid">vs</div>
+        <div class="vs-col reif">
+          <div class="vs-tag">B · the same fact as a claim (45 so far)</div>
+          <div class="mini">
+            <div class="row"><b>Triple</b><span>2-methyl-3-furanthiol → contributes_to → meaty</span></div>
+            <div class="row"><b>Conditions</b><span>matrix = pea-protein extrudate · pH 6.2 · 140 °C · 8 min</span></div>
+            <div class="row"><b>Measured</b><span>GC-O + AEDA · FD factor 2048</span></div>
+            <div class="row"><b>Evidence</b><span>source #0712 · sensory GC-O · tier 1</span></div>
+            <div class="row"><b>Weight</b><span>w = 0.62 (2 corroborating · 0 contradicting)</span></div>
+          </div>
+          <ul class="miss gain">
+            <li>citable — the answer carries its paper</li>
+            <li>scoped — true <i>here</i>, not everywhere</li>
+            <li>rankable — weak claims sort below strong ones</li>
+            <li>contestable — a new paper can lower w</li>
+          </ul>
+          <div class="punch">Falsifiable. This is the unit a scientist will trust.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 4. WEIGHT PIPELINE ── -->
+  <div class="sec">
+    <div class="sec-h"><span class="sec-n">4</span><span class="sec-t">How should a claim earn its weight?</span>
+      <span class="sec-d" style="color:var(--brass);font-weight:700">open question</span></div>
+    <div class="pipe">
+      <div class="pbox open"><div class="pk">Evidence tier</div><div class="pv">?</div><div class="pe">journal · study type</div></div>
+      <div class="pop">×?</div>
+      <div class="pbox open"><div class="pk">Method strength</div><div class="pv">?</div><div class="pe">GC-O vs passing mention</div></div>
+      <div class="pop">×?</div>
+      <div class="pbox open"><div class="pk">Directness</div><div class="pv">?</div><div class="pe">measured vs inferred</div></div>
+      <div class="pop">×?</div>
+      <div class="pbox open"><div class="pk">Corroboration</div><div class="pv">?</div><div class="pe">how many <i>independent</i> sources</div></div>
+      <div class="pop">−?</div>
+      <div class="pbox pen open"><div class="pk">Contradiction</div><div class="pv">?</div><div class="pe">opposing claims</div></div>
+      <div class="pop">=</div>
+      <div class="pbox out open"><div class="pk">Claim weight</div><div class="pv">?</div><div class="pe">w ∈ [0,1]</div></div>
+    </div>
+  </div>
+
+  <!-- ── 5. CONTRADICTION ── -->
+  <div class="sec">
+    <div class="sec-h"><span class="sec-n">5</span><span class="sec-t">What a contradiction looks like</span>
+      <span class="sec-d">same subject, same object, opposite polarity — kept side by side, never merged</span></div>
+    <div class="card" style="padding:18px 20px">
+      <div class="contra">
+        <div class="pole subj">molecule<br><b>hexanal</b></div>
+        <div class="stack">
+          <div class="cl">
+            <span class="pol">SUPPORTS</span>
+            <span class="cond">conditions NULL · pea isolate (stated in text)</span>
+            <span class="src">source #0344 · tier 1 · sensory panel</span>
+            <span class="w" style="color:var(--wine)">w 0.71</span>
+          </div>
+          <div class="clash">
+            <span class="bolt">⚡ CONTRADICTION</span>
+            <span class="txt">flagged automatically · both claims stay in the graph · the Oracle must surface both</span>
+          </div>
+          <div class="cl opp">
+            <span class="pol">REFUTES</span>
+            <span class="cond">conditions NULL · fermented isolate (stated in text)</span>
+            <span class="src">source #0591 · tier 2 · GC-MS only</span>
+            <span class="w" style="color:var(--brass)">w 0.38</span>
+          </div>
+        </div>
+        <div class="pole obj">odour<br><b>beany / green</b></div>
+      </div>
+      <div class="caveat"><b>Careful:</b> different conditions are <b>not</b> a contradiction — they are two scoped truths.
+        Only claims with the <i>same</i> conditions and opposing polarity conflict. Because conditions are NULL here, we
+        cannot yet tell the two apart automatically — which is exactly why the conditions fields matter.</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span class="legend">
+      <span><i></i>claim / built</span>
+      <span><i class="c"></i>gap or contradiction</span>
+      <span><i class="d"></i>NULL / not yet populated</span>
+    </span>
+    <span>MeatCODE — claim-based knowledge graph · v1 · 2026-08-16</span>
+  </div>
+
+</div>
+</body>
+</html>

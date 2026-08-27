@@ -2,7 +2,7 @@
 
 _Last updated: 2026-06-30 12:23 UTC · advisory session · added File-update conventions (stamps + AGENT_UPDATE_LOG.md)_
 
-**Read this first, then `PROJECT_STATE.md`.** This repo is the single source of truth for everything
+**Read `ROLES.md` FIRST (who does what + file ownership), then this file, then `PROJECT_STATE.md`.** This repo is the single source of truth for everything
 file-based on MeatCODE. If anything here conflicts with a scattered copy elsewhere on disk
 (the parent *Claude Database* folder, the iCloud *GFI Database* folder, old uploads) — *this repo wins.*
 Those old copies are being retired.
