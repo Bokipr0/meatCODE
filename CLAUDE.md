@@ -1,6 +1,6 @@
 # MeatCODE — repository guide for agents
 
-_Last updated: 2026-06-30 12:23 UTC · advisory session · added File-update conventions (stamps + AGENT_UPDATE_LOG.md)_
+_Last updated: 2026-08-31 · state-curation pass · refreshed the start-of-session reads (added MVP_BOARD + TEAM_BROADCAST), corrected the deploy flow (Release Center; `deploy.command`/`sync_meatcode.command` retired), fixed the brand (→ seaweed-teal) and the stale corpus/phase facts (~818 sources, MVP focus)_
 
 **Read `ROLES.md` FIRST (who does what + file ownership), then this file, then `PROJECT_STATE.md`.** This repo is the single source of truth for everything
 file-based on MeatCODE. If anything here conflicts with a scattered copy elsewhere on disk
@@ -40,13 +40,14 @@ meatCODE/
   README.md
   .env.example         ← copy to .env and fill keys (.env is gitignored)
   app/                 ← the product surface
-    meatcode_mockup.html      ← CANONICAL mockup (Map / Oracle / Research + Protocol library + Prediction)
+    meatcode_mockup.html      ← CANONICAL mockup (nav: Oracle · Research · Simulate; Database + Map + Analytics reachable off-nav)
     expert_network_map.html   ← standalone expert/co-authorship network view
     assets/                   ← logo, chord-diagram SVG, media
   server/              ← backend (single file — reaktzia-mvp/ was removed 2026-07-05)
-    meatcode_server.py        ← THE server: serves the mockup + Oracle (POST /api/ask, SSE) +
-                                 Neon-backed GET /api/experts, /api/experts/{id}, /api/papers/{id}.
-                                 Launch via run_oracle.command (repo root).
+    meatcode_server.py        ← THE server: serves the mockup + the GROUNDED Oracle (POST /api/ask, SSE —
+                                 retrieves from the corpus + cites real source ids) + Neon-backed read
+                                 endpoints (experts, molecules, sources, companies, /api/corpus, /api/compare, …).
+                                 Launch via run_oracle.command (repo root). Deployed on Render.
     MeatCODE_API_Quickstart.md
   db/                  ← schema, migrations, seeds (source-controlled SQL)
     taxonomy/                 ← topics hierarchy CSVs
@@ -63,8 +64,10 @@ meatCODE/
 
 **At the start of every session:**
 1. `git pull`
-2. Read `CLAUDE.md` (this file), then `PROJECT_STATE.md`.
-3. Check Asana for the current task if the work is task-driven.
+2. Read, in order: `CLAUDE.md` (this file) → `PROJECT_STATE.md` (technical reality) → `MVP_BOARD.md` (open
+   deliverables for the end-of-August MVP) → `TEAM_BROADCAST.md` (the short "what you must know now").
+   `ROLES.md` covers who owns which files.
+3. Check the current task (Asana / MVP_BOARD) if the work is task-driven.
 
 **While working:**
 - Edit files in this repo only. Query Neon and Asana live — don't snapshot them into files.
@@ -77,7 +80,7 @@ meatCODE/
 1. **Stamp** every file you created or materially changed with a last-updated note (see *File-update conventions* below).
 2. **Append a detailed entry to `AGENT_UPDATE_LOG.md`** (newest first) — what changed, which files, why, what's next.
 3. Update `PROJECT_STATE.md` — move finished items to Done, add what's now in-flight, log any decision with the date.
-4. Pushing to GitHub is done by **Lior on his Mac** via `sync_meatcode.command` — the cowork sandbox can't run git on the mounted folder, so agents never run `git` here.
+4. Committing/deploying is done by **Lior on his Mac** — the cowork sandbox can't run git on the mounted folder, so agents never run `git` here. Deploy is a split dev→prod flow via the `Release Center/` scripts: `deploy-dev.command` (→ private staging) then `promote-to-prod.command` (→ public site); `rollback-prod.command` undoes a release. _(The old single `deploy.command` and `sync_meatcode.command` are retired — 2026-07-23.)_
 
 That's the whole discipline: **read STATE first; stamp + log + update STATE last.**
 Any session opened afterwards is automatically current.
@@ -116,16 +119,19 @@ One `.env` at the repo root (`meatCODE/.env`, git-ignored) holds `DATABASE_URL` 
 - Secrets (`.env`, API keys) never get committed. Use `.env.example` as the template.
 - Large binaries (demo GIFs, big PDFs) — keep out of git history; link or store in `data/` (gitignored)
   or use Git LFS if they must be versioned.
-- Brand: wine / pomegranate palette, distinct from Claude's cream+orange. (Design tokens live in the mockup.)
+- Brand: **GFI seaweed-teal** (the earlier wine/pomegranate palette was retired 2026-06-30). Design tokens live in the mockup.
 - Owner/supervisor: **Daniel Dikovsky** (GFI IL Head of SciTech). Author/core execution: **Lior Teper**.
 
 ## Key facts an agent should know
 - **2026 is the validation year, not launch.** The #1 risk is building the full vision too early —
   prefer a narrow, validated MVP. Push back on scope creep.
+- **Current target (set 2026-07-22):** a credible, source-backed prototype — **internal demo end of August
+  2026**, external P1 expert validation **mid-September**. Open deliverables live in `MVP_BOARD.md`.
 - The strategic hypothesis: meaty flavor should be engineered as **process flavor** (cooking-generated
   precursor + lipid + matrix + heat chemistry), not only added as a final flavor mix.
-- Phase 1 (Jun–Aug 2026) crux: **collect first 1,000–2,000 high-value literature sources** (currently
-  ~34 migrated). Closing this gap is the foundation everything else stands on.
+- The corpus now stands at **~818 citable sources** (from ~34 at migration) — the Phase-1 foundation gap is
+  largely closed. The live crux is **corpus trust** (only ~39% pass the Oracle's `relevance_llm ≥ 60` gate)
+  and **deploying the built backlog**. See `PROJECT_STATE.md` + `MVP_BOARD.md`.
 - Ecosystem interest already in: Wageningen (WUR — joint GC-MS / volatile-atlas idea), Masha Niv, FSI.
 - Stack: Neon Postgres · Dimensions.ai-fed pipeline (Layer C typed extraction + Layer E store, 3-tier
   relevance) · Streamlit (internal) · Metabase planned (stakeholder self-serve) · mockup → Next.js planned.

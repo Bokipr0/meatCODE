@@ -5841,14 +5841,15 @@ function mcFetchRelatedMolecules(question, answerText, rowEl) {
     fetch(url, { credentials: 'same-origin' })
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (list) {
-        // Endpoint returns a BARE array: [{id, name, category, taste, mentions_count}, …].
+        // Endpoint returns a BARE array: [{id, name, category, mentions_count}, …].
+        // (taste dropped 2026-08-27, migration 0014.)
         if (!Array.isArray(list) || list.length === 0) { row.innerHTML = ''; return; }  // empty → hide
         var chips = list.map(function (m) {
           if (!m) return '';
           var id   = (m.id != null) ? String(m.id) : '';
           var name = m.name ? String(m.name) : '';
           if (!name) return '';                       // never fabricate — skip nameless rows
-          var sub  = [m.category, m.taste].filter(Boolean).map(String).join(' · ');
+          var sub  = [m.category].filter(Boolean).map(String).join(' · ');
           return '<button type="button" class="oracle-related-chip"' +
                    ' data-molecule-id="' + escapeHtml(id) + '"' +
                    ' data-molecule-name="' + escapeHtml(name) + '"' +
@@ -8152,8 +8153,8 @@ window.rebuildExpertList = function () {};
         nameEl.textContent = nm;
         if (crumbEl) crumbEl.textContent = nm;
         if (m.name) mcPushRecentMolecule(id, m.name);  // upgrade the recent with the resolved name
-        if (metaEl) metaEl.textContent = [m.category, m.taste, m.use_notes].filter(Boolean).map(String).join('  ·  ');
-        if (tagsEl) tagsEl.innerHTML = [m.category, m.taste].filter(Boolean)
+        if (metaEl) metaEl.textContent = [m.category].filter(Boolean).map(String).join('  ·  ');
+        if (tagsEl) tagsEl.innerHTML = [m.category].filter(Boolean)
           .map(function (t) { return '<span class="detail-tag">' + esc(String(t)) + '</span>'; }).join('');
         var papers = Array.isArray(m.papers) ? m.papers : [];
         if (countEl) countEl.textContent = papers.length ? ('· ' + papers.length) : '';

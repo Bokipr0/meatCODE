@@ -76,7 +76,7 @@ def build(stats_only=False):
 
     # ---------------- MOLECULE KG ----------------
     molecules = fetch(cur, """
-        select id, name, coalesce(category,'Uncategorised'), taste, use_notes
+        select id, name, coalesce(category,'Uncategorised')
         from molecules order by id""")
     odours = fetch(cur, "select id, name, coalesce(odour_category,'other') from odours order by id")
     mol_od = fetch(cur, "select molecule_id, odour_id from molecule_odours")
@@ -243,7 +243,7 @@ def build(stats_only=False):
         deg_mol[m] += 1
 
     mol_nodes = []
-    for mid, name, cat, taste, notes in molecules:
+    for mid, name, cat in molecules:   # taste/use_notes dropped 2026-08-27 (migration 0014)
         e = mvl_by_no.get(mvl_of_mol.get(mid))
         mol_nodes.append({
             "id": f"m{mid}", "raw_id": mid, "label": name, "type": "molecule",

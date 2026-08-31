@@ -1,5 +1,12 @@
 # MeatCODE — Agent Update Log
 
+## 2026-08-31 · state-curation pass (Coordinator) · de-conflicted CLAUDE.md + PROJECT_STATE.md against current reality
+- What:   Curated the two canonical steering files so a fresh Claude Code / agent session starts from clean, non-contradictory state (per the `meatcode-curate-state` skill; conflict order Advisory→Algorithm→Full-Stack→Data→UI/UX). No new facts invented — everything folded in was already recorded in this log / `TEAM_BROADCAST.md` / `MVP_BOARD.md`.
+- Files:  `CLAUDE.md` (stamp; start-of-session reads now include MVP_BOARD + TEAM_BROADCAST; deploy flow corrected to the `Release Center/` scripts with `deploy.command`/`sync_meatcode.command` marked retired; brand corrected wine/pomegranate → **seaweed-teal**; "~34 sources / Phase-1 crux" key-facts refreshed to ~818 + MVP framing; repo-map server line notes the grounded Oracle + current endpoints). `PROJECT_STATE.md` (stamp; **Where-we-are** Phase-0→1 → MVP/end-Aug + B1/B2; grounded retrieval moved from In-flight → **SHIPPED** with the open benchmark/reranking/B2 items; **Next** replaced the stale Jun/Jul Asana list with the current P0 spine; **Decisions** gained 2026-07-22 MVP, 2026-07-23 GC-MS-preview + deploy-split; **Open items/risks** refreshed to B1/B2 + ungoverned-corpus + ungated /api/corpus + parallel-session hygiene, dropping the stale 496-sources/empty-retrieval bullets; stale "Latest team broadcast" pointer updated to 2026-08-16). `AGENT_UPDATE_LOG.md` (this entry).
+- Why:    Lior: keep the markdown the agents read most current so Claude Code sessions begin from the latest information, and stamp them with today's date. The bottom half of PROJECT_STATE + several CLAUDE.md facts had drifted months stale and contradicted the newer top-of-file content.
+- Result: Both files stamped **2026-08-31**; automated audit clean (code fences balanced; every targeted stale string — "Phase 0 → Phase 1 hinge", "~34 to 1,000", "496 sources (462", "retrieves nothing at all", "wine / pomegranate palette", "~34 migrated", "sync_meatcode.command" — now absent). Feature/changelog history (v12.x + the Aug runs) left intact — this pass only de-conflicted the steering sections.
+- Next:   Lior commits/deploys via the `Release Center/` flow (`deploy-dev.command` → staging → `promote-to-prod.command`). B1 (deploy) + B2 (quarantine write-back) remain the critical path.
+
 ## 2026-08-16 (pm) · Project Coordinator · Oracle capability demos + live corpus filter + first-class Analytics scene + dev-banner removal — 4-lane PARALLEL run (consolidated)
 - What:   Ran Lior's 4-task sprint across 4 lanes IN PARALLEL, split by disjoint file ownership (UI/UX → `app/meatcode_mockup.html` · Full-Stack → `server/meatcode_server.py` · Data → `db/research_chip_map.json` + `db/CORPUS_FILTER_NOTES.md` · Advisory → `docs/oracle_demos_and_corpus_filter_2026-08-16.md`). Zero file collisions. The shared API contract held with **ZERO slug corrections** — Data validated all 40 taxonomy slugs against `keywords_topics.json`, so the UI's `data-topics`, the server's `CORPUS_PHASES`, and the map are all consistent. Coordinator verified each deliverable (node --check / py_compile / json.tool / route-shadow / tag balance) and wrote all four back to the repo.
 - Contract: **NEW `GET /api/corpus?phase=<juice|lipid|analytics>&topics=<slugs>`** (per-slug + `phase_topics` live counts, deduped `totals`, ≤50 rows) · **NEW `POST /api/compare`** (1–2 molecule profiles side-by-side, honest `in_corpus:false`) · **NEW `GET /api/molecule-profile/{id}`** (thin alias = `/api/molecules/{id}`) · reuses `POST /api/ask` (grounded SSE) + `POST /api/simulate` (mock, `maillard_sim` flag).
@@ -781,3 +788,28 @@ Structural check: `information_schema.view_column_usage` → no view reads any o
 over server/ app/ kg/ pipeline/ analysis/ db/ → zero references outside 0009. Nothing rebuilt.
 Applied to BOTH branches inside a transaction with in-transaction verification (0 columns remaining,
 799 rows unchanged, all 10 molecules-dependent views still queryable). `molecules` now 40 columns.
+
+## 2026-08-27 · Data Engineer — migration 0014: dropped molecules.taste + use_notes
+Lior gave an explicit go-ahead after being shown that both columns held data (taste 13/799,
+use_notes 15/799) AND were live in application code. **Code first, then the column:**
+- `server/meatcode_server.py` — removed from 3 SELECTs (the `/api/molecules` list, the
+  molecule-suggestions ranker, and `_molecule_detail`, which backs `GET /api/molecules/{id}`, the
+  `/api/molecule-profile/{id}` alias and `POST /api/compare`) + dropped the `COMPARE_FIELD_ORDER`
+  rows "Taste / descriptor" and "Use notes".
+- `kg/build_kg.py` — removed from the molecule SELECT and its positional unpack
+  (`for mid, name, cat, taste, notes in molecules` → 3-tuple; a bare column drop here would have
+  raised ValueError, not a SQL error).
+- `app/meatcode_mockup.html` — molecule-detail meta line, detail tag chips, related-molecule chip
+  subtitle.
+Verified before the DDL: `py_compile` clean on both modules, **10/10 mockup inline scripts pass
+`node --check`**, zero remaining code references. Then applied 0014 to BOTH branches inside a
+transaction with in-transaction verification: 0 columns remaining, 799 rows unchanged, **38 columns**,
+all 10 dependent views queryable, and a replay of the rewritten `_molecule_detail` SELECT returns a
+real row (46 · Formic Acid · Acids · 1 mention).
+**Lesson recorded:** `information_schema.view_column_usage` was EMPTY for both columns — the catalog
+dependency check cannot see Python or JavaScript. For any column that is not obviously dead
+scaffolding, a repo grep is a mandatory third check alongside `count()=0` and the view check.
+**Note:** `_molecule_detail` now returns only id/name/category/mentions_count/papers. The molecule
+detail page and Compare screen lost two rows; the migration-0011 property columns
+(molecular_weight, tpsa, logp, functional_groups — 590 rows each vs the 13 just removed) are the
+obvious replacement and would be adopted by Compare automatically. **Not deployed** — B1 still open.

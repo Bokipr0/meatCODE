@@ -58,8 +58,9 @@
 #   /api/release/{deploy-dev,promote}, gated by RELEASE_CENTER=1 AND loopback (404 anywhere else); the
 #   admin page app/release-center.html is served only under the same gate. APP_ENV picks each flag's column.
 # Prev 2026-07-22 13:55 UTC · Full-Stack Engineer · added GET /api/molecules/{id} — single-molecule
-#   detail endpoint powering the new molecule detail PAGE. Returns the molecule row (id/name/category/taste/
-#   use_notes) + mentions_count (COUNT from source_molecules, same signal as /api/molecules) + up to 10 linked
+#   detail endpoint powering the new molecule detail PAGE. Returns the molecule row (id/name/category;
+#   taste + use_notes removed 2026-08-27, migration 0014) + mentions_count (COUNT from source_molecules,
+#   same signal as /api/molecules) + up to 10 linked
 #   `papers` (source_molecules → sources, ORDER BY priority_score DESC NULLS LAST, year DESC NULLS LAST),
 #   all parameterized via pg_rows. SELECT-only; 404 {"error":"not found"} for a missing id. Regex branch sits
 #   next to the list handler and requires a numeric id, so the bare /api/molecules list is NOT shadowed.
@@ -382,11 +383,9 @@ def _topic_label(slug):
 COMPARE_FIELD_ORDER = [
     ("name", "Name"),
     ("category", "Class"),
-    ("taste", "Taste / descriptor"),
     ("cas_number", "CAS number"),
     ("pubchem_cid", "PubChem CID"),
     ("formula", "Formula"),
-    ("use_notes", "Use notes"),
     ("mentions_count", "Corpus mentions"),
 ]
 COMPARE_FIELD_SKIP = {"id", "papers", "in_corpus"}
@@ -1122,7 +1121,7 @@ class Handler(SimpleHTTPRequestHandler):
                 where_sql = (" WHERE " + " AND ".join(where)) if where else ""
 
                 sql = (
-                    "SELECT m.id, m.name, m.category, m.taste, m.use_notes, "
+                    "SELECT m.id, m.name, m.category, "
                     "COALESCE(sm.mentions_count, 0)::int AS mentions_count "
                     "FROM molecules m "
                     "LEFT JOIN (SELECT molecule_id, COUNT(*) AS mentions_count "
@@ -1280,7 +1279,7 @@ class Handler(SimpleHTTPRequestHandler):
                 # "top by mentions". The <> '' guards stop a blank name/category matching all of q
                 # via '%%'. '%%' is the psycopg2-escaped literal '%' → the pattern '%<name>%'.
                 sql = (
-                    "SELECT m.id, m.name, m.category, m.taste, "
+                    "SELECT m.id, m.name, m.category, "
                     "COALESCE(sm.mentions_count, 0)::int AS mentions_count "
                     "FROM molecules m "
                     "LEFT JOIN (SELECT molecule_id, COUNT(*) AS mentions_count "
@@ -1475,7 +1474,7 @@ class Handler(SimpleHTTPRequestHandler):
         is guaranteed identical everywhere. Returns the dict, or None when the id is absent
         (callers turn None into a 404 / an in_corpus:false column). SELECT-only; two queries."""
         rows = pg_rows(
-            "SELECT m.id, m.name, m.category, m.taste, m.use_notes, "
+            "SELECT m.id, m.name, m.category, "
             "COALESCE(sm.mentions_count, 0)::int AS mentions_count "
             "FROM molecules m "
             "LEFT JOIN (SELECT molecule_id, COUNT(*) AS mentions_count "

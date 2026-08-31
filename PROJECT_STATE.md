@@ -4,7 +4,7 @@
 > Asana owns *tasks & priorities*; this file owns *technical reality* — what's built, what's broken,
 > what's in flight. Keep it short and current, not a changelog.
 
-_Last updated: 2026-08-16 (pm) · Project Coordinator — Oracle-demos & corpus-filter run: NEW GET /api/corpus (live Research chips) + POST /api/compare + /api/molecule-profile alias · Analytics promoted to a first-class #analytics scene · 4 Oracle capability demos · dev banner removed. Awaiting deploy-dev. See AGENT_UPDATE_LOG.md_
+_Last updated: 2026-08-31 · state-curation pass (Coordinator) — de-conflicted the stale June/July steering sections (Where-we-are / Next / Open-items / In-flight) against the current MVP reality; grounded RAG marked SHIPPED; corpus numbers refreshed (~818 sources · 3,129 experts · 799 molecules). Latest feature run: 2026-08-16 Oracle-demos & corpus-filter (GET /api/corpus · POST /api/compare · first-class #analytics · 4 Oracle capability demos) — awaiting deploy-dev. See AGENT_UPDATE_LOG.md._
 
 ## Oracle capability demos + live corpus filter + first-class Analytics scene — shipped to the repo 2026-08-16 (awaiting deploy-dev)
 4-lane parallel run (UI/UX → mockup · Full-Stack → server · Data → db/ chip-map · Advisory → docs/). Disjoint files, zero collisions; the API contract held with zero slug corrections.
@@ -109,15 +109,23 @@ Open decision for Lior + Daniel: whether to add an anonymous server-side questio
 
 ---
 
-## 📣 Latest team broadcast — 2026-07-20 ~13:10 UTC
-Project Coordinator has notified the team. **Every agent: read [`TEAM_BROADCAST.md`](TEAM_BROADCAST.md)** for what shipped and your next move. Headline: **Oracle v11 shipped** (dictation · pinned-above-history sidebar · honest `event: status` phases · zero user-facing model mentions) on top of the **grounded retrieval** milestone; site is always-on + password-gated; expired-sign-in now reported in plain language. **⚠️ Open #1 risk: confirmed quarantines write only to `source_audits`, NOT `sources.relevance_llm` — Daniel-rejected sources remain retrievable. Close before WUR.** Open decision for Lior + Daniel: anonymous server-side question log?
+## 📣 Latest team broadcast — see `TEAM_BROADCAST.md` (current as of 2026-08-16)
+**Every agent: read [`TEAM_BROADCAST.md`](TEAM_BROADCAST.md)** for the current "what you must know now" plus the
+MVP north-star goals. Recent headlines: the 2026-08-16 Oracle capability demos + live `GET /api/corpus` filter
++ first-class `#analytics` scene, and the Maillard-simulator architecture (mock mode, flag-gated). **The #1
+risks remain B1 (deploy the backlog) + B2 (quarantine write-back).**
 
 ---
 
 ## Where we are
-Phase 0 → Phase 1 hinge (per Asana: "MeatCODE – Open Flavor & Aroma Initiative", owned by Daniel).
-Roadmap runs in 4 phases to Mar 2027: Phase 0 setup (May–Jun) · Phase 1 foundation build (Jun–Aug) ·
-Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-up proposal (Jan–Mar).
+**MVP push (set 2026-07-22):** a credible, source-backed prototype — **internal demo end of August 2026**,
+external **P1 expert validation mid-September**. The bar is `docs/MeatCODE_MVP_Definition_and_User_Journeys.md`;
+open deliverables (8 lanes · action items · 2 blocking gaps, with owners) live in `MVP_BOARD.md`. Journey
+status and the P0 spine are in the "🎯 MVP alignment" section above.
+**The two critical-path blockers (unchanged):** **B1 — deploy the built backlog** (a month of verified work,
+v12.1 → the 2026-08-16 demos, is committed but NOT live) and **B2 — close the quarantine → `relevance_llm`
+write-back** (Daniel-rejected sources are still retrievable). Nothing else is demoable to reviewers until B1
+lands. (The underlying GFI roadmap still runs in phases to Mar 2027; the MVP is the near-term focus.)
 
 ## Done
 - **Data-audit loop — BUILT + VERIFIED (2026-07-07, parallel team):** recurring every-2-days source
@@ -234,21 +242,17 @@ Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-u
   `UI-UX Designer/`. Spec flags one gap: molecule API endpoints (`/api/molecules…`) don't exist yet — data-eng follow-up.
 
 ## In flight
-- **Grounded retrieval + relevance verification (2026-07-08, parallel team run — Data Engineer +
-  Algorithm Expert + Advisory):** Closing the Oracle's ungrounded-answer gap — `POST /api/ask` still
-  hard-codes an empty sources list and streams a raw Claude answer with **zero corpus retrieval**
-  (`server/meatcode_server.py`; also flagged in the `0006` Done entry above and in
-  `docs/tagging_relational_guide.md` §3). Algorithm Expert is wiring `/api/ask` to retrieve from
-  `sources.search_vec` (FTS, live since migration `0001`) filtered to `relevance_llm >= 60`, per the
-  four-step design in `docs/DECISION_Oracle_Answer_Engine.docx` (understand → find → rerank top few →
-  write-with-citations-or-refuse). Data Engineer is verifying corpus relevance against the taxonomy bible
-  (`db/taxonomy/keywords_topics.json`) and refreshing the audit-run xlsx Daniel reviews
-  (`pipeline/export_audit_xlsx.py`). Advisory wrote the connecting architecture:
-  `docs/DECISION_grounded_answers_and_relevance.md` (the grounding contract + the relevance gate + how they
-  connect — including a flagged gap: confirmed quarantines don't yet suppress Oracle retrieval) and
-  `docs/daniel_review_workflow.md` (Daniel's keep/quarantine/back-tag sign-off loop, step by step). Not yet
-  landed in code as of this entry — retrieval wiring + the quarantine write-back are still open; see those
-  docs' Open risks for the full list before this is demo-ready for WUR or other external reviewers.
+- **Grounded retrieval — SHIPPED (2026-07-08 → 2026-08-15).** `POST /api/ask` now retrieves from the corpus
+  (`sources.search_vec` FTS, gated to `relevance_llm >= 60`, with an AND→OR fallback for the
+  `websearch_to_tsquery` 0-result problem), grounds the answer in only those sources, cites real
+  `sources.id`, and refuses ("the corpus doesn't cover this") rather than fall back to open/training
+  knowledge. It also gained the additive `event: status` (retrieving/answering) and `event: consensus`
+  (agree/oppose/neutral per source). A closed-corpus RAG eval **baseline** is on record
+  (`analysis/rag_eval/`: groundedness 3.4 · cite-acc 4.8 · coverage 4.1 /10 — zero invented citations, but
+  depth still largely uncited general knowledge). **Still open (Algorithm/Data):** the gold-set benchmark vs
+  GPT/Claude/Perplexity (the only proof of "benchmark-competitive"), reranking / pgvector-hybrid, and closing
+  the quarantine write-back (B2). Design of record: `docs/DECISION_grounded_answers_and_relevance.md`,
+  `docs/daniel_review_workflow.md`.
 - **v9 mockup — v8 polish on the newer canonical (2026-07-08, art-director):** `UI-UX Designer/MeatCODE_mockup_v9.html`
   = the deployed `app/meatcode_mockup.html` (Database scene + Simulate engine + Toolbench-in-Research + Oracle
   history) with the v8 polish forward-ported (teal avatar, SVG bell, 4-audience personas, dashboard
@@ -268,17 +272,33 @@ Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-u
   Expert/Molecular; sitemap, data model, journeys, tool stack). Both awaiting Daniel sign-off. First
   mini-demo asset = the live Oracle (`run_oracle.command`), pending Lior's `.env` key.
 
-## Next (highest leverage first)
-1. **Literature collection — the crux.** Get from ~34 to 1,000–2,000 high-value sources (Asana due Jul 31).
-   Everything downstream (Oracle quality, molecular DB, white-space analysis) depends on it.
-2. **Tool-stack + hub-architecture docs** (Asana, due Jun 30) — largely answered by this repo's
-   three-homes model; write it up formally for Daniel's approval.
-3. Tag + summarize first 30–50 sources with the standard template.
-4. Load Anthropic credits and run the live pipeline end-to-end (not `--mock`).
-5. Drop `.env` (`DATABASE_URL`) into the repo → run the **retrievability check** (count sources with
-   non-null `abstract` + `search_vec`); that's the true size of the citable corpus.
+## Next (highest leverage first) — the P0 spine for the 31 Aug MVP
+Full board with owners/status in `MVP_BOARD.md`. In order:
+1. **B1 · Deploy the backlog** (Lior) — `deploy-dev.command` → verify staging → `promote-to-prod.command`.
+   A month of committed, verified work is invisible to reviewers until this lands. **[critical path]**
+2. **B2 · Close the quarantine → `relevance_llm` write-back** (Data) — Daniel-rejected sources must actually
+   drop out of Oracle retrieval, not just sit in `source_audits`. **[critical path]**
+3. **Benchmark harness** (Algorithm) — 30–50 expert-authored gold questions, MeatCODE vs GPT/Claude/Perplexity,
+   blind-rated. The only proof of criterion 1 ("benchmark-competitive"). Then reranking → pgvector hybrid.
+4. **Corpus trust** (Data) — back-tag the remaining untagged sources (~252 left) + run the retrievability
+   count, so Research and the Oracle count the same governed corpus.
+5. **GC-MS preview + `/api/protocols`** (Full-Stack + Data) — scaffold the fingerprint / by-cut preview on
+   clearly-labelled reference data (decision 2026-07-23: preview, not a live engine), pending the
+   reference-data-source decision.
+6. **UI/UX** — lock ONE design system, add the J3 knowledge-graph view, reframe Research into a J4 planning
+   flow, and label J2 / J4 / Simulate as honest previews.
 
 ## Decisions (most recent first)
+- **2026-07-23** — **GC-MS / molecular tool ships as an honest PREVIEW** for the MVP — fingerprint + by-cut
+  comparison on clearly-labelled reference data, not a live analytical engine. Resolves the long-open
+  "GC-MS: P0 vs preview?" question. Open sub-decision: reference-profile source (WUR / literature-mined /
+  synthetic-and-labelled). See `MVP_BOARD.md`.
+- **2026-07-23** — **Deploy is a split dev→prod flow.** `deploy.command` and `sync_meatcode.command` are
+  retired; use the `Release Center/` scripts: `deploy-dev.command` (→ private staging) then
+  `promote-to-prod.command` (→ public site), with `rollback-prod.command` to undo.
+- **2026-07-22** — **MVP definition + 5 user journeys adopted** as the bar (internal demo end-Aug, P1
+  validation mid-Sept). Open deliverables tracked in `MVP_BOARD.md`; the P0 spine leads with B1 (deploy) +
+  B2 (quarantine write-back). See `docs/MeatCODE_MVP_Definition_and_User_Journeys.md` + `docs/MVP_ALIGNMENT.md`.
 - **2026-07-08** — Grounding contract adopted for the Oracle: it may answer ONLY from retrieved sources
   that are both citable (`search_vec` populated) and score `relevance_llm >= 60`; it must cite what it
   uses and refuse ("the corpus doesn't cover this") rather than fall back to open/training knowledge. This
@@ -297,19 +317,22 @@ Phase 2 MVP hub (Sep–Nov) · Phase 3 validation (Nov–Jan) · Phase 4 scale-u
   session). All agents read/edit/commit/push here; never edit MeatCODE files in the parent folder or iCloud.
 
 ## Open items / risks
-- **Two artifacts not yet in repo** (were iCloud cloud-only during setup): copy from the GFI Database
-  iCloud folder before first push — `streamlit_dashboard.py` → `analysis/`, `expert_network_map.html` → `app/`.
-- **Source corpus (verified live 2026-06-30):** 496 sources (462 with abstracts), 799 molecules,
-  **3,129 experts** (Dimensions ingest — far above the old 374), 45 claims. The Prediction surface in
-  the mockup implies a model this corpus can't yet back — frame as hypothesis-generation, not authority.
-  Still short of the 1,000–2,000 source target (Phase 1 crux).
-- **Oracle recall / grounding — the live fix in progress:** `POST /api/ask` currently retrieves nothing at
-  all (empty sources list, raw Claude answer — see the in-flight item above); the old
-  `reaktzia-mvp/retrieval.py` this bullet used to point at was deleted 2026-07-05. The fix being wired now
-  uses `sources.search_vec` FTS + `relevance_llm >= 60`, with a tag-based fallback planned for the
-  documented `websearch_to_tsquery` 0-result problem (ANDs every term, so natural-language questions often
-  match nothing). See `docs/DECISION_grounded_answers_and_relevance.md` and
-  `docs/tagging_relational_guide.md` §3.
-- **Neon auto-sleep** will bite concurrent multi-agent access; keep warm or front with `meatcode_server.py`.
-- `__pycache__/` + `.DS_Store` copied into `server/reaktzia-mvp/` are permission-locked; `.gitignore`
-  excludes them so they won't be committed.
+- **B1 — the built backlog is not deployed.** A month of verified work (v12.1 → the 2026-08-16 Oracle demos)
+  is committed but not live; reviewers see none of it until `deploy-dev` → `promote-to-prod`. **[critical path]**
+- **B2 — quarantine write-back gap.** Confirmed quarantines write only to `source_audits`, NOT to
+  `sources.relevance_llm`, so a source Daniel rejects is still retrievable and citable by the Oracle. Close
+  before any external / WUR demo. **[critical path]**
+- **Corpus governance undercuts "benchmark-competitive":** ~818 sources (790 citable), but only **~39% pass
+  the `relevance_llm >= 60` gate**, ~252 still untagged, and molecules / experts are thinly enriched
+  (chemistry fields NULL until a curation source is chosen — don't invent values). The Simulate / Prediction
+  and GC-MS surfaces imply models the data can't yet back — keep them **labelled synthetic / preview**, framed
+  as hypothesis-generation, never as authority or chemistry.
+- **`/api/corpus` counts are currently UNGATED** (open decision #9 in `MVP_BOARD.md`): Data recommends applying
+  the Oracle's `relevance_llm >= 60` gate so Research and the Oracle count the same corpus; Full-Stack shipped
+  it ungated. One-line SQL change — awaiting Lior's call.
+- **Data reality (per the AI-Review snapshots):** ingestion is clean but enrichment / scoring is largely
+  unwritten (Sources `composite_score = 0`, tags 26–74% filled; Experts name + affiliation only; Molecules no
+  structure yet). Paper ingestion is blocked (no Dimensions creds / ingester).
+- **Neon auto-sleep** bites concurrent multi-agent access; keep warm or front with `meatcode_server.py`.
+- **Parallel-session hygiene:** multiple Cowork sessions edit the same mounted files — commit / push (or hand
+  off through the Coordinator) between sessions to avoid losing uncommitted WIP.
