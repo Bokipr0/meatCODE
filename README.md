@@ -18,8 +18,7 @@ Start with **[`CLAUDE.md`](./CLAUDE.md)** (operating protocol + the three-homes 
 
 - **Code, docs, mockup, SQL** live in this git repo — the single source of truth.
 - **Structured data** (literature, molecules, experts, protocols) lives in **Neon Postgres**.
-- **Tasks & priorities** live in **Asana** ("MeatCODE – Open Flavor & Aroma Initiative").
-
+- 
 Pull and read `PROJECT_STATE.md` first; update it and commit/push last. That discipline keeps every
 session — human or agent — automatically current.
 
