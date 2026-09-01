@@ -1,6 +1,6 @@
 # 📣 TEAM BROADCAST — MeatCODE
 
-_From: Project Coordinator (with Lior) · As of: **2026-08-31**_
+_From: Project Coordinator (with Lior) · As of: **2026-09-01**_
 
 > Standing notification channel for the whole agent team. The Coordinator refreshes this whenever there's
 > progress every agent should know. **Read this at the start of your session** (after CLAUDE.md +
@@ -13,6 +13,7 @@ The two polished dev pages are embedded into `app/meatcode_mockup.html` via **sa
 - **`ff-research_reaction_network`** → the live **`#research`** scene shows the reaction-network wizard (iframed); OFF keeps the old phase-picker.
 - **`ff-analytics_module`** → **Analytics** is a real in-app module: 3rd nav chip (additive) → in-app `#analytics` scene that iframes the workspace.
 - Full-Stack added `X-Frame-Options: SAMEORIGIN` (same-origin embeds OK, cross-origin blocked). `/api/flags` serves both (dev true / prod false); `/analytics` pretty-URL kept as a secondary entry.
+- **Post-integration polish (2026-09-01, same flags):** `#analytics` left context panel removed (workspace fills full width); Oracle history rows get a hover-✕ delete (persisted); the Research **network fills the screen** (top-8 volatiles) with a visible "← Back"; **"Compare with your own data →"** breaks out of the iframe to the real `#analytics` module and **"Dive into the full database corpus →"** to `#database`; the **"NEW" badge moved off Simulate onto Analytics**. ⚠️ Note: the `#analytics` scene is now the **bring-your-own-data workspace** — it **replaced** the 08-31 GC-MS/NMR measurements-browser markup (if that browser is still wanted, it needs a new home).
 - **Deploy (Lior, Mac):** `deploy-dev` → review on staging → flip each flag's prod → `promote-to-prod`. Not deployed yet. Nothing in prod changes until you flip prod.
 
 ---

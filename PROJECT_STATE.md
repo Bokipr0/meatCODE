@@ -4,7 +4,23 @@
 > Asana owns *tasks & priorities*; this file owns *technical reality* — what's built, what's broken,
 > what's in flight. Keep it short and current, not a changelog.
 
-_Last updated: 2026-08-31 (pm) · Project Coordinator — Demo-prep run: `#analytics` is now a GC-MS/NMR measurements browser; `#simulate` "Predict outcomes" is LIVE → `/api/simulate` (mock, synthetic-labelled); adapter accepts mM; 10-min run-of-show shipped. Awaiting deploy-dev. See AGENT_UPDATE_LOG.md._
+_Last updated: 2026-09-01 · Project Coordinator — Research reaction-network wizard + Analytics bring-your-own-data module built, **LIVE-integrated** into the mockup as flag-gated iframes (`#research` swap + in-app `#analytics` scene + 3rd nav chip) and polished; new `/api/reaction-network`. **Supersedes the 08-31 measurements-browser `#analytics`.** Awaiting deploy-dev. See AGENT_UPDATE_LOG.md._
+
+## Research wizard + Analytics module — built → LIVE-integrated → polished (2026-08-31 → 09-01, flag-gated, awaiting deploy-dev)
+Multi-run arc (Coordinator-orchestrated; per-run detail in `AGENT_UPDATE_LOG.md`). Both surfaces are now wired into the live platform as **same-origin iframes gated by flags**, plus a new read-only endpoint. Dev pages carry an **`?embed=1` embed-mode** (hides their standalone chrome, keeps in-content honesty labels).
+
+**Research — reaction-network journey replaces the phase-picker** (flag `ff-research_reaction_network`, dev ON / prod OFF)
+- New dev page `app/dev/research_reaction_network.html`: a no-page-scroll **3-step wizard** — Step 1 pick **Lipid / Aqueous precursors** (auto-advances) → Step 2 **Heat + Reaction Network** (curated precursor→reaction→volatile graph, "oven·180 °C"; nodes light-by-default→color on hover; click → inline compound profile → **"Dive into the full database corpus →"** `target="_top"` → `#database` molecule table) → Step 3 **Analytical + Sensory** profiles (scalable inline SVG) with **"Compare with your own data →"** `target="_top"` → `#analytics`. Network fills the width; volatiles capped to top-8 by corpus mentions; "← Back" pill on steps 2–3. Distinct from Simulate (explores our data, not a predictor).
+- Backend: NEW read-only **`GET /api/reaction-network?branch=lipid|aqueous`** (`server/reaction_network.py`) — curated precursor/reaction skeleton **enriched with real Neon volatiles from `meaty_volatile_library`** (honest `backed` flags), SELECT-only, degrades gracefully. Verified vs live Neon.
+- Integration: the mockup's **`#research` scene iframes the wizard** (`?embed=1`) when the flag is ON; OFF keeps the old phase-picker. Research nav chip unchanged.
+
+**Analytics — a real 4th top-nav module** (flag `ff-analytics_module`, dev ON / prod OFF)
+- New dev page `app/dev/analytics_workspace.html`: guided **bring-your-own GC-MS/NMR → compare to reference** preview, simplified to **2 steps** — (1) choose method (GC-MS/NMR) + upload → **Compare Samples** → (2) analytical + sensory results (default reference). Honest illustrative preview (no real parsing).
+- Integration: **"Analytics" added as the 3rd nav chip** (Oracle · Research · **Analytics** · Simulate — additive, flag-gated, and the **"NEW" badge moved here from Simulate**) → an in-app **`#analytics` scene that iframes the workspace**. ⚠️ **This REPLACES the 2026-08-31 measurements-browser `#analytics`** — that markup was swapped for the workspace iframe. Full-Stack added a `/analytics` pretty-URL + **`X-Frame-Options: SAMEORIGIN`**. The `#analytics` left context panel was removed (full-width); Oracle history gained hover-✕ delete.
+
+**Deploy path (flag-first):** `deploy-dev` → staging review (Research shows the wizard, Analytics chip opens the workspace scene) → flip each flag's `prod` in the Release Center → `promote-to-prod`. **NOT deployed.** This delivers board **A2 (screen-flow) + A3 (bring-your-own-data compare) + A7 (Analytics scene)**.
+
+## Demo-prep — GC-MS/NMR measurements browser + Pablo's simulator LIVE (mock) — shipped to the repo 2026-08-31 (awaiting deploy-dev)
 
 ## Demo-prep — GC-MS/NMR measurements browser + Pablo's simulator LIVE (mock) — shipped to the repo 2026-08-31 (awaiting deploy-dev)
 3-lane parallel build for the demo (UI/UX → mockup · Full-Stack → maillard/adapter · Advisory → docs). Disjoint from the same-day dev-zone **Analytics workspace** (`app/dev/analytics_workspace.html`, board A3, upload→compare) — this run is the in-product surfaces.
