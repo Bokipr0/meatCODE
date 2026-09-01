@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<!-- Last updated: 2026-09-01 · UI/UX Designer · STEP-2 FILL + SIMPLIFY: reaction network now spreads its three columns across the FULL card width (precursors far-left, reactions centered in the oven band, volatiles far-right — no empty gutter), caps volatiles to the top 8 by corpus mentions (honestly labelled in the net-note when trimmed), and uses larger/readable nodes on a wide 1220×520 viewBox so meet-scaling fills the area instead of shrinking to a tiny center cluster. Hover-aura + click→compound-profile intact; edges to trimmed volatiles are dropped (no dangling links). · COMPARE→ANALYTICS: both Step-3 "Compare with your own data →" buttons now target="_top" → /app/meatcode_mockup.html#analytics so the platform switches to its real Analytics module (breaks out of the Research iframe; not nested, not Recent-Picks). Same _top pattern as the DIVE→#database link. · BACK CONTROL: rail Back is now a visible "← Back" pill (was a bare arrow circle), shown on steps 2 & 3, goStep(step-1) → Results→Network→Precursors. · Prior 2026-09-01 · DIVE→DB redirect (target="_top" → #database); EMBED MODE (?embed=1 / iframe → body.embed hides standalone chrome). · Prior 2026-08-31 17:04 UTC · Research wizard — Step-2 network fit-to-screen; Step-3 profiles enlarged + scalable SVG -->
+<title>Research · how meaty flavor forms · MeatCODE (preview)</title>
+<meta name="viewport" content="width=1280" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FAF6EF; --bg-deep:#F2EBDA; --surface:#fff; --surface-2:#F7F0E0;
+  --wine:#00736E; --wine-deep:#015A56; --wine-soft:#4FA59F; --wine-tint:#B5DDD8; --wine-mist:#E0F0EE;
+  --ink:#1A1A1A; --ink-dim:#4A4A4A; --ink-faint:#8A8A8A;
+  --line:#E5DDD0; --line-strong:#D2C8B5;
+  --brass:#C77E5F; --brass-soft:#F2D7C8; --olive:#7A8C5F; --olive-soft:#D6DCC4;
+  --shadow:0 4px 16px rgba(0,67,64,.06); --shadow-lg:0 12px 34px rgba(0,67,64,.12);
+  --round:"Varela Round","Heebo",-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:"SF Mono","JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--round);-webkit-font-smoothing:antialiased}
+/* whole experience fits the viewport — no page-level scroll */
+body{height:100vh;overflow:hidden;display:flex;flex-direction:column}
+a{color:inherit;text-decoration:none}
+
+/* preview banner */
+.preview-banner{flex:0 0 auto;background:var(--brass-soft);color:#8a4a2c;font-size:12px;font-weight:700;text-align:center;padding:6px 16px;border-bottom:1px solid #eec7b3;letter-spacing:.01em}
+.preview-banner b{color:#6f3418}
+
+/* top header */
+.topbar{flex:0 0 auto;display:flex;align-items:center;gap:16px;padding:9px 24px;background:var(--surface);border-bottom:1px solid var(--line)}
+.back-link{color:var(--wine-deep);font-weight:700;font-size:13px}
+.back-link:hover{text-decoration:underline}
+.brand{font-weight:700;font-size:17px;color:var(--wine)}
+.brand small{display:block;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);font-weight:700}
+.topbar .title{font-weight:700;font-size:13.5px;color:var(--ink);border-left:1px solid var(--line);padding-left:16px}
+.topbar .spacer{flex:1}
+.demo-pill{display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--line);border-radius:100px;padding:5px 12px;font-size:11px;font-weight:700;color:var(--ink-dim)}
+.demo-pill::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--brass)}
+
+/* slim progress rail — the only progress cue */
+.rail{flex:0 0 auto;position:relative;display:flex;align-items:center;justify-content:center;gap:16px;padding:12px 30px;background:var(--surface);border-bottom:1px solid var(--line)}
+.rail-back{position:absolute;left:30px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 14px 0 12px;border-radius:100px;border:1px solid var(--line-strong);background:var(--surface);color:var(--wine-deep);font-size:12.5px;font-weight:700;font-family:var(--round);cursor:pointer;transition:.16s;flex:0 0 auto}
+.rail-back:hover{background:var(--wine-mist);border-color:var(--wine-tint)}
+.rail-back[hidden]{display:none}
+.rail-track{flex:0 1 760px;width:760px;max-width:64vw;display:flex;gap:14px;margin:0 auto}
+.seg{flex:1;min-width:0}
+.seg .bar{height:5px;background:var(--line);border-radius:100px;overflow:hidden}
+.seg .bar>span{display:block;height:100%;width:0;background:var(--wine);border-radius:100px;transition:width .55s cubic-bezier(.4,0,.2,1)}
+.seg.on .bar>span{width:100%}
+.seg small{display:block;margin-top:6px;font-size:11px;font-weight:700;color:var(--ink-faint);letter-spacing:.02em}
+.seg.on small{color:var(--ink-dim)}
+.seg.active small{color:var(--wine-deep)}
+.rail-branch{position:absolute;right:30px;top:50%;transform:translateY(-50%);font-size:11.5px;font-weight:700;color:var(--ink-faint);flex:0 0 auto;min-width:64px;text-align:right}
+
+/* stage: holds the sliding steps, bounded to remaining viewport */
+.stage{flex:1 1 auto;position:relative;overflow:hidden}
+.step{position:absolute;inset:0;padding:24px 30px;display:flex;flex-direction:column;min-height:0;
+  opacity:0;transform:translateX(46px);transition:opacity .42s ease,transform .42s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.step.prev{transform:translateX(-46px)}
+.step.active{opacity:1;transform:none;pointer-events:auto}
+
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--wine)}
+.h1{font-size:23px;font-weight:700;margin:5px 0 4px;letter-spacing:-.01em}
+.h2{font-size:18px;font-weight:700;margin:0 0 3px}
+.lead{font-size:13.5px;color:var(--ink-dim);line-height:1.5;max-width:720px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--wine);color:#fff;border:none;border-radius:12px;padding:11px 22px;font-weight:700;font-size:13.5px;font-family:var(--round);cursor:pointer;box-shadow:var(--shadow)}
+.btn:hover{background:var(--wine-deep)}
+.btn.ghost{background:transparent;color:var(--wine-deep);box-shadow:none;border:1px solid var(--line-strong)}
+.curated-tag{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;background:var(--brass-soft);color:#8a4a2c;padding:3px 10px;border-radius:100px;text-transform:uppercase;letter-spacing:.06em}
+.curated-tag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--brass)}
+
+/* ---------- STEP 1 · precursors ---------- */
+.step1-inner{margin:0 auto;max-width:1000px;width:100%}
+.branch-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+.branch{background:var(--surface);border:1.5px solid var(--line);border-radius:18px;padding:26px;cursor:pointer;transition:.16s;position:relative}
+.branch:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);border-color:var(--wine-soft)}
+.branch .ic{width:52px;height:52px;border-radius:14px;background:var(--wine-mist);color:var(--wine);display:grid;place-items:center;margin-bottom:14px}
+.branch h3{margin:0 0 6px;font-size:20px}
+.branch p{margin:0;font-size:13px;color:var(--ink-dim);line-height:1.55}
+.branch .path{margin-top:14px;font-family:var(--mono);font-size:11px;color:var(--wine-deep);background:var(--wine-mist);border-radius:8px;padding:8px 11px;display:inline-block}
+.branch .go{margin-top:16px;font-size:13px;font-weight:700;color:var(--wine-deep)}
+
+/* ---------- STEP 2 · network + volatiles ---------- */
+.step2-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;flex:0 0 auto}
+.step2-body{flex:1 1 auto;display:grid;grid-template-columns:1fr;gap:16px;margin-top:12px;min-height:0}
+.net-card{display:flex;flex-direction:column;min-height:0;padding:16px 18px}
+.net-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;font-weight:700;color:var(--ink-dim);flex:0 0 auto;margin-bottom:8px}
+.net-legend span{display:inline-flex;align-items:center;gap:6px}
+.net-legend i{width:12px;height:12px;border-radius:4px;display:inline-block}
+.net-legend i.pre{background:var(--wine)} .net-legend i.rea{background:var(--brass)} .net-legend i.vol{background:var(--olive)}
+.net-legend i.hollow{background:transparent;border:1.5px dashed var(--line-strong)}
+/* network fills the remaining space and scales to fit — no internal scroll, no cutoff */
+.net-wrap{flex:1 1 auto;overflow:hidden;min-height:0;display:flex}
+.net-wrap svg{width:100%;height:100%;display:block}
+.net-note{font-size:11px;color:var(--ink-faint);margin-top:8px;font-style:italic;flex:0 0 auto}
+/* every node renders light + neutral by default; category color is revealed on hover */
+svg g.node rect,svg g.node text{transition:fill .15s,stroke .15s}
+svg g.node .box{fill:#FCFAF5;stroke:var(--line-strong);stroke-width:1.6}
+svg g.node .bar{fill:#CFC5B4}
+svg g.node text{fill:#6A6A6A}
+svg g.nd{cursor:pointer}
+/* hover-aura + color reveal (applies to all node categories) */
+svg g.node.pre:hover{filter:drop-shadow(0 0 7px rgba(0,115,110,.5))}
+svg g.node.rea:hover{filter:drop-shadow(0 0 7px rgba(199,126,95,.5))}
+svg g.node.vol:hover{filter:drop-shadow(0 0 7px rgba(122,140,95,.55))}
+svg g.node.pre:hover .box{fill:var(--wine-mist);stroke:var(--wine)}
+svg g.node.pre:hover .bar{fill:var(--wine)}
+svg g.node.rea:hover .box{fill:var(--brass-soft);stroke:var(--brass)}
+svg g.node.rea:hover .bar{fill:var(--brass)}
+svg g.node.vol:hover .box{fill:#E7ECDC;stroke:var(--olive)}
+svg g.node.vol:hover .bar{fill:var(--olive)}
+svg g.node:hover .box{stroke-width:2.2}
+svg g.node:hover text{fill:var(--ink)}
+
+.step2-foot{flex:0 0 auto;display:flex;justify-content:flex-end;margin-top:12px}
+.loadnote{font-size:12px;color:var(--ink-faint);padding:26px;text-align:center}
+
+/* inline compound profile — stays inside the journey */
+.prof-scrim{position:absolute;inset:0;background:rgba(26,26,26,.14);opacity:0;pointer-events:none;transition:.22s;z-index:8}
+.prof-scrim.show{opacity:1;pointer-events:auto}
+.prof-panel{position:absolute;top:16px;right:16px;bottom:16px;width:360px;max-width:calc(100% - 32px);background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow-lg);z-index:9;
+  transform:translateX(30px);opacity:0;pointer-events:none;transition:.28s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;padding:22px 22px 20px}
+.prof-panel.show{transform:none;opacity:1;pointer-events:auto}
+.prof-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink-dim);font-size:15px;cursor:pointer;display:grid;place-items:center}
+.prof-close:hover{background:var(--surface-2)}
+.prof-kind{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--wine)}
+.prof-name{font-size:22px;font-weight:700;font-family:var(--mono);margin:6px 0 2px;line-height:1.15}
+.prof-meta{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.prof-meta .row{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--surface-2);border-radius:11px;padding:11px 13px}
+.prof-meta .row .k{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint)}
+.prof-meta .row .v{font-size:14px;font-weight:700;color:var(--ink)}
+.prof-meta .row .v.big{font-family:var(--mono);font-size:20px;color:var(--wine-deep)}
+.prof-label{margin-top:14px;font-size:11px;font-weight:700;padding:5px 12px;border-radius:100px;display:inline-flex;align-items:center;gap:7px;align-self:flex-start}
+.prof-label.backed{background:var(--wine-mist);color:var(--wine-deep)}
+.prof-label.backed::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--wine)}
+.prof-label.curated{background:var(--brass-soft);color:#8a4a2c}
+.prof-label.curated::before{content:"";width:7px;height:7px;border-radius:50%;border:1.5px dashed #b06a4a}
+.prof-note{font-size:11.5px;color:var(--ink-dim);line-height:1.5;margin-top:14px}
+.prof-dive{margin-top:auto;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--wine);color:#fff;border-radius:12px;padding:12px 18px;font-weight:700;font-size:13.5px;box-shadow:var(--shadow)}
+.prof-dive:hover{background:var(--wine-deep)}
+
+/* ---------- STEP 3 · analytical + sensory ---------- */
+.step3-body{flex:1 1 auto;display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-top:12px;min-height:0}
+/* Step-3 profile cards are static + sized to fit — no internal scroll */
+.res-card{display:flex;flex-direction:column;min-height:0;padding:18px 20px;overflow:hidden}
+#anaChart{flex:0 1 auto;min-height:0;margin-top:4px}
+/* profiles are inline scalable SVG (viewBox + width:100%) — enlarged caps, still fit Step 3 */
+#anaChart svg,#radar svg{width:100%;height:auto;display:block}
+#anaChart svg{max-height:270px}
+#radar{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center}
+#radar svg{max-height:310px}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex:0 0 auto}
+.sub-title{font-size:15px;font-weight:700;color:var(--ink)}
+.sub-desc{font-size:11.5px;color:var(--ink-dim);margin-top:2px}
+.legend{display:flex;gap:16px;font-size:12px;font-weight:700;color:var(--ink-dim);margin:8px 0}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.legend .ref i{background:var(--wine)} .legend .test i{background:var(--brass)}
+.stat-row{display:flex;gap:12px;margin-top:12px}
+.stat{flex:1;background:var(--surface-2);border-radius:12px;padding:11px 13px}
+.stat b{display:block;font-family:var(--mono);font-size:21px;color:var(--wine-deep);line-height:1.1}
+.stat span{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint)}
+.pill-min{font-size:10.5px;font-weight:700;background:var(--brass-soft);color:#8a4a2c;padding:3px 9px;border-radius:100px}
+.compare-btn{display:inline-flex;align-items:center;gap:7px;margin-top:14px;font-size:12.5px;font-weight:700;color:#fff;background:var(--wine);border-radius:11px;padding:11px 16px;cursor:pointer;box-shadow:var(--shadow);align-self:flex-start}
+.compare-btn:hover{background:var(--wine-deep)}
+.step3-note{font-size:11px;color:var(--ink-faint);font-style:italic;margin-top:8px}
+
+/* ---------- EMBED MODE ---------- */
+/* When loaded with ?embed=1 or inside an iframe (body.embed), hide the standalone-page
+   outer chrome so the wizard sits flush inside the platform shell. The rail + steps + all
+   in-content honesty labels stay. body is a flex column so removing these two flex items
+   leaves no top offset. */
+body.embed .preview-banner,
+body.embed .topbar{display:none}
+</style>
+</head>
+<body>
+<script>/* embed mode: ?embed=1 or inside an iframe → hide standalone chrome (set before paint) */try{if(location.search.indexOf('embed=1')>-1||window.self!==window.top){document.body.classList.add('embed');}}catch(e){}</script>
+
+<div class="preview-banner">Preview · curated concept view — <b>a curated reaction map honestly labelled, enriched with real corpus data where we have it.</b> Not a predictive engine and not a live measurement.</div>
+
+<header class="topbar">
+  <a class="back-link" href="/app/dev/index.html">&larr; Dev Area</a>
+  <div class="brand">MeatCODE<small>Research</small></div>
+  <div class="title">How meaty flavor forms</div>
+  <div class="spacer"></div>
+  <span class="demo-pill">Curated preview</span>
+</header>
+
+<!-- slim progress rail (the only progress cue) -->
+<div class="rail">
+  <button class="rail-back" id="railBack" onclick="goStep(state.step-1)" hidden aria-label="Go back one step"><span aria-hidden="true">&larr;</span> Back</button>
+  <div class="rail-track">
+    <div class="seg" data-seg="1"><div class="bar"><span></span></div><small>Precursors</small></div>
+    <div class="seg" data-seg="2"><div class="bar"><span></span></div><small>Network</small></div>
+    <div class="seg" data-seg="3"><div class="bar"><span></span></div><small>Results</small></div>
+  </div>
+  <div class="rail-branch" id="railBranch"></div>
+</div>
+
+<div class="stage">
+
+  <!-- STEP 1 · precursors -->
+  <section class="step active" data-step="1">
+    <div class="step1-inner">
+      <div class="eyebrow">Research · how meaty flavor forms</div>
+      <div class="h1">Where does the flavor start?</div>
+      <div class="lead">Meaty flavor is built during cooking. Pick which family of precursors you want to explore &mdash; MeatCODE walks you through the heat-driven reaction network it feeds, the volatile aroma compounds it produces, and how those read on analytical and sensory data.</div>
+      <div class="branch-grid">
+        <div class="branch" onclick="chooseBranch('lipid')">
+          <div class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="9" r="3"/><path d="M10 9h5M15 7v4M15 9h4"/><path d="M4 18c2-1.5 4-1.5 6 0s4 1.5 6 0 4-1.5 4 0"/></svg></div>
+          <h3>Lipid precursors</h3>
+          <p>Fats, fatty acids and triglycerides. Under heat these oxidise &mdash; hydroperoxides break down into the fatty, green and fried-note aldehydes and furans.</p>
+          <div class="path">fats / fatty acids &rarr; lipid oxidation &rarr; volatiles</div>
+          <div class="go">Explore the lipid network &rarr;</div>
+        </div>
+        <div class="branch" onclick="chooseBranch('aqueous')">
+          <div class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3c3 4 5 6 5 9a5 5 0 0 1-10 0c0-3 2-5 5-9z"/><path d="M9.5 13.5l1.5 1.5 3-3"/></svg></div>
+          <h3>Aqueous precursors</h3>
+          <p>Peptides, sugars and amino acids. Under heat these drive the Maillard reaction and Strecker degradation &mdash; the roasted, meaty, sulfurous thiols and pyrazines.</p>
+          <div class="path">amino acids + sugars &rarr; Maillard + Strecker &rarr; volatiles</div>
+          <div class="go">Explore the aqueous network &rarr;</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 2 · reaction network + volatiles -->
+  <section class="step" data-step="2">
+    <div class="step2-head">
+      <div>
+        <div class="eyebrow"><span id="netBranchLabel">Lipid</span> · heat + reactions</div>
+        <div class="h2">The reaction network and the volatiles it makes</div>
+      </div>
+      <span class="curated-tag">Curated preview</span>
+    </div>
+
+    <div class="step2-body">
+      <div class="card net-card">
+        <div class="net-legend">
+          <span><i class="pre"></i>Precursor</span>
+          <span><i class="rea"></i>Reaction</span>
+          <span><i class="vol"></i>Volatile</span>
+          <span><i class="hollow"></i>Curated (not yet corpus-backed)</span>
+        </div>
+        <div class="net-wrap" id="netWrap"><div class="loadnote">Loading reaction network&hellip;</div></div>
+        <div class="net-note" id="netNote">Hover a precursor or volatile node, then click it to open its compound profile.</div>
+      </div>
+    </div>
+
+    <div class="step2-foot">
+      <button class="btn" onclick="goStep(3)">See analytical &amp; sensory results &rarr;</button>
+    </div>
+
+    <!-- inline compound profile (stays in the module) -->
+    <div class="prof-scrim" id="profScrim" onclick="closeProfile()"></div>
+    <aside class="prof-panel" id="profPanel" aria-hidden="true">
+      <button class="prof-close" onclick="closeProfile()" aria-label="Close">&times;</button>
+      <div class="prof-kind" id="pfKind">Volatile</div>
+      <div class="prof-name" id="pfName">&mdash;</div>
+      <div class="prof-meta" id="pfMeta"></div>
+      <div class="prof-label backed" id="pfLabel">Corpus-backed</div>
+      <div class="prof-note" id="pfNote"></div>
+      <a class="prof-dive" target="_top" href="/app/meatcode_mockup.html#database">Dive into the full database corpus &rarr;</a>
+    </aside>
+  </section>
+
+  <!-- STEP 3 · analytical + sensory -->
+  <section class="step" data-step="3">
+    <div class="step2-head">
+      <div>
+        <div class="eyebrow">Analytical &amp; sensory results</div>
+        <div class="h2">How this volatile set reads on the instrument and the panel</div>
+        <div class="lead">The reference analytical trace and modelled descriptive-panel view for this branch. Bring your own GC-MS / NMR run or sensory scores and overlay them against this reference.</div>
+      </div>
+      <span class="curated-tag">Illustrative</span>
+    </div>
+
+    <div class="step3-body">
+      <div class="card res-card">
+        <div class="card-head">
+          <div><div class="sub-title">Analytical profile</div><div class="sub-desc">Reference volatile trace for this branch (illustrative).</div></div>
+          <span class="pill-min">illustrative</span>
+        </div>
+        <div class="legend"><span class="ref"><i></i>Reference</span><span class="test"><i></i>Your sample</span></div>
+        <div id="anaChart"></div>
+        <div class="stat-row">
+          <div class="stat"><b id="stDet">0</b><span>Detected</span></div>
+          <div class="stat"><b id="stAli">0</b><span>Aligned</span></div>
+          <div class="stat"><b id="stOnly">0</b><span>Test-only</span></div>
+        </div>
+        <div class="step3-note" id="anaNote"></div>
+        <a class="compare-btn" target="_top" href="/app/meatcode_mockup.html#analytics">Compare with your own data &rarr;</a>
+      </div>
+
+      <div class="card res-card">
+        <div class="card-head">
+          <div><div class="sub-title">Sensory profile</div><div class="sub-desc">Modelled descriptive-panel view.</div></div>
+          <span class="pill-min">estimate</span>
+        </div>
+        <div id="radar" style="margin-top:6px"></div>
+        <a class="compare-btn" target="_top" href="/app/meatcode_mockup.html#analytics">Compare with your own data &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ---------- embedded demo fallback (matches GET /api/reaction-network contract) ---------- */
+var DEMO = {
+  lipid: {
+    branch:"lipid", status:"preview",
+    note:"Curated lipid-oxidation view. Volatile mention counts are from the MeatCODE corpus; reactions are curated and honestly labelled.",
+    precursors:[
+      {id:"p:linoleic", name:"Linoleic acid", backed:true},
+      {id:"p:oleic", name:"Oleic acid", backed:true},
+      {id:"p:phospholipid", name:"Phospholipids", backed:true},
+      {id:"p:arachidonic", name:"Arachidonic acid", backed:false}
+    ],
+    reactions:[
+      {id:"r:autox", name:"Autoxidation → hydroperoxides", pathway:"lipid_oxidation", backed:true},
+      {id:"r:beta", name:"β-scission cleavage", pathway:"lipid_oxidation", backed:true},
+      {id:"r:secox", name:"Secondary oxidation", pathway:"lipid_oxidation", backed:false}
+    ],
+    volatiles:[
+      {id:"v:hexanal", name:"Hexanal", class:"Aldehyde", mentions_count:42, backed:true},
+      {id:"v:nonenal", name:"(E)-2-Nonenal", class:"Aldehyde", mentions_count:18, backed:true},
+      {id:"v:decadienal", name:"(E,E)-2,4-Decadienal", class:"Aldehyde", mentions_count:12, backed:true},
+      {id:"v:pentylfuran", name:"2-Pentylfuran", class:"Furan", mentions_count:9, backed:true},
+      {id:"v:octenol", name:"1-Octen-3-ol", class:"Alcohol", mentions_count:7, backed:false}
+    ],
+    edges:[
+      {from:"p:linoleic", to:"r:autox"},{from:"p:oleic", to:"r:autox"},
+      {from:"p:phospholipid", to:"r:beta"},{from:"p:arachidonic", to:"r:secox"},
+      {from:"r:autox", to:"v:hexanal"},{from:"r:autox", to:"v:pentylfuran"},{from:"r:autox", to:"v:nonenal"},
+      {from:"r:beta", to:"v:nonenal"},{from:"r:beta", to:"v:decadienal"},
+      {from:"r:secox", to:"v:octenol"}
+    ],
+    analytical:{detected:38, aligned:24, test_only:6, note:"Illustrative counts — not a processed measurement."},
+    sensory:[
+      {axis:"Fatty", value:.82},{axis:"Green", value:.60},{axis:"Fried", value:.70},{axis:"Tallowy", value:.55},
+      {axis:"Rancid", value:.40},{axis:"Nutty", value:.45},{axis:"Meaty", value:.32},{axis:"Metallic", value:.35}
+    ]
+  },
+  aqueous: {
+    branch:"aqueous", status:"preview",
+    note:"Curated Maillard + Strecker view. Volatile mention counts are from the MeatCODE corpus; reactions are curated and honestly labelled.",
+    precursors:[
+      {id:"p:cysteine", name:"Cysteine", backed:true},
+      {id:"p:glucose", name:"Glucose", backed:true},
+      {id:"p:ribose", name:"Ribose", backed:true},
+      {id:"p:thiamine", name:"Thiamine", backed:true},
+      {id:"p:glycine", name:"Glycine", backed:false}
+    ],
+    reactions:[
+      {id:"r:amadori", name:"Amadori rearrangement", pathway:"maillard", backed:true},
+      {id:"r:strecker", name:"Strecker degradation", pathway:"strecker", backed:true},
+      {id:"r:thiadeg", name:"Thiamine degradation", pathway:"maillard", backed:false}
+    ],
+    volatiles:[
+      {id:"v:fft", name:"2-Furfurylthiol", class:"Thiol", mentions_count:51, backed:true},
+      {id:"v:mft", name:"2-Methyl-3-furanthiol", class:"Thiol", mentions_count:44, backed:true},
+      {id:"v:dmp", name:"2,5-Dimethylpyrazine", class:"Pyrazine", mentions_count:28, backed:true},
+      {id:"v:ap", name:"2-Acetyl-1-pyrroline", class:"N-heterocycle", mentions_count:22, backed:true},
+      {id:"v:methional", name:"Methional", class:"Sulfur aldehyde", mentions_count:19, backed:true}
+    ],
+    edges:[
+      {from:"p:glucose", to:"r:amadori"},{from:"p:ribose", to:"r:amadori"},{from:"p:glycine", to:"r:amadori"},
+      {from:"p:cysteine", to:"r:strecker"},
+      {from:"p:thiamine", to:"r:thiadeg"},{from:"p:cysteine", to:"r:thiadeg"},
+      {from:"r:amadori", to:"v:dmp"},{from:"r:amadori", to:"v:ap"},
+      {from:"r:strecker", to:"v:methional"},{from:"r:strecker", to:"v:mft"},
+      {from:"r:thiadeg", to:"v:fft"},{from:"r:thiadeg", to:"v:mft"}
+    ],
+    analytical:{detected:52, aligned:33, test_only:9, note:"Illustrative counts — not a processed measurement."},
+    sensory:[
+      {axis:"Roasted", value:.85},{axis:"Meaty", value:.80},{axis:"Savory", value:.72},{axis:"Sulfurous", value:.60},
+      {axis:"Nutty", value:.58},{axis:"Caramelized", value:.62},{axis:"Brothy", value:.55},{axis:"Metallic", value:.30}
+    ]
+  }
+};
+
+var state = { branch:null, data:null, step:1, nodeIndex:{} };
+
+/* ---------- data load (same-origin fetch, graceful embedded fallback) ---------- */
+async function loadBranch(branch){
+  try{
+    var res = await fetch('/api/reaction-network?branch=' + encodeURIComponent(branch), {headers:{'Accept':'application/json'}});
+    if(res.ok){
+      var j = await res.json();
+      if(j && j.precursors && j.reactions && j.volatiles){ return {data:j, live:true}; }
+    }
+  }catch(e){ /* endpoint 404s until deployed — fall through */ }
+  return {data:DEMO[branch], live:false};
+}
+
+async function chooseBranch(branch){
+  state.branch = branch;
+  document.getElementById('netWrap').innerHTML = '<div class="loadnote">Loading reaction network…</div>';
+  var out = await loadBranch(branch);
+  state.data = out.data;
+  buildNodeIndex(out.data);
+  renderAll(out.live);
+  goStep(2);
+}
+
+function buildNodeIndex(d){
+  var idx = {};
+  d.precursors.forEach(function(p){ idx[p.id] = {kind:'precursor', name:p.name, backed:p.backed}; });
+  d.reactions.forEach(function(r){ idx[r.id] = {kind:'reaction', name:r.name, backed:r.backed, pathway:r.pathway}; });
+  d.volatiles.forEach(function(v){ idx[v.id] = {kind:'volatile', name:v.name, backed:v.backed, cls:v.class, mentions_count:v.mentions_count}; });
+  state.nodeIndex = idx;
+}
+
+function renderAll(live){
+  var d = state.data;
+  var label = state.branch==='lipid' ? 'Lipid' : 'Aqueous';
+  document.getElementById('netBranchLabel').textContent = label + (live ? ' · live' : ' · curated');
+  document.getElementById('railBranch').textContent = label + ' branch';
+  document.getElementById('netNote').textContent = (live ? '' : 'Showing the embedded curated dataset (the /api/reaction-network endpoint is not reachable). ') + 'Hover a precursor or volatile node, then click to open its compound profile.';
+  renderNetwork(d);
+  renderProfiles(d);
+}
+
+/* ---------- SVG reaction network (precursors → reactions → volatiles, oven/heat motif) ---------- */
+function renderNetwork(d){
+  // keep it readable + honest: show only the top N volatiles by corpus mentions
+  var VOL_CAP = 8;
+  var volAll = d.volatiles.slice().sort(function(a,b){ return (b.mentions_count||0) - (a.mentions_count||0); });
+  var vols = volAll.slice(0, VOL_CAP);
+  var trimmed = volAll.length - vols.length;
+
+  // wide viewBox spread across the full card width so meet-scaling fills the area
+  // (no big empty gutter): precursors far-left, reactions centered in the oven band, volatiles far-right
+  var vbW = 1220, vbH = 520, W = 210, H = 48;
+  var PRE_X = 30;
+  var REA_X = Math.round((vbW - W)/2);
+  var VOL_X = vbW - W - 30;
+  var cols = [
+    {items:d.precursors, x:PRE_X, cls:'pre'},
+    {items:d.reactions,  x:REA_X, cls:'rea'},
+    {items:vols,         x:VOL_X, cls:'vol'}
+  ];
+  var maxN = Math.max(d.precursors.length, d.reactions.length, vols.length);
+  var padY = 46, availH = vbH - padY*2;
+  // gap uses the vertical room but never overflows the viewBox
+  var gap = maxN>1 ? Math.min(96, (availH - H)/(maxN-1)) : 0;
+  var pos = {};
+  cols.forEach(function(col){
+    var n = col.items.length;
+    var colH = (n-1)*gap + H;
+    var y0 = (vbH - colH)/2;
+    col.items.forEach(function(it, i){
+      var y = y0 + i*gap;
+      pos[it.id] = {x:col.x, y:y, cx:col.x + W, cy:y + H/2, lx:col.x, cls:col.cls};
+    });
+  });
+
+  var svg = '<svg viewBox="0 0 ' + vbW + ' ' + vbH + '" preserveAspectRatio="xMidYMid meet">';
+  svg += '<defs><linearGradient id="heat" x1="0" y1="0" x2="0" y2="1">' +
+         '<stop offset="0" stop-color="#F2D7C8" stop-opacity=".9"/>' +
+         '<stop offset="1" stop-color="#F2D7C8" stop-opacity=".28"/></linearGradient></defs>';
+
+  // oven / heat band behind the reaction column
+  var bandX = REA_X - 30, bandW = W + 60;
+  svg += '<rect x="' + bandX + '" y="12" width="' + bandW + '" height="' + (vbH-24) + '" rx="20" fill="url(#heat)" stroke="#eec7b3" stroke-width="1"/>';
+  var flameY = 34, fcx = REA_X + W/2;
+  svg += '<g fill="#C77E5F">';
+  [-60,-20,20,60].forEach(function(dx){
+    var x = fcx + dx;
+    svg += '<path d="M' + x + ' ' + (flameY+8) + ' q-6 -6 0 -14 q3 5 6 0 q4 8 -3 14 z" opacity=".85"/>';
+  });
+  svg += '</g>';
+  svg += '<text x="' + fcx + '" y="' + (vbH-18) + '" font-family="SF Mono,monospace" font-size="14" font-weight="700" fill="#8a4a2c" text-anchor="middle">oven · 180 °C</text>';
+
+  // edges (edges to trimmed volatiles simply have no position → skipped, no dangling links)
+  d.edges.forEach(function(e){
+    var a = pos[e.from], b = pos[e.to];
+    if(!a || !b) return;
+    var x1=a.cx, y1=a.cy, x2=b.lx, y2=b.cy;
+    var mx=(x1+x2)/2;
+    svg += '<path d="M' + x1 + ' ' + y1 + ' C' + mx + ' ' + y1 + ' ' + mx + ' ' + y2 + ' ' + x2 + ' ' + y2 +
+           '" fill="none" stroke="#CBBFAE" stroke-width="1.8" opacity=".85"/>';
+  });
+
+  // nodes — every node is light + neutral by default; category color is revealed on hover (CSS)
+  cols.forEach(function(col){
+    col.items.forEach(function(it){
+      var p = pos[it.id];
+      var dash = it.backed ? '' : ' stroke-dasharray="5 4"';
+      var nm = it.name.length>26 ? it.name.slice(0,25)+'…' : it.name;
+      // precursor & volatile nodes are clickable (class nd); reactions carry the light-node styling too
+      var clickable = (col.cls==='pre' || col.cls==='vol');
+      var classes = 'node ' + col.cls + (clickable ? ' nd' : '');
+      var gattr = ' class="' + classes + '"';
+      if(clickable){ gattr += ' onclick="openProfile(\'' + it.id + '\')" role="button" tabindex="0"'; }
+      svg += '<g' + gattr + '><title>' + esc(it.name) + (it.backed?'':' (curated — not yet corpus-backed)') + (clickable?' — click to open profile':'') + '</title>';
+      svg += '<rect class="box" x="' + p.x + '" y="' + p.y + '" width="' + W + '" height="' + H + '" rx="12" fill="#FCFAF5" stroke="#D2C8B5" stroke-width="1.6"' + dash + '/>';
+      svg += '<rect class="bar" x="' + p.x + '" y="' + p.y + '" width="5" height="' + H + '" rx="2.5" fill="#CFC5B4"/>';
+      svg += '<text x="' + (p.x+16) + '" y="' + (p.y+H/2+1) + '" font-size="13.5" font-weight="700" fill="#6A6A6A" dominant-baseline="middle">' + esc(nm) + '</text>';
+      if(typeof it.mentions_count==='number'){ svg += '<text x="' + (p.x+W-12) + '" y="' + (p.y+17) + '" font-size="10" fill="#9A9A9A" text-anchor="end" font-weight="700">' + it.mentions_count + '×</text>'; }
+      svg += '</g>';
+    });
+  });
+
+  svg += '<text x="' + (PRE_X) + '" y="24" font-size="11.5" letter-spacing="1.6" fill="#8A8A8A" font-weight="700">PRECURSORS</text>';
+  svg += '<text x="' + (VOL_X) + '" y="24" font-size="11.5" letter-spacing="1.6" fill="#8A8A8A" font-weight="700">VOLATILES</text>';
+  svg += '</svg>';
+  document.getElementById('netWrap').innerHTML = svg;
+
+  // honest label when the volatile list was trimmed to the top N by corpus mentions
+  var nn = document.getElementById('netNote');
+  if(nn && trimmed>0){
+    nn.textContent = 'Showing the top ' + vols.length + ' volatiles by corpus mentions (' + trimmed + ' more in the full record). ' + nn.textContent;
+  }
+}
+
+/* ---------- inline compound profile (stays in journey) ---------- */
+function openProfile(id){
+  var nd = state.nodeIndex[id];
+  if(!nd) return;
+  var branchLabel = state.branch==='lipid' ? 'lipid-oxidation' : 'Maillard / Strecker';
+  document.getElementById('pfKind').textContent = nd.kind==='precursor' ? 'Precursor' : 'Volatile';
+  document.getElementById('pfName').textContent = nd.name;
+
+  var rows = '';
+  if(nd.kind==='volatile'){
+    rows += '<div class="row"><span class="k">Class</span><span class="v">' + esc(nd.cls||'Volatile') + '</span></div>';
+    rows += '<div class="row"><span class="k">Pathway</span><span class="v">' + branchLabel + '</span></div>';
+    rows += '<div class="row"><span class="k">Corpus mentions</span><span class="v big">' + (typeof nd.mentions_count==='number'? nd.mentions_count : '—') + '</span></div>';
+  } else {
+    rows += '<div class="row"><span class="k">Role</span><span class="v">Precursor</span></div>';
+    rows += '<div class="row"><span class="k">Branch</span><span class="v">' + (state.branch==='lipid'?'Lipid':'Aqueous') + '</span></div>';
+    rows += '<div class="row"><span class="k">Feeds</span><span class="v">' + branchLabel + '</span></div>';
+  }
+  document.getElementById('pfMeta').innerHTML = rows;
+
+  var lbl = document.getElementById('pfLabel');
+  if(nd.backed){ lbl.className = 'prof-label backed'; lbl.textContent = 'Corpus-backed'; }
+  else { lbl.className = 'prof-label curated'; lbl.textContent = 'Curated — not yet corpus-backed'; }
+
+  document.getElementById('pfNote').textContent = nd.backed
+    ? 'Drawn from the MeatCODE corpus. Open the full record for the literature and molecular data behind it.'
+    : 'Part of the curated reaction map, honestly labelled — not yet linked to corpus evidence.';
+
+  document.getElementById('profScrim').classList.add('show');
+  var panel = document.getElementById('profPanel');
+  panel.classList.add('show');
+  panel.setAttribute('aria-hidden','false');
+}
+function closeProfile(){
+  document.getElementById('profScrim').classList.remove('show');
+  var panel = document.getElementById('profPanel');
+  panel.classList.remove('show');
+  panel.setAttribute('aria-hidden','true');
+}
+
+/* ---------- analytical + sensory ---------- */
+function curve(peaks, which, W, H){
+  var N=200, pts=[];
+  for(var i=0;i<=N;i++){
+    var x=i/N, y=0;
+    peaks.forEach(function(p){ var h=which==='ref'?p[1]:p[2]; y+=h*Math.exp(-Math.pow((x-p[0]),2)/(2*0.0016)); });
+    y=Math.min(y,1);
+    var px=x*W, py=H-6-y*(H-14);
+    pts.push(px.toFixed(1)+','+py.toFixed(1));
+  }
+  return pts.join(' ');
+}
+
+function renderProfiles(d){
+  var a = d.analytical || {detected:0,aligned:0,test_only:0,note:''};
+  document.getElementById('stDet').textContent = a.detected;
+  document.getElementById('stAli').textContent = a.aligned;
+  document.getElementById('stOnly').textContent = a.test_only;
+  document.getElementById('anaNote').textContent = a.note || '';
+
+  var vs = d.volatiles, n = vs.length;
+  var peaks = vs.map(function(v,i){
+    var pos = (i+0.6)/(n+0.2);
+    var ref = 0.35 + 0.6*Math.min(1,(v.mentions_count||10)/50);
+    var test = Math.max(0.12, ref - 0.06 - (i%3)*0.05);
+    return [pos, ref, test];
+  });
+  var W=520,H=210, grid='';
+  for(var g=0; g<=4; g++){ var gy=6+g*((H-14)/4); grid+='<line x1="0" y1="'+gy+'" x2="'+W+'" y2="'+gy+'" stroke="#EDE4D6" stroke-width="1"/>'; }
+  var refP=curve(peaks,'ref',W,H), testP=curve(peaks,'test',W,H);
+  var xlab = 'Retention time (min) — illustrative';
+  var svg = '<svg viewBox="0 0 '+W+' '+(H+22)+'" width="100%">'+grid+
+    '<polyline points="'+refP+'" fill="none" stroke="#00736E" stroke-width="1.8"/>'+
+    '<polyline points="'+testP+'" fill="none" stroke="#C77E5F" stroke-width="1.6" stroke-dasharray="4 3"/>'+
+    '<text x="'+(W/2)+'" y="'+(H+18)+'" font-size="10" fill="#8A8A8A" text-anchor="middle">'+xlab+'</text></svg>';
+  document.getElementById('anaChart').innerHTML = svg;
+
+  renderRadar(d.sensory||[]);
+}
+
+function renderRadar(sensory){
+  var ax = sensory.map(function(s){return s.axis;});
+  var vals = sensory.map(function(s){return s.value;});
+  var n = ax.length; if(!n){ document.getElementById('radar').innerHTML=''; return; }
+  var cx=160,cy=140,R=98, ring='';
+  for(var r=1;r<=3;r++){
+    var pp=[];
+    for(var i=0;i<n;i++){ var ang=-Math.PI/2+i*2*Math.PI/n; pp.push((cx+Math.cos(ang)*R*r/3).toFixed(1)+','+(cy+Math.sin(ang)*R*r/3).toFixed(1)); }
+    ring+='<polygon points="'+pp.join(' ')+'" fill="none" stroke="#EDE4D6" stroke-width="1"/>';
+  }
+  var poly=[], labels='';
+  for(var i=0;i<n;i++){
+    var ang=-Math.PI/2+i*2*Math.PI/n;
+    poly.push((cx+Math.cos(ang)*R*vals[i]).toFixed(1)+','+(cy+Math.sin(ang)*R*vals[i]).toFixed(1));
+    var lx=cx+Math.cos(ang)*(R+18), ly=cy+Math.sin(ang)*(R+14);
+    var anchor = Math.abs(Math.cos(ang))<0.3 ? 'middle' : (Math.cos(ang)>0?'start':'end');
+    labels+='<text x="'+lx.toFixed(1)+'" y="'+ly.toFixed(1)+'" font-size="9.5" fill="#8A8A8A" text-anchor="'+anchor+'" dominant-baseline="middle">'+esc(ax[i])+'</text>';
+  }
+  document.getElementById('radar').innerHTML='<svg viewBox="0 0 320 280" width="100%">'+ring+
+    '<polygon points="'+poly.join(' ')+'" fill="rgba(0,115,110,.16)" stroke="#00736E" stroke-width="1.8"/>'+labels+'</svg>';
+}
+
+/* ---------- wizard step control ---------- */
+function goStep(n){
+  if(n < 1) n = 1;
+  if(n > 3) n = 3;
+  if(n >= 2 && !state.data){ n = 1; }   // can't reach network/results before a branch is chosen
+  if(n === 1){ closeProfile(); }
+  state.step = n;
+
+  document.querySelectorAll('.step').forEach(function(s){
+    var d = +s.dataset.step;
+    s.classList.toggle('active', d === n);
+    s.classList.toggle('prev', d < n);
+  });
+
+  // progress rail: fill segments up to current step
+  document.querySelectorAll('.seg').forEach(function(seg){
+    var i = +seg.dataset.seg;
+    seg.classList.toggle('on', i <= n);
+    seg.classList.toggle('active', i === n);
+  });
+
+  document.getElementById('railBack').hidden = (n === 1);
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// init
+goStep(1);
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeProfile(); });
+</script>
+</body>
+</html>

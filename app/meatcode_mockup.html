@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<!-- Last updated: 2026-08-16 14:46 UTC · UI/UX Designer · Research live-corpus chips + Analytics scene + Oracle demo chips + dev-banner removal. (T3) removed #ffDevBanner + its CSS (no dangling refs). (T1) #research-sub juice/lipid sub-cards carry data-topics (taxonomy slugs), are a real toggle multi-select (default 3 picked), and live-query GET /api/corpus (debounced 250ms) → count line from totals.{molecules,papers} + per-card source counts from phase_topics (0-source cards honestly greyed + unselectable); loading/empty/error/not-deployed states; selection stashed to localStorage.mc_research_topics for #database. (T4) the 4 Oracle starter chips are capability demos now (data-demo, dispatched by a delegated handler; the generic starter→askOracle handler skips data-demo chips): (a) Maillard route schematic strip + the EXISTING grounded askOracle(); (b) inline lipid-corpus card (GET /api/corpus?phase=lipid); (c) inline simulator card (canned POST /api/simulate) with the MANDATORY synthetic banner + disclaimer, honest 404→"enable maillard_sim"; (d) inline compare card (POST /api/compare, 1–2 molecules, diff via fields[].differs, user-entered labelling) — none navigate away; askOracle()/SSE untouched. (T2) Analytics is a first-class #analytics scene now (4-region shell, Research active) with 6 live-corpus method chips (data-topics from the ANALYTICS map, multi-select+deselect, results panel + per-card counts); the #research Analytics tile routes to #analytics (dev/analytics.html dependency dropped); setScene NAV_CAT + the nav SCENES list register it. New CSS: .mc-demo-*/.mc-route-*/.mc-synth-banner/.mc-cmp-*/#analytics (tokens only). · Prior 2026-08-15 17:40 UTC · UI/UX Designer · ORACLE IS NOW A REAL CHAT (approved design ported from app/dev/oracle_redesign.html v11 onto the live product, on THIS file's tokens — no palette imported). (1) THREAD: the centre column of #oracle is a scrollable multi-turn conversation (#oracleThread, the only scroller in the column) instead of one replaceable answer. Each question renders as a right-aligned user bubble (.oracle-turn.user/.oracle-bubble, wine-mist) and each answer as its own card appended below — a follow-up APPENDS and auto-scrolls to the new turn, it never wipes the previous answer. The ask box + starters moved BELOW the thread into a docked .oracle-composer (attach + mic + Ask + Enter-to-send / Shift+Enter newline all unchanged). #oracleAnswerSlot is gone; `oracleSlot` is now re-pointed at the current turn by mcOpenAnswerTurn(), so setOracleLoading / setOracleError / streamSSE write into the newest turn unchanged. Because several answer cards now coexist, opening a turn RETIRES the previous turns' ids (data-was-id) and the id-based answer CSS (#oracleSourcesList…) moved onto .oracle-sources-list. (2) HEADER: the "ORACLE" eyebrow and the "Ask the Oracle" H1 are REMOVED (Lior — the nav already says Oracle); the grounding line stays IN FULL: "Every answer is grounded in the corpus (818 sources, keyword/FTS retrieval, relevance_llm ≥ 60) with sources you can open." (mono on the threshold). (3) REAL RETRIEVAL KEPT + EXTENDED: status → "Digging the MeatCODE database…", sources → the real paper pills with their real [id] citations (+ NEW: the additive per-source `claims` key renders as an honest claims list when present), chunk → streaming prose with teal [n] cite chips, done → finalize (guard intact, so the double done/stream-close can't double-fire), error → error card; NEW `consensus` handler renders an honest "N support · M oppose · K neutral" chip ONLY when the event actually arrives. Missing events change nothing (full backward compatibility). (4) HISTORY = CONVERSATIONS: mc_oracle_history_v1 records now carry turns:[{q,a}] (12 turns × 4000 chars caps, all try/catch); asking appends a turn to the ACTIVE conversation, clicking a rail entry REPLAYS that whole conversation into the thread, and a legacy/seed record with no stored answer says so instead of inventing one. A small "+ New chat" button in the composer starts a fresh conversation. The left Pinned/History rail itself is untouched (same markup, styling, pin + rename behaviour). Lab Stash highlight-to-save now spans the whole thread (host = #oracleThread), and the related-molecules chip row, SESSION_EXPIRED handling, credentials:'same-origin' + the typeof API_BASE guard, and the no-page-scroll shell are all preserved. · Prior 2026-08-15 14:55 UTC · UI/UX Designer · FOUR changes (Lior's dev-area sprint). (1) ORACLE ATTACH (preview): paperclip button in the ask box next to the mic (#oracleAttachBtn + hidden #oracleFileInput); picking a file renders a removable filename chip (+ "preview" tag) in #oracleAttachRow above the ask controls. CLIENT-SIDE ONLY — nothing is uploaded and NO success/processing message is shown (tooltip: "Attach data or a paper (preview — processing coming soon)"). (2) DEV AREA BUTTON: a flask "Dev Area" link (→ /app/dev/index.html, same tab, plain <a>) authored statically next to the Inventory button on all 14 topbars; FEATURE-FLAGGED — .mc-devarea-btn is display:none unless body.ff-dev_area (set by the existing /api/flags load pass), so it stays off production until the flag flips. (3) HOME OFF THE NAV — Oracle is the landing again: empty hash → #oracle (setScene default), the brand/logo click → #oracle, and the load-time nav pass now REMOVES any Home chip instead of injecting one → top nav everywhere = Oracle · Research · Simulate. The #home scene + its wiring stay in the file but are unreachable from nav (harmless dead scene, cheap rollback; NAV_CAT/ROUTES 'home' entries left in place). (4) RESEARCH TILES: #research now shows THREE tiles — Juice · Lipid (both subtitled "aroma profiles inside", still → #research-sub) · Analytics (→ /app/dev/analytics.html, labelled a dev preview); the Matrix + Volatiles cards and the dashed "Looking for a protocol instead?" card are REMOVED (the #research-sub matrix/volatiles content + #toolbench stay intact off-scene); each tile now carries its own palette (Juice teal · Lipid coral · Analytics olive) whose card background DEEPENS to a darker shade of the same hue on hover (smooth background-color transition via .phase-card[data-phase] rules). · Prior 2026-07-22 14:16 UTC · UI/UX Designer · Home v3 (Lior's review) — TWO changes. (1) DATA OUT OF TOP NAV: the load-time nav pass now removes BOTH Map and Database chips (was: relabel Database→Data and keep) + still injects Home + reorders → net top nav EVERYWHERE = Home · Oracle · Research · Simulate. The Home "Data" TILE (→#database) and the #database scene + all in-content routes are kept — Data stays reachable, just not as an upper-category button. setScene's dynamic active-map no longer activates a Data chip (database/molecule-detail/protocol-detail leave the nav with nothing active, like #map); Oracle/Research/Simulate/Home still highlight. ['data','database'] left in ROUTES (harmless; the tile uses href). (2) INVENTORY = Option A slide-over drawer, built + wired: a compact "Inventory" button on Home (below the tiles) shows live counts and opens a right slide-over (backdrop + 3-way segmented control Articles · Protocols · Sentences; Esc/backdrop/× close; item cards + italic quote cards for sentences), reproduced from outputs/inventory_option_A_drawer.html on the canonical tokens. CLIENT-SIDE ONLY (one shared password, no per-user identity — like Lab Stash; no server store). Stores: Articles → NEW mc_saved_articles_v1 (a save/bookmark button on each #molecule-detail linked-paper row pushes {id,name,meta,href}; exposed window.mcSaveArticle); Protocols → NEW mc_saved_protocols_v1 (a "Save protocol" button on #protocol-detail); Sentences → the real Lab Stash via window.MCStash.list() ({id,text,q}) rendered as quote cards, removable via window.MCStash.remove(id). Counts = the three live store sizes, re-read on open / on entering #home / after any save. Clicks: article → opens its doi/url (else the molecule); protocol → #protocol-detail; sentence → reopens its source question in #oracle. All new storage versioned + try/catch, dedupe by id, cap 50. Prior Home v2 work preserved (mic dictation, 4 tiles, merged recents, molecule/protocol detail scenes) and Toolbench/MCStash, Lab Stash highlight-to-save, Oracle SSE/status, SESSION_EXPIRED/same-origin, no-page-scroll shell untouched. · Prior 2026-07-22 13:48 UTC · UI/UX Designer · Home v2 (Lior's annotated review) — NAV is now Home · Oracle · Data · Research · Simulate: the load-time nav pass (formerly "trim") now drops only Map, RELABELS the Database chip to "Data" (icon kept), still prepends a Home chip, and REORDERS every topbar to the canonical order; nav-active is now DYNAMIC (setScene maps scene→category: database/molecule-detail/protocol-detail→Data, research/research-sub/toolbench→Research, etc. and lights the matching chip in every topbar), replacing the old static per-topbar active; ROUTES gained ['data','database']. HOME: ask box gained a MIC (reuses the Oracle's Web Speech dictation via a shared mcMakeDictation() helper — en-US, interim→final append into #homeAskInput, hidden where unsupported); tiles are now FOUR (Oracle→#oracle, Data→#database, Research→#research, Simulate→#simulate); "Pick up where you left off" now merges recent CHATS + MOLECULES (mc_recent_molecules_v1) + PROTOCOLS (mc_recent_protocols_v1), most-recent-first, labelled by kind, seeded with a representative molecule + protocol when empty (no experts); rows route chat→#oracle, molecule→#molecule-detail, protocol→#protocol-detail. NEW SCENES: #molecule-detail fetches GET {API}/api/molecules/{id} (same-origin guard + credentials:'same-origin'; crumbs Data/Molecules/name, mono title, category·taste·odor meta, tag chips, Linked-papers card with per-paper Open→ via doi/url, cross-links Ask the Oracle→ / See on Map→; loading/empty/error states never blank the page; records the view into mc_recent_molecules_v1). #protocol-detail is a representative TEMPLATE (no protocol backend yet — static placeholder steps/papers; only crumb+title populated live from mc_protocol_focus_id/name; records into mc_recent_protocols_v1). All prior work preserved (Related-molecules chips, widened Oracle answer, Toolbench, Lab Stash, lean restyle, SSE streaming/status, SESSION_EXPIRED/same-origin, no-page-scroll shell); #database/#map scenes + in-content journeys intact (Map off the nav; Data back on it). · Prior 2026-07-22 13:23 UTC · UI/UX Designer · added Home landing module — a new #home scene is now the DEFAULT landing (empty hash → #home via setScene) and the MeatCODE logo routes to #home. Top nav everywhere is now Home · Oracle · Research · Simulate: #home authors its own topbar (Home active), and trimNav — which still drops the Database + Map chips — now also PREPENDS a "Home" chip (house SVG) to every other topbar; nav router gained ['home','home'] in ROUTES + 'home' in SCENES. Home is built on #research's app/topbar/canvas shell (no left rail; #home .canvas spans both columns) and reproduces meatcode_lean_v1's Home on this file's tokens (teal=--wine, coral=--brass), all rules scoped under #home/.home-*. It has a REAL typeable ask box (Enter or Ask → sets #oracleTextarea, routes to #oracle, and streams via askOracle()), three tiles routing to #oracle/#research/#simulate, and a "Pick up where you left off" list wired to the saved Oracle chats (live oracleChats / mcLoadOracleChats seeds; a row → mcOpenOracleChat(id) then #oracle), re-rendered on load and on entering #home. All prior work preserved (Related-molecules chips, widened Oracle answer, Toolbench/window.MCStash, Lab Stash, lean DB/Oracle restyle, advisory Oracle-notes, SSE streaming + status phase, SESSION_EXPIRED + credentials same-origin, no-page-scroll shell); #database/#map scenes + their in-content journeys still intact and still off the top nav. · Prior 2026-07-22 12:10 UTC · UI/UX Designer · TASK 1 — removed Database + Map from the TOP NAV: a small load-time JS pass drops any .domain chip whose exact label is "Database"/"Map" across all ~11 topbars (DRY, can't desync); the #database and #map scenes AND every in-content route into them (dock items, "See on Map →", breadcrumbs, the new Related-molecule chips) are kept fully intact — the screens stay reachable, just not as nav buttons. TASK 2 — widened the Oracle answer to ~1080px via #oracle .oracle-wrap max-width, holding .oracle-heading/.oracle-input/.oracle-starter-row to a centered 780px so only #oracleAnswerSlot / the .oracle-answer card fills the wider wrap; content stays centered (margin:auto) and the no-page-scroll fixed shell is untouched. TASK 3 — added a "Related molecules" teal molecule-pill row at the very end of each answer card (below prose, sources, follow-ups): on completion (finalizeAnswer, guarded so the double SSE done/stream-close fire only requests once) it calls GET {API_BASE}/api/molecule-suggestions?q=<question+answer>&limit=6 with credentials:'same-origin' and the typeof-API_BASE same-origin guard, renders the bare [{id,name,category,taste,mentions_count}] array as chips with loading/empty/error states (all try/catch-wrapped — any fetch/parse failure hides the row silently and never blanks the answer); clicking a chip deep-links into Database → Molecules via mc_db_tab + mc_db_focus_id/name + a prefilled #db-molecules-search (reuses the DB engine's maybeFocus). Only the additions above changed; Toolbench, Lab Stash, lean DB/Oracle restyle, SSE streaming + status phase, SESSION_EXPIRED/same-origin, and the advisory Oracle-notes pass are all preserved. · Prior 2026-07-21 14:40 UTC · advisory session · Oracle notes pass (from Lior's annotated screenshot): removed the "ORACLE" eyebrow; subtitle → "Every answer is based on a closed corpus with information you can access"; shorter one-line placeholder; input textarea auto-grows (overflow hidden, min-height 30px) so there's no scrollbar or wasted gap; starter chips are now showcase quick-suggestions (Maillard synthesis route · Mask beany off-notes · Sulfur notes in cooked beef · Boost roasted aroma); answer SOURCES moved BELOW the prose (was above), recolored to a BLUE palette, and collapsed to the first 2 with a "+N more" toggle. · Prior 2026-07-21 14:16 UTC · UI/UX Designer · Lean restyle (matches UI-UX Designer/meatcode_lean_v1.html). TASK A — Database molecules/experts/companies to the lean .filterbar + .tbl look: filter bar is now a surface-2 panel with a pill search + right-aligned sort; molecules category filter is live .fchip chips (All · real facets) that drive the hidden <select> so every fetch/pager/XLSX wire is reused; per-tab "Data / <Entity>" breadcrumb; columns reworked through the config-driven engine — Molecules = MOLECULE(mono) · CLASS(category) · SOURCES(mono mentions_count) · RELEVANCE(.db-bar from priority_score, 0–100); Experts = NAME · AFFILIATION · COUNTRY · H-INDEX(.db-bar, dynamic max, NO relevance column); Companies = NAME · COUNTRY · WEBSITE(link); Export moved below each table as a lean ghost "⤓ Export (.xlsx)". 50/page pagination + Toolbench bookmark on molecule rows preserved. TASK B — Oracle centre column to the lean look: ORACLE eyebrow + "Ask the Oracle" + corpus subtitle; ask box → .oracle-box proportions (1.5px line-strong, r20); answer card → .answer (r20, 15.5px/1.7); retrieved papers render as coral .ent.paper-style pills wired to the live SSE sources (no fabricated molecule/expert chips); follow-ups → lean "→" chips from the model's Follow-ups line; left Pinned/History rail, Lab Stash highlight-to-save, streaming + "Digging the MeatCODE database…" status phase, SESSION_EXPIRED + credentials same-origin, and no-page-scroll frame all preserved. Only CSS + HTML markup + the DB config-engine columns/chips changed; the Oracle/Lab-Stash/Toolbench script blocks are byte-identical. NOTE: the on-disk base was the 13:19 commit — the Full-Stack Engineer's 13:34 backup Export/Import (mc-backup / mcStashSnapshot) is NOT in this file and must be re-applied + committed. · Prior 2026-07-21 13:19 UTC · UI/UX Designer · (1+3) Every tab is a centered, fixed-height frame with NO page scroll: the app-shell grid (64px 1fr, 100vh, overflow:hidden) bounds each scene and each scene’s .canvas is the internal scroller (min-height:0 + overflow-y:auto). Map keeps canvas overflow:hidden for the globe. Oracle is now a bounded flex column — heading + ask box + starters stay pinned and ONLY #oracleAnswerSlot scrolls. Content stays horizontally centered via each wrap’s max-width + margin:auto. (2) The topbar search bar was removed on every scene and replaced by a Toolbench wrench button that opens a saved-items drawer with three persisted sections — Saved molecules (mc_saved_molecules_v1; bookmark button added to each Database molecules row), Saved sentences (mc_lab_stash_v1 via a new window.MCStash owner API), and Marked chats (pinned mc_oracle_history_v1). The redundant bottom-left “Lab Stash” button was removed; highlight-to-save still writes mc_lab_stash_v1. All three stores are versioned + try/catch-wrapped; molecules capped at 100. · Prior 2026-07-21: full-screen shell (grid 64px 1fr; dock/flow-bar hidden), bulletproof Ask re-enable (.finally + input-listener), verified caches. · Prior: 401/SESSION_EXPIRED “your sign-in expired” + credentials same-origin; “Digging the MeatCODE database…” status phase; Oracle default landing + brand→#oracle; nav Oracle·Research·Database·Simulate·Map; no topbar bell. -->
+<!-- Last updated: 2026-09-01 · UI/UX Designer · NEW badge moved Simulate → Analytics. The "new" class was dropped from every Simulate top-nav chip (all ~14 topbars, including the active #simulate chip), so Simulate no longer shows the brass "new" pill. The flag-gated Analytics chip (injected by the ff-analytics_module load-time pass, 3rd nav position) now gets className 'domain new' at creation, so Analytics shows the same NEW badge instead. Badge CSS (.domain.new::after / .domain.active.new::after) unchanged; Oracle/Research chips, the #analytics scene, and the Oracle-delete work untouched. · Prior 2026-09-01 06:53 UTC · UI/UX Designer · #analytics context panel removed (full-width iframe) + Oracle history hover-✕ delete. (1) The #analytics scene no longer renders the platform's left context panel: two scoped CSS rules — `#analytics .context{display:none}` + `#analytics .canvas{grid-column:1/-1}` — hide the 248px "ANALYTICS · Analytical methods · HONEST STATUS" aside and let the embedded workspace iframe span the full canvas width (no left gap; the dev page's own "Guided workflow" taskbar becomes the leftmost element). The aside markup is left in the DOM but display:none'd; NO other scene's context panel is touched. (2) Oracle history rail (Pinned Chats + Oracle History, both rendered by mcOracleRowHTML from mc_oracle_history_v1): each row now carries a `.ctx-del` ✕ button next to the dot — hidden by default, and on row :hover the `.dot` is display:none'd while the ✕ shows in the SAME left spot. Clicking the ✕ calls new mcDeleteOracleChat(id): filters the chat out of oracleChats, clears oracleActiveId if it was active, mcSaveOracleChats() (persists to mc_oracle_history_v1), and re-renders. Delegated click handler intercepts `.ctx-del[data-del-id]` FIRST with stopPropagation so delete never opens the chat; dblclick guard also ignores `.ctx-del`; the right-side bookmark/pin + rename controls are unchanged. Applies to both Pinned + History rows (shared row component). · Prior 2026-09-01 · UI/UX Designer · DEV-PAGE INTEGRATION via iframe + embed-mode (flag-gated). (1) #research is now gated to the polished dev WIZARD: a new load-time IIFE (right after the Analytics-chip pass) watches body.class and, when ff-research_reaction_network is ON, hides the #research .research-wrap phase-picker and injects a full-fill <iframe class=mc-embed-frame src=/app/dev/research_reaction_network.html?embed=1> into #research .canvas (canvas gets .mc-embed-canvas → padding:0/overflow:hidden). Flag OFF → the phase-picker is untouched. MutationObserver handles the async /api/flags race; idempotent via the mc-embed-frame guard. (2) #analytics scene now EMBEDS the dev workspace: its former in-mockup measurements-browser markup (#anMethods/#anResults/#anDetail) was replaced by a full-fill <iframe src=/app/dev/analytics_workspace.html?embed=1> in a .mc-embed-canvas; the mcAnalytics IIFE stays but no-ops cleanly (all DOM accessors null-guard). (3) the flag-gated Analytics nav chip now switches to the in-app scene (location.hash='#analytics') instead of a full-page nav to the dev file; setScene NAV_CAT/chipCat give #analytics its own 'analytics' category so the chip lights when active. New CSS: .canvas.mc-embed-canvas + .mc-embed-frame. Both dev pages gained embed mode (?embed=1 or inside an iframe → body.embed hides their standalone chrome; all in-content honesty labels kept). · Prior 2026-08-31 16:58 UTC · UI/UX Designer · Analytics nav chip (ADDITIVE + flag-gated). A new load-time IIFE (right after the top-nav normalize pass) inserts ONE "Analytics" .domain chip as the 3rd top-nav item across every topbar → order reads Oracle · Research · Analytics · Simulate, but ONLY when body.ff-analytics_module is set (dev ON / prod OFF — set by the async /api/flags pass; the IIFE both tries immediately AND watches body-class mutations so it inserts once the flag resolves). Clicking it does a FULL-PAGE navigation to /app/dev/analytics_workspace.html (NOT an in-app #scene switch). Idempotent (data-analytics-chip guard, never double-inserts); atom-style orbital icon consistent with the set; the existing Oracle/Research/Simulate chips + handlers are untouched. · Prior 2026-08-31 13:38 UTC · UI/UX Designer · GC-MS/NMR measurements browser + live simulator wiring. TASK A: #analytics is now a MEASUREMENTS BROWSER — each .an-method card carries data-method + an "Open method ▸" CTA + a "compare corpus" checkbox (the existing multi-select union in #anResults is preserved via the checkbox; card-body/CTA click opens a detail view #anDetail instead). openDetail() renders three parts into #anDetail: (1) an inline-SVG PLACEHOLDER spectrum built by specSVG() — GC-MS = a chromatogram (baseline + Gaussian retention-time peaks, numbered, legend of representative meaty volatiles: 2-methyl-3-furanthiol/furfural/2-acetyl-1-pyrroline/2,5-dimethylpyrazine/methional/hexanal), NMR = a ¹H spectrum (δ-ppm peaks + assignment legend), both loudly captioned "ILLUSTRATIVE — placeholder spectrum, not measured data"; the four PLANNED methods get an honest .an-spec-planned "no reference spectrum yet" panel instead of a fake trace; (2) a "What it measures / What it detects" honest block from METHOD_META; (3) that method's LIVE corpus slice via the existing GET /api/corpus?phase=analytics&topics=<slugs> (reuses corpusGet/statLine/topTopics/rowsList; 404/error/empty states graceful). GC-MS + NMR fully pressable end-to-end on placeholder data; honest DATA-EXISTS/PLANNED chips kept. TASK B: #simPredictBtn now POSTs /api/simulate (form-built request via buildRequest(): reads the two .sim-prec rows → amino_acids/sugars by data-class, conditions from editable .sim-num contenteditable spans, matrix mapped to the adapter enum, options.top_compounds:8, label; unit is the chemist-natural "mM" — NOT rewritten; credentials:'same-origin', same API_BASE as askOracle/mcAnalytics) → loading state → renders the REAL response into the existing gorgeous card: #simPredictPct/#simPredictFill from mean compound confidence, the compounds table replaced via the SIM_TBODY marker (name + top reaction-family · yield_ppb · descriptor aroma · confidence/backing), #simOffNotes for off_notes, and the MANDATORY "SYNTHETIC — NOT A REAL SIMULATION" #simSynthBanner + disclaimer whenever synthetic:true (never without); the hardcoded literature card is swapped for an honest "no literature backing — synthetic placeholder" note on synthetic runs. Status branch: 200 render inline · 202 poll GET /api/simulate/{job_id} every ~1.2s (give up ~120s) · 404 → "enable the maillard_sim flag in the Release Center" · 4xx/5xx → error.message + Retry (parses the {ok:false,error:{message}} envelope whether it arrives as 200-ok:false or a 4xx/5xx). Precursor amounts + conditions are inline-editable; the initial static profile is framed as an "illustrative preview" until Predict is pressed. askOracle()/SSE + the .sim-select dropdown IIFE untouched. All added inline scripts pass node --check; tags balanced. · Prior 2026-08-16 14:46 UTC · UI/UX Designer · Research live-corpus chips + Analytics scene + Oracle demo chips + dev-banner removal. (T3) removed #ffDevBanner + its CSS (no dangling refs). (T1) #research-sub juice/lipid sub-cards carry data-topics (taxonomy slugs), are a real toggle multi-select (default 3 picked), and live-query GET /api/corpus (debounced 250ms) → count line from totals.{molecules,papers} + per-card source counts from phase_topics (0-source cards honestly greyed + unselectable); loading/empty/error/not-deployed states; selection stashed to localStorage.mc_research_topics for #database. (T4) the 4 Oracle starter chips are capability demos now (data-demo, dispatched by a delegated handler; the generic starter→askOracle handler skips data-demo chips): (a) Maillard route schematic strip + the EXISTING grounded askOracle(); (b) inline lipid-corpus card (GET /api/corpus?phase=lipid); (c) inline simulator card (canned POST /api/simulate) with the MANDATORY synthetic banner + disclaimer, honest 404→"enable maillard_sim"; (d) inline compare card (POST /api/compare, 1–2 molecules, diff via fields[].differs, user-entered labelling) — none navigate away; askOracle()/SSE untouched. (T2) Analytics is a first-class #analytics scene now (4-region shell, Research active) with 6 live-corpus method chips (data-topics from the ANALYTICS map, multi-select+deselect, results panel + per-card counts); the #research Analytics tile routes to #analytics (dev/analytics.html dependency dropped); setScene NAV_CAT + the nav SCENES list register it. New CSS: .mc-demo-*/.mc-route-*/.mc-synth-banner/.mc-cmp-*/#analytics (tokens only). · Prior 2026-08-15 17:40 UTC · UI/UX Designer · ORACLE IS NOW A REAL CHAT (approved design ported from app/dev/oracle_redesign.html v11 onto the live product, on THIS file's tokens — no palette imported). (1) THREAD: the centre column of #oracle is a scrollable multi-turn conversation (#oracleThread, the only scroller in the column) instead of one replaceable answer. Each question renders as a right-aligned user bubble (.oracle-turn.user/.oracle-bubble, wine-mist) and each answer as its own card appended below — a follow-up APPENDS and auto-scrolls to the new turn, it never wipes the previous answer. The ask box + starters moved BELOW the thread into a docked .oracle-composer (attach + mic + Ask + Enter-to-send / Shift+Enter newline all unchanged). #oracleAnswerSlot is gone; `oracleSlot` is now re-pointed at the current turn by mcOpenAnswerTurn(), so setOracleLoading / setOracleError / streamSSE write into the newest turn unchanged. Because several answer cards now coexist, opening a turn RETIRES the previous turns' ids (data-was-id) and the id-based answer CSS (#oracleSourcesList…) moved onto .oracle-sources-list. (2) HEADER: the "ORACLE" eyebrow and the "Ask the Oracle" H1 are REMOVED (Lior — the nav already says Oracle); the grounding line stays IN FULL: "Every answer is grounded in the corpus (818 sources, keyword/FTS retrieval, relevance_llm ≥ 60) with sources you can open." (mono on the threshold). (3) REAL RETRIEVAL KEPT + EXTENDED: status → "Digging the MeatCODE database…", sources → the real paper pills with their real [id] citations (+ NEW: the additive per-source `claims` key renders as an honest claims list when present), chunk → streaming prose with teal [n] cite chips, done → finalize (guard intact, so the double done/stream-close can't double-fire), error → error card; NEW `consensus` handler renders an honest "N support · M oppose · K neutral" chip ONLY when the event actually arrives. Missing events change nothing (full backward compatibility). (4) HISTORY = CONVERSATIONS: mc_oracle_history_v1 records now carry turns:[{q,a}] (12 turns × 4000 chars caps, all try/catch); asking appends a turn to the ACTIVE conversation, clicking a rail entry REPLAYS that whole conversation into the thread, and a legacy/seed record with no stored answer says so instead of inventing one. A small "+ New chat" button in the composer starts a fresh conversation. The left Pinned/History rail itself is untouched (same markup, styling, pin + rename behaviour). Lab Stash highlight-to-save now spans the whole thread (host = #oracleThread), and the related-molecules chip row, SESSION_EXPIRED handling, credentials:'same-origin' + the typeof API_BASE guard, and the no-page-scroll shell are all preserved. · Prior 2026-08-15 14:55 UTC · UI/UX Designer · FOUR changes (Lior's dev-area sprint). (1) ORACLE ATTACH (preview): paperclip button in the ask box next to the mic (#oracleAttachBtn + hidden #oracleFileInput); picking a file renders a removable filename chip (+ "preview" tag) in #oracleAttachRow above the ask controls. CLIENT-SIDE ONLY — nothing is uploaded and NO success/processing message is shown (tooltip: "Attach data or a paper (preview — processing coming soon)"). (2) DEV AREA BUTTON: a flask "Dev Area" link (→ /app/dev/index.html, same tab, plain <a>) authored statically next to the Inventory button on all 14 topbars; FEATURE-FLAGGED — .mc-devarea-btn is display:none unless body.ff-dev_area (set by the existing /api/flags load pass), so it stays off production until the flag flips. (3) HOME OFF THE NAV — Oracle is the landing again: empty hash → #oracle (setScene default), the brand/logo click → #oracle, and the load-time nav pass now REMOVES any Home chip instead of injecting one → top nav everywhere = Oracle · Research · Simulate. The #home scene + its wiring stay in the file but are unreachable from nav (harmless dead scene, cheap rollback; NAV_CAT/ROUTES 'home' entries left in place). (4) RESEARCH TILES: #research now shows THREE tiles — Juice · Lipid (both subtitled "aroma profiles inside", still → #research-sub) · Analytics (→ /app/dev/analytics.html, labelled a dev preview); the Matrix + Volatiles cards and the dashed "Looking for a protocol instead?" card are REMOVED (the #research-sub matrix/volatiles content + #toolbench stay intact off-scene); each tile now carries its own palette (Juice teal · Lipid coral · Analytics olive) whose card background DEEPENS to a darker shade of the same hue on hover (smooth background-color transition via .phase-card[data-phase] rules). · Prior 2026-07-22 14:16 UTC · UI/UX Designer · Home v3 (Lior's review) — TWO changes. (1) DATA OUT OF TOP NAV: the load-time nav pass now removes BOTH Map and Database chips (was: relabel Database→Data and keep) + still injects Home + reorders → net top nav EVERYWHERE = Home · Oracle · Research · Simulate. The Home "Data" TILE (→#database) and the #database scene + all in-content routes are kept — Data stays reachable, just not as an upper-category button. setScene's dynamic active-map no longer activates a Data chip (database/molecule-detail/protocol-detail leave the nav with nothing active, like #map); Oracle/Research/Simulate/Home still highlight. ['data','database'] left in ROUTES (harmless; the tile uses href). (2) INVENTORY = Option A slide-over drawer, built + wired: a compact "Inventory" button on Home (below the tiles) shows live counts and opens a right slide-over (backdrop + 3-way segmented control Articles · Protocols · Sentences; Esc/backdrop/× close; item cards + italic quote cards for sentences), reproduced from outputs/inventory_option_A_drawer.html on the canonical tokens. CLIENT-SIDE ONLY (one shared password, no per-user identity — like Lab Stash; no server store). Stores: Articles → NEW mc_saved_articles_v1 (a save/bookmark button on each #molecule-detail linked-paper row pushes {id,name,meta,href}; exposed window.mcSaveArticle); Protocols → NEW mc_saved_protocols_v1 (a "Save protocol" button on #protocol-detail); Sentences → the real Lab Stash via window.MCStash.list() ({id,text,q}) rendered as quote cards, removable via window.MCStash.remove(id). Counts = the three live store sizes, re-read on open / on entering #home / after any save. Clicks: article → opens its doi/url (else the molecule); protocol → #protocol-detail; sentence → reopens its source question in #oracle. All new storage versioned + try/catch, dedupe by id, cap 50. Prior Home v2 work preserved (mic dictation, 4 tiles, merged recents, molecule/protocol detail scenes) and Toolbench/MCStash, Lab Stash highlight-to-save, Oracle SSE/status, SESSION_EXPIRED/same-origin, no-page-scroll shell untouched. · Prior 2026-07-22 13:48 UTC · UI/UX Designer · Home v2 (Lior's annotated review) — NAV is now Home · Oracle · Data · Research · Simulate: the load-time nav pass (formerly "trim") now drops only Map, RELABELS the Database chip to "Data" (icon kept), still prepends a Home chip, and REORDERS every topbar to the canonical order; nav-active is now DYNAMIC (setScene maps scene→category: database/molecule-detail/protocol-detail→Data, research/research-sub/toolbench→Research, etc. and lights the matching chip in every topbar), replacing the old static per-topbar active; ROUTES gained ['data','database']. HOME: ask box gained a MIC (reuses the Oracle's Web Speech dictation via a shared mcMakeDictation() helper — en-US, interim→final append into #homeAskInput, hidden where unsupported); tiles are now FOUR (Oracle→#oracle, Data→#database, Research→#research, Simulate→#simulate); "Pick up where you left off" now merges recent CHATS + MOLECULES (mc_recent_molecules_v1) + PROTOCOLS (mc_recent_protocols_v1), most-recent-first, labelled by kind, seeded with a representative molecule + protocol when empty (no experts); rows route chat→#oracle, molecule→#molecule-detail, protocol→#protocol-detail. NEW SCENES: #molecule-detail fetches GET {API}/api/molecules/{id} (same-origin guard + credentials:'same-origin'; crumbs Data/Molecules/name, mono title, category·taste·odor meta, tag chips, Linked-papers card with per-paper Open→ via doi/url, cross-links Ask the Oracle→ / See on Map→; loading/empty/error states never blank the page; records the view into mc_recent_molecules_v1). #protocol-detail is a representative TEMPLATE (no protocol backend yet — static placeholder steps/papers; only crumb+title populated live from mc_protocol_focus_id/name; records into mc_recent_protocols_v1). All prior work preserved (Related-molecules chips, widened Oracle answer, Toolbench, Lab Stash, lean restyle, SSE streaming/status, SESSION_EXPIRED/same-origin, no-page-scroll shell); #database/#map scenes + in-content journeys intact (Map off the nav; Data back on it). · Prior 2026-07-22 13:23 UTC · UI/UX Designer · added Home landing module — a new #home scene is now the DEFAULT landing (empty hash → #home via setScene) and the MeatCODE logo routes to #home. Top nav everywhere is now Home · Oracle · Research · Simulate: #home authors its own topbar (Home active), and trimNav — which still drops the Database + Map chips — now also PREPENDS a "Home" chip (house SVG) to every other topbar; nav router gained ['home','home'] in ROUTES + 'home' in SCENES. Home is built on #research's app/topbar/canvas shell (no left rail; #home .canvas spans both columns) and reproduces meatcode_lean_v1's Home on this file's tokens (teal=--wine, coral=--brass), all rules scoped under #home/.home-*. It has a REAL typeable ask box (Enter or Ask → sets #oracleTextarea, routes to #oracle, and streams via askOracle()), three tiles routing to #oracle/#research/#simulate, and a "Pick up where you left off" list wired to the saved Oracle chats (live oracleChats / mcLoadOracleChats seeds; a row → mcOpenOracleChat(id) then #oracle), re-rendered on load and on entering #home. All prior work preserved (Related-molecules chips, widened Oracle answer, Toolbench/window.MCStash, Lab Stash, lean DB/Oracle restyle, advisory Oracle-notes, SSE streaming + status phase, SESSION_EXPIRED + credentials same-origin, no-page-scroll shell); #database/#map scenes + their in-content journeys still intact and still off the top nav. · Prior 2026-07-22 12:10 UTC · UI/UX Designer · TASK 1 — removed Database + Map from the TOP NAV: a small load-time JS pass drops any .domain chip whose exact label is "Database"/"Map" across all ~11 topbars (DRY, can't desync); the #database and #map scenes AND every in-content route into them (dock items, "See on Map →", breadcrumbs, the new Related-molecule chips) are kept fully intact — the screens stay reachable, just not as nav buttons. TASK 2 — widened the Oracle answer to ~1080px via #oracle .oracle-wrap max-width, holding .oracle-heading/.oracle-input/.oracle-starter-row to a centered 780px so only #oracleAnswerSlot / the .oracle-answer card fills the wider wrap; content stays centered (margin:auto) and the no-page-scroll fixed shell is untouched. TASK 3 — added a "Related molecules" teal molecule-pill row at the very end of each answer card (below prose, sources, follow-ups): on completion (finalizeAnswer, guarded so the double SSE done/stream-close fire only requests once) it calls GET {API_BASE}/api/molecule-suggestions?q=<question+answer>&limit=6 with credentials:'same-origin' and the typeof-API_BASE same-origin guard, renders the bare [{id,name,category,taste,mentions_count}] array as chips with loading/empty/error states (all try/catch-wrapped — any fetch/parse failure hides the row silently and never blanks the answer); clicking a chip deep-links into Database → Molecules via mc_db_tab + mc_db_focus_id/name + a prefilled #db-molecules-search (reuses the DB engine's maybeFocus). Only the additions above changed; Toolbench, Lab Stash, lean DB/Oracle restyle, SSE streaming + status phase, SESSION_EXPIRED/same-origin, and the advisory Oracle-notes pass are all preserved. · Prior 2026-07-21 14:40 UTC · advisory session · Oracle notes pass (from Lior's annotated screenshot): removed the "ORACLE" eyebrow; subtitle → "Every answer is based on a closed corpus with information you can access"; shorter one-line placeholder; input textarea auto-grows (overflow hidden, min-height 30px) so there's no scrollbar or wasted gap; starter chips are now showcase quick-suggestions (Maillard synthesis route · Mask beany off-notes · Sulfur notes in cooked beef · Boost roasted aroma); answer SOURCES moved BELOW the prose (was above), recolored to a BLUE palette, and collapsed to the first 2 with a "+N more" toggle. · Prior 2026-07-21 14:16 UTC · UI/UX Designer · Lean restyle (matches UI-UX Designer/meatcode_lean_v1.html). TASK A — Database molecules/experts/companies to the lean .filterbar + .tbl look: filter bar is now a surface-2 panel with a pill search + right-aligned sort; molecules category filter is live .fchip chips (All · real facets) that drive the hidden <select> so every fetch/pager/XLSX wire is reused; per-tab "Data / <Entity>" breadcrumb; columns reworked through the config-driven engine — Molecules = MOLECULE(mono) · CLASS(category) · SOURCES(mono mentions_count) · RELEVANCE(.db-bar from priority_score, 0–100); Experts = NAME · AFFILIATION · COUNTRY · H-INDEX(.db-bar, dynamic max, NO relevance column); Companies = NAME · COUNTRY · WEBSITE(link); Export moved below each table as a lean ghost "⤓ Export (.xlsx)". 50/page pagination + Toolbench bookmark on molecule rows preserved. TASK B — Oracle centre column to the lean look: ORACLE eyebrow + "Ask the Oracle" + corpus subtitle; ask box → .oracle-box proportions (1.5px line-strong, r20); answer card → .answer (r20, 15.5px/1.7); retrieved papers render as coral .ent.paper-style pills wired to the live SSE sources (no fabricated molecule/expert chips); follow-ups → lean "→" chips from the model's Follow-ups line; left Pinned/History rail, Lab Stash highlight-to-save, streaming + "Digging the MeatCODE database…" status phase, SESSION_EXPIRED + credentials same-origin, and no-page-scroll frame all preserved. Only CSS + HTML markup + the DB config-engine columns/chips changed; the Oracle/Lab-Stash/Toolbench script blocks are byte-identical. NOTE: the on-disk base was the 13:19 commit — the Full-Stack Engineer's 13:34 backup Export/Import (mc-backup / mcStashSnapshot) is NOT in this file and must be re-applied + committed. · Prior 2026-07-21 13:19 UTC · UI/UX Designer · (1+3) Every tab is a centered, fixed-height frame with NO page scroll: the app-shell grid (64px 1fr, 100vh, overflow:hidden) bounds each scene and each scene’s .canvas is the internal scroller (min-height:0 + overflow-y:auto). Map keeps canvas overflow:hidden for the globe. Oracle is now a bounded flex column — heading + ask box + starters stay pinned and ONLY #oracleAnswerSlot scrolls. Content stays horizontally centered via each wrap’s max-width + margin:auto. (2) The topbar search bar was removed on every scene and replaced by a Toolbench wrench button that opens a saved-items drawer with three persisted sections — Saved molecules (mc_saved_molecules_v1; bookmark button added to each Database molecules row), Saved sentences (mc_lab_stash_v1 via a new window.MCStash owner API), and Marked chats (pinned mc_oracle_history_v1). The redundant bottom-left “Lab Stash” button was removed; highlight-to-save still writes mc_lab_stash_v1. All three stores are versioned + try/catch-wrapped; molecules capped at 100. · Prior 2026-07-21: full-screen shell (grid 64px 1fr; dock/flow-bar hidden), bulletproof Ask re-enable (.finally + input-listener), verified caches. · Prior: 401/SESSION_EXPIRED “your sign-in expired” + credentials same-origin; “Digging the MeatCODE database…” status phase; Oracle default landing + brand→#oracle; nav Oracle·Research·Database·Simulate·Map; no topbar bell. -->
 <title>MeatCODE · GFI Israel — flavor & aroma research</title>
 <meta name="viewport" content="width=1440" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -248,6 +248,19 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
   overflow: auto;
   min-height: 0;   /* lets this grid cell scroll internally instead of stretching the shell */
 }
+
+/* Embedded dev-page frame (Research wizard / Analytics workspace loaded ?embed=1).
+   The scene canvas becomes an unpadded, non-scrolling host so the already-no-scroll
+   embedded page fills it flush; the iframe itself carries the scroll if it needs to. */
+.canvas.mc-embed-canvas { padding: 0; overflow: hidden; }
+.mc-embed-frame { display: block; width: 100%; height: 100%; border: 0; }
+
+/* 2026-09-01 · #analytics embeds the full dev workspace (which carries its OWN "Guided
+   workflow" taskbar), so this scene DROPS the platform's left context panel and lets the
+   embedded iframe span the full canvas width — the screen centralizes on the workspace.
+   Scoped to #analytics ONLY; every other scene's left context panel is untouched. */
+#analytics .context { display: none; }
+#analytics .canvas { grid-column: 1 / -1; }
 
 /* ── Bottom dock (4 persistent tools) ── */
 .dock {
@@ -1709,6 +1722,26 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
 #oracle .context-item .save-ico::before { inset: 7px; }   /* 20px glyph ≈ 1.4× the old 14px */
 #oracle .context-item .save-ico:hover { background: var(--wine-mist); }
 #oracle .context-item .save-ico:focus-visible { outline: 2px solid var(--wine); outline-offset: -2px; }
+
+/* 2026-09-01 · hover-to-delete: on row hover the LEFT dot becomes a small ✕ (same spot).
+   Default (non-hover) shows the dot; the ✕ is a real button that removes + persists. */
+#oracle .context-item .ctx-del {
+  display: none;
+  width: 16px; height: 16px; flex-shrink: 0;
+  margin: 0 -5px 0 -5px;                 /* re-centre the 16px hit area over the 6px dot slot */
+  padding: 0; border: 0; background: none;
+  -webkit-appearance: none; appearance: none;
+  align-items: center; justify-content: center;
+  border-radius: 5px; cursor: pointer;
+  color: var(--ink-faint); font-size: 12px; line-height: 1;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+#oracle .context-item:hover .dot { display: none; }
+#oracle .context-item:hover .ctx-del { display: inline-flex; }
+#oracle .context-item.renaming .ctx-del { display: none; }   /* never while editing the name */
+#oracle .context-item.renaming:hover .dot { display: inline-block; }
+#oracle .context-item .ctx-del:hover { background: var(--wine-mist); color: var(--wine); }
+#oracle .context-item .ctx-del:focus-visible { outline: 2px solid var(--wine); outline-offset: -2px; }
 #oracle .context-empty {
   font-size: 12px; line-height: 1.45; color: var(--ink-faint);
   padding: 4px 10px 6px;
@@ -2435,7 +2468,7 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
-        <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
       </div>
       <div class="topbar-right">
         <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
@@ -2540,7 +2573,7 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
-        <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
       </div>
       <div class="topbar-right">
         <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
@@ -2621,7 +2654,7 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
-        <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
       </div>
       <div class="topbar-right">
         <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
@@ -2706,7 +2739,7 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
-        <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
@@ -2839,7 +2872,7 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
-        <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
@@ -3012,7 +3045,7 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
-        <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
@@ -3164,7 +3197,7 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
-        <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
@@ -3268,7 +3301,7 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
-        <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
@@ -3400,7 +3433,7 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
-        <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
@@ -3448,41 +3481,13 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
       </div>
     </aside>
 
-    <main class="canvas">
-      <div class="an-wrap">
-        <div class="breadcrumb"><a onclick="location.hash='#research'">Research</a> · <span>Analytics</span></div>
-        <h1 class="h1">Analytical methods across the corpus</h1>
-        <p class="muted" style="font-size:14px;color:var(--ink-dim);max-width:680px;line-height:1.55;">The measurement families MeatCODE speaks. Click a method to pull its live slice of the corpus. Status chips are honest: only <b>GC-MS</b> has reference data today (the Meaty Volatile Library) — the others are planned or thin. Pick as many as you like; click again to deselect.</p>
-        <div class="an-methods" id="anMethods">
-          <div class="an-method has-data" data-topics="gcms_topic,hs_spme_topic,gc_olfactometry">
-            <div class="an-method-top"><h3>GC-MS<span class="abbr">gas chromatography–mass spectrometry</span></h3><span class="an-chip data">DATA EXISTS</span></div>
-            <p>Separates and identifies the volatile compounds behind aroma — the workhorse for profiling meaty top-notes.</p>
-          </div>
-          <div class="an-method" data-topics="hplc_topic,lcms_topic">
-            <div class="an-method-top"><h3>HPLC / LC-MS<span class="abbr">liquid chromatography (– mass spec)</span></h3><span class="an-chip planned">PLANNED</span></div>
-            <p>Quantifies non-volatile taste and precursor molecules — amino acids, sugars, nucleotides — the inputs cooking turns into flavor.</p>
-          </div>
-          <div class="an-method" data-topics="gc_olfactometry,sniffing_topic,aeda,qda,threshold_testing,consumer_panel_topic">
-            <div class="an-method-top"><h3>Olfactory / Sensory<span class="abbr">GC-O · AEDA · QDA · panels</span></h3><span class="an-chip planned">PLANNED</span></div>
-            <p>Puts human noses on the data — which detected compounds actually smell, how intense, and what descriptor they evoke.</p>
-          </div>
-          <div class="an-method" data-topics="nmr">
-            <div class="an-method-top"><h3>NMR<span class="abbr">¹H / ¹³C nuclear magnetic resonance</span></h3><span class="an-chip planned">PLANNED</span></div>
-            <p>Resolves molecular structure and tracks reaction chemistry — confirming what a Maillard system actually produced.</p>
-          </div>
-          <div class="an-method" data-topics="mass_spectrometry,ftir">
-            <div class="an-method-top"><h3>Mass spec / Spectroscopy<span class="abbr">MS · FT-IR · optical</span></h3><span class="an-chip planned">PLANNED</span></div>
-            <p>Fast structural and optical readouts of browning, oxidation and pigment state — process-level signals alongside the deep methods.</p>
-          </div>
-          <div class="an-method" data-topics="metabolomics_topic,proteomics_topic,lipidomics_topic,volatilomics,peptidomics_topic">
-            <div class="an-method-top"><h3>Omics<span class="abbr">metabo · proteo · lipido · volatilo</span></h3><span class="an-chip planned">PLANNED</span></div>
-            <p>Whole-profile fingerprinting — the untargeted layer that maps how precursor pools and volatiles shift together.</p>
-          </div>
-        </div>
-        <div class="an-results" id="anResults">
-          <div class="mc-demo-loading">Pick a method above to pull its corpus slice.</div>
-        </div>
-      </div>
+    <!-- 2026-09-01 · UI/UX · Analytics scene now EMBEDS the polished dev workspace via iframe.
+         The dev page runs in embed mode (?embed=1 → its own banner + "← Dev Area" chrome is hidden),
+         so it sits flush inside this platform shell. The canvas is unpadded + non-scrolling so the
+         already-no-scroll page fills it. (The former in-mockup measurements-browser markup was
+         replaced; its mcAnalytics IIFE remains but no-ops cleanly — every accessor null-guards.) -->
+    <main class="canvas mc-embed-canvas">
+      <iframe class="mc-embed-frame" src="/app/dev/analytics_workspace.html?embed=1" title="Analytics workspace" loading="lazy"></iframe>
     </main>
 
     <footer class="dock">
@@ -3504,7 +3509,7 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
-        <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
@@ -3713,7 +3718,7 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
-        <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
@@ -3826,7 +3831,7 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
-        <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
@@ -4088,7 +4093,7 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
-        <div class="domain new active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
       </div>
       <div class="topbar-right">
@@ -4161,18 +4166,18 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
 
             <div class="sim-field">
               <label>Precursors</label>
-              <div class="sim-prec"><span class="name">L-Cysteine</span><span class="conc">5.0 <small>mM</small></span><span class="rm">×</span></div>
-              <div class="sim-prec"><span class="name">D-Ribose</span><span class="conc">5.0 <small>mM</small></span><span class="rm">×</span></div>
+              <div class="sim-prec" data-class="amino_acids"><span class="name">L-Cysteine</span><span class="conc"><span class="sim-num" data-amt contenteditable="true" inputmode="decimal" spellcheck="false" title="Editable — click to change">5.0</span> <small>mM</small></span><span class="rm">×</span></div>
+              <div class="sim-prec" data-class="sugars"><span class="name">D-Ribose</span><span class="conc"><span class="sim-num" data-amt contenteditable="true" inputmode="decimal" spellcheck="false" title="Editable — click to change">5.0</span> <small>mM</small></span><span class="rm">×</span></div>
               <button class="sim-add">+ Add another precursor</button>
             </div>
 
             <div class="sim-field">
               <label>Conditions</label>
               <div class="sim-cond-grid">
-                <div class="sim-cond"><small>Temperature</small><b>110 <span>°C</span></b></div>
-                <div class="sim-cond"><small>Time</small><b>30 <span>min</span></b></div>
-                <div class="sim-cond"><small>pH</small><b>5.5</b></div>
-                <div class="sim-cond"><small>Water activity</small><b>0.85 <span>Aw</span></b></div>
+                <div class="sim-cond"><small>Temperature</small><b><span class="sim-num" data-cond="temperature_c" contenteditable="true" inputmode="decimal" spellcheck="false" title="Editable — click to change">110</span> <span>°C</span></b></div>
+                <div class="sim-cond"><small>Time</small><b><span class="sim-num" data-cond="time_min" contenteditable="true" inputmode="decimal" spellcheck="false" title="Editable — click to change">30</span> <span>min</span></b></div>
+                <div class="sim-cond"><small>pH</small><b><span class="sim-num" data-cond="ph" contenteditable="true" inputmode="decimal" spellcheck="false" title="Editable — click to change">5.5</span></b></div>
+                <div class="sim-cond"><small>Water activity</small><b><span class="sim-num" data-cond="water_activity" contenteditable="true" inputmode="decimal" spellcheck="false" title="Editable — click to change">0.85</span> <span>Aw</span></b></div>
               </div>
             </div>
 
@@ -4211,6 +4216,7 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
           </div>
 
           <div class="sim-card sim-output">
+            <div id="simSynthBanner"></div>
             <div class="sim-predict">
               <div class="sim-predict-head">
                 <div class="sim-predict-label"><span class="pulse"></span>Predictability</div>
@@ -4242,7 +4248,9 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
               </tbody>
             </table>
 
-            <div>
+            <div id="simOffNotes"></div>
+
+            <div id="simLit">
               <div class="sim-card-title" style="margin-top:14px;margin-bottom:8px;">Where this prediction comes from</div>
               <div class="sim-lit">
                 <div class="sim-lit-item"><div class="sim-lit-score">8/8<small>Benchmark</small></div><div class="sim-lit-body"><div class="sim-lit-cite">Hofmann &amp; Schieberle 1995 · J. Agric. Food Chem.</div><div class="sim-lit-why">Cysteine + ribose model · same T/pH/time region · SIDA quantitation of MFT &amp; FFT</div></div></div>
@@ -4282,7 +4290,7 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
-        <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
       </div>
       <div class="topbar-right">
         <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
@@ -4332,7 +4340,7 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
-        <div class="domain new"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
       </div>
       <div class="topbar-right">
         <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
@@ -4432,7 +4440,8 @@ function setScene() {
      "Database"→"Data" and injects Home, so the final nav highlights correctly. */
   var NAV_CAT = {
     home: 'home', oracle: 'oracle',
-    research: 'research', 'research-sub': 'research', analytics: 'research', toolbench: 'research', 'toolbench-tools': 'research',
+    research: 'research', 'research-sub': 'research', toolbench: 'research', 'toolbench-tools': 'research',
+    analytics: 'analytics',   /* own nav category → lights the flag-gated Analytics chip (2026-09-01) */
     simulate: 'simulate'
     /* database / molecule-detail / protocol-detail / map → no active chip (Data is not a top-nav button) */
   };
@@ -4442,6 +4451,7 @@ function setScene() {
     var chipCat = (lbl === 'home') ? 'home'
                 : (lbl === 'oracle') ? 'oracle'
                 : (lbl === 'research') ? 'research'
+                : (lbl === 'analytics') ? 'analytics'
                 : (lbl === 'simulate') ? 'simulate'
                 : '';
     d.classList.toggle('active', !!navCat && chipCat === navCat);
@@ -5234,6 +5244,13 @@ function mcOracleRowHTML(c) {
   return '<div class="context-item' + (c.id === oracleActiveId ? ' active' : '') + '"' +
               ' data-chat-id="' + escapeHtml(c.id) + '" title="' + escapeHtml(c.q) + '">' +
            '<div class="dot"' + (c.pinned ? ' style="background:var(--wine)"' : '') + '></div>' +
+           '<button type="button" class="ctx-del" data-del-id="' + escapeHtml(c.id) + '"' +
+                  ' aria-label="Delete this chat" title="Delete this chat">' +
+             '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" ' +
+                  'stroke-linecap="round" aria-hidden="true">' +
+               '<path d="M4 4l8 8M12 4l-8 8"/>' +
+             '</svg>' +
+           '</button>' +
            '<span class="ctx-text">' + escapeHtml(label) + '</span>' +
            '<button type="button" class="ctx-rename" data-rename-id="' + escapeHtml(c.id) + '"' +
                   ' aria-label="Rename this chat" title="Rename (or double-click the row)">' +
@@ -5330,6 +5347,17 @@ function mcToggleOracleChatPin(id) {
   mcSaveOracleChats();
   renderOracleSidebar(id);
 }
+/* 2026-09-01 · hover-✕ delete: drop the chat from the store (same mc_oracle_history_v1
+   key both Pinned + History read from), persist, and re-render. If the removed chat was
+   the active conversation, clear the active id so the thread doesn't keep a dangling row. */
+function mcDeleteOracleChat(id) {
+  var before = oracleChats.length;
+  oracleChats = oracleChats.filter(function (c) { return c.id !== id; });
+  if (oracleChats.length === before) return;   // nothing matched — no-op
+  if (oracleActiveId === id) oracleActiveId = null;
+  mcSaveOracleChats();
+  renderOracleSidebar();
+}
 /* 2026-08-15 · a rail entry now loads that WHOLE conversation into the thread
    (it used to just re-populate the ask box with the one question). */
 function mcOpenOracleChat(id) {
@@ -5383,6 +5411,8 @@ function mcWireOracleSidebar() {
       var t = ev.target;
       if (!t || !t.closest) return;
       if (t.closest('.ctx-edit')) return;                 // typing in the rename field
+      var del = t.closest('.ctx-del[data-del-id]');
+      if (del) { ev.stopPropagation(); mcDeleteOracleChat(del.getAttribute('data-del-id')); return; }
       var ren = t.closest('.ctx-rename[data-rename-id]');
       if (ren) { ev.stopPropagation(); mcStartRenameOracleChat(ren.getAttribute('data-rename-id')); return; }
       var pin = t.closest('.save-ico[data-pin-id]');
@@ -5392,7 +5422,7 @@ function mcWireOracleSidebar() {
     });
     el.addEventListener('dblclick', function (ev) {
       var t = ev.target;
-      if (!t || !t.closest || t.closest('.ctx-edit') || t.closest('.save-ico')) return;
+      if (!t || !t.closest || t.closest('.ctx-edit') || t.closest('.save-ico') || t.closest('.ctx-del')) return;
       var row = t.closest('.context-item[data-chat-id]');
       if (row) { ev.preventDefault(); mcStartRenameOracleChat(row.getAttribute('data-chat-id')); }
     });
@@ -6091,66 +6121,214 @@ document.addEventListener('click', function (e) {
   wire('tbfTopic');
 })();
 
-/* Simulate animation — bar fills, percentage counts up, rows stream in */
+/* ═══ 2026-08-31 · #simulate live wiring — POST /api/simulate (mock, honestly labelled) ═══
+   Builds the request from the form, POSTs to the same API base as askOracle/mcAnalytics, and
+   renders the REAL response into the existing output card: #simPredictPct/#simPredictFill from
+   mean confidence, the compounds table (via the <!--SIM_TBODY--> marker), off_notes, and the
+   MANDATORY synthetic banner whenever synthetic:true. 200 → inline · 202 → poll ~1.2s (≤120s) ·
+   404 → "enable maillard_sim" · 4xx/5xx → error.message + Retry. Precursor amounts + conditions
+   are editable inline. Oracle SSE + the .sim-select dropdown IIFE are untouched. */
 (function () {
-  var btn = document.getElementById('simPredictBtn');
-  var bar = document.getElementById('simPredictFill');
-  var pct = document.getElementById('simPredictPct');
-  if (!btn || !bar || !pct) return;
+  var scene = document.getElementById('simulate');
+  if (!scene) return;
+  var btn   = document.getElementById('simPredictBtn');
+  var bar   = document.getElementById('simPredictFill');
+  var pctEl = document.getElementById('simPredictPct');
+  if (!btn || !bar || !pctEl) return;
+  var tbody   = scene.querySelector('.sim-table tbody');
+  var outCard = scene.querySelector('.sim-output');
+  var banner  = document.getElementById('simSynthBanner');
+  var offBox  = document.getElementById('simOffNotes');
+  var litBox  = document.getElementById('simLit');
+  var familyLine  = scene.querySelector('.sim-out-family');
+  var predictFoot = scene.querySelector('.sim-predict-foot span');
 
-  // Find the simulate output table tbody
-  var simScene = document.getElementById('simulate');
-  var tbody = simScene && simScene.querySelector('.sim-table tbody');
-  var rows = tbody ? Array.prototype.slice.call(tbody.querySelectorAll('tr')) : [];
+  function api() { return (typeof API_BASE !== 'undefined') ? API_BASE : 'http://127.0.0.1:8000'; }
+  function esc(s) { return (typeof escapeHtml === 'function') ? escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s); }
+  function fmtNum(n) { var x = Number(n); if (!isFinite(x)) return String(n); if (x >= 100) return String(Math.round(x)); if (x >= 1) return String(Math.round(x * 10) / 10); return String(Math.round(x * 1000) / 1000); }
+  function fmtFamily(f) { return String(f == null ? '' : f).replace(/_/g, ' '); }
+  function readNum(el, fallback) { if (!el) return fallback; var m = String(el.textContent || '').replace(',', '.').match(/-?\d+(\.\d+)?/); return m ? parseFloat(m[0]) : fallback; }
 
-  function hideRows() {
-    rows.forEach(function (r) {
-      r.style.opacity = '0';
-      r.style.transform = 'translateY(8px)';
-      r.style.transition = 'opacity 0.35s, transform 0.35s';
-    });
+  /* map the shown matrix label → the adapter's matrix enum (aqueous|protein_isolate|…) */
+  var MATRIX_MAP = { 'Aqueous model system': 'aqueous', 'Pea protein isolate': 'protein_isolate', 'Soy protein isolate': 'protein_isolate', 'Cooked beef muscle': 'unspecified' };
+  var AA_HINTS = /(cysteine|glycine|alanine|valine|leucine|isoleucine|proline|methionine|threonine|serine|lysine|arginine|histidine|phenylalanine|tyrosine|tryptophan|glutam|aspart|asparagine|glutamine|taurine)/i;
+  var SUGAR_HINTS = /(ribose|glucose|xylose|fructose|arabinose|galactose|mannose|maltose|lactose|sucrose|rhamnose|sugar)/i;
+  function classify(name, declared) {
+    if (declared === 'amino_acids' || declared === 'sugars' || declared === 'lipids' || declared === 'other') return declared;
+    if (AA_HINTS.test(name)) return 'amino_acids';
+    if (SUGAR_HINTS.test(name)) return 'sugars';
+    return 'other';
   }
-  function showRowsStaggered() {
-    rows.forEach(function (r, i) {
-      setTimeout(function () {
-        r.style.opacity = '1';
-        r.style.transform = 'translateY(0)';
-      }, 350 + i * 180);
+  function buildRequest() {
+    var groups = { amino_acids: [], sugars: [], lipids: [], other: [] };
+    var names = [];
+    scene.querySelectorAll('.sim-prec').forEach(function (row) {
+      var nmEl = row.querySelector('.name');
+      var nm = nmEl ? String(nmEl.textContent || '').trim() : '';
+      if (!nm) return;
+      var amt = readNum(row.querySelector('[data-amt]'), 5.0);
+      if (!(amt > 0)) amt = 5.0;
+      /* chemist-natural unit — sent as mM, NOT rewritten (Full-Stack is adding mM as accepted) */
+      groups[classify(nm, row.getAttribute('data-class'))].push({ name: nm, amount: amt, unit: 'mM' });
+      names.push(nm);
     });
+    var mv = document.getElementById('matrixVal');
+    var matrixLabel = (mv && mv.textContent || '').trim();
+    var cond = {
+      ph: readNum(scene.querySelector('[data-cond="ph"]'), 5.5),
+      temperature_c: readNum(scene.querySelector('[data-cond="temperature_c"]'), 110),
+      time_min: readNum(scene.querySelector('[data-cond="time_min"]'), 30),
+      water_activity: readNum(scene.querySelector('[data-cond="water_activity"]'), 0.85),
+      matrix: MATRIX_MAP[matrixLabel] || 'unspecified'
+    };
+    var label = ((names.slice(0, 2).join(' × ')) || 'Maillard run') + ' · ' + Math.round(cond.temperature_c) + '°C';
+    return { precursors: groups, conditions: cond, options: { top_compounds: 8 }, label: label.slice(0, 120) };
   }
+
+  /* ---- predictability meter animation ---- */
+  var rafId = null;
   function animatePct(target, ms) {
-    var start = performance.now();
-    var initial = +pct.textContent || 0;
-    function tick(now) {
-      var t = Math.min(1, (now - start) / ms);
-      var ease = 1 - Math.pow(1 - t, 3);
-      pct.textContent = Math.round(initial + (target - initial) * ease);
-      if (t < 1) requestAnimationFrame(tick);
+    if (rafId) cancelAnimationFrame(rafId);
+    target = Math.max(0, Math.min(100, Math.round(target)));
+    bar.style.width = target + '%';
+    var start = performance.now(), initial = +pctEl.textContent || 0;
+    function tick(now) { var t = Math.min(1, (now - start) / ms); var e = 1 - Math.pow(1 - t, 3); pctEl.textContent = Math.round(initial + (target - initial) * e); if (t < 1) rafId = requestAnimationFrame(tick); }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  /* ---- output states ---- */
+  var hasResult = false;
+  function setLoading() {
+    scene.classList.add('sim-running');
+    btn.disabled = true;
+    if (banner) banner.innerHTML = '';
+    if (rafId) cancelAnimationFrame(rafId); pctEl.textContent = '0'; bar.style.width = '0%';
+    if (offBox) offBox.innerHTML = '';
+    if (tbody) tbody.innerHTML = '<!--SIM_TBODY--><tr><td colspan="4"><div class="sim-msg"><span class="sim-spin"></span>Running the simulator…</div></td></tr>';
+  }
+  function stopRunning() { scene.classList.remove('sim-running'); btn.disabled = false; }
+  function showMessage(html, isErr, retry) {
+    stopRunning(); hasResult = false;
+    if (banner) banner.innerHTML = '';
+    if (rafId) cancelAnimationFrame(rafId); pctEl.textContent = '0'; bar.style.width = '0%';
+    if (offBox) offBox.innerHTML = '';
+    if (tbody) tbody.innerHTML = '<!--SIM_TBODY--><tr><td colspan="4"><div class="sim-msg' + (isErr ? ' sim-msg-err' : '') + '">' + html + (retry ? ' <button type="button" class="sim-retry">Retry</button>' : '') + '</div></td></tr>';
+  }
+  function show404() { showMessage('Simulator preview — turn on the <b>maillard_sim</b> flag in the Release Center to run it.', false, false); }
+  function showError(msg) { showMessage(esc(msg), true, true); }
+
+  function render(d) {
+    stopRunning();
+    if (!d || d.ok === false) { showError((d && d.error && d.error.message) ? d.error.message : 'The simulator reported a failure.'); return; }
+    hasResult = true;
+    var comps = Array.isArray(d.compounds) ? d.compounds : [];
+    /* MANDATORY synthetic banner whenever synthetic:true — never without it */
+    if (banner) {
+      if (d.synthetic) {
+        banner.innerHTML = '<div class="mc-synth-banner"><span class="dotmark"></span>SYNTHETIC — NOT A REAL SIMULATION</div>' + (d.disclaimer ? '<p class="sim-disclaimer">' + esc(d.disclaimer) + '</p>' : '');
+      } else {
+        banner.innerHTML = '<div class="sim-live-note">Live simulator · <b>' + esc(String(d.mode || 'backend')) + '</b> backend.</div>';
+      }
     }
-    requestAnimationFrame(tick);
+    /* predictability = mean compound confidence */
+    var confs = comps.map(function (c) { return (c && c.confidence != null) ? Number(c.confidence) : null; }).filter(function (v) { return v != null && isFinite(v); });
+    var pctv = confs.length ? Math.round(confs.reduce(function (a, b) { return a + b; }, 0) / confs.length * 100) : (comps.length ? 60 : 0);
+    animatePct(pctv, 1200);
+    if (predictFoot) predictFoot.innerHTML = confs.length
+      ? ('Mean model confidence across <b>' + comps.length + '</b> predicted compound' + (comps.length === 1 ? '' : 's') + (d.synthetic ? ' (synthetic).' : '.'))
+      : ('<b>' + comps.length + '</b> compound' + (comps.length === 1 ? '' : 's') + ' predicted' + (d.synthetic ? ' (synthetic).' : '.'));
+    /* top-pathway line (replaces the hardcoded "SLR Family 01" claim) */
+    var fams = Array.isArray(d.reaction_families) ? d.reaction_families : [];
+    if (familyLine) {
+      if (fams.length) { var top = fams[0]; familyLine.innerHTML = 'Top pathway: <b>' + esc(fmtFamily(top.family)) + '</b>' + (top.share != null ? ' · ' + Math.round(top.share * 100) + '% of modelled signal' : '') + ' · ' + fams.length + ' reaction ' + (fams.length === 1 ? 'family' : 'families'); }
+      else familyLine.innerHTML = 'Predicted volatile profile' + (d.synthetic ? ' · synthetic placeholder' : '');
+    }
+    /* compounds table — replace the hardcoded rows via the <!--SIM_TBODY--> marker */
+    if (tbody) {
+      if (comps.length) {
+        var rowsHTML = comps.map(function (c) {
+          if (!c) return '';
+          var y = (c.yield_ppb != null) ? (fmtNum(c.yield_ppb) + ' ppb') : '—';
+          var fam = (Array.isArray(c.reaction_families) && c.reaction_families[0]) ? fmtFamily(c.reaction_families[0].family) : '';
+          var conf = (c.confidence != null) ? (Math.round(c.confidence * 100) + '%') : '';
+          var nfam = Array.isArray(c.reaction_families) ? c.reaction_families.length : 0;
+          var back = conf ? ('<b>' + conf + '</b> conf' + (nfam ? ' · ' + nfam + ' fam' : '')) : (nfam ? (nfam + ' families') : '—');
+          return '<tr><td><div class="sim-mol">' + esc(String(c.name || 'unnamed')) + '</div>' + (fam ? '<div class="sim-mol-class">' + esc(fam) + '</div>' : '') + '</td>' +
+                 '<td><span class="sim-conc">' + esc(y) + '</span></td>' +
+                 '<td class="sim-aroma">' + esc(String(c.descriptor || '—')) + '</td>' +
+                 '<td class="sim-cite">' + back + '</td></tr>';
+        }).join('');
+        tbody.innerHTML = '<!--SIM_TBODY-->' + rowsHTML;
+      } else {
+        tbody.innerHTML = '<!--SIM_TBODY--><tr><td colspan="4"><div class="sim-msg">No compounds returned for these inputs.</div></td></tr>';
+      }
+    }
+    /* off-note risks */
+    if (offBox) {
+      var offs = Array.isArray(d.off_notes) ? d.off_notes : [];
+      if (offs.length) {
+        offBox.innerHTML = '<div class="sim-card-title" style="margin-top:14px;margin-bottom:8px;">Off-note risks</div>' + offs.map(function (o) {
+          if (!o) return '';
+          var lvl = o.level ? esc(String(o.level)) : '';
+          var cls = o.level === 'high' ? 'hi' : (o.level === 'medium' ? 'md' : 'lo');
+          var risk = (o.risk != null) ? (Math.round(o.risk * 100) + '% risk') : '';
+          return '<div class="sim-off-row"><span class="sim-off-tag">' + esc(String(o.tag || 'off-note')) + '</span>' + (o.descriptor ? '<span class="sim-off-desc">' + esc(String(o.descriptor)) + '</span>' : '') + '<span class="sim-off-metric ' + cls + '">' + esc(risk) + (lvl ? ' · ' + lvl : '') + '</span></div>';
+        }).join('');
+      } else offBox.innerHTML = '';
+    }
+    /* literature block — the static citations do NOT back a synthetic run; keep it honest */
+    if (litBox) {
+      litBox.innerHTML = '<div class="sim-card-title" style="margin-top:14px;margin-bottom:8px;">Where this prediction comes from</div>' +
+        (d.synthetic
+          ? '<div class="sim-msg">This is a <b>synthetic placeholder</b> generated deterministically from the request — it has <b>no literature backing</b>. Benchmark provenance will render here once a real simulator backend is connected.</div>'
+          : '<div class="sim-msg">Live <b>' + esc(String(d.mode || 'backend')) + '</b> backend. Per-compound benchmark provenance renders here once the backend exposes its citation set.</div>');
+    }
   }
 
-  // On scene activation, reset to the "pre-predict" state
-  function reset() {
-    bar.style.width = '0%';
-    pct.textContent = '0';
-    hideRows();
+  /* ---- network: 200 inline · 202 poll (≤120s) · 404 flag-off · 4xx/5xx error ---- */
+  function submit() {
+    var req;
+    try { req = buildRequest(); } catch (e) { showError('Could not read the form inputs.'); return; }
+    var total = 0; ['amino_acids', 'sugars', 'lipids', 'other'].forEach(function (k) { total += (req.precursors[k] || []).length; });
+    if (!total) { showMessage('Add at least one precursor to run a prediction.', true, false); return; }
+    setLoading();
+    fetch(api() + '/api/simulate', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(req) })
+      .then(function (r) {
+        if (r.status === 404) { show404(); return; }
+        if (r.status === 202) { return r.json().then(function (j) { poll(j && j.poll, j && j.job_id, Date.now()); }).catch(function () { showError('Simulator accepted the job but returned an unreadable response.'); }); }
+        return r.json().then(function (j) {
+          if (!r.ok && !(j && j.error)) { showError('Simulator error (HTTP ' + r.status + ').'); return; }
+          render(j);
+        }).catch(function () { showError(r.ok ? 'The simulator returned an unreadable response.' : ('Simulator error (HTTP ' + r.status + ').')); });
+      })
+      .catch(function (e) { showError('Simulator is not reachable: ' + String(e && e.message ? e.message : e)); });
   }
-  // Run reset whenever the user enters the simulate scene
-  window.addEventListener('hashchange', function () {
-    if (location.hash === '#simulate') reset();
-  });
-  if (location.hash === '#simulate') reset();
+  function poll(pollUrl, jobId, startedAt) {
+    if (Date.now() - startedAt > 120000) { showError('The simulation timed out after 120 s. Try again.'); return; }
+    var url = pollUrl ? (api() + pollUrl) : (api() + '/api/simulate/' + encodeURIComponent(jobId || ''));
+    setTimeout(function () {
+      fetch(url, { credentials: 'same-origin' }).then(function (r) {
+        if (r.status === 404) { show404(); return; }
+        if (r.status === 202) { poll(pollUrl, jobId, startedAt); return; }
+        return r.json().then(function (j) {
+          if (j && j.status === 'running') { poll(pollUrl, jobId, startedAt); return; }
+          if (!r.ok && !(j && j.error)) { showError('Simulator error (HTTP ' + r.status + ').'); return; }
+          render(j);
+        }).catch(function () { showError(r.ok ? 'Unreadable poll response.' : ('Simulator error (HTTP ' + r.status + ').')); });
+      }).catch(function (e) { showError('Lost contact while polling: ' + String(e && e.message ? e.message : e)); });
+    }, 1200);
+  }
 
-  btn.addEventListener('click', function (e) {
-    e.preventDefault();
-    // Animate the bar to 78%
-    bar.style.width = '78%';
-    animatePct(78, 1400);
-    // Stream the rows in
-    hideRows();
-    setTimeout(showRowsStaggered, 300);
+  /* ---- wiring ---- */
+  btn.addEventListener('click', function (e) { e.preventDefault(); submit(); });
+  if (outCard) outCard.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('.sim-retry')) { e.preventDefault(); submit(); } });
+  scene.querySelectorAll('.sim-num').forEach(function (el) {
+    el.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } });   /* keep numbers single-line */
   });
+  /* reset the meter on scene entry, but NEVER wipe a rendered result's synthetic banner */
+  function reset() { stopRunning(); if (hasResult) return; if (rafId) cancelAnimationFrame(rafId); pctEl.textContent = '0'; bar.style.width = '0%'; if (banner) banner.innerHTML = '<div class="sim-live-note">Illustrative preview — the profile below is sample data. Press <b>Predict outcomes</b> to run the live simulator.</div>'; }
+  window.addEventListener('hashchange', function () { if (location.hash === '#simulate') reset(); });
+  reset();
 })();
 
 /* Community map top-toggle (Researchers / Companies) — visual switch */
@@ -8418,6 +8596,79 @@ window.rebuildExpertList = function () {};
 </script>
 
 <script>
+/* 2026-08-31 · Analytics nav chip (UI/UX) — ADDITIVE + flag-gated. Inserts ONE "Analytics" chip as
+   the 3rd top-nav item so the order reads Oracle · Research · Analytics · Simulate, but ONLY when the
+   analytics_module flag is on (body.ff-analytics_module — dev ON / prod OFF until promoted). Clicking
+   it switches to the in-app #analytics scene (location.hash='#analytics'), which embeds the polished
+   dev Analytics workspace via a ?embed=1 iframe (2026-09-01). This
+   never touches the existing Oracle / Research / Simulate chips or their handlers — it only appends a
+   new chip. The ff-* class is set asynchronously by the /api/flags pass below, so this both tries
+   immediately AND watches body-class changes to insert once the flag resolves. Idempotent. */
+(function () {
+  var ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="1.5"/><ellipse cx="8" cy="8" rx="6.2" ry="2.6"/><ellipse cx="8" cy="8" rx="6.2" ry="2.6" transform="rotate(60 8 8)"/><ellipse cx="8" cy="8" rx="6.2" ry="2.6" transform="rotate(120 8 8)"/></svg>';
+  function insertChips() {
+    if (!document.body.classList.contains('ff-analytics_module')) return;
+    document.querySelectorAll('.domains').forEach(function (row) {
+      if (row.querySelector('.domain[data-analytics-chip]')) return;   // idempotent — never double-insert
+      var chip = document.createElement('div');
+      chip.className = 'domain new';   // NEW badge (moved from Simulate → Analytics, 2026-09-01)
+      chip.setAttribute('data-analytics-chip', '1');
+      chip.innerHTML = ICON + 'Analytics';
+      chip.addEventListener('click', function () { location.hash = '#analytics'; });
+      // 3rd position → insert before the Simulate chip if present, else append
+      var chips = Array.prototype.slice.call(row.querySelectorAll('.domain'));
+      var sim = chips.filter(function (d) { return (d.textContent || '').trim() === 'Simulate'; })[0];
+      if (sim) row.insertBefore(chip, sim); else row.appendChild(chip);
+    });
+  }
+  function ready(fn) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn); else fn(); }
+  ready(function () {
+    insertChips();
+    try {
+      var mo = new MutationObserver(function () { insertChips(); });
+      mo.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    } catch (e) {}
+  });
+})();
+</script>
+
+<script>
+/* 2026-09-01 · #research → wizard iframe (UI/UX) — flag-gated on ff-research_reaction_network.
+   When the flag is ON (body.ff-research_reaction_network — dev ON / prod OFF, set async by the
+   /api/flags pass below), the #research scene swaps its phase-picker for a full-fill iframe of the
+   polished dev wizard (/app/dev/research_reaction_network.html?embed=1 — embed mode hides that page's
+   own banner + "← Dev Area" chrome so it sits flush in this shell). Flag OFF → the phase-picker is
+   left EXACTLY as-is. Idempotent (mc-embed-frame guard); a MutationObserver on body.class handles the
+   async flag race, mirroring the Analytics-chip pass. The Research nav chip still points at #research. */
+(function () {
+  function apply() {
+    if (!document.body.classList.contains('ff-research_reaction_network')) return;
+    var scene = document.getElementById('research');
+    if (!scene) return;
+    var canvas = scene.querySelector('.canvas');
+    if (!canvas || canvas.querySelector('.mc-embed-frame')) return;   // idempotent — never double-inject
+    var wrap = canvas.querySelector('.research-wrap');
+    if (wrap) wrap.style.display = 'none';                            // hide the phase-picker content
+    canvas.classList.add('mc-embed-canvas');
+    var f = document.createElement('iframe');
+    f.className = 'mc-embed-frame';
+    f.src = '/app/dev/research_reaction_network.html?embed=1';
+    f.title = 'Research · how meaty flavor forms';
+    f.setAttribute('loading', 'lazy');
+    canvas.appendChild(f);
+  }
+  function ready(fn) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn); else fn(); }
+  ready(function () {
+    apply();
+    try {
+      var mo = new MutationObserver(function () { apply(); });
+      mo.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    } catch (e) {}
+  });
+})();
+</script>
+
+<script>
 /* Feature flags (Release Center): light up any flag that is ON for THIS environment.
    Each on-flag becomes a body class  ff-<key>  that CSS or JS can react to. Fails silent. */
 (function(){
@@ -8549,6 +8800,70 @@ window.rebuildExpertList = function () {};
 #analytics .an-count{ display:inline-block; margin-top:9px; font-family:var(--mono); font-size:10px; font-weight:700; color:var(--wine-deep); background:var(--wine-mist); border:1px solid var(--wine-tint); border-radius:999px; padding:2px 8px; }
 #analytics .an-count.empty{ color:var(--ink-faint); background:var(--surface-2); border-color:var(--line-strong); }
 #analytics .an-results{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px 20px; box-shadow:var(--shadow); }
+/* Analytics — measurements-browser additions (2026-08-31, UI/UX) */
+#analytics .an-method-foot{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:11px; }
+#analytics .an-open{ font-family:var(--round); font-size:12px; font-weight:700; color:var(--wine); background:var(--wine-mist); border:1px solid var(--wine-tint); border-radius:999px; padding:5px 12px; cursor:pointer; transition:background .12s,color .12s; }
+#analytics .an-open:hover{ background:var(--wine); color:#fff; }
+#analytics .an-pick{ display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:700; color:var(--ink-faint); cursor:pointer; user-select:none; white-space:nowrap; }
+#analytics .an-pick input{ accent-color:var(--wine); width:13px; height:13px; cursor:pointer; }
+#analytics .an-method.chosen .an-pick{ color:var(--wine-deep); }
+#analytics .an-count{ margin-top:9px; }
+/* detail view */
+#analytics .an-detail{ background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:20px 22px; box-shadow:var(--shadow); }
+#analytics .an-back{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; color:var(--wine); background:none; border:none; cursor:pointer; padding:0; margin-bottom:12px; font-family:var(--round); }
+#analytics .an-back:hover{ text-decoration:underline; }
+#analytics .an-detail-head{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:4px; }
+#analytics .an-detail-head h2{ font-size:20px; color:var(--wine-deep); margin:0; }
+#analytics .an-detail-head .abbr{ font-family:var(--mono); font-size:10px; color:var(--ink-faint); font-weight:400; letter-spacing:.02em; margin-left:4px; }
+#analytics .an-detail-grid{ display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); gap:18px; align-items:start; margin:16px 0 20px; }
+@media (max-width:820px){ #analytics .an-detail-grid{ grid-template-columns:1fr; } }
+#analytics .an-spec-card,#analytics .an-measures-card{ background:var(--bg-deep); border:1px solid var(--line); border-radius:12px; padding:15px 16px; }
+#analytics .an-spec-illus{ display:inline-flex; align-items:center; gap:6px; font-family:var(--mono); font-size:9.5px; font-weight:700; letter-spacing:.06em; color:#8A4B30; background:var(--brass-soft); border:1px solid #E0BBA6; border-radius:999px; padding:3px 9px; margin-bottom:10px; }
+#analytics .an-spec-illus .dotmark{ width:7px; height:7px; border-radius:50%; background:var(--brass); }
+#analytics .an-spec svg{ width:100%; height:auto; display:block; background:var(--surface); border:1px solid var(--line); border-radius:10px; }
+#analytics .an-spec .an-ax,#analytics .an-spec .an-tick{ stroke:var(--line-strong); stroke-width:1; }
+#analytics .an-spec .an-tk{ fill:var(--ink-faint); font-family:var(--mono); font-size:9px; text-anchor:middle; }
+#analytics .an-spec .an-axl{ fill:var(--ink-dim); font-family:var(--mono); font-size:9px; text-anchor:middle; letter-spacing:.03em; }
+#analytics .an-spec .an-trace{ fill:none; stroke:var(--wine); stroke-width:1.7; stroke-linejoin:round; stroke-linecap:round; }
+#analytics .an-spec .an-pdot{ fill:var(--brass); }
+#analytics .an-spec .an-pnum{ fill:#fff; font-family:var(--mono); font-size:8px; font-weight:700; text-anchor:middle; }
+#analytics .an-spec-cap{ font-size:11px; color:var(--ink-faint); line-height:1.45; margin-top:9px; }
+#analytics .an-spec-legend{ list-style:none; margin:10px 0 0; padding:0; display:grid; gap:5px; }
+#analytics .an-spec-legend li{ display:flex; align-items:baseline; gap:8px; font-size:11.5px; color:var(--ink-dim); }
+#analytics .an-spec-legend .k{ flex:0 0 18px; height:18px; display:inline-grid; place-items:center; border-radius:50%; background:var(--brass); color:#fff; font-family:var(--mono); font-size:9px; font-weight:700; }
+#analytics .an-spec-legend .nm{ font-family:var(--mono); font-size:11.5px; color:var(--ink); font-weight:700; }
+#analytics .an-spec-planned{ display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:8px; min-height:180px; background:var(--surface); border:1px dashed var(--line-strong); border-radius:10px; padding:20px; }
+#analytics .an-spec-planned .pchip{ font-family:var(--mono); font-size:9.5px; font-weight:700; letter-spacing:.06em; color:var(--ink-faint); background:var(--surface-2); border:1px solid var(--line-strong); border-radius:999px; padding:3px 9px; }
+#analytics .an-spec-planned p{ font-size:12px; color:var(--ink-dim); line-height:1.5; max-width:280px; margin:0; }
+#analytics .an-measures-card h3{ font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--wine-soft); font-family:var(--mono); margin:0 0 5px; }
+#analytics .an-measures-card h3+p{ margin:0 0 15px; }
+#analytics .an-measures-card p{ font-size:13px; color:var(--ink); line-height:1.55; margin:0; }
+#analytics .an-detail-corpus > h3{ font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--wine-soft); font-family:var(--mono); margin:0 0 10px; }
+#analytics .an-detail-results{ min-height:40px; }
+/* Simulate — live-wiring additions (2026-08-31, UI/UX) */
+#simulate .sim-num{ display:inline-block; min-width:12px; padding:0 1px; cursor:text; outline:none; border-bottom:1px dashed var(--wine-soft); }
+#simulate .sim-num:hover{ border-bottom-color:var(--wine); }
+#simulate .sim-num:focus{ background:var(--wine-mist); border-bottom-color:var(--wine); border-radius:3px 3px 0 0; }
+#simSynthBanner:empty,#simOffNotes:empty{ display:none; }
+#simSynthBanner .sim-disclaimer{ font-size:11px; color:#8A4B30; line-height:1.45; margin:6px 0 0; }
+#simSynthBanner .sim-live-note{ font-size:11.5px; color:var(--ink-faint); background:var(--surface-2); border:1px solid var(--line); border-radius:9px; padding:7px 11px; }
+#simSynthBanner .sim-live-note b{ color:var(--wine-deep); }
+#simulate .sim-msg{ font-size:12.5px; color:var(--ink-dim); line-height:1.5; padding:6px 2px; }
+#simulate .sim-msg b{ color:var(--wine-deep); }
+#simulate .sim-msg-err{ color:#8A4B30; }
+#simulate .sim-retry{ margin-left:8px; font-family:var(--round); font-size:12px; font-weight:700; color:#fff; background:var(--brass); border:none; border-radius:8px; padding:4px 12px; cursor:pointer; }
+#simulate .sim-retry:hover{ background:#B06A4C; }
+#simulate .sim-spin{ display:inline-block; width:12px; height:12px; margin-right:7px; border:2px solid var(--wine-tint); border-top-color:var(--wine); border-radius:50%; vertical-align:-1px; animation:simspin .7s linear infinite; }
+@keyframes simspin{ to{ transform:rotate(360deg); } }
+#simulate.sim-running .sim-output{ opacity:.75; }
+#simulate.sim-running #simPredictBtn{ opacity:.6; cursor:progress; }
+#simOffNotes .sim-off-row{ display:flex; align-items:baseline; gap:9px; padding:7px 0; border-top:1px solid var(--line); }
+#simOffNotes .sim-off-tag{ font-family:var(--mono); font-size:12.5px; font-weight:700; color:var(--ink); text-transform:capitalize; }
+#simOffNotes .sim-off-desc{ font-size:12px; color:var(--ink-dim); }
+#simOffNotes .sim-off-metric{ margin-left:auto; font-family:var(--mono); font-size:11.5px; white-space:nowrap; color:var(--ink-faint); }
+#simOffNotes .sim-off-metric.hi{ color:#B0432B; }
+#simOffNotes .sim-off-metric.md{ color:#8A4B30; }
+#simOffNotes .sim-off-metric.lo{ color:var(--olive); }
 </style>
 <script>
 /* ═══ 2026-08-16 · Oracle capability demos (a–d) + Analytics scene wiring (UI/UX) ═══════
@@ -8904,7 +9219,7 @@ window.rebuildExpertList = function () {};
       if (!known) { b.textContent = '—'; b.classList.add('empty'); c.classList.remove('an-zero'); return; }
       b.textContent = total + (total === 1 ? ' source' : ' sources');
       b.classList.toggle('empty', total === 0);
-      if (total === 0) { c.classList.add('an-zero'); c.classList.remove('chosen'); }
+      if (total === 0) { c.classList.add('an-zero'); c.classList.remove('chosen'); var cb0 = c.querySelector('.an-pick-cb'); if (cb0) cb0.checked = false; }
       else { c.classList.remove('an-zero'); }
     });
   }
@@ -8983,16 +9298,163 @@ window.rebuildExpertList = function () {};
   }
   function refreshDebounced() { if (timer) clearTimeout(timer); timer = setTimeout(refresh, 250); }
 
+  /* ── measurements-browser detail view (2026-08-31) ──────────────────────────────────
+     Clicking a method (card body or "Open method") opens #anDetail with 3 parts:
+     an inline-SVG PLACEHOLDER spectrum, an honest "what it measures / detects" block, and
+     the method's LIVE /api/corpus slice. The "compare corpus" checkbox still drives the
+     multi-select union in #anResults (preserved). Spectra are loudly labelled illustrative. */
+  var METHOD_META = {
+    gcms: {
+      spectrum: 'gcms',
+      measures: 'Vaporises the sample and pushes it through a long capillary column, so compounds separate by how strongly they stick — each leaves at its own retention time — then a mass spectrometer fragments every peak and identifies it from its mass pattern.',
+      detects: 'The volatile aroma compounds behind cooked-meat smell — furans, thiols, pyrazines, aldehydes — each with a retention time and a library-matched identity.'
+    },
+    nmr: {
+      spectrum: 'nmr',
+      measures: 'Places the sample in a strong magnetic field and reads how each hydrogen (¹H) or carbon (¹³C) nucleus resonates. The chemical shift reports each atom’s electronic neighbourhood, and peak area is proportional to how many nuclei are present.',
+      detects: 'Molecular structure and relative quantity — it confirms which molecules a Maillard system actually produced, and in what ratio, without a reference standard for every one.'
+    },
+    hplc: { planned: true,
+      measures: 'Separates a liquid sample by how each dissolved compound partitions between the column packing and the solvent, then detects each band as it elutes — often straight into a mass spectrometer.',
+      detects: 'Non-volatile taste and precursor molecules — amino acids, reducing sugars, nucleotides — the inputs cooking converts into aroma.'
+    },
+    olfactory: { planned: true,
+      measures: 'Puts a trained human nose or a panel on the sample — sniffing the GC effluent (GC-O / AEDA) or scoring descriptors and intensity on a scale (QDA, consumer panels).',
+      detects: 'Which detected compounds actually smell, how intense they are, and what descriptor they evoke — the sensory ground truth an instrument alone cannot give.'
+    },
+    massspec: { planned: true,
+      measures: 'Direct structural and optical readouts — high-resolution mass spectrometry for exact masses, FT-IR for functional-group fingerprints, optical methods for colour and pigment state.',
+      detects: 'Fast process-level signals of browning, oxidation and pigment change that sit alongside the deep separation methods.'
+    },
+    omics: { planned: true,
+      measures: 'Untargeted, whole-profile fingerprinting across a family of platforms — metabolomics, proteomics, lipidomics, volatilomics — capturing everything measurable at once rather than a target list.',
+      detects: 'How entire precursor pools and volatile profiles shift together across a process — the exploratory layer that surfaces patterns to chase with targeted methods.'
+    }
+  };
+  var SPEC_DATA = {
+    gcms: { xmin: 0, xmax: 18, xlabel: 'retention time (min)', reversed: false, sigma: 6.5, ticks: [0, 3, 6, 9, 12, 15, 18],
+      peaks: [
+        { x: 3.1,  h: 0.55, nm: '2-methyl-3-furanthiol', d: 'meaty · brothy' },
+        { x: 5.4,  h: 0.95, nm: 'furfural',              d: 'sweet · caramellic' },
+        { x: 7.9,  h: 0.42, nm: '2-acetyl-1-pyrroline',  d: 'roasty · popcorn' },
+        { x: 10.4, h: 0.72, nm: '2,5-dimethylpyrazine',  d: 'roasted · nutty' },
+        { x: 13.1, h: 0.50, nm: 'methional',             d: 'boiled potato' },
+        { x: 16.0, h: 0.33, nm: 'hexanal',               d: 'green · fatty' }
+      ] },
+    nmr: { xmin: 0, xmax: 10, xlabel: 'chemical shift δ (ppm)', reversed: true, sigma: 3.6, ticks: [0, 2, 4, 6, 8, 10],
+      peaks: [
+        { x: 9.55, h: 0.50, nm: 'δ 9.6', d: 'aldehyde –CHO' },
+        { x: 7.30, h: 0.72, nm: 'δ 7.3', d: 'aromatic Ar–H' },
+        { x: 5.20, h: 0.30, nm: 'δ 5.2', d: 'vinylic =CH' },
+        { x: 3.60, h: 0.60, nm: 'δ 3.6', d: 'O–CH methine' },
+        { x: 2.10, h: 0.95, nm: 'δ 2.1', d: '–CH₃ α to C=O' },
+        { x: 1.25, h: 0.82, nm: 'δ 1.2', d: 'aliphatic –CH₂' }
+      ] }
+  };
+  function specSVG(which) {
+    var s = SPEC_DATA[which]; if (!s) return '';
+    var W = 560, H = 210, mL = 40, mR = 14, mT = 30, mB = 34;
+    var pw = W - mL - mR, ph = H - mT - mB, baseY = mT + ph, i, px;
+    function sx(v) { var t = (v - s.xmin) / (s.xmax - s.xmin); if (s.reversed) t = 1 - t; return mL + t * pw; }
+    var pts = [];
+    for (px = 0; px <= pw; px += 2) {
+      var y = 0;
+      for (i = 0; i < s.peaks.length; i++) { var dd = (px - (sx(s.peaks[i].x) - mL)) / s.sigma; y += s.peaks[i].h * Math.exp(-0.5 * dd * dd); }
+      pts.push((mL + px).toFixed(1) + ',' + (baseY - y * ph * 0.8).toFixed(1));
+    }
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Illustrative ' + (which === 'gcms' ? 'chromatogram' : '¹H NMR spectrum') + '">';
+    svg += '<line class="an-ax" x1="' + mL + '" y1="' + mT + '" x2="' + mL + '" y2="' + baseY + '"/>';
+    svg += '<line class="an-ax" x1="' + mL + '" y1="' + baseY + '" x2="' + (W - mR) + '" y2="' + baseY + '"/>';
+    s.ticks.forEach(function (tv) {
+      var X = sx(tv);
+      svg += '<line class="an-tick" x1="' + X + '" y1="' + baseY + '" x2="' + X + '" y2="' + (baseY + 4) + '"/><text class="an-tk" x="' + X + '" y="' + (baseY + 15) + '">' + tv + '</text>';
+    });
+    svg += '<text class="an-axl" x="' + (mL + pw / 2) + '" y="' + (H - 6) + '">' + esc(s.xlabel) + '</text>';
+    svg += '<path class="an-trace" d="M' + pts.join(' L') + '"/>';
+    s.peaks.forEach(function (p, idx) {
+      var X = sx(p.x), apexY = baseY - p.h * ph * 0.8 - 12; if (apexY < mT + 6) apexY = mT + 6;
+      svg += '<circle class="an-pdot" cx="' + X + '" cy="' + apexY + '" r="7"/><text class="an-pnum" x="' + X + '" y="' + (apexY + 2.8) + '">' + (idx + 1) + '</text>';
+    });
+    return svg + '</svg>';
+  }
+  function specBlock(which) {
+    var s = SPEC_DATA[which];
+    var legend = '<ol class="an-spec-legend">' + s.peaks.map(function (p, i) {
+      return '<li><span class="k">' + (i + 1) + '</span><span><span class="nm">' + esc(p.nm) + '</span> &middot; ' + esc(p.d) + '</span></li>';
+    }).join('') + '</ol>';
+    var cap = (which === 'gcms')
+      ? 'A simulated total-ion chromatogram — retention time versus abundance. The peaks and labels are representative meaty-aroma volatiles used for layout, not a measured injection.'
+      : 'A simulated ¹H spectrum — chemical shift versus signal, plotted high-to-low by convention. Shifts and assignments are representative, not integrated from a real acquisition.';
+    return '<div class="an-spec-illus"><span class="dotmark"></span>ILLUSTRATIVE — placeholder spectrum, not measured data</div>' +
+           '<div class="an-spec">' + specSVG(which) + '</div><div class="an-spec-cap">' + cap + '</div>' + legend;
+  }
+  function plannedSpecBlock(name) {
+    return '<div class="an-spec-planned"><span class="pchip">NO REFERENCE SPECTRUM YET</span>' +
+           '<p>' + esc(name) + ' is a planned method. A placeholder spectrum would imply data we don’t have — when reference measurements land, an illustrative trace appears here.</p></div>';
+  }
+  var detailOpen = false;
+  function openDetail(card) {
+    var host = document.getElementById('anDetail'); if (!host || !card) return;
+    var meta = METHOD_META[card.getAttribute('data-method') || ''] || {};
+    var h3 = card.querySelector('h3');
+    var title = (h3 && h3.childNodes[0]) ? String(h3.childNodes[0].textContent).trim() : (h3 ? h3.textContent : '');
+    var abbrEl = card.querySelector('.abbr'), abbr = abbrEl ? abbrEl.textContent : '';
+    var chip = card.querySelector('.an-chip'), chipHTML = chip ? chip.outerHTML : '';
+    var slugs = cardSlugs(card);
+    var specHTML = meta.planned ? plannedSpecBlock(title) : specBlock(meta.spectrum);
+    host.innerHTML =
+      '<button type="button" class="an-back">&larr; All methods</button>' +
+      '<div class="an-detail-head"><h2>' + esc(title) + (abbr ? '<span class="abbr">' + esc(abbr) + '</span>' : '') + '</h2>' + chipHTML + '</div>' +
+      '<div class="an-detail-grid"><div class="an-spec-card">' + specHTML + '</div>' +
+        '<div class="an-measures-card"><h3>What it measures</h3><p>' + esc(meta.measures || '') + '</p>' +
+          '<h3>What it detects</h3><p>' + esc(meta.detects || '') + '</p></div></div>' +
+      '<div class="an-detail-corpus"><h3>Live corpus slice</h3><div class="an-detail-results"><div class="mc-demo-loading">Loading this method’s corpus slice…</div></div></div>';
+    var g = gridEl(), rr = resultsEl();
+    if (g) g.hidden = true;
+    if (rr) rr.hidden = true;
+    host.hidden = false;
+    detailOpen = true;
+    try { host.scrollIntoView({ block: 'start', behavior: 'smooth' }); } catch (e) {}
+    var res = host.querySelector('.an-detail-results'), mine = ++seq;
+    corpusGet(slugs, function (err, d) {
+      if (!res || !detailOpen || mine !== seq) return;
+      if (err === 'NOT_DEPLOYED') { res.innerHTML = '<div class="mc-demo-error">Corpus preview loads once the API is deployed — the method reference above is available now.</div>'; return; }
+      if (err || !d || d.ok === false) { res.innerHTML = '<div class="mc-demo-error">Corpus API is not reachable yet — the method reference above is available now.</div>'; return; }
+      var chips = topTopics(d.phase_topics, 10), rows = rowsList(d.rows, 6);
+      res.innerHTML = statLine(d.totals) +
+        (chips ? '<div style="margin:12px 0 2px;">' + chips + '</div>' : '') +
+        (rows ? '<div style="margin-top:8px;">' + rows + '</div>' : '<div class="mc-demo-note" style="margin-top:8px;">No sample papers in this slice yet.</div>');
+    });
+  }
+  function closeDetail() {
+    var host = document.getElementById('anDetail');
+    detailOpen = false; seq++;   /* invalidate any in-flight detail fetch */
+    if (host) { host.hidden = true; host.innerHTML = ''; }
+    var g = gridEl(), rr = resultsEl();
+    if (g) g.hidden = false;
+    if (rr) rr.hidden = false;
+  }
+
   document.addEventListener('click', function (e) {
-    var c = e.target.closest && e.target.closest('#analytics .an-method');
-    if (!c) return;
-    if (c.classList.contains('an-zero')) return;   /* greyed = not selectable */
-    c.classList.toggle('chosen');
+    if (!e.target.closest) return;
+    if (e.target.closest('#analytics .an-back')) { e.preventDefault(); closeDetail(); return; }
+    var card = e.target.closest('#analytics .an-method');
+    if (!card) return;
+    if (e.target.closest('.an-pick')) return;      /* the checkbox drives multi-select, never detail */
+    e.preventDefault();
+    openDetail(card);
+  }, false);
+  document.addEventListener('change', function (e) {
+    var cb = e.target.closest && e.target.closest('#analytics .an-pick-cb');
+    if (!cb) return;
+    var card = cb.closest('.an-method'); if (!card) return;
+    if (card.classList.contains('an-zero')) { cb.checked = false; return; }
+    card.classList.toggle('chosen', cb.checked);
     updateRail();
     refreshDebounced();
   }, false);
 
-  function onScene() { if (location.hash !== '#analytics') return; refresh(); }
+  function onScene() { if (location.hash !== '#analytics') { if (detailOpen) closeDetail(); return; } refresh(); }
   window.addEventListener('hashchange', onScene);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onScene);
   else onScene();

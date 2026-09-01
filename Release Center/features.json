@@ -191,6 +191,57 @@
       "url": "/app/dev/oracle_redesign.html",
       "dev": true,
       "prod": true
+    },
+    "analytics_workspace": {
+      "label": "Analytics workspace (bring-your-own data)",
+      "description": "Guided GC-MS / NMR upload -> align a scientist's own data to a MeatCODE reference profile and interpret the difference: chromatogram/spectrum overlay, analytical profile, sensory radar, peak alignment.",
+      "kind": "screen",
+      "added": "2026-08-31",
+      "status": "preview",
+      "where": {
+        "screen": "Dev Area -> Screens",
+        "spot": "'Analytics workspace' card; the page carries a PREVIEW banner - guided stepper on illustrative data, no real parsing.",
+        "file": "app/dev/analytics_workspace.html"
+      },
+      "destination": "Analytics zone -> GC-MS/NMR 'Compare your data' (MVP board A3). Lior's call once the fingerprint schema + reference-data source land.",
+      "url": "/app/dev/analytics_workspace.html",
+      "note": "Guided-stepper mockup (method -> upload -> confirm format -> reference -> compare). Figures are generated for demonstration; wiring to real /api/* + a reference-profile source (A1/A3) is the follow-up.",
+      "dev": true,
+      "prod": false
+    },
+    "research_reaction_network": {
+      "label": "Research - reaction network journey",
+      "description": "New Research journey: pick lipid or aqueous precursors -> curated Heat+Reaction Network (precursors -> reactions -> volatiles) enriched with real Neon volatiles -> inline analytical + sensory profiles that link to the analytics workspace.",
+      "kind": "screen",
+      "added": "2026-08-31",
+      "status": "preview",
+      "where": {
+        "screen": "Dev Area -> Screens",
+        "spot": "'Research - reaction network journey' card; PREVIEW banner - curated skeleton, real volatiles where backed.",
+        "file": "app/dev/research_reaction_network.html"
+      },
+      "destination": "LIVE INTEGRATION (2026-09-01): gates the #research scene in app/meatcode_mockup.html - when ff-research_reaction_network is ON, Research shows this wizard iframed (embed mode); OFF keeps the old phase-picker. Flip prod + promote-to-prod to graduate.",
+      "url": "/app/dev/research_reaction_network.html",
+      "note": "UI consumes GET /api/reaction-network?branch=lipid|aqueous (real volatiles from meaty_volatile_library; precursors/reactions/edges are curated skeleton). Distinct from Simulate. Endpoint 404s until deploy-dev -> UI runs on embedded demo until then.",
+      "dev": true,
+      "prod": false
+    },
+    "analytics_module": {
+      "label": "Analytics module (top nav)",
+      "description": "Adds an 'Analytics' chip as the 3rd top-nav section (Oracle - Research - Analytics - Simulate); clicking it opens the guided Analytics workspace.",
+      "kind": "screen",
+      "added": "2026-08-31",
+      "status": "preview",
+      "where": {
+        "screen": "Top nav (all topbars)",
+        "spot": "Top bar, 3rd chip before Simulate; a load-time pass inserts it only when body.ff-analytics_module is set.",
+        "file": "app/meatcode_mockup.html + server/meatcode_server.py (/analytics route)"
+      },
+      "destination": "LIVE INTEGRATION (2026-09-01): Top-nav 'Analytics' (3rd chip, additive) -> in-app #analytics scene that iframes the workspace (embed mode). /analytics pretty-URL kept as a secondary direct entry. dev ON / prod OFF.",
+      "url": "/analytics",
+      "note": "Additive nav chip (Oracle/Research/Simulate untouched). Server serves /analytics + /analytics/ as a clean alias for /app/dev/analytics_workspace.html. Distinct from the analytics_workspace flag (which lists the workspace under Dev Area screens).",
+      "dev": true,
+      "prod": false
     }
   }
 }

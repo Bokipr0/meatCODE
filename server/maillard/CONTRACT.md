@@ -1,6 +1,6 @@
 # Maillard simulator — request / response contract
 
-_Last updated: 2026-08-16 · Fullstack Engineer · NEW — the wire contract between the MeatCODE UI, `server/meatcode_server.py`, and the Maillard chemistry simulator._
+_Last updated: 2026-08-31 · Project Coordinator · added `mM` / `mmol/L` to accepted units (§2) to match the adapter + the `#simulate` form. Prev: 2026-08-16 · Fullstack — the wire contract between the MeatCODE UI, `server/meatcode_server.py`, and the Maillard chemistry simulator._
 
 This document is what the **UI codes against**. `adapter.py` is an implementation of it, and so is
 whatever wraps the Maillard container. If the simulator's own JSON differs, the adapter translates —
@@ -74,7 +74,7 @@ and the UI polls. **The UI must handle both** — branch on the HTTP status, or 
 ```
 
 - At least **one** precursor across all groups is required.
-- `unit` ∈ `mg | g | mmol | mol | ppm | ppb | percent` (default `mg`).
+- `unit` ∈ `mg | g | mmol | mol | ppm | ppb | percent | mM | mmol/L` (default `mg`). _(`mM` / `mmol/L` added 2026-08-31: the `#simulate` form submits mM; the mock treats it as a concentration, no conversion. Real backends may convert or reject per their own capability.)_
 - `matrix` ∈ `aqueous | oil | emulsion | dry | gel | protein_isolate | unspecified`.
 - Bounds are an **input-sanity gate, not a chemistry claim** — deliberately wide. The simulator
   remains the authority on what it can model and may still reject an in-bounds request.

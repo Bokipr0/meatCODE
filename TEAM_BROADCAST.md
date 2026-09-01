@@ -1,12 +1,38 @@
 # 📣 TEAM BROADCAST — MeatCODE
 
-_From: Project Coordinator (with Lior) · As of: **2026-08-16**_
+_From: Project Coordinator (with Lior) · As of: **2026-08-31**_
 
 > Standing notification channel for the whole agent team. The Coordinator refreshes this whenever there's
 > progress every agent should know. **Read this at the start of your session** (after CLAUDE.md +
 > PROJECT_STATE.md). Full history is in `AGENT_UPDATE_LOG.md`; this is the short "what you need to know now."
 
 ---
+
+## 🚀 2026-09-01 · Research wizard + Analytics module are now WIRED INTO THE LIVE PLATFORM (flag-gated, deploy-ready)
+The two polished dev pages are embedded into `app/meatcode_mockup.html` via **same-origin iframe + embed-mode** (`?embed=1` hides the standalone chrome). Both gated, dev ON / prod OFF:
+- **`ff-research_reaction_network`** → the live **`#research`** scene shows the reaction-network wizard (iframed); OFF keeps the old phase-picker.
+- **`ff-analytics_module`** → **Analytics** is a real in-app module: 3rd nav chip (additive) → in-app `#analytics` scene that iframes the workspace.
+- Full-Stack added `X-Frame-Options: SAMEORIGIN` (same-origin embeds OK, cross-origin blocked). `/api/flags` serves both (dev true / prod false); `/analytics` pretty-URL kept as a secondary entry.
+- **Deploy (Lior, Mac):** `deploy-dev` → review on staging → flip each flag's prod → `promote-to-prod`. Not deployed yet. Nothing in prod changes until you flip prod.
+
+---
+
+## 🧪 2026-08-31 · New Research journey (reaction network) landed — flag-first in the Dev Zone
+The Research section's new architecture is built: **Lipid / Aqueous precursors → Heat + Reaction Network → Volatiles → Analytical + Sensory profiles** (distinct from Simulate — it explores the reaction network from our data). Flag **`research_reaction_network`** (dev ON / prod OFF).
+- **UI/UX:** `app/dev/research_reaction_network.html` — two separate branch networks; volatiles → inline analytical + sensory panels, each linking to `app/dev/analytics_workspace.html`; DB browsing kept reachable. Honest preview.
+- **Full-Stack:** `GET /api/reaction-network?branch=lipid|aqueous` (`server/reaction_network.py`) — curated skeleton **enriched with real volatiles from `meaty_volatile_library`** (`backed` flags), SELECT-only, degrades gracefully. Verified vs live Neon (lipid 175/62/113 · aqueous 116/47/69).
+- **Data Engineer note:** `reaction_participants` is empty → reactions/edges stay curated (`backed:false`) until real precursor→volatile links exist; that's the unlock to make the whole network fully data-backed.
+- **Not deployed** — `deploy-dev` to see it on staging with real volatiles; promotion into the live `#research` scene is Lior's call.
+
+---
+
+## 🎬 2026-08-31 · DEMO PREP — GC-MS/NMR measurements browser + Pablo's simulator LIVE (mock) — in the repo, awaiting deploy-dev
+For the demo (31 Aug / 1 Sep). What every agent must know:
+- The **`#analytics` scene is now a measurements browser** — GC-MS + NMR cards open a detail view (illustrative placeholder spectrum + honest "what it measures/detects" + the method's live `/api/corpus` slice). **Separate** from the same-day dev-zone **Analytics workspace** (`app/dev/analytics_workspace.html`, upload→compare, board A3) — two different GC-MS/NMR surfaces, no collision.
+- The **`#simulate` "Predict outcomes" button is now LIVE** → `POST /api/simulate` (MOCK, `synthetic:true`, mandatory synthetic banner). `server/maillard/adapter.py` now accepts **`mM`/`mmol/L`** (the form's units — it was 400ing every submit) and the mock is meaty-forward + demo-worthy. `CONTRACT.md` §2 synced.
+- **Run-of-show:** `docs/meatcode_demo_runofshow_2026-08-31.md` (balanced 10-min live demo + deploy-first checklist).
+- **Demo gate = B1:** `/api/corpus` · `/api/compare` · `/api/simulate` are 404 on prod → run the demo on **deploy-dev staging** or **run-local localhost**, `maillard_sim` ON, Neon awake.
+- **Data tasks** (Neon tagging+query verify · 50-paper extraction+QA · Yizhou abstracts) can't run from the cloud sandbox — **Neon is network-blocked there** — so they run on Lior's Mac / Claude Code.
 
 ## 🧩 2026-08-16 (pm) · ORACLE CAPABILITY DEMOS + LIVE CORPUS FILTER + FIRST-CLASS ANALYTICS — landed in the repo, awaiting deploy-dev
 A 4-lane parallel run shipped Lior's demo-polish sprint (full detail: AGENT_UPDATE_LOG.md top entry; state: PROJECT_STATE.md). What every agent must know now:

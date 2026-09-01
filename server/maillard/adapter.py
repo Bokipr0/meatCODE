@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-# Last updated: 2026-08-16 · Fullstack Engineer · NEW — dependency-free Maillard simulator adapter.
+# Last updated: 2026-08-31 13:40 UTC · Full-Stack · accept `mM` / `mmol/L` precursor units (the
+#   #simulate form submits mM — was 400ing every real UI submit) + made the mock demo-worthy:
+#   compound ranking is now a deterministic, precursor-aware affinity heuristic (meaty thiols lead
+#   a cysteine+ribose broth; lipid notes drop out with no lipid precursor) with curated per-compound
+#   reaction_families. Still 100% synthetic — synthetic:true + disclaimer + warnings all intact.
+# Prev 2026-08-16 · Fullstack Engineer · NEW — dependency-free Maillard simulator adapter.
 #   One interface (`run`, `health`, `validate`) over three backends selected by MAILLARD_MODE:
 #   mock (deterministic, seeded, ALWAYS labelled "mode":"mock" + synthetic:true), http (POST to a
 #   separate Render docker service at MAILLARD_URL), cli (local `docker exec/run`, dev only).
@@ -115,7 +120,11 @@ BOUNDS = {
     "temperature": (20.0, 300.0),   # °C
     "time":        (0.1, 1440.0),   # minutes
 }
-UNITS = ("mg", "g", "mmol", "mol", "ppm", "ppb", "percent")
+# Accepted precursor-amount units. `mM` / `mmol/L` are molar concentrations — the units a
+# flavor chemist actually types into the #simulate form (added 2026-08-31 per the 2026-08-16
+# broadcast; the UI submits `mM`). The mock derives its output from the request hash, so no
+# real unit conversion happens here — this list only decides what is REJECTED as malformed.
+UNITS = ("mg", "g", "mmol", "mol", "ppm", "ppb", "percent", "mM", "mmol/L", "mmol/l")
 MATRICES = ("aqueous", "oil", "emulsion", "dry", "gel", "protein_isolate", "unspecified")
 _NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 \-\(\),'\.\+/]{0,79}$")
 
@@ -252,30 +261,64 @@ def request_fingerprint(normalised):
 
 
 # ─── Backend: mock ───────────────────────────────────────────────────────────────────────
-# EVERY value below is synthetic. The compound names are a fixed vocabulary of
+# EVERY value below is synthetic. The compound names are a curated vocabulary of
 # commonly-discussed Maillard volatiles used purely as realistic-looking LABELS; the
 # numbers attached to them are a seeded RNG shaped by the request, not chemistry. Both the
 # envelope and each compound are marked synthetic so nothing can masquerade as a real run.
+#
+# Each entry additionally carries `tags` and `families`. These make the DEMO believable
+# without inventing chemistry: `tags` bias which known volatiles rank high for the
+# precursors actually submitted (so a cysteine+ribose broth leads with meaty thiols, and
+# lipid-oxidation notes stay low when no lipid precursor is present), and `families` is a
+# curated, plausible label set per compound (instead of families picked at random). It is
+# still a synthetic LABEL heuristic keyed to the request — no kinetics, no yields, nothing
+# to cite. Tags (all keyed off what the request contains):
+#   S        sulfur / meaty, from amino acids (boosted further by cysteine / methionine)
+#   Smet     methionine-derived (methional) — needs methionine to score high
+#   strecker Strecker-aldehyde-ish, from amino acids
+#   nitrogen roasty N-heterocycle, from amino acids + heat
+#   pyrazine needs BOTH a sugar and an amino acid, scaled by heat
+#   sugar    furan / caramel, from sugars
+#   lipid    lipid-derived — near-zero unless a lipid precursor is present
 _MOCK_COMPOUNDS = [
-    ("2-acetyl-1-pyrroline", "roasty / popcorn"),
-    ("2-methyl-3-furanthiol", "meaty / brothy"),
-    ("bis(2-methyl-3-furyl) disulfide", "meaty"),
-    ("methional", "boiled potato"),
-    ("furfural", "sweet / caramellic"),
-    ("5-hydroxymethylfurfural", "caramellic"),
-    ("2,5-dimethylpyrazine", "roasted / nutty"),
-    ("2-ethyl-3,5-dimethylpyrazine", "roasted"),
-    ("3-(methylthio)propanal", "savoury"),
-    ("furfuryl mercaptan", "coffee-like"),
-    ("2-furanmethanethiol", "roasty"),
-    ("maltol", "caramellic"),
-    ("hexanal", "green / fatty"),
-    ("(E,E)-2,4-decadienal", "fried / fatty"),
-    ("1-octen-3-ol", "mushroom"),
-    ("2-acetylthiazole", "nutty / popcorn"),
+    {"name": "2-methyl-3-furanthiol",             "descriptor": "meaty / brothy",
+     "tags": ("S", "sugar"),      "families": ("thiol_formation", "furan_formation", "sulfur_recombination")},
+    {"name": "2-furfurylthiol",                   "descriptor": "roasty coffee / meaty",
+     "tags": ("S", "sugar"),      "families": ("furan_formation", "thiol_formation")},
+    {"name": "bis(2-methyl-3-furyl) disulfide",   "descriptor": "intensely meaty",
+     "tags": ("S", "sugar"),      "families": ("sulfur_recombination", "thiol_formation")},
+    {"name": "3-mercapto-2-butanone",             "descriptor": "brothy / sulfury",
+     "tags": ("S",),              "families": ("thiol_formation", "sugar_fragmentation")},
+    {"name": "dimethyl trisulfide",               "descriptor": "savoury / sulfurous",
+     "tags": ("S",),              "families": ("sulfur_recombination",)},
+    {"name": "methional",                         "descriptor": "boiled potato / savoury",
+     "tags": ("strecker", "Smet"),"families": ("strecker_degradation", "sulfur_recombination")},
+    {"name": "2-acetyl-1-pyrroline",              "descriptor": "roasty / popcorn",
+     "tags": ("nitrogen", "strecker"), "families": ("strecker_degradation", "pyrrole_formation", "cyclization")},
+    {"name": "2-acetylthiazole",                  "descriptor": "nutty / roasty popcorn",
+     "tags": ("nitrogen", "S"),   "families": ("thiazole_formation", "strecker_degradation")},
+    {"name": "2,5-dimethylpyrazine",              "descriptor": "roasted / nutty",
+     "tags": ("pyrazine",),       "families": ("pyrazine_formation", "amadori_rearrangement")},
+    {"name": "2-ethyl-3,5-dimethylpyrazine",      "descriptor": "roasted / earthy",
+     "tags": ("pyrazine",),       "families": ("pyrazine_formation", "strecker_degradation")},
+    {"name": "furfural",                          "descriptor": "sweet / almond / caramellic",
+     "tags": ("sugar",),          "families": ("sugar_fragmentation", "dehydration", "furan_formation")},
+    {"name": "4-hydroxy-2,5-dimethyl-3(2H)-furanone", "descriptor": "caramel / roasted-sweet",
+     "tags": ("sugar",),          "families": ("amadori_rearrangement", "sugar_fragmentation")},
+    {"name": "5-hydroxymethylfurfural",           "descriptor": "caramellic",
+     "tags": ("sugar",),          "families": ("dehydration", "sugar_fragmentation")},
+    {"name": "maltol",                            "descriptor": "caramellic / cotton-candy",
+     "tags": ("sugar",),          "families": ("sugar_fragmentation", "retro_aldol")},
+    {"name": "hexanal",                           "descriptor": "green / fatty",
+     "tags": ("lipid",),          "families": ("lipid_oxidation",)},
+    {"name": "(E,E)-2,4-decadienal",              "descriptor": "fried / fatty",
+     "tags": ("lipid",),          "families": ("lipid_oxidation", "lipid_maillard_interaction")},
+    {"name": "1-octen-3-ol",                      "descriptor": "mushroom / earthy",
+     "tags": ("lipid",),          "families": ("lipid_oxidation",)},
 ]
-# Placeholder family vocabulary for the mock ONLY. The real simulator's 16 reaction
-# families are the authority; the UI must treat family ids as OPAQUE strings (CONTRACT.md).
+# Placeholder family vocabulary for the mock ONLY — the union of every `families` label used
+# above. The real simulator's 16 reaction families are the authority; the UI must treat
+# family ids as OPAQUE strings (CONTRACT.md).
 _MOCK_FAMILIES = [
     "amadori_rearrangement", "strecker_degradation", "sugar_fragmentation",
     "pyrazine_formation", "thiol_formation", "furan_formation",
@@ -283,6 +326,49 @@ _MOCK_FAMILIES = [
     "lipid_oxidation", "lipid_maillard_interaction", "thiazole_formation",
     "pyrrole_formation", "melanoidin_polymerization", "sulfur_recombination",
 ]
+
+
+def _mock_precursor_context(normalised):
+    """Read (only) which precursor CLASSES and a couple of key amino acids are present, plus
+    a heat factor. Drives the synthetic affinity weighting — no amounts, no chemistry."""
+    prec = normalised.get("precursors", {})
+    aminos = prec.get("amino_acids") or []
+    names = " ".join((p.get("name") or "").lower() for p in aminos)
+    temp = normalised.get("conditions", {}).get("temperature_c", 100.0)
+    return {
+        "has_amino": bool(aminos),
+        "has_sugar": bool(prec.get("sugars")),
+        "has_lipid": bool(prec.get("lipids")),
+        "has_cys": ("cystein" in names or "cystin" in names),
+        "has_met": ("methionin" in names),
+        "temp": temp,
+        "heatf": max(0.4, min(1.4, temp / 110.0)),
+    }
+
+
+def _mock_affinity(tags, ctx):
+    """Synthetic propensity for a labelled volatile given the precursor classes submitted.
+    A deterministic demo-realism weight, NOT a rate. Higher → likelier to rank high."""
+    score = 0.0
+    for t in tags:
+        if t == "S":
+            score += (2.2 + (1.0 if ctx["has_cys"] else 0.0) + (0.3 if ctx["has_met"] else 0.0)) \
+                if ctx["has_amino"] else 0.15
+        elif t == "Smet":
+            score += 2.0 if ctx["has_met"] else 0.5
+        elif t == "strecker":
+            score += 1.5 if ctx["has_amino"] else 0.2
+        elif t == "nitrogen":
+            score += 1.7 * ctx["heatf"] if ctx["has_amino"] else 0.2
+        elif t == "pyrazine":
+            score += 2.2 * ctx["heatf"] if (ctx["has_amino"] and ctx["has_sugar"]) else 0.2
+        elif t == "sugar":
+            score += 2.0 if ctx["has_sugar"] else 0.2
+        elif t == "lipid":
+            score += 2.2 if ctx["has_lipid"] else 0.06
+    return max(0.05, score)
+
+
 _MOCK_OFF_NOTES = [
     ("burnt", "over-roasted / acrid"),
     ("sulfurous", "eggy / cabbage"),
@@ -317,24 +403,35 @@ def _mock_run(normalised, fingerprint):
     extent = (temp / 150.0) * (1.0 - math.exp(-tmin / 30.0)) * (0.6 + ph / 14.0)
     n_prec = sum(len(v) for v in normalised["precursors"].values())
     mass = sum(p["amount"] for v in normalised["precursors"].values() for p in v)
+    # Damped mass factor: keeps synthetic yields in a believable band whether the request is
+    # in mM (single-digit amounts) or mg (hundreds). Monotone, so a bigger load still moves
+    # yields up. It is NOT a concentration — units are never converted in the mock.
+    mass_factor = 0.6 + math.log1p(max(0.0, mass))
 
+    ctx = _mock_precursor_context(normalised)
+    # Rank the known volatiles by their synthetic affinity to the submitted precursors, with
+    # a small seeded jitter so the list isn't frozen. Meaty thiols lead a cysteine+ribose
+    # broth; lipid notes drop to the bottom when no lipid precursor was given.
+    scored = []
+    for spec in _MOCK_COMPOUNDS:
+        propensity = _mock_affinity(spec["tags"], ctx) * rng.uniform(0.7, 1.3)
+        scored.append((propensity, spec))
+    scored.sort(key=lambda ps: ps[0], reverse=True)
     top_n = normalised.get("options", {}).get("top_compounds", 8)
-    picks = _MOCK_COMPOUNDS[:]
-    rng.shuffle(picks)
-    picks = picks[:min(top_n, len(picks))]
+    scored = scored[:min(top_n, len(scored))]
 
     compounds = []
-    for rank, (name, descriptor) in enumerate(picks, start=1):
-        base = extent * mass * rng.uniform(0.4, 4.0) * (1.0 / rank) * 12.0
+    for rank, (propensity, spec) in enumerate(scored, start=1):
+        base = extent * mass_factor * propensity * 14.0
         spread = base * rng.uniform(0.15, 0.55)
         conf = max(0.05, min(0.95, 0.9 - 0.06 * rank + rng.uniform(-0.08, 0.08)))
-        fams = rng.sample(_MOCK_FAMILIES, k=rng.randint(1, 3))
-        weights = [rng.random() for _ in fams]
+        fams = list(spec["families"])
+        weights = sorted((rng.uniform(0.4, 1.0) for _ in fams), reverse=True)
         tot = sum(weights) or 1.0
         compounds.append({
             "rank": rank,
-            "name": name,
-            "descriptor": descriptor,
+            "name": spec["name"],
+            "descriptor": spec["descriptor"],
             "yield_ppb": round(base, 2),
             "confidence": round(conf, 3),
             "confidence_interval_ppb": [round(max(0.0, base - spread), 2), round(base + spread, 2)],
@@ -388,7 +485,11 @@ def _mock_run(normalised, fingerprint):
         "compounds": compounds,
         "reaction_families": families,
         "off_notes": off_notes,
-        "warnings": ["Mock backend: results are synthetic placeholders, not chemistry."],
+        "warnings": [
+            "Mock backend: every value is a synthetic placeholder, not chemistry.",
+            "Compound ranking is a deterministic demo heuristic keyed to which precursor "
+            "classes were submitted (seeded by the request hash) — not a kinetic prediction.",
+        ],
     }
 
 
@@ -623,15 +724,16 @@ def health():
 
 
 if __name__ == "__main__":                       # python3 server/maillard/adapter.py → smoke test
+    # The live #simulate demo preset: cysteine + ribose beef-broth base, amounts in mM (the
+    # unit the form submits). Exercises both the mM fix and the meaty-forward mock ranking.
     demo = {
         "precursors": {
-            "sugars": [{"name": "D-glucose", "amount": 180, "unit": "mg"},
-                       {"name": "D-ribose", "amount": 60, "unit": "mg"}],
-            "amino_acids": [{"name": "L-cysteine", "amount": 120, "unit": "mg"},
-                            {"name": "L-methionine", "amount": 40, "unit": "mg"}],
+            "sugars": [{"name": "D-Ribose", "amount": 5, "unit": "mM"}],
+            "amino_acids": [{"name": "L-Cysteine", "amount": 5, "unit": "mM"}],
         },
-        "conditions": {"ph": 5.6, "temperature_c": 140, "time_min": 30, "matrix": "aqueous"},
-        "options": {"monte_carlo_runs": 200, "top_compounds": 6},
+        "conditions": {"ph": 5.5, "temperature_c": 110, "time_min": 30,
+                       "water_activity": 0.85, "matrix": "aqueous"},
+        "options": {"monte_carlo_runs": 200, "top_compounds": 8},
         "label": "beef-broth base",
     }
     print(json.dumps(health(), indent=2))

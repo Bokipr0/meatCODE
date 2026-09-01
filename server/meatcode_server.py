@@ -1,5 +1,25 @@
 #!/usr/bin/env python3
-# Last updated: 2026-08-16 14:46 UTC · Full-Stack · GET /api/corpus + POST /api/compare + /api/molecule-profile alias
+# Last updated: 2026-09-01 · Full-Stack · X-Frame-Options: SAMEORIGIN on every response (end_headers).
+#   Enables the live platform to embed app/dev/research_reaction_network.html (#research) and
+#   app/dev/analytics_workspace.html (#analytics) as SAME-ORIGIN iframes while blocking cross-origin
+#   framing. Server previously set NO frame header (framing allowed from any origin), so this only
+#   makes the intent explicit + tightens to same-origin. No other headers/routes/gates changed.
+# Prev 2026-08-31 16:58 UTC · Full-Stack · /analytics pretty-URL → app/dev/analytics_workspace.html
+#   Added a bare-path rewrite in do_GET (mirrors the /command-center sibling, placed just before
+#   super().do_GET()): /analytics and /analytics/ → /app/dev/analytics_workspace.html so the new
+#   top-nav "Analytics" section has a clean entry point. GET/read-only, behind the same auth gate as
+#   the rest of app/. Matches ONLY the bare path — does not shadow /analytics.html or any other route.
+# Prev 2026-08-31 15:09 UTC · Full-Stack · GET /api/reaction-network?branch=lipid|aqueous —
+#   Research-journey data (precursors → reaction network → volatiles → analytical/sensory profile).
+#   Curated, honestly-labelled skeleton (precursors/reactions/precursor→reaction edges, all
+#   backed=false — no reaction edges are stored in Neon), ENRICHED with REAL volatiles + mention
+#   counts pulled live from `meaty_volatile_library` (backed=true) filtered by the branch's
+#   likely_process (lipid → Lipid oxidation/Both; aqueous → Maillard/Both). analytical =
+#   detected/aligned(=in molecule corpus)/test_only from the same library; sensory = 8 axes
+#   computed from the branch's real odour descriptors. SELECT-only; invalid/missing branch →
+#   aqueous; DB unset/down → curated skeleton with backed=false + status "preview" (never 500).
+#   Logic lives in the NEW server/reaction_network.py (owns no SQL execution — handed pg_rows).
+# Prev 2026-08-16 14:46 UTC · Full-Stack · GET /api/corpus + POST /api/compare + /api/molecule-profile alias
 #   (1) NEW auth-gated GET /api/corpus?phase=<juice|lipid|analytics>&topics=<slug,...> — drives the
 #       Research sub-topic chips + Analytics scene + the Oracle "explore the lipid corpus" demo. Hardcoded
 #       PHASE→taxonomy-slug sets (CORPUS_PHASES, all real slugs from db/taxonomy/keywords_topics.json);
@@ -133,6 +153,11 @@ Endpoints
   GET  /api/molecule-suggestions[?q=&limit=&exclude=id,id,...]  context-aware molecule chips for the
                                  Oracle answer panel: bare array ranked by molecules named in `q`, then
                                  whose chemical family (category) appears in `q`, then top by mentions_count
+  GET  /api/reaction-network?branch=lipid|aqueous  Research journey: precursors → reaction network →
+                                 volatiles → analytical/sensory profile. Curated skeleton (precursors/
+                                 reactions/edges, backed=false) enriched with REAL volatiles + mention
+                                 counts from `meaty_volatile_library` (backed=true). Invalid branch →
+                                 aqueous; DB down → curated skeleton, status "preview" (never 500)
   GET  /api/sources[?q=&topic=&sort=relevance|citations|year&min_relevance=&limit=]  Database tab:
                                  literature sources
   GET  /api/companies[?q=&country=&sort=name|country&limit=]  Database tab: companies — reads the
@@ -406,6 +431,15 @@ try:
 except Exception as _e:                      # never let a missing/broken adapter stop the server
     maillard_adapter = None
     sys.stderr.write("[maillard] adapter unavailable: %s\n" % str(_e)[:200])
+
+# Reaction-network builder (GET /api/reaction-network) — curated skeleton + live MVL
+# enrichment. Owns no SQL execution; it is handed pg_rows at call time. A failed import
+# must never stop the server (the endpoint then returns a minimal degraded payload).
+try:
+    import reaction_network
+except Exception as _e:
+    reaction_network = None
+    sys.stderr.write("[reaction-network] module unavailable: %s\n" % str(_e)[:200])
 
 MAILLARD_SYNC_WAIT      = float(os.environ.get("MAILLARD_SYNC_WAIT", "8"))    # s waited inline before 202
 MAILLARD_JOB_TTL        = float(os.environ.get("MAILLARD_JOB_TTL", "3600"))   # s a finished job is kept
@@ -823,6 +857,12 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        # Same-origin framing is REQUIRED: the live platform (app/meatcode_mockup.html)
+        # embeds app/dev/research_reaction_network.html and app/dev/analytics_workspace.html
+        # as same-origin iframes (both served by THIS server). SAMEORIGIN keeps that working
+        # while blocking cross-origin embedding (clickjacking). Making the intent explicit —
+        # the previous default (no header at all) allowed framing by ANY origin.
+        self.send_header("X-Frame-Options", "SAMEORIGIN")
         # Force HTML to revalidate on every load. Without this the browser happily
         # serves its cached copy after a deploy — the classic "I pushed but the site
         # still looks the same". Assets keep their normal caching.
@@ -898,6 +938,11 @@ class Handler(SimpleHTTPRequestHandler):
         # its microphone dictation works — browsers block the mic on file:// / sandboxed panels).
         if path in ("/command-center", "/command-center/"):
             self.path = "/app/agent_command_center.html"
+        # Pretty URL for the guided Analytics workspace (the nav "Analytics" section links
+        # here). Matches ONLY the bare /analytics(/) so it never shadows /analytics.html or
+        # any other path; the file already lives under app/dev/ and is served today.
+        if path in ("/analytics", "/analytics/"):
+            self.path = "/app/dev/analytics_workspace.html"
         return super().do_GET()
 
     def _handle_api_get(self, path):
@@ -985,6 +1030,27 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/templates":
             # No DB needed — lists whatever Claude Design exports live in app/templates/.
             return self._send_json(self._list_templates())
+
+        if path == "/api/reaction-network":
+            # Research journey data: precursors → reaction network → volatiles → profile.
+            # A curated, honestly-labelled skeleton (precursors / reactions / edges, all
+            # backed=false) ENRICHED with real volatile names + mention counts from the
+            # Meaty Volatile Library where the DB is reachable (backed=true). TWO separate
+            # branches — ?branch=lipid|aqueous; anything else defaults to aqueous. SELECT-only.
+            # Placed BEFORE the DATABASE_URL guard on purpose: DB unset/down → curated
+            # skeleton with backed=false + status "preview", never a 5xx.
+            branch = (qs.get("branch") or [""])[0]
+            if reaction_network is None:        # import failed at boot — degrade, don't 500
+                return self._send_json({
+                    "branch": (branch or "aqueous").strip().lower(),
+                    "status": "preview",
+                    "note": "Reaction-network module unavailable on this server.",
+                    "precursors": [], "reactions": [], "volatiles": [], "edges": [],
+                    "analytical": {"detected": 0, "aligned": 0, "test_only": 0, "note": "unavailable"},
+                    "sensory": [],
+                })
+            return self._send_json(
+                reaction_network.build(branch, pg_rows if DATABASE_URL else None))
 
         if not DATABASE_URL:
             return self._send_json({"error": "DATABASE_URL not configured"}, 503)

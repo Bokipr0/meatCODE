@@ -1,4 +1,4 @@
-_Last updated: 2026-08-16 (pm) · Project Coordinator · Oracle-demos & corpus-filter run — added A9, promoted A7 (#analytics live scene), refreshed lanes 1/3/6/8; B1/B2 remain the critical path_
+_Last updated: 2026-08-31 (pm) · Project Coordinator · Demo-prep — GC-MS/NMR measurements browser + Pablo's simulator live (mock) + 10-min run-of-show; B1 (deploy) is now a hard demo gate_
 
 # MVP_BOARD — what's open for end of August
 
@@ -12,6 +12,8 @@ _Last updated: 2026-08-16 (pm) · Project Coordinator · Oracle-demos & corpus-f
 **Scope decision (2026-07-23, Lior):** the **GC-MS / molecular tool ships as an honest preview** —
 fingerprint + by-cut comparison on clearly-labelled reference data, *not* a live analytical engine.
 This resolves the open "GC-MS: P0 vs preview?" question in `PROJECT_STATE.md`.
+
+**Demo readiness (2026-08-31, Coordinator):** the two demo modules landed — the in-product **GC-MS/NMR measurements browser** (`#analytics`) and **Pablo's simulator live in mock** (`#simulate` → `/api/simulate`, synthetic-labelled) — plus a 10-min run-of-show (`docs/meatcode_demo_runofshow_2026-08-31.md`). A separate same-day dev-zone **Analytics workspace** (`app/dev/analytics_workspace.html`, A3) covers the bring-your-own-data upload→compare flow. **Hard demo gate: B1 (deploy)** — `/api/corpus`, `/api/compare`, `/api/simulate` are 404 on prod, so demo on `deploy-dev` staging or localhost with `maillard_sim` ON.
 
 Status key: 🟢 working · 🟡 in progress · 🔴 blocked · ⚪ not started · **[CP]** = critical path
 
