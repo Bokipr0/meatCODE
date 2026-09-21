@@ -186,6 +186,38 @@ body.ff-dev_area .mc-devarea-btn {
 }
 body.ff-dev_area .mc-devarea-btn:hover { background: var(--wine-mist); color: var(--wine); border-color: var(--wine-tint); }
 body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+/* 2026-09-21 · Backups button (feature-flagged, same pattern as Dev Area above). Authored
+   statically next to it on every topbar, CSS-hidden unless /api/flags adds body.ff-backup_center
+   — so it stays invisible on production until Lior deliberately flips that flag. Opens a small
+   menu with the two server-side download links (GET /api/backup, GET /api/data-backup); both are
+   plain <a href> to same-origin URLs, so the browser's normal Content-Disposition download
+   handling does the rest — no fetch/JS needed for the download itself. */
+.mc-backup-wrap { display: none; position: relative; }
+body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
+.mc-backup-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 14px;
+  background: var(--bg-deep); border: 1px solid transparent;
+  border-radius: 10px;
+  font-family: inherit; font-size: 13px; font-weight: 700; color: var(--ink-dim);
+  cursor: pointer; transition: 0.13s;
+}
+.mc-backup-btn:hover, .mc-backup-wrap.open .mc-backup-btn { background: var(--wine-mist); color: var(--wine); border-color: var(--wine-tint); }
+.mc-backup-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+.mc-backup-menu {
+  display: none; position: absolute; top: calc(100% + 6px); right: 0; z-index: 60;
+  min-width: 220px; padding: 6px; background: #fff; border: 1px solid var(--wine-tint, #e5d3d8);
+  border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,.14);
+}
+.mc-backup-wrap.open .mc-backup-menu { display: block; }
+.mc-backup-menu a {
+  display: flex; align-items: baseline; gap: 6px;
+  padding: 9px 10px; border-radius: 7px;
+  font-family: inherit; font-size: 13px; font-weight: 600; color: var(--ink, #2a2020);
+  text-decoration: none;
+}
+.mc-backup-menu a:hover { background: var(--wine-mist); color: var(--wine); }
+.mc-backup-menu a small { font-weight: 400; color: var(--ink-dim); }
 
 /* ── Left context panel ── */
 .context {
@@ -2472,6 +2504,13 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
       </div>
       <div class="topbar-right">
         <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
+        <div class="mc-backup-wrap">
+          <button type="button" class="mc-backup-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Download a backup" title="Download a backup" onclick="mcToggleBackupMenu(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Backups</span></button>
+          <div class="mc-backup-menu" role="menu">
+            <a role="menuitem" href="/api/backup"><span>⬇ Repo backup <small>(.zip)</small></span></a>
+            <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
+          </div>
+        </div>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -2577,6 +2616,13 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
       </div>
       <div class="topbar-right">
         <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
+        <div class="mc-backup-wrap">
+          <button type="button" class="mc-backup-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Download a backup" title="Download a backup" onclick="mcToggleBackupMenu(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Backups</span></button>
+          <div class="mc-backup-menu" role="menu">
+            <a role="menuitem" href="/api/backup"><span>⬇ Repo backup <small>(.zip)</small></span></a>
+            <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
+          </div>
+        </div>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -2658,6 +2704,13 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
       </div>
       <div class="topbar-right">
         <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
+        <div class="mc-backup-wrap">
+          <button type="button" class="mc-backup-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Download a backup" title="Download a backup" onclick="mcToggleBackupMenu(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Backups</span></button>
+          <div class="mc-backup-menu" role="menu">
+            <a role="menuitem" href="/api/backup"><span>⬇ Repo backup <small>(.zip)</small></span></a>
+            <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
+          </div>
+        </div>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -2744,6 +2797,13 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
       </div>
       <div class="topbar-right">
         <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
+        <div class="mc-backup-wrap">
+          <button type="button" class="mc-backup-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Download a backup" title="Download a backup" onclick="mcToggleBackupMenu(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Backups</span></button>
+          <div class="mc-backup-menu" role="menu">
+            <a role="menuitem" href="/api/backup"><span>⬇ Repo backup <small>(.zip)</small></span></a>
+            <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
+          </div>
+        </div>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -2877,6 +2937,13 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
       </div>
       <div class="topbar-right">
         <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
+        <div class="mc-backup-wrap">
+          <button type="button" class="mc-backup-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Download a backup" title="Download a backup" onclick="mcToggleBackupMenu(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Backups</span></button>
+          <div class="mc-backup-menu" role="menu">
+            <a role="menuitem" href="/api/backup"><span>⬇ Repo backup <small>(.zip)</small></span></a>
+            <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
+          </div>
+        </div>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -3050,6 +3117,13 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
       </div>
       <div class="topbar-right">
         <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
+        <div class="mc-backup-wrap">
+          <button type="button" class="mc-backup-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Download a backup" title="Download a backup" onclick="mcToggleBackupMenu(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Backups</span></button>
+          <div class="mc-backup-menu" role="menu">
+            <a role="menuitem" href="/api/backup"><span>⬇ Repo backup <small>(.zip)</small></span></a>
+            <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
+          </div>
+        </div>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -3202,6 +3276,13 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
       </div>
       <div class="topbar-right">
         <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
+        <div class="mc-backup-wrap">
+          <button type="button" class="mc-backup-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Download a backup" title="Download a backup" onclick="mcToggleBackupMenu(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Backups</span></button>
+          <div class="mc-backup-menu" role="menu">
+            <a role="menuitem" href="/api/backup"><span>⬇ Repo backup <small>(.zip)</small></span></a>
+            <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
+          </div>
+        </div>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -3306,6 +3387,13 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
       </div>
       <div class="topbar-right">
         <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
+        <div class="mc-backup-wrap">
+          <button type="button" class="mc-backup-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Download a backup" title="Download a backup" onclick="mcToggleBackupMenu(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Backups</span></button>
+          <div class="mc-backup-menu" role="menu">
+            <a role="menuitem" href="/api/backup"><span>⬇ Repo backup <small>(.zip)</small></span></a>
+            <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
+          </div>
+        </div>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -3438,6 +3526,13 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
       </div>
       <div class="topbar-right">
         <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
+        <div class="mc-backup-wrap">
+          <button type="button" class="mc-backup-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Download a backup" title="Download a backup" onclick="mcToggleBackupMenu(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Backups</span></button>
+          <div class="mc-backup-menu" role="menu">
+            <a role="menuitem" href="/api/backup"><span>⬇ Repo backup <small>(.zip)</small></span></a>
+            <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
+          </div>
+        </div>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -3514,6 +3609,13 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
       </div>
       <div class="topbar-right">
         <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
+        <div class="mc-backup-wrap">
+          <button type="button" class="mc-backup-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Download a backup" title="Download a backup" onclick="mcToggleBackupMenu(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Backups</span></button>
+          <div class="mc-backup-menu" role="menu">
+            <a role="menuitem" href="/api/backup"><span>⬇ Repo backup <small>(.zip)</small></span></a>
+            <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
+          </div>
+        </div>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -3723,6 +3825,13 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
       </div>
       <div class="topbar-right">
         <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
+        <div class="mc-backup-wrap">
+          <button type="button" class="mc-backup-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Download a backup" title="Download a backup" onclick="mcToggleBackupMenu(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Backups</span></button>
+          <div class="mc-backup-menu" role="menu">
+            <a role="menuitem" href="/api/backup"><span>⬇ Repo backup <small>(.zip)</small></span></a>
+            <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
+          </div>
+        </div>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -3836,6 +3945,13 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
       </div>
       <div class="topbar-right">
         <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
+        <div class="mc-backup-wrap">
+          <button type="button" class="mc-backup-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Download a backup" title="Download a backup" onclick="mcToggleBackupMenu(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Backups</span></button>
+          <div class="mc-backup-menu" role="menu">
+            <a role="menuitem" href="/api/backup"><span>⬇ Repo backup <small>(.zip)</small></span></a>
+            <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
+          </div>
+        </div>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -4098,6 +4214,13 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
       </div>
       <div class="topbar-right">
         <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
+        <div class="mc-backup-wrap">
+          <button type="button" class="mc-backup-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Download a backup" title="Download a backup" onclick="mcToggleBackupMenu(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Backups</span></button>
+          <div class="mc-backup-menu" role="menu">
+            <a role="menuitem" href="/api/backup"><span>⬇ Repo backup <small>(.zip)</small></span></a>
+            <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
+          </div>
+        </div>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -4294,6 +4417,13 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
       </div>
       <div class="topbar-right">
         <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
+        <div class="mc-backup-wrap">
+          <button type="button" class="mc-backup-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Download a backup" title="Download a backup" onclick="mcToggleBackupMenu(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Backups</span></button>
+          <div class="mc-backup-menu" role="menu">
+            <a role="menuitem" href="/api/backup"><span>⬇ Repo backup <small>(.zip)</small></span></a>
+            <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
+          </div>
+        </div>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -4344,6 +4474,13 @@ body.ff-dev_area .mc-devarea-btn svg { width: 16px; height: 16px; flex-shrink: 0
       </div>
       <div class="topbar-right">
         <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
+        <div class="mc-backup-wrap">
+          <button type="button" class="mc-backup-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Download a backup" title="Download a backup" onclick="mcToggleBackupMenu(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Backups</span></button>
+          <div class="mc-backup-menu" role="menu">
+            <a role="menuitem" href="/api/backup"><span>⬇ Repo backup <small>(.zip)</small></span></a>
+            <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
+          </div>
+        </div>
         <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           <span>Inventory</span>
@@ -8683,6 +8820,36 @@ window.rebuildExpertList = function () {};
       .catch(function(){});
   }catch(e){}
 })();
+</script>
+
+<script>
+/* Backups button menu (flag-gated ff-backup_center, .mc-backup-wrap on every topbar). Plain
+   open/close toggle — the links themselves are same-origin <a href> to the server's download
+   endpoints, so no fetch/blob handling is needed here, just the little dropdown. */
+function mcToggleBackupMenu(btn){
+  var wrap = btn.closest('.mc-backup-wrap');
+  if(!wrap) return;
+  var willOpen = !wrap.classList.contains('open');
+  document.querySelectorAll('.mc-backup-wrap.open').forEach(function(w){
+    w.classList.remove('open');
+    var b = w.querySelector('.mc-backup-btn'); if(b) b.setAttribute('aria-expanded', 'false');
+  });
+  if(willOpen){ wrap.classList.add('open'); btn.setAttribute('aria-expanded', 'true'); }
+}
+document.addEventListener('click', function(e){
+  if(e.target.closest('.mc-backup-wrap')) return;
+  document.querySelectorAll('.mc-backup-wrap.open').forEach(function(w){
+    w.classList.remove('open');
+    var b = w.querySelector('.mc-backup-btn'); if(b) b.setAttribute('aria-expanded', 'false');
+  });
+});
+document.addEventListener('keydown', function(e){
+  if(e.key !== 'Escape') return;
+  document.querySelectorAll('.mc-backup-wrap.open').forEach(function(w){
+    w.classList.remove('open');
+    var b = w.querySelector('.mc-backup-btn'); if(b) b.setAttribute('aria-expanded', 'false');
+  });
+});
 </script>
 <style>
   /* Release Center in-app overlay — only wired on dev environments. */

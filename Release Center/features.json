@@ -79,6 +79,21 @@
       "dev": true,
       "prod": false
     },
+    "backup_center": {
+      "label": "Backups button",
+      "description": "Topbar button + dropdown letting anyone with the site password download a repo backup (GET /api/backup) or the actual Neon data (GET /api/data-backup) with one click — for Daniel/Yochai, no raw API URLs to remember.",
+      "kind": "feature",
+      "added": "2026-09-21",
+      "status": "live",
+      "where": {
+        "screen": "All screens (15 topbars)",
+        "spot": "Top bar, immediately right of the Dev Area button — .mc-backup-wrap / .mc-backup-btn.",
+        "file": "app/meatcode_mockup.html + server/meatcode_server.py"
+      },
+      "note": "Set dev:true / prod:false deliberately, same as Dev Area — Lior asked for this to be reachable on staging only for now. To ship it to prod: flip this flag's prod to true here (or in the Release Center admin page), then run promote-to-prod.command. The two download endpoints stay behind the normal site password either way — the flag only controls whether the BUTTON is visible, not whether the endpoints respond.",
+      "dev": true,
+      "prod": false
+    },
     "maillard_sim": {
       "label": "Maillard simulator",
       "description": "Call the Maillard chemistry simulator from MeatCODE: submit precursors + conditions, get ranked compounds with yields (ppb), confidence intervals and reaction-family attribution.",
