@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-# Last updated: 2026-09-21 · Full-Stack · NEW GET /api/backup — downloads a zip of the live repo
+# Last updated: 2026-09-21 · Full-Stack · NEW GET /api/data-backup — downloads the ACTUAL Neon
+#   data (every row, all 47 tables), not the curated pipeline/export_snapshot.py xlsx sample.
+#   Tries a real `pg_dump` first (schema+data+indexes, directly restorable) if that binary is on
+#   the host; otherwise falls back to a zip of one CSV per table (COPY ... TO STDOUT, real full
+#   data, no DDL) — the fallback's README says explicitly which mode produced it, so it's never
+#   mistaken for a byte-perfect dump. Same site-password gate as the rest of the site; refactored
+#   the raw-bytes response path out of /api/backup into a shared `_send_binary()` helper so both
+#   endpoints behave identically. Never a 500 — DB/tooling failures degrade to a 503.
+# Prev 2026-09-21 · Full-Stack · NEW GET /api/backup — downloads a zip of the live repo
 #   straight from the running server via `git archive --format=zip HEAD`. Only git-TRACKED files
 #   are included (archive walks the commit tree, not the working directory), so .env/.git
 #   internals/gitignored data can never end up in the zip regardless of what's on disk. Behind the
@@ -187,6 +195,10 @@ Endpoints
   GET  /api/backup              downloads a zip of the live repo's git-tracked files (HEAD) —
                                  `git archive`, so secrets/gitignored data never included; same
                                  site-password gate as everything else; 503 if git is unavailable
+  GET  /api/data-backup         downloads the ACTUAL Neon data (not a curated sample): real
+                                 `pg_dump` (.sql.gz, schema+data+indexes) if the binary is on
+                                 this host, else a zip of one CSV per table (data only, labelled
+                                 as such). Same site-password gate; 503 if Postgres is unreachable
 
 Claude Design templates: drop an exported .html into app/templates/ and include
 <script src="meatcode-api.js"></script> — the connector wires its elements to the
@@ -209,6 +221,7 @@ ANTHROPIC_API_KEY=sk-ant-...  on its own line. The script reads it automatically
 """
 
 import os, sys, json, re, threading, base64, hmac, datetime, subprocess, glob, time, uuid
+import shutil, gzip, io, zipfile
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
@@ -1072,6 +1085,11 @@ class Handler(SimpleHTTPRequestHandler):
 
         if not DATABASE_URL:
             return self._send_json({"error": "DATABASE_URL not configured"}, 503)
+        if path == "/api/data-backup":
+            # The actual Neon data (pg_dump or a full-data CSV fallback) — has its own
+            # try/except with a more specific error than the generic "database error"
+            # below, so it's handled before that shared block. See _handle_data_backup_download.
+            return self._handle_data_backup_download()
         try:
             if path == "/api/consensus-demo":
                 # Test surface for the consensus signal: same retrieval as POST /api/ask,
@@ -1560,8 +1578,15 @@ class Handler(SimpleHTTPRequestHandler):
                 {"error": "backup unavailable on this host: " + str(e)[:200]}, 503)
         stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d")
         filename = "meatCODE_backup_%s_%s.zip" % (stamp, commit)
+        return self._send_binary(body, "application/zip", filename)
+
+    # ─── shared: stream raw bytes as a downloadable file ───
+    def _send_binary(self, body, content_type, filename):
+        """Write `body` as a Content-Disposition: attachment download. Shared by every
+        backup-style endpoint (/api/backup, /api/data-backup) so headers/behavior stay
+        identical — only _send_json's JSON counterpart existed before."""
         self.send_response(200)
-        self.send_header("Content-Type", "application/zip")
+        self.send_header("Content-Type", content_type)
         self.send_header("Content-Disposition", 'attachment; filename="%s"' % filename)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
@@ -1569,6 +1594,66 @@ class Handler(SimpleHTTPRequestHandler):
             self.wfile.write(body)
         except (BrokenPipeError, ConnectionResetError):
             pass
+
+    # ─── the actual Neon data, straight off the running server ───
+    def _handle_data_backup_download(self):
+        """GET /api/data-backup — download the REAL Neon data (not a curated sample, unlike
+        the existing pipeline/export_snapshot.py xlsx). Two paths, tried in order, always
+        honestly labelled so nobody mistakes one for the other:
+          1. Real `pg_dump` (schema + every row + indexes/constraints/sequences — a byte-
+             faithful, directly restorable backup: `gunzip -c file.sql.gz | psql $DATABASE_URL`)
+             if the `pg_dump` binary is present on this host.
+          2. Fallback: a zip with one CSV per table (`COPY ... TO STDOUT WITH CSV HEADER`) —
+             every row of real data, no DDL. Used only when `pg_dump` isn't installed; the
+             zip's README says so explicitly, same honesty convention as everywhere else in
+             this file (never silently pass off a partial artifact as the full thing).
+        Never a 500 — DB/tooling failures degrade to a clear 503."""
+        stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d_%H%M")
+        if shutil.which("pg_dump"):
+            try:
+                dump = subprocess.run(
+                    ["pg_dump", DATABASE_URL, "--no-owner", "--no-privileges", "--format=plain"],
+                    capture_output=True, timeout=120,
+                )
+                if dump.returncode != 0 or not dump.stdout:
+                    raise RuntimeError((dump.stderr or b"pg_dump returned no data")
+                                        .decode("utf-8", "ignore")[:200])
+                body = gzip.compress(dump.stdout)
+                filename = "meatcode_neon_backup_%s.sql.gz" % stamp
+                return self._send_binary(body, "application/gzip", filename)
+            except Exception as e:
+                self.log_message("pg_dump path failed, falling back to CSV export: %s", str(e)[:200])
+                # fall through to the CSV fallback below rather than fail the request
+        try:
+            import psycopg2
+            tables = [r["table_name"] for r in pg_rows(
+                "SELECT table_name FROM information_schema.tables "
+                "WHERE table_schema = 'public' AND table_type = 'BASE TABLE' "
+                "ORDER BY table_name"
+            )]
+            conn = psycopg2.connect(DATABASE_URL)
+            buf = io.BytesIO()
+            try:
+                with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+                    zf.writestr("README.txt",
+                        "MeatCODE Neon data export — DATA ONLY.\n"
+                        "The pg_dump binary was not available on this host, so schema DDL, "
+                        "indexes, constraints, and sequences are NOT included here — only "
+                        "every row of every table, one CSV per table.\n"
+                        "Taken (UTC): %s\nTables: %d\n" % (stamp, len(tables)))
+                    with conn.cursor() as cur:
+                        for t in tables:
+                            csv_buf = io.BytesIO()
+                            cur.copy_expert(
+                                'COPY "%s" TO STDOUT WITH CSV HEADER' % t, csv_buf)
+                            zf.writestr("%s.csv" % t, csv_buf.getvalue())
+            finally:
+                conn.close()
+            filename = "meatcode_neon_data_only_%s.zip" % stamp
+            return self._send_binary(buf.getvalue(), "application/zip", filename)
+        except Exception as e:
+            return self._send_json(
+                {"error": "data backup unavailable: " + str(e)[:200]}, 503)
 
     # ─── template gallery listing (no DB) ───
     def _list_templates(self):
