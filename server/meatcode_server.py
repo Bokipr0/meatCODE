@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
-# Last updated: 2026-09-01 · Full-Stack · X-Frame-Options: SAMEORIGIN on every response (end_headers).
+# Last updated: 2026-09-21 · Full-Stack · NEW GET /api/backup — downloads a zip of the live repo
+#   straight from the running server via `git archive --format=zip HEAD`. Only git-TRACKED files
+#   are included (archive walks the commit tree, not the working directory), so .env/.git
+#   internals/gitignored data can never end up in the zip regardless of what's on disk. Behind the
+#   SAME site-password gate as everything else — no new access surface, no per-user auth needed;
+#   anyone holding the shared credentials (e.g. Daniel, Yochai) can pull a clean, current backup.
+#   Streams the raw zip bytes with Content-Disposition: attachment (not JSON). Never touches
+#   Postgres, so it's declared before the DB try/except block. Degrades to a clear 503 (never a
+#   500/crash) if git or a working checkout isn't available on the host. Filename embeds the short
+#   commit + UTC date so two downloads are never confused. Purely additive; no existing route moved.
+# Prev 2026-09-01 · Full-Stack · X-Frame-Options: SAMEORIGIN on every response (end_headers).
 #   Enables the live platform to embed app/dev/research_reaction_network.html (#research) and
 #   app/dev/analytics_workspace.html (#analytics) as SAME-ORIGIN iframes while blocking cross-origin
 #   framing. Server previously set NO frame header (framing allowed from any origin), so this only
@@ -174,6 +184,9 @@ Endpoints
   GET  /api/papers/recent[?limit=]  recent papers (dashboard rows)
   GET  /api/templates           lists deployed Claude Design templates in app/templates/
   GET  /templates/ ...          serves app/templates/ (the template gallery + exports)
+  GET  /api/backup              downloads a zip of the live repo's git-tracked files (HEAD) —
+                                 `git archive`, so secrets/gitignored data never included; same
+                                 site-password gate as everything else; 503 if git is unavailable
 
 Claude Design templates: drop an exported .html into app/templates/ and include
 <script src="meatcode-api.js"></script> — the connector wires its elements to the
@@ -1027,6 +1040,11 @@ class Handler(SimpleHTTPRequestHandler):
                     "html_no_cache": True,           # fresh deploys show immediately
                 },
             })
+        if path == "/api/backup":
+            # Repo backup, straight off the running server — no Postgres involved, so this
+            # lives before the DB try/except block below. See the file-header changelog entry
+            # for the full rationale.
+            return self._handle_backup_download()
         if path == "/api/templates":
             # No DB needed — lists whatever Claude Design exports live in app/templates/.
             return self._send_json(self._list_templates())
@@ -1513,6 +1531,44 @@ class Handler(SimpleHTTPRequestHandler):
             return self._send_json({"error": "unknown endpoint " + path}, 404)
         except Exception as e:
             return self._send_json({"error": "database error: " + str(e)[:200]}, 503)
+
+    # ─── repo backup, straight off the running server ───
+    def _handle_backup_download(self):
+        """GET /api/backup — stream a zip of the repo AS COMMITTED at the currently-deployed
+        HEAD. Uses `git archive`, which walks the commit tree rather than the working
+        directory — so `.env`/`.env.*`, `.git` internals, and anything gitignored (data
+        snapshots, __pycache__, node_modules, ...) are structurally excluded, no matter what
+        happens to be sitting on disk on this host. Guarded end-to-end: any failure (no git
+        binary, no .git checkout, empty archive) returns a clear 503 — never a 500, never a
+        half-written response."""
+        try:
+            rev = subprocess.run(
+                ["git", "-C", REPO_ROOT, "rev-parse", "--short", "HEAD"],
+                capture_output=True, text=True, timeout=10,
+            )
+            commit = rev.stdout.strip() if rev.returncode == 0 else "unknown"
+            arc = subprocess.run(
+                ["git", "-C", REPO_ROOT, "archive", "--format=zip", "HEAD"],
+                capture_output=True, timeout=30,
+            )
+            if arc.returncode != 0 or not arc.stdout:
+                raise RuntimeError((arc.stderr or b"git archive returned no data")
+                                    .decode("utf-8", "ignore")[:200])
+            body = arc.stdout
+        except Exception as e:
+            return self._send_json(
+                {"error": "backup unavailable on this host: " + str(e)[:200]}, 503)
+        stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d")
+        filename = "meatCODE_backup_%s_%s.zip" % (stamp, commit)
+        self.send_response(200)
+        self.send_header("Content-Type", "application/zip")
+        self.send_header("Content-Disposition", 'attachment; filename="%s"' % filename)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        try:
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
 
     # ─── template gallery listing (no DB) ───
     def _list_templates(self):

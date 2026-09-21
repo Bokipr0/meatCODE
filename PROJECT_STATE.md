@@ -4,7 +4,10 @@
 > Asana owns *tasks & priorities*; this file owns *technical reality* — what's built, what's broken,
 > what's in flight. Keep it short and current, not a changelog.
 
-_Last updated: 2026-09-01 · Project Coordinator — Research reaction-network wizard + Analytics bring-your-own-data module built, **LIVE-integrated** into the mockup as flag-gated iframes (`#research` swap + in-app `#analytics` scene + 3rd nav chip) and polished; new `/api/reaction-network`. **Supersedes the 08-31 measurements-browser `#analytics`.** Awaiting deploy-dev. See AGENT_UPDATE_LOG.md._
+_Last updated: 2026-09-21 · Full-Stack — NEW `GET /api/backup` (repo backup downloadable straight off the running server, behind the existing site password). Awaiting deploy-dev. See AGENT_UPDATE_LOG.md._
+
+## Repo backup downloadable via the server — shipped to the repo 2026-09-21 (awaiting deploy-dev)
+`server/meatcode_server.py` gained `GET /api/backup`: streams a zip of the repo's git-tracked files at HEAD (`git archive --format=zip HEAD`) straight from the running Render instance. Secrets/gitignored data can't leak (archive walks the commit tree, not disk); same shared-password gate as the rest of the site, so Daniel/Yochai can pull a clean backup themselves once they have the site credentials — no per-user auth added. Degrades to a `503` if git isn't available on the host; never a 500. Verified locally (`py_compile` + live `curl` round-trip, valid zip, correct filename). **Not deployed — `deploy-dev.command` → confirm on staging → `promote-to-prod.command`.** Live URL once promoted: `https://meatcode-oracle.onrender.com/api/backup`.
 
 ## Research wizard + Analytics module — built → LIVE-integrated → polished (2026-08-31 → 09-01, flag-gated, awaiting deploy-dev)
 Multi-run arc (Coordinator-orchestrated; per-run detail in `AGENT_UPDATE_LOG.md`). Both surfaces are now wired into the live platform as **same-origin iframes gated by flags**, plus a new read-only endpoint. Dev pages carry an **`?embed=1` embed-mode** (hides their standalone chrome, keeps in-content honesty labels).
