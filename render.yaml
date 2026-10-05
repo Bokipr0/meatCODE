@@ -21,6 +21,8 @@ services:
         sync: false            # paste a strong password in the Render dashboard (not in the repo).
       - key: SITE_USER          # username people type alongside the password
         value: meatcode         # not secret; change if you like
+      - key: UNPAYWALL_EMAIL    # Papers browser (dev flag): contact email Unpaywall requires. Optional.
+        sync: false            # paste in the Render dashboard (not in the repo); unset = PDF lookup "unavailable".
       - key: PYTHON_VERSION
         value: 3.12.4
       - key: APP_ENV

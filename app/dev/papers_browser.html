@@ -1,0 +1,1249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<!-- Last updated: 2026-10-05 · UI/UX Designer · audit lenses added (No DOI / No abstract / Untagged / In Oracle corpus / Not in Oracle corpus via tri-state has_doi, has_abstract, has_tags, in_oracle; optional 'In Oracle?' column) · earlier: NEW dev page — Papers browser (flag papers_browser, dev ON / prod OFF). Browse ALL papers (Neon `sources`), 50/page: sortable headers, filter panel + active pills + quick lenses, minimal default columns + column picker (mc_papers_cols_v1), cross-page row selection → CSV (server) / XLSX (client SheetJS), "Export filtered" + "Download entire table" CSV, per-row Open / lazy open-access PDF, detail drawer, density toggle, keyboard shortcuts, shareable URL-hash state. ?embed=1 (or inside an iframe) hides standalone chrome. ?mock=1 = ~120 clearly-labelled synthetic rows, client-side only (never active without the param). Built against the /api/papers-browser contract. -->
+<title>Papers browser · MeatCODE (dev)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#FAF6EF; --bg-deep:#F2EBDA; --surface:#FFFFFF; --surface-2:#F7F0E0;
+  --wine:#00736E; --wine-deep:#015A56; --wine-soft:#4FA59F; --wine-tint:#B5DDD8; --wine-mist:#E0F0EE;
+  --ink:#1A1A1A; --ink-dim:#4A4A4A; --ink-faint:#8A8A8A;
+  --line:#E5DDD0; --line-strong:#D2C8B5;
+  --brass:#C77E5F; --brass-soft:#F2D7C8; --olive:#7A8C5F; --olive-soft:#D6DCC4;
+  --shadow:0 4px 16px rgba(0,67,64,.08); --shadow-lg:0 10px 32px rgba(0,67,64,.12);
+  --round:"Varela Round","Heebo",-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:"SF Mono","JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--round);-webkit-font-smoothing:antialiased;letter-spacing:.005em}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit}
+[hidden]{display:none !important}
+:focus-visible{outline:2px solid var(--wine);outline-offset:2px}
+
+/* ── standalone chrome (hidden in embed mode) ── */
+.pb-chrome{flex:none;display:flex;align-items:center;gap:16px;padding:10px 20px;background:var(--surface);border-bottom:1px solid var(--line)}
+.pb-chrome .back{color:var(--wine-deep);font-weight:700;font-size:13px}
+.pb-chrome .back:hover{text-decoration:underline}
+.pb-chrome .brand{font-weight:700;font-size:17px;color:var(--wine-deep)}
+.pb-chrome .sub{font-size:12px;color:var(--ink-faint);border-left:1px solid var(--line);padding-left:16px}
+body.embed .pb-chrome{display:none}
+
+/* ── shell: fixed viewport, only the table region scrolls ── */
+.pb{display:flex;flex-direction:column;height:100vh;min-height:0}
+.pb-body{flex:1;min-height:0;display:flex;flex-direction:column;gap:9px;padding:14px 22px 12px}
+.pb-mock{flex:none;background:var(--brass-soft);color:#8a4a2c;border:1px solid #eec7b3;border-radius:10px;padding:6px 12px;font-size:12.5px;font-weight:700;text-align:center;letter-spacing:.01em}
+.pb-head{flex:none;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.pb-head h1{margin:0;font-size:19px;color:var(--wine-deep);letter-spacing:-.005em}
+.pb-dev{font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.06em;color:var(--brass);background:var(--brass-soft);border-radius:999px;padding:2px 8px;text-transform:uppercase}
+.pb-stats{font-size:12px;color:var(--ink-faint);font-family:var(--mono);letter-spacing:-.01em}
+.pb-stats b{color:var(--ink-dim);font-weight:700}
+
+/* ── toolbar ── */
+.pb-bar{flex:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pb-search{position:relative;flex:1 1 220px;min-width:200px;max-width:380px}
+.pb-search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--ink-faint);pointer-events:none}
+.pb-search input{width:100%;height:36px;border:1px solid var(--line-strong);border-radius:100px;background:var(--surface);padding:0 34px 0 34px;font-size:13px;font-family:inherit;color:var(--ink)}
+.pb-search input:focus{border-color:var(--wine);outline:none;box-shadow:0 0 0 3px var(--wine-mist)}
+.pb-search .clr{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:none;background:none;color:var(--ink-faint);cursor:pointer;font-size:16px;line-height:1;padding:4px 6px}
+.pb-search .clr:hover{color:var(--wine-deep)}
+.pb-btn{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border-radius:12px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-dim);font-weight:700;font-size:12.5px;cursor:pointer;white-space:nowrap;transition:.12s}
+.pb-btn:hover:not(:disabled){background:var(--wine-mist);border-color:var(--wine-tint);color:var(--wine-deep)}
+.pb-btn:disabled{opacity:.42;cursor:not-allowed}
+.pb-btn.on{background:var(--wine-mist);border-color:var(--wine);color:var(--wine-deep)}
+.pb-btn.primary{background:var(--wine);border-color:var(--wine);color:var(--surface)}
+.pb-btn.primary:hover:not(:disabled){background:var(--wine-deep);border-color:var(--wine-deep);color:var(--surface)}
+.pb-btn.busy{opacity:.7;cursor:progress}
+.pb-btn svg{width:14px;height:14px;flex:none}
+.pb-badge{font-family:var(--mono);font-size:10.5px;background:var(--wine);color:var(--surface);border-radius:999px;padding:1px 7px;min-width:18px;text-align:center}
+.pb-seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:12px;overflow:hidden;height:36px;background:var(--surface)}
+.pb-seg button{border:none;background:none;padding:0 12px;font-size:12px;font-weight:700;color:var(--ink-faint);cursor:pointer}
+.pb-seg button+button{border-left:1px solid var(--line)}
+.pb-seg button.on{background:var(--wine-mist);color:var(--wine-deep)}
+.pb-spacer{flex:1}
+.pb-pop{position:relative}
+.pb-menu{position:absolute;z-index:30;top:42px;right:0;min-width:230px;max-height:60vh;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-lg);padding:8px}
+.pb-menu.left{left:0;right:auto}
+.pb-menu h4{margin:6px 8px 6px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+.pb-menu label{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:8px;font-size:12.5px;color:var(--ink-dim);cursor:pointer}
+.pb-menu label:hover{background:var(--wine-mist)}
+.pb-menu label.lock{opacity:.6;cursor:default}
+.pb-menu input[type=checkbox]{accent-color:var(--wine);width:14px;height:14px}
+.pb-menu .foot{display:flex;gap:8px;border-top:1px solid var(--line);margin-top:6px;padding:8px 4px 2px}
+.pb-menu .foot button{flex:1;height:30px;border-radius:9px;border:1px solid var(--line-strong);background:var(--surface);font-size:11.5px;font-weight:700;color:var(--ink-dim);cursor:pointer}
+.pb-menu .foot button:hover{background:var(--wine-mist);color:var(--wine-deep)}
+.pb-keys{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;padding:6px 8px;font-size:12px;color:var(--ink-dim)}
+.pb-keys kbd{font-family:var(--mono);font-size:11px;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:6px;padding:1px 7px;color:var(--ink)}
+
+/* ── lenses + pills row ── */
+.pb-chips{flex:none;display:flex;align-items:center;gap:7px;flex-wrap:wrap;min-height:30px}
+.pb-chips .lab{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-right:2px}
+.fchip{padding:6px 12px;border-radius:100px;font-size:11.5px;font-weight:700;color:var(--ink-dim);background:var(--surface);border:1px solid var(--line);cursor:pointer;font-family:inherit}
+.fchip:hover{border-color:var(--wine-tint);color:var(--wine-deep)}
+.fchip.on{background:var(--wine);color:var(--surface);border-color:var(--wine)}
+.pb-sep{width:1px;height:18px;background:var(--line-strong);margin:0 4px}
+.pill{display:inline-flex;align-items:center;gap:6px;background:var(--wine-mist);color:var(--wine-deep);border:1px solid var(--wine-tint);border-radius:100px;padding:4px 6px 4px 11px;font-size:11.5px;font-weight:700}
+.pill button{border:none;background:none;color:var(--wine);cursor:pointer;font-size:14px;line-height:1;padding:0 4px;border-radius:50%}
+.pill button:hover{color:var(--wine-deep);background:var(--wine-tint)}
+.pb-clear{border:none;background:none;color:var(--wine);font-size:12px;font-weight:700;text-decoration:underline;cursor:pointer;padding:4px 6px}
+.pb-clear:hover{color:var(--wine-deep)}
+
+/* ── filter panel ── */
+.pb-filters{flex:none;max-height:min(42vh,330px);overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow)}
+.pb-fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px 18px}
+.pb-f{border:none;margin:0;padding:0;min-width:0}
+.pb-f legend{padding:0;margin-bottom:6px;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+.pb-range{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-faint)}
+.pb-f input[type=number],.pb-msearch,.pb-f select{width:100%;height:32px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);padding:0 9px;font-size:12.5px;font-family:inherit;color:var(--ink)}
+.pb-f input:focus,.pb-f select:focus{border-color:var(--wine);outline:none;box-shadow:0 0 0 3px var(--wine-mist)}
+.pb-f .hint{margin-top:5px;font-size:11px;color:var(--ink-faint);line-height:1.4}
+.pb-tog{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-dim);margin-bottom:6px;cursor:pointer}
+.pb-tog input{accent-color:var(--wine);width:14px;height:14px}
+.pb-mlist{margin-top:5px;max-height:118px;overflow:auto;border:1px solid var(--line);border-radius:9px;padding:3px}
+.pb-mlist label{display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:6px;font-size:12px;color:var(--ink-dim);cursor:pointer}
+.pb-mlist label:hover{background:var(--wine-mist)}
+.pb-mlist input{accent-color:var(--wine);width:13px;height:13px;flex:none}
+.pb-mlist span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pb-mlist em{font-style:normal;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint)}
+.pb-mlist .grp{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);padding:6px 6px 2px}
+.pb-mlist .none{padding:8px;font-size:11.5px;color:var(--ink-faint)}
+
+/* ── table card ── */
+.pb-card{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;position:relative}
+.pb-sel{flex:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:var(--wine);color:var(--surface);font-size:12.5px;font-weight:700}
+.pb-sel .n{font-family:var(--mono)}
+.pb-sel .sp{flex:1}
+.pb-sel button{height:28px;padding:0 12px;border-radius:9px;border:1px solid rgba(255,255,255,.55);background:transparent;color:var(--surface);font-size:12px;font-weight:700;cursor:pointer}
+.pb-sel button:hover:not(:disabled){background:var(--surface);color:var(--wine-deep)}
+.pb-sel button:disabled{opacity:.55;cursor:progress}
+.pb-sel button.link{border-color:transparent;text-decoration:underline}
+.pb-wrap{flex:1;min-height:0;overflow:auto;position:relative}
+table.pb-t{border-collapse:separate;border-spacing:0;table-layout:fixed;width:100%;font-size:13px}
+.pb-t th{position:sticky;top:0;z-index:3;text-align:left;padding:0 12px;height:40px;background:var(--surface-2);font-weight:700;font-size:10.5px;color:var(--ink-faint);letter-spacing:.11em;text-transform:uppercase;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pb-t th button{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:5px;max-width:100%;overflow:hidden;text-overflow:ellipsis;letter-spacing:inherit;text-transform:inherit;font-weight:700;color:inherit}
+.pb-t th button:hover{color:var(--wine-deep)}
+.pb-t th button:focus-visible{outline:2px solid var(--wine);outline-offset:3px;border-radius:4px}
+.pb-t th[aria-sort="ascending"],.pb-t th[aria-sort="descending"]{color:var(--wine-deep)}
+.pb-t th .arr{font-size:10px;opacity:.35}
+.pb-t th[aria-sort] .arr{opacity:1;color:var(--wine)}
+.pb-t td{padding:0 12px;height:var(--rowh,50px);border-bottom:1px solid var(--line);color:var(--ink);vertical-align:middle;overflow:hidden;background:var(--surface)}
+.pb-t.compact{--rowh:34px}
+.pb-t.compact td{font-size:12.5px}
+.pb-t tbody tr:hover td{background:var(--wine-mist)}
+.pb-t tbody tr.sel td{background:var(--wine-mist)}
+.pb-t tbody tr{cursor:pointer}
+.pb-t tbody tr:focus-visible{outline:2px solid var(--wine);outline-offset:-2px}
+.pb-t th.c-sel,.pb-t td.c-sel{width:42px;position:sticky;left:0;z-index:2;padding:0 0 0 14px}
+.pb-t th.c-sel{z-index:5}
+.pb-t th.c-title,.pb-t td.c-title{position:sticky;left:42px;z-index:2;box-shadow:1px 0 0 var(--line)}
+.pb-t th.c-title{z-index:5}
+.pb-t th.c-act,.pb-t td.c-act{width:150px;text-align:right}
+.pb-t th.num,.pb-t td.num{text-align:right}
+.pb-t th.num button{flex-direction:row-reverse}
+.pb-t input[type=checkbox]{accent-color:var(--wine);width:15px;height:15px;cursor:pointer}
+.ttl{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:700;line-height:1.3;color:var(--ink)}
+.pb-t.compact .ttl{-webkit-line-clamp:1}
+.t1{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mono{font-family:var(--mono);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.nul{color:var(--line-strong)}
+.lnk{color:var(--wine);font-weight:600;border-bottom:1px solid var(--wine-tint)}
+.lnk:hover{color:var(--wine-deep);border-bottom-color:var(--wine)}
+.tag{display:inline-block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line-strong);color:var(--ink-dim);vertical-align:middle}
+.tag.ok{background:var(--olive-soft);border-color:var(--olive);color:#4A5A33}
+.tag.warn{background:var(--brass-soft);border-color:var(--brass);color:#8a4a2c}
+.tag.teal{background:var(--wine-mist);border-color:var(--wine-tint);color:var(--wine-deep)}
+.db-metric{display:flex;align-items:center;gap:9px;justify-content:flex-start}
+.db-bar{height:6px;width:64px;background:var(--surface-2);border-radius:100px;overflow:hidden;flex:none}
+.db-bar>i{display:block;height:100%;background:var(--wine);border-radius:100px}
+.db-bar.low>i{background:var(--brass)}
+.db-metric-n{font-family:var(--mono);font-size:12px;color:var(--ink-dim);min-width:22px;font-variant-numeric:tabular-nums}
+.act{display:inline-flex;align-items:center;gap:6px}
+.abtn{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:28px;padding:0 11px;border-radius:9px;border:1px solid var(--line-strong);background:var(--surface);color:var(--wine);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.abtn:hover:not(.dis){background:var(--wine);border-color:var(--wine);color:var(--surface)}
+.abtn.dis{color:var(--ink-faint);opacity:.5;cursor:not-allowed}
+.abtn.busy{cursor:progress}
+.spin{width:11px;height:11px;border:2px solid var(--wine-tint);border-top-color:var(--wine);border-radius:50%;animation:pbspin .7s linear infinite;display:inline-block}
+.abtn:hover .spin{border-color:rgba(255,255,255,.4);border-top-color:#fff}
+@keyframes pbspin{to{transform:rotate(360deg)}}
+.pb-wrap.loading tbody{opacity:.5;transition:opacity .15s}
+.sk td .b{display:block;height:11px;border-radius:6px;background:linear-gradient(90deg,var(--surface-2),var(--bg-deep),var(--surface-2));background-size:200% 100%;animation:pbsh 1.2s linear infinite}
+@keyframes pbsh{to{background-position:-200% 0}}
+.pb-state{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:30px;background:var(--surface);z-index:6}
+.pb-state h3{margin:0;font-size:17px;color:var(--wine-deep)}
+.pb-state p{margin:0;max-width:460px;font-size:13px;line-height:1.55;color:var(--ink-dim)}
+.pb-state.err h3{color:#6F2A26}
+.pb-state .ic{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:var(--wine-mist);color:var(--wine)}
+.pb-state.err .ic{background:var(--brass-soft);color:#6F2A26}
+.pb-state .ic svg{width:20px;height:20px}
+
+/* ── footer: info · pager · exports ── */
+.pb-foot{flex:none;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:9px 14px;border-top:1px solid var(--line);background:var(--surface)}
+.pb-info{font-size:12px;color:var(--ink-dim);font-variant-numeric:tabular-nums;min-width:150px}
+.pb-info b{font-family:var(--mono);color:var(--ink)}
+.pb-pager{display:flex;align-items:center;gap:5px}
+.db-page-btn{border:1px solid var(--line);background:var(--surface);color:var(--ink-dim);border-radius:9px;min-width:32px;height:30px;padding:0 9px;font-size:12.5px;font-weight:600;cursor:pointer;transition:.12s;font-variant-numeric:tabular-nums}
+.db-page-btn:hover:not(:disabled){border-color:var(--wine);color:var(--wine);background:var(--wine-mist)}
+.db-page-btn:disabled{opacity:.4;cursor:default}
+.db-page-btn.cur{background:var(--wine);border-color:var(--wine);color:var(--surface);opacity:1}
+.pb-dots{color:var(--ink-faint);padding:0 3px}
+.pb-jump{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-faint)}
+.pb-jump input{width:58px;height:30px;border:1px solid var(--line-strong);border-radius:9px;padding:0 8px;font-size:12.5px;font-family:var(--mono);text-align:center;color:var(--ink)}
+.pb-jump input:focus{border-color:var(--wine);outline:none;box-shadow:0 0 0 3px var(--wine-mist)}
+.pb-exp{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.pb-exp .pb-btn{height:32px}
+
+/* ── detail drawer ── */
+.pb-scrim{position:fixed;inset:0;background:rgba(26,26,26,.28);z-index:40}
+.pb-drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,92vw);background:var(--surface);border-left:1px solid var(--line);box-shadow:var(--shadow-lg);z-index:41;display:flex;flex-direction:column;transform:translateX(0);animation:pbin .18s ease-out}
+@keyframes pbin{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+.pb-dh{flex:none;display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.pb-dh .sp{flex:1}
+.pb-dh button{height:30px;min-width:30px;padding:0 10px;border-radius:9px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-dim);font-weight:700;font-size:12px;cursor:pointer}
+.pb-dh button:hover:not(:disabled){background:var(--wine-mist);color:var(--wine-deep)}
+.pb-dh button:disabled{opacity:.4;cursor:default}
+.pb-db{flex:1;min-height:0;overflow:auto;padding:18px 22px 26px}
+.pb-db h2{margin:0 0 6px;font-size:18px;line-height:1.3;color:var(--wine-deep)}
+.pb-db .meta{font-size:12.5px;color:var(--ink-dim);line-height:1.55;margin-bottom:12px}
+.pb-db .meta .mono{font-size:12px}
+.pb-db .acts{display:flex;gap:8px;margin:12px 0 16px;flex-wrap:wrap}
+.pb-db h5{margin:18px 0 6px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+.pb-db .txt{font-size:13.5px;line-height:1.65;color:var(--ink);white-space:pre-wrap}
+.pb-db .claim{border-left:4px solid var(--wine);background:var(--wine-mist);border-radius:0 10px 10px 0;padding:10px 14px;font-size:13.5px;line-height:1.55;color:var(--wine-deep)}
+.pb-db .chips{display:flex;gap:6px;flex-wrap:wrap}
+.pb-db dl{margin:0;display:grid;grid-template-columns:150px 1fr;gap:6px 12px;font-size:12.5px}
+.pb-db dt{color:var(--ink-faint);font-family:var(--mono);font-size:11.5px}
+.pb-db dd{margin:0;color:var(--ink-dim);overflow-wrap:anywhere}
+.pb-db .none{font-size:12.5px;color:var(--ink-faint);font-style:italic}
+
+/* ── toast ── */
+.pb-toast{position:fixed;left:50%;bottom:64px;transform:translateX(-50%);z-index:60;max-width:min(620px,92vw);background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:12px;font-size:13px;line-height:1.45;box-shadow:var(--shadow-lg);display:flex;gap:12px;align-items:center}
+.pb-toast.err{background:#6F2A26}
+.pb-toast a{color:var(--wine-tint);font-weight:700;text-decoration:underline}
+
+@media (max-width:1180px){
+  .pb-body{padding:12px 14px 10px}
+  .pb-info{min-width:0}
+  .pb-exp .pb-btn{padding:0 10px}
+}
+@media (prefers-reduced-motion:reduce){.pb-drawer,.spin,.sk td .b{animation:none}}
+</style>
+</head>
+<body>
+<script>/* embed mode: ?embed=1 or inside an iframe → hide standalone chrome (set before paint) */try{if(location.search.indexOf('embed=1')>-1||window.self!==window.top){document.body.classList.add('embed');}}catch(e){}</script>
+
+<div class="pb">
+  <header class="pb-chrome">
+    <a class="back" href="/app/dev/index.html">&larr; Dev Area</a>
+    <span class="brand">MeatCODE</span>
+    <span class="sub">Papers browser &middot; dev preview (flag <b>papers_browser</b>)</span>
+  </header>
+
+  <div class="pb-body">
+    <div class="pb-mock" id="pbMock" hidden>MOCK DATA &mdash; layout check only. These ~120 rows are synthetic and generated in your browser; nothing here is from the database.</div>
+
+    <div class="pb-head">
+      <h1>Papers</h1><span class="pb-dev">dev</span>
+      <span class="pb-stats" id="pbStats" aria-live="polite">&nbsp;</span>
+    </div>
+
+    <div class="pb-bar" role="toolbar" aria-label="Papers toolbar">
+      <div class="pb-search">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>
+        <input id="pbQ" type="search" autocomplete="off" spellcheck="false" placeholder="Search title, authors, journal, DOI…" aria-label="Search papers" />
+        <button class="clr" id="pbQClr" type="button" aria-label="Clear search" hidden>&times;</button>
+      </div>
+      <button class="pb-btn" id="pbFiltBtn" type="button" aria-expanded="false" aria-controls="pbFilters">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M2 3.5h12M4.5 8h7M7 12.5h2"/></svg>Filters <span class="pb-badge" id="pbFiltN" hidden>0</span>
+      </button>
+      <div class="pb-pop">
+        <button class="pb-btn" id="pbColBtn" type="button" aria-haspopup="true" aria-expanded="false">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="2" y="3" width="3.2" height="10" rx="1"/><rect x="6.4" y="3" width="3.2" height="10" rx="1"/><rect x="10.8" y="3" width="3.2" height="10" rx="1"/></svg>Columns
+        </button>
+        <div class="pb-menu left" id="pbColMenu" role="group" aria-label="Choose columns" hidden></div>
+      </div>
+      <div class="pb-seg" role="group" aria-label="Row density">
+        <button type="button" id="pbDenC" data-d="comfortable" aria-pressed="true">Comfortable</button>
+        <button type="button" id="pbDenK" data-d="compact" aria-pressed="false">Compact</button>
+      </div>
+      <div class="pb-pop">
+        <button class="pb-btn" id="pbKeyBtn" type="button" aria-haspopup="true" aria-expanded="false" title="Keyboard shortcuts" aria-label="Keyboard shortcuts">?</button>
+        <div class="pb-menu left" id="pbKeyMenu" hidden>
+          <h4>Keyboard shortcuts</h4>
+          <div class="pb-keys">
+            <kbd>/</kbd><span>Focus search</span>
+            <kbd>f</kbd><span>Toggle filters</span>
+            <kbd>[</kbd> <span>Previous page &nbsp;<kbd>]</kbd> next</span>
+            <kbd>j</kbd><span>Next row &nbsp;<kbd>k</kbd> previous</span>
+            <kbd>x</kbd><span>Select / unselect focused row</span>
+            <kbd>Enter</kbd><span>Open detail drawer for focused row</span>
+            <kbd>Esc</kbd><span>Close drawer / menus</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pb-chips" id="pbChips" aria-label="Quick filters and active filters"></div>
+
+    <section class="pb-filters" id="pbFilters" aria-label="Filters" hidden>
+      <div class="pb-fgrid">
+        <fieldset class="pb-f"><legend>Year</legend>
+          <div class="pb-range"><input id="fYmin" type="number" inputmode="numeric" aria-label="Year from" placeholder="from"><span>to</span><input id="fYmax" type="number" inputmode="numeric" aria-label="Year to" placeholder="to"></div>
+        </fieldset>
+        <fieldset class="pb-f"><legend>Relevance (LLM, 0&ndash;100)</legend>
+          <div class="pb-range"><input id="fRmin" type="number" min="0" max="100" aria-label="Minimum relevance" placeholder="min"><span>to</span><input id="fRmax" type="number" min="0" max="100" aria-label="Maximum relevance" placeholder="max"></div>
+          <div class="hint">The corpus gate is &ge;&nbsp;60. Papers with no score are excluded by any relevance bound.</div>
+        </fieldset>
+        <fieldset class="pb-f"><legend>Citations</legend>
+          <input id="fCit" type="number" min="0" inputmode="numeric" aria-label="Minimum citations" placeholder="minimum citations">
+        </fieldset>
+        <fieldset class="pb-f"><legend>Has / audit / type</legend>
+          <select id="fDoi" aria-label="DOI"><option value="">DOI: any</option><option value="1">Has a DOI</option><option value="0">No DOI</option></select>
+          <select id="fAbs" aria-label="Abstract"><option value="">Abstract: any</option><option value="1">Has an abstract</option><option value="0">No abstract</option></select>
+          <select id="fTags" aria-label="Tags"><option value="">Tags: any</option><option value="1">Has tags</option><option value="0">Untagged</option></select>
+          <select id="fOra" aria-label="Oracle corpus"><option value="">Oracle corpus: any</option><option value="1">In Oracle corpus</option><option value="0">Not in Oracle corpus</option></select>
+          <label class="pb-tog"><input type="checkbox" id="fUrl"> Has URL</label>
+          <select id="fRev" aria-label="Review articles"><option value="">Reviews &amp; original (any)</option><option value="1">Reviews only</option><option value="0">Exclude reviews</option></select>
+        </fieldset>
+        <fieldset class="pb-f"><legend>Review status</legend><input class="pb-msearch" data-for="review_status" placeholder="Find…" aria-label="Find review status"><div class="pb-mlist" data-key="review_status"></div></fieldset>
+        <fieldset class="pb-f"><legend>Study type</legend><input class="pb-msearch" data-for="study_type" placeholder="Find…" aria-label="Find study type"><div class="pb-mlist" data-key="study_type"></div></fieldset>
+        <fieldset class="pb-f"><legend>Trust tier</legend><input class="pb-msearch" data-for="trust_tier" placeholder="Find…" aria-label="Find trust tier"><div class="pb-mlist" data-key="trust_tier"></div></fieldset>
+        <fieldset class="pb-f"><legend>Topic</legend><input class="pb-msearch" data-for="topic" placeholder="Find topic…" aria-label="Find topic"><div class="pb-mlist" data-key="topic"></div></fieldset>
+        <fieldset class="pb-f"><legend>Tag</legend><input class="pb-msearch" data-for="tag" placeholder="Find tag…" aria-label="Find tag"><div class="pb-mlist" data-key="tag"></div></fieldset>
+      </div>
+    </section>
+
+    <div class="pb-card">
+      <div class="pb-sel" id="pbSel" role="region" aria-label="Selection" hidden>
+        <span><span class="n" id="pbSelN">0</span> selected</span>
+        <button type="button" id="pbSelCsv">Export CSV</button>
+        <button type="button" id="pbSelXlsx">Export XLSX</button>
+        <button type="button" id="pbSelAll" class="link">Select all matching</button>
+        <span class="sp"></span>
+        <button type="button" id="pbSelClr" class="link">Clear</button>
+      </div>
+      <div class="pb-wrap" id="pbWrap">
+        <table class="pb-t" id="pbT" aria-label="Papers" aria-busy="false">
+          <colgroup id="pbCg"></colgroup>
+          <thead id="pbHead"></thead>
+          <tbody id="pbBody"></tbody>
+        </table>
+        <div class="pb-state" id="pbState" hidden role="status"></div>
+      </div>
+      <div class="pb-foot">
+        <div class="pb-info" id="pbInfo" aria-live="polite">&nbsp;</div>
+        <nav class="pb-pager" id="pbPager" aria-label="Pagination"></nav>
+        <div class="pb-jump" id="pbJump" hidden><label for="pbJumpIn">Go to</label><input id="pbJumpIn" type="number" min="1" inputmode="numeric" aria-label="Jump to page"><button class="db-page-btn" id="pbJumpGo" type="button">Go</button></div>
+        <div class="pb-exp">
+          <button class="pb-btn" id="pbExpF" type="button">Export filtered (CSV)</button>
+          <button class="pb-btn primary" id="pbExpAll" type="button">Download entire papers table (CSV)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pb-scrim" id="pbScrim" hidden></div>
+<aside class="pb-drawer" id="pbDrawer" role="dialog" aria-modal="true" aria-label="Paper details" hidden></aside>
+<div class="pb-toast" id="pbToast" role="status" aria-live="polite" hidden></div>
+
+<script>
+/* Papers browser — dev module (flag papers_browser). Same-origin API: /api/papers-browser*.
+   ?mock=1 swaps the network layer for ~120 synthetic rows generated client-side (never otherwise). */
+(function () {
+  'use strict';
+
+  /* ───────────── constants ───────────── */
+  var API = '/api/papers-browser';
+  var MOCK = /[?&]mock=1(&|$)/.test(location.search);
+  var PAGE_SIZE = 50;
+  var GATE = 60;                       // corpus relevance gate (relevance_llm >= 60)
+  var COLS_KEY = 'mc_papers_cols_v1';
+  var DENS_KEY = 'mc_papers_density_v1';
+  var SORTS = ['year', 'citations', 'relevance', 'priority', 'title', 'authors', 'journal', 'created'];
+  var ASC_FIRST = { title: 1, authors: 1, journal: 1 };
+
+  /* Every column of the list payload. `sort` = API sort key. Defaults = Lior's MINIMAL set. */
+  var COLS = [
+    { k: 'title',          l: 'Title',         sort: 'title',     w: 400, def: 1, lock: 1 },
+    { k: 'authors',        l: 'Authors',       sort: 'authors',   w: 210, def: 1 },
+    { k: 'year',           l: 'Year',          sort: 'year',      w: 78,  def: 1, num: 1 },
+    { k: 'journal',        l: 'Journal',       sort: 'journal',   w: 200, def: 1 },
+    { k: 'doi',            l: 'DOI',           w: 200, def: 1 },
+    { k: 'citation_count', l: 'Citations',     sort: 'citations', w: 104, def: 1, num: 1 },
+    { k: 'venue',          l: 'Venue',         w: 170 },
+    { k: 'relevance_llm',  l: 'Relevance',     sort: 'relevance', w: 138 },
+    { k: 'in_oracle',      l: 'In Oracle?',    w: 100 },
+    { k: 'priority_score', l: 'Priority',      sort: 'priority',  w: 94, num: 1 },
+    { k: 'review_status',  l: 'Review status', w: 134 },
+    { k: 'trust_tier',     l: 'Trust tier',    w: 112 },
+    { k: 'study_type',     l: 'Study type',    w: 144 },
+    { k: 'is_review',      l: 'Review?',       w: 92 },
+    { k: 'source_type',    l: 'Source type',   w: 124 },
+    { k: 'url',            l: 'URL',           w: 180 },
+    { k: 'doi_url',        l: 'DOI URL',       w: 180 },
+    { k: 'created_at',     l: 'Added',         sort: 'created',   w: 112 },
+    { k: 'id',             l: 'ID',            w: 76, num: 1 }
+  ];
+  var COLMAP = {}; COLS.forEach(function (c) { COLMAP[c.k] = c; });
+
+  /* ───────────── helpers ───────────── */
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function nf(n) { try { return Number(n).toLocaleString('en-US'); } catch (e) { return String(n); } }
+  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function isNum(v) { return v !== '' && v != null && isFinite(Number(v)); }
+  function nil() { return '<span class="nul">—</span>'; }
+  function authorsText(a) { return Array.isArray(a) ? a.join('; ') : (a == null ? '' : String(a)); }
+  function safeUrl(u) { return /^https?:\/\//i.test(String(u || '')) ? String(u) : ''; }
+  function dateOnly(v) { if (!v) return ''; var m = String(v).match(/^\d{4}-\d{2}-\d{2}/); return m ? m[0] : String(v); }
+  function paperLink(r) {
+    return safeUrl(r.doi_url) || safeUrl(r.url) || (r.doi ? 'https://doi.org/' + encodeURI(String(r.doi)) : '');
+  }
+  function stamp() { var d = new Date(); function p(n) { return (n < 10 ? '0' : '') + n; } return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()); }
+
+  /* ───────────── state ───────────── */
+  function defaultState() {
+    return { page: 1, q: '', year_min: '', year_max: '', min_relevance: '', max_relevance: '',
+             review_status: [], study_type: [], trust_tier: [], topic: [], tag: [],
+             has_doi: '', has_abstract: '', has_tags: '', in_oracle: '', has_url: false, is_review: '', min_citations: '', sort: 'year', dir: 'desc' };
+  }
+  var S = defaultState();
+  var facets = null;                 // GET /facets payload (or null)
+  var data = { items: [], total: 0, pages: 0 };
+  var sel = new Set();               // selected ids — survives paging / filtering
+  var visCols = [];                  // visible column keys (ordered by COLS)
+  var density = 'comfortable';
+  var reqSeq = 0, aborter = null, firstLoad = true, lastRowIdx = -1;
+  var rowCache = {};                 // id → full row (POST /rows)
+  var pdfCache = {};                 // id → pdf lookup result
+  var drawerId = null, drawerReturn = null;
+  var disabledEnv = false;
+
+  /* ── querystring (API) + hash (shareable view) ── */
+  function listParams(s, o) {
+    var p = [];
+    function add(k, v) {
+      if (Array.isArray(v)) v = v.join(',');
+      if (v === '' || v == null || v === false) return;
+      p.push(encodeURIComponent(k) + '=' + encodeURIComponent(v));
+    }
+    if (o.paging) { add('page', s.page); if (!o.hash) add('page_size', PAGE_SIZE); }
+    add('q', (s.q || '').trim());
+    add('year_min', s.year_min); add('year_max', s.year_max);
+    add('min_relevance', s.min_relevance); add('max_relevance', s.max_relevance);
+    add('review_status', s.review_status); add('study_type', s.study_type); add('trust_tier', s.trust_tier);
+    add('topic', s.topic); add('tag', s.tag);
+    add('has_doi', s.has_doi); add('has_abstract', s.has_abstract); add('has_tags', s.has_tags); add('in_oracle', s.in_oracle);
+    if (s.has_url) add('has_url', '1');
+    add('is_review', s.is_review);
+    add('min_citations', s.min_citations);
+    add('sort', s.sort); add('dir', s.dir);
+    return p.join('&');
+  }
+  function readHash() {
+    var s = defaultState(), h = (location.hash || '').replace(/^#/, '');
+    if (!h) return s;
+    h.split('&').forEach(function (kv) {
+      var i = kv.indexOf('='); if (i < 1) return;
+      var k, v;
+      try { k = decodeURIComponent(kv.slice(0, i)); v = decodeURIComponent(kv.slice(i + 1).replace(/\+/g, ' ')); } catch (e) { return; }
+      if (k === 'page') { if (/^\d+$/.test(v) && +v > 0) s.page = +v; }
+      else if (k === 'q') s.q = v;
+      else if (k === 'year_min' || k === 'year_max' || k === 'min_relevance' || k === 'max_relevance' || k === 'min_citations') { if (/^\d+$/.test(v)) s[k] = v; }
+      else if (k === 'review_status' || k === 'study_type' || k === 'trust_tier' || k === 'topic' || k === 'tag') s[k] = v.split(',').filter(Boolean);
+      else if (k === 'has_doi' || k === 'has_abstract' || k === 'has_tags' || k === 'in_oracle') { if (v === '1' || v === '0') s[k] = v; }
+      else if (k === 'has_url') s.has_url = v === '1';
+      else if (k === 'is_review') { if (v === '1' || v === '0') s.is_review = v; }
+      else if (k === 'sort') { if (SORTS.indexOf(v) > -1) s.sort = v; }
+      else if (k === 'dir') { if (v === 'asc' || v === 'desc') s.dir = v; }
+    });
+    return s;
+  }
+  function writeHash() {
+    var d = defaultState(), cur = listParams(S, { paging: true, hash: true }), def = listParams(d, { paging: true, hash: true });
+    var h = (cur === def || cur === 'page=1&sort=year&dir=desc') ? '' : cur;
+    try { history.replaceState(null, '', location.pathname + location.search + (h ? '#' + h : '')); } catch (e) {}
+  }
+
+  /* ───────────── network layer (real | mock) ───────────── */
+  function parseResp(r) {
+    return r.text().then(function (t) { var d = null; try { d = t ? JSON.parse(t) : null; } catch (e) {} return { ok: r.ok, status: r.status, data: d, res: r }; });
+  }
+  function getJSON(url, signal) {
+    return fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' }, signal: signal }).then(parseResp);
+  }
+  function postRaw(url, body) {
+    return fetch(url, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  }
+  function apiList(s, signal) { return MOCK ? Mock.list(s) : getJSON(API + '?' + listParams(s, { paging: true }), signal); }
+  function apiFacets() { return MOCK ? Mock.facets() : getJSON(API + '/facets'); }
+  function apiRows(ids) {
+    if (MOCK) return Mock.rows(ids);
+    return postRaw(API + '/rows', { ids: ids }).then(parseResp);
+  }
+  function apiPdf(id) { return MOCK ? Mock.pdf(id) : getJSON(API + '/pdf?id=' + encodeURIComponent(id)); }
+
+  /* ───────────── mock (only with ?mock=1) ───────────── */
+  var Mock = (function () {
+    if (!MOCK) return null;
+    function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+    var R = rng(818);
+    function pick(a) { return a[Math.floor(R() * a.length)]; }
+    var journals = ['Mock Journal of Food Science', 'Synthetic Reviews in Flavor Chemistry', 'Placeholder Meat Science', 'Lorem Cultivated Meat Letters', 'Test Bioprocessing Reports'];
+    var surn = ['Mockman', 'Synthetica', 'Placeholder', 'Testwell', 'Lorem', 'Ipsum', 'Dummy', 'Faker'];
+    var statuses = ['unreviewed', 'reviewed', 'flagged'], types = ['in vitro', 'review', 'sensory', 'modelling', 'clinical'], tiers = ['tier 1', 'tier 2', 'tier 3'];
+    var topics = [{ slug: 'mock-maillard', name: 'Mock · Maillard' }, { slug: 'mock-lipid', name: 'Mock · Lipid oxidation' }, { slug: 'mock-heme', name: 'Mock · Heme' }, { slug: 'mock-scaffold', name: 'Mock · Scaffolds' }];
+    var tagdefs = [{ category: 'mock-category', slug: 'mock-tag-a', name: 'Mock tag A' }, { category: 'mock-category', slug: 'mock-tag-b', name: 'Mock tag B' }, { category: 'mock-other', slug: 'mock-tag-c', name: 'Mock tag C' }];
+    var rows = [];
+    for (var i = 1; i <= 120; i++) {
+      var hasRel = R() > 0.12, rel = hasRel ? Math.round((R() < 0.39 ? 60 + R() * 40 : R() * 60) * 10) / 10 : null;
+      var isRev = R() < 0.18, doi = R() < 0.78 ? '10.0000/mock.' + (1000 + i) : null;
+      var tp = topics.filter(function () { return R() < 0.3; }), tg = tagdefs.filter(function () { return R() < 0.3; });
+      rows.push({
+        id: i, title: '[MOCK] Synthetic paper #' + i + ' — placeholder title about ' + pick(['aroma precursors', 'Maillard browning', 'lipid oxidation', 'heme analogues', 'texture scaffolds']) + ' (layout test only)',
+        authors: pick(surn) + ' A., ' + pick(surn) + ' B., ' + pick(surn) + ' C.' , year: R() < 0.05 ? null : 1998 + Math.floor(R() * 29),
+        journal: R() < 0.1 ? null : pick(journals), venue: R() < 0.5 ? null : pick(journals), doi: doi, in_oracle: false,
+        doi_url: doi ? 'https://example.invalid/doi/' + doi : null, url: R() < 0.7 ? 'https://example.invalid/paper/' + i : null,
+        citation_count: R() < 0.15 ? null : Math.floor(Math.pow(R(), 3) * 400), relevance_llm: rel,
+        priority_score: R() < 0.4 ? null : Math.round(R() * 100) / 10, review_status: R() < 0.2 ? null : pick(statuses),
+        trust_tier: R() < 0.5 ? null : pick(tiers), study_type: R() < 0.35 ? null : (isRev ? 'review' : pick(types)), is_review: isRev,
+        source_type: R() < 0.3 ? null : 'journal-article', created_at: '2026-0' + (1 + Math.floor(R() * 9)) + '-' + (10 + Math.floor(R() * 18)) + 'T10:00:00Z',
+        _topics: tp.map(function (t) { return t.slug; }), _tags: tg.map(function (t) { return t.slug; }),
+        _full: { abstract: 'MOCK abstract. This is synthetic filler text for paper #' + i + ' to check the drawer layout. It is not from the database.', main_claim: R() < 0.5 ? null : 'MOCK main claim for #' + i + '.', tags: tg }
+      });
+      var rr = rows[rows.length - 1]; rr.in_oracle = !!((rr.doi || rr.url) && rr.relevance_llm != null && rr.relevance_llm >= 60);
+      if (R() < 0.06) rr._full.abstract = null;
+    }
+    function wait(v, ms) { return new Promise(function (res) { setTimeout(function () { res(v); }, ms || 160); }); }
+    function filt(s) {
+      var q = (s.q || '').trim().toLowerCase();
+      return rows.filter(function (r) {
+        if (q && (r.title + ' ' + authorsText(r.authors) + ' ' + (r.journal || '') + ' ' + (r.doi || '')).toLowerCase().indexOf(q) < 0) return false;
+        if (isNum(s.year_min) && !(r.year != null && r.year >= +s.year_min)) return false;
+        if (isNum(s.year_max) && !(r.year != null && r.year <= +s.year_max)) return false;
+        if (isNum(s.min_relevance) && !(r.relevance_llm != null && r.relevance_llm >= +s.min_relevance)) return false;
+        if (isNum(s.max_relevance) && !(r.relevance_llm != null && r.relevance_llm <= +s.max_relevance)) return false;
+        if (s.review_status.length && s.review_status.indexOf(r.review_status) < 0) return false;
+        if (s.study_type.length && s.study_type.indexOf(r.study_type) < 0) return false;
+        if (s.trust_tier.length && s.trust_tier.indexOf(r.trust_tier) < 0) return false;
+        if (s.topic.length && !s.topic.some(function (t) { return r._topics.indexOf(t) > -1; })) return false;
+        if (s.tag.length && !s.tag.some(function (t) { return r._tags.indexOf(t) > -1; })) return false;
+        if (s.has_doi === '1' && !r.doi) return false;
+        if (s.has_doi === '0' && r.doi) return false;
+        if (s.has_abstract === '1' && !r._full.abstract) return false;
+        if (s.has_abstract === '0' && r._full.abstract) return false;
+        if (s.has_tags === '1' && !r._tags.length) return false;
+        if (s.has_tags === '0' && r._tags.length) return false;
+        if (s.in_oracle === '1' && !r.in_oracle) return false;
+        if (s.in_oracle === '0' && r.in_oracle) return false;
+        if (s.has_url && !r.url) return false;
+        if (s.is_review === '1' && !r.is_review) return false;
+        if (s.is_review === '0' && r.is_review) return false;
+        if (isNum(s.min_citations) && !((r.citation_count || 0) >= +s.min_citations)) return false;
+        return true;
+      });
+    }
+    var SK = { year: 'year', citations: 'citation_count', relevance: 'relevance_llm', priority: 'priority_score', title: 'title', authors: 'authors', journal: 'journal', created: 'created_at' };
+    function sorted(list, s) {
+      var k = SK[s.sort] || 'year', m = s.dir === 'asc' ? 1 : -1;
+      return list.slice().sort(function (a, b) {
+        var x = a[k], y = b[k]; if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1;
+        if (typeof x === 'string') return m * String(x).localeCompare(String(y)); return m * (x - y);
+      });
+    }
+    function strip(r) { var o = {}; Object.keys(r).forEach(function (k) { if (k.charAt(0) !== '_') o[k] = r[k]; }); return o; }
+    function counts(key) { var m = {}; rows.forEach(function (r) { if (r[key] != null) m[r[key]] = (m[r[key]] || 0) + 1; }); return Object.keys(m).sort().map(function (v) { return { value: v, count: m[v] }; }); }
+    return {
+      csvOf: function (s) { return filt(s); },
+      all: function () { return rows; },
+      list: function (s) {
+        var f = sorted(filt(s), s), pages = Math.max(1, Math.ceil(f.length / PAGE_SIZE)), pg = Math.min(Math.max(1, s.page), pages);
+        return wait({ ok: true, status: 200, data: { items: f.slice((pg - 1) * PAGE_SIZE, pg * PAGE_SIZE).map(strip), total: f.length, page: pg, page_size: PAGE_SIZE, pages: f.length ? pages : 0, sort: s.sort, dir: s.dir } });
+      },
+      facets: function () {
+        return wait({ ok: true, status: 200, data: { year_min: 1998, year_max: 2026, review_status: counts('review_status'), study_type: counts('study_type'), trust_tier: counts('trust_tier'),
+          topics: topics.map(function (t) { return { slug: t.slug, name: t.name, count: rows.filter(function (r) { return r._topics.indexOf(t.slug) > -1; }).length }; }),
+          tags: tagdefs.map(function (t) { return { category: t.category, slug: t.slug, name: t.name, count: rows.filter(function (r) { return r._tags.indexOf(t.slug) > -1; }).length }; }),
+          totals: { papers: rows.length, with_doi: rows.filter(function (r) { return r.doi; }).length, with_url: rows.filter(function (r) { return r.url; }).length, reviews: rows.filter(function (r) { return r.is_review; }).length } } }, 120);
+      },
+      rows: function (ids) {
+        var set = {}; ids.forEach(function (i) { set[i] = 1; });
+        var items = rows.filter(function (r) { return set[r.id]; }).map(function (r) { var o = strip(r); o.abstract = r._full.abstract; o.main_claim = r._full.main_claim; o.tags = r._full.tags; return o; });
+        return wait({ ok: true, status: 200, data: { items: items, missing: [] } }, 120);
+      },
+      pdf: function (id) { return wait({ ok: true, status: 200, data: { ok: true, id: id, doi: null, landing_url: null, pdf_url: null, source: 'none', cached: false, _mock: true } }, 450); }
+    };
+  })();
+
+  /* ───────────── toast ───────────── */
+  var toastT = null;
+  function toast(msg, o) {
+    o = o || {}; var el = $('pbToast');
+    el.className = 'pb-toast' + (o.err ? ' err' : '');
+    el.innerHTML = '<span>' + esc(msg) + '</span>' + (o.href ? ' <a href="' + esc(o.href) + '" target="_blank" rel="noopener noreferrer">' + esc(o.linkText || 'Open') + '</a>' : '');
+    el.hidden = false; clearTimeout(toastT);
+    toastT = setTimeout(function () { el.hidden = true; }, o.ms || 5200);
+  }
+
+  /* ───────────── columns ───────────── */
+  function loadCols() {
+    var def = COLS.filter(function (c) { return c.def; }).map(function (c) { return c.k; }), keys = null;
+    try { var raw = lsGet(COLS_KEY); if (raw) keys = JSON.parse(raw); } catch (e) { keys = null; }
+    if (!Array.isArray(keys)) keys = def;
+    keys = keys.filter(function (k) { return COLMAP[k]; });
+    if (keys.indexOf('title') < 0) keys.push('title');
+    setCols(keys, true);
+  }
+  function setCols(keys, skipSave) {
+    visCols = COLS.filter(function (c) { return keys.indexOf(c.k) > -1; }).map(function (c) { return c.k; });
+    if (!skipSave) lsSet(COLS_KEY, JSON.stringify(visCols));
+  }
+  function buildColMenu() {
+    var h = '<h4>Columns</h4>';
+    COLS.forEach(function (c) {
+      h += '<label class="' + (c.lock ? 'lock' : '') + '"><input type="checkbox" data-col="' + c.k + '"' + (visCols.indexOf(c.k) > -1 ? ' checked' : '') + (c.lock ? ' disabled' : '') + '> ' + esc(c.l) + '</label>';
+    });
+    h += '<div class="foot"><button type="button" data-colact="min">Minimal</button><button type="button" data-colact="all">All columns</button></div>';
+    $('pbColMenu').innerHTML = h;
+  }
+
+  /* ───────────── cell renderers ───────────── */
+  function tagCell(v, cls) { return v == null || v === '' ? nil() : '<span class="tag ' + (cls || '') + '" title="' + esc(v) + '">' + esc(v) + '</span>'; }
+  function linkCell(txt, href, mono) {
+    if (!txt) return nil();
+    var u = safeUrl(href);
+    return u ? '<a class="lnk t1' + (mono ? ' mono' : '') + '" href="' + esc(u) + '" target="_blank" rel="noopener noreferrer" title="' + esc(txt) + '">' + esc(txt) + '</a>' : '<span class="t1' + (mono ? ' mono' : '') + '" title="' + esc(txt) + '">' + esc(txt) + '</span>';
+  }
+  var RENDER = {
+    title: function (r) { return '<span class="ttl" title="' + esc(r.title) + '">' + esc(r.title || '(untitled)') + '</span>'; },
+    authors: function (r) { var a = authorsText(r.authors); return a ? '<span class="t1" title="' + esc(a) + '">' + esc(a) + '</span>' : nil(); },
+    year: function (r) { return r.year == null ? nil() : '<span class="mono">' + esc(r.year) + '</span>'; },
+    journal: function (r) { return r.journal ? '<span class="t1" title="' + esc(r.journal) + '">' + esc(r.journal) + '</span>' : nil(); },
+    venue: function (r) { return r.venue ? '<span class="t1" title="' + esc(r.venue) + '">' + esc(r.venue) + '</span>' : nil(); },
+    doi: function (r) { return linkCell(r.doi, r.doi_url || (r.doi ? 'https://doi.org/' + r.doi : ''), true); },
+    citation_count: function (r) { return r.citation_count == null ? nil() : '<span class="mono">' + nf(r.citation_count) + '</span>'; },
+    relevance_llm: function (r) {
+      if (r.relevance_llm == null) return nil();
+      var v = Math.max(0, Math.min(100, Number(r.relevance_llm)));
+      return '<span class="db-metric" title="relevance_llm ' + esc(r.relevance_llm) + (v >= GATE ? ' — passes the ≥ ' + GATE + ' gate' : ' — below the ≥ ' + GATE + ' gate') + '"><span class="db-bar' + (v < GATE ? ' low' : '') + '"><i style="width:' + v + '%"></i></span><span class="db-metric-n">' + Math.round(v) + '</span></span>';
+    },
+    priority_score: function (r) { return r.priority_score == null ? nil() : '<span class="mono">' + esc(Number(r.priority_score).toFixed(1)) + '</span>'; },
+    review_status: function (r) { return tagCell(r.review_status, r.review_status === 'reviewed' ? 'ok' : (r.review_status === 'flagged' ? 'warn' : '')); },
+    trust_tier: function (r) { return tagCell(r.trust_tier, 'teal'); },
+    study_type: function (r) { return tagCell(r.study_type); },
+    in_oracle: function (r) { return r.in_oracle == null ? nil() : (r.in_oracle ? '<span class="tag ok" title="Citable and relevance >= 60 — the exact Oracle predicate">✓</span>' : '<span class="nul" title="Not in the Oracle corpus (not citable or relevance < 60)">—</span>'); },
+    is_review: function (r) { return r.is_review == null ? nil() : (r.is_review ? '<span class="tag teal">Review</span>' : '<span class="nul">no</span>'); },
+    source_type: function (r) { return tagCell(r.source_type); },
+    url: function (r) { return linkCell(r.url, r.url, true); },
+    doi_url: function (r) { return linkCell(r.doi_url, r.doi_url, true); },
+    created_at: function (r) { var d = dateOnly(r.created_at); return d ? '<span class="mono">' + esc(d) + '</span>' : nil(); },
+    id: function (r) { return '<span class="mono">' + esc(r.id) + '</span>'; }
+  };
+  function actionsCell(r) {
+    var href = paperLink(r);
+    var open = href ? '<a class="abtn" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer" aria-label="Open paper: ' + esc(r.title) + '" title="Open the paper (DOI link, else source URL)">Open</a>'
+                    : '<span class="abtn dis" aria-disabled="true" title="No DOI or URL on record">Open</span>';
+    var pdf = (r.doi || href) ? '<button type="button" class="abtn pb-pdf" data-id="' + esc(r.id) + '" aria-label="Find open-access PDF: ' + esc(r.title) + '" title="Best-effort open-access PDF lookup">PDF</button>'
+                              : '<span class="abtn dis" aria-disabled="true" title="No DOI or URL to look up">PDF</span>';
+    return '<span class="act">' + open + pdf + '</span>';
+  }
+
+  /* ───────────── table render ───────────── */
+  function renderHead() {
+    var cg = '<col style="width:42px">', th = '<tr><th class="c-sel" scope="col"><input type="checkbox" id="pbAllPg" aria-label="Select all papers on this page"></th>', sum = 42;
+    visCols.forEach(function (k) {
+      var c = COLMAP[k]; cg += '<col style="width:' + c.w + 'px">'; sum += c.w;
+      var cls = (k === 'title' ? 'c-title ' : '') + (c.num ? 'num' : ''), ar = 'none', arrow = '';
+      var attrs = '';
+      if (c.sort) {
+        if (S.sort === c.sort) { ar = S.dir === 'asc' ? 'ascending' : 'descending'; arrow = S.dir === 'asc' ? '▲' : '▼'; attrs = ' aria-sort="' + ar + '"'; }
+        else arrow = '↕';
+        th += '<th scope="col" class="' + cls + '"' + attrs + '><button type="button" data-sort="' + c.sort + '" title="Sort by ' + esc(c.l) + '">' + esc(c.l) + ' <span class="arr" aria-hidden="true">' + arrow + '</span></button></th>';
+      } else th += '<th scope="col" class="' + cls + '">' + esc(c.l) + '</th>';
+    });
+    cg += '<col style="width:150px">'; sum += 150;
+    th += '<th class="c-act" scope="col">Open</th></tr>';
+    $('pbCg').innerHTML = cg; $('pbHead').innerHTML = th;
+    $('pbT').style.minWidth = sum + 'px';
+  }
+  function renderBody() {
+    var h = '';
+    data.items.forEach(function (r, i) {
+      var on = sel.has(r.id);
+      h += '<tr data-id="' + esc(r.id) + '" data-i="' + i + '" tabindex="0" class="' + (on ? 'sel' : '') + '" aria-selected="' + on + '">';
+      h += '<td class="c-sel"><input type="checkbox" class="pb-ck" aria-label="Select: ' + esc(r.title) + '"' + (on ? ' checked' : '') + '></td>';
+      visCols.forEach(function (k) {
+        var c = COLMAP[k];
+        h += '<td class="' + (k === 'title' ? 'c-title ' : '') + (c.num ? 'num' : '') + '">' + RENDER[k](r) + '</td>';
+      });
+      h += '<td class="c-act">' + actionsCell(r) + '</td></tr>';
+    });
+    $('pbBody').innerHTML = h;
+    syncPageCk();
+  }
+  function renderSkeleton() {
+    var h = '';
+    for (var i = 0; i < 12; i++) {
+      h += '<tr class="sk"><td class="c-sel"></td>';
+      visCols.forEach(function (k) { h += '<td class="' + (k === 'title' ? 'c-title' : '') + '"><span class="b" style="width:' + (k === 'title' ? 80 : 45 + (i * 7 + k.length * 5) % 40) + '%"></span></td>'; });
+      h += '<td class="c-act"><span class="b" style="width:70%;margin-left:auto"></span></td></tr>';
+    }
+    $('pbBody').innerHTML = h;
+  }
+  function syncPageCk() {
+    var all = $('pbAllPg'); if (!all) return;
+    var n = 0; data.items.forEach(function (r) { if (sel.has(r.id)) n++; });
+    all.checked = data.items.length > 0 && n === data.items.length;
+    all.indeterminate = n > 0 && n < data.items.length;
+  }
+  function showState(kind, title, msg, retry) {
+    var el = $('pbState'), icon = kind === 'err'
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>';
+    el.className = 'pb-state' + (kind === 'err' ? ' err' : '');
+    el.innerHTML = '<div class="ic">' + icon + '</div><h3>' + esc(title) + '</h3><p>' + esc(msg) + '</p>' + (retry || '');
+    el.hidden = false; $('pbT').style.visibility = 'hidden';
+  }
+  function hideState() { $('pbState').hidden = true; $('pbT').style.visibility = ''; }
+
+  /* ───────────── load ───────────── */
+  function load(opts) {
+    opts = opts || {};
+    var seq = ++reqSeq;
+    if (aborter) { try { aborter.abort(); } catch (e) {} }
+    aborter = (!MOCK && window.AbortController) ? new AbortController() : null;
+    writeHash();
+    var wrap = $('pbWrap'); hideState();
+    $('pbT').setAttribute('aria-busy', 'true');
+    if (firstLoad || !data.items.length) renderSkeleton(); else wrap.classList.add('loading');
+    apiList(S, aborter ? aborter.signal : undefined).then(function (r) {
+      if (seq !== reqSeq) return;
+      wrap.classList.remove('loading'); $('pbT').setAttribute('aria-busy', 'false');
+      if (r.status === 404) { return envDisabled(); }
+      if (!r.ok || !r.data || !Array.isArray(r.data.items)) { return loadError(r.status, r.data); }
+      var d = r.data;
+      if (d.pages > 0 && S.page > d.pages) { S.page = d.pages; return load(); }
+      data = { items: d.items, total: d.total || 0, pages: d.pages || 0 };
+      firstLoad = false; disabledEnv = false;
+      renderHead(); renderBody(); renderFoot(); renderChips(); renderSelBar(); syncControls();
+      if (!data.items.length) showState('empty', 'No papers match these filters', 'Try widening the year range, lowering the relevance bound, or clearing a filter.', '<button type="button" class="pb-btn" data-act="clearall">Clear all filters</button>');
+      if (opts.scrollTop !== false) $('pbWrap').scrollTop = 0;
+    }).catch(function (e) {
+      if (e && e.name === 'AbortError') return;
+      if (seq !== reqSeq) return;
+      wrap.classList.remove('loading'); $('pbT').setAttribute('aria-busy', 'false');
+      loadError(0, null);
+    });
+  }
+  function envDisabled() {
+    disabledEnv = true; data = { items: [], total: 0, pages: 0 };
+    $('pbBody').innerHTML = ''; $('pbInfo').innerHTML = '&nbsp;'; $('pbPager').innerHTML = ''; $('pbJump').hidden = true;
+    ['pbExpF', 'pbExpAll'].forEach(function (id) { $(id).disabled = true; });
+    showState('empty', 'Papers browser isn’t enabled on this environment', 'The papers_browser feature flag is off here (or the server doesn’t have the API yet). It is dev-only for now — turn it on in the Release Center.');
+  }
+  function loadError(status, body) {
+    var msg = status === 503 ? 'The database is temporarily unavailable (503). Nothing is wrong with your filters — try again in a moment.'
+            : (status === 401 || status === 403) ? 'Your sign-in expired or you don’t have access. Reload the page and sign in again.'
+            : status === 400 ? ((body && (body.error && (body.error.message || body.error))) || 'The server rejected one of the filters (400).')
+            : status ? 'The server returned an error (' + status + ').' : 'Couldn’t reach the server. Check your connection.';
+    $('pbBody').innerHTML = '';
+    showState('err', 'Couldn’t load papers', String(msg), '<button type="button" class="pb-btn primary" data-act="retry">Retry</button>');
+  }
+
+  /* ───────────── footer / pager ───────────── */
+  function renderFoot() {
+    var t = data.total, a = t ? (S.page - 1) * PAGE_SIZE + 1 : 0, b = Math.min(S.page * PAGE_SIZE, t);
+    $('pbInfo').innerHTML = t ? 'Showing <b>' + nf(a) + '–' + nf(b) + '</b> of <b>' + nf(t) + '</b>' : 'Showing <b>0</b> of <b>0</b>';
+    var pg = data.pages, cur = S.page, h = '';
+    if (pg > 1) {
+      h += '<button class="db-page-btn" data-pg="1" ' + (cur === 1 ? 'disabled' : '') + ' aria-label="First page" title="First">&laquo;</button>';
+      h += '<button class="db-page-btn" data-pg="' + (cur - 1) + '" ' + (cur === 1 ? 'disabled' : '') + ' aria-label="Previous page" title="Previous ( [ )">&lsaquo;</button>';
+      var lo = Math.max(1, cur - 2), hi = Math.min(pg, cur + 2);
+      if (lo > 1) { h += '<button class="db-page-btn" data-pg="1">1</button>'; if (lo > 2) h += '<span class="pb-dots">…</span>'; }
+      for (var i = lo; i <= hi; i++) h += '<button class="db-page-btn' + (i === cur ? ' cur' : '') + '" data-pg="' + i + '"' + (i === cur ? ' aria-current="page"' : '') + ' aria-label="Page ' + i + '">' + i + '</button>';
+      if (hi < pg) { if (hi < pg - 1) h += '<span class="pb-dots">…</span>'; h += '<button class="db-page-btn" data-pg="' + pg + '">' + pg + '</button>'; }
+      h += '<button class="db-page-btn" data-pg="' + (cur + 1) + '" ' + (cur === pg ? 'disabled' : '') + ' aria-label="Next page" title="Next ( ] )">&rsaquo;</button>';
+      h += '<button class="db-page-btn" data-pg="' + pg + '" ' + (cur === pg ? 'disabled' : '') + ' aria-label="Last page" title="Last">&raquo;</button>';
+    }
+    $('pbPager').innerHTML = h;
+    $('pbJump').hidden = pg < 2; $('pbJumpIn').max = pg;
+    var tot = facets && facets.totals ? facets.totals.papers : null;
+    $('pbExpF').disabled = disabledEnv; $('pbExpAll').disabled = disabledEnv;
+    $('pbExpF').textContent = 'Export filtered (CSV)' + (filtersActive() ? ' · ' + nf(t) + ' rows' : '');
+    $('pbExpF').title = filtersActive() ? 'Download all ' + nf(t) + ' rows matching the current filters and sort (not just this page)' : 'No filters active — this is the same as the entire table';
+    $('pbExpAll').textContent = 'Download entire papers table (CSV)' + (tot != null ? ' · ' + nf(tot) + ' rows' : '');
+  }
+  function goPage(n) {
+    n = Math.max(1, Math.min(data.pages || 1, parseInt(n, 10) || 1));
+    if (n === S.page) return; S.page = n; load();
+  }
+
+  /* ───────────── filters: state ⇄ controls ───────────── */
+  function filtersActive() { return activeCount() > 0; }
+  function activeCount() {
+    var n = 0, s = S;
+    if ((s.q || '').trim()) n++;
+    if (s.year_min !== '' || s.year_max !== '') n++;
+    if (s.min_relevance !== '' || s.max_relevance !== '') n++;
+    ['review_status', 'study_type', 'trust_tier', 'topic', 'tag'].forEach(function (k) { if (s[k].length) n++; });
+    ['has_doi', 'has_abstract', 'has_tags', 'in_oracle'].forEach(function (k) { if (s[k] !== '') n++; });
+    if (s.has_url) n++; if (s.is_review !== '') n++; if (s.min_citations !== '') n++;
+    return n;
+  }
+  function filterBadgeCount() { return activeCount() - ((S.q || '').trim() ? 1 : 0); }
+  function syncControls() {
+    var set = function (id, v) { var el = $(id); if (el && document.activeElement !== el) el.value = v; };
+    set('pbQ', S.q); set('fYmin', S.year_min); set('fYmax', S.year_max); set('fRmin', S.min_relevance); set('fRmax', S.max_relevance);
+    set('fCit', S.min_citations); set('fRev', S.is_review);
+    set('fDoi', S.has_doi); set('fAbs', S.has_abstract); set('fTags', S.has_tags); set('fOra', S.in_oracle); $('fUrl').checked = !!S.has_url;
+    $('pbQClr').hidden = !S.q;
+    Array.prototype.forEach.call(document.querySelectorAll('.pb-mlist'), function (box) {
+      var key = box.getAttribute('data-key');
+      Array.prototype.forEach.call(box.querySelectorAll('input'), function (i) { i.checked = S[key].indexOf(i.value) > -1; });
+    });
+    var n = filterBadgeCount(); $('pbFiltN').hidden = !n; $('pbFiltN').textContent = n;
+  }
+  function buildMulti() {
+    function opts(key, list) {
+      var box = document.querySelector('.pb-mlist[data-key="' + key + '"]'); if (!box) return;
+      var h = '';
+      (list || []).forEach(function (o) { h += '<label data-s="' + esc(String(o.name || o.value).toLowerCase()) + '"><input type="checkbox" value="' + esc(o.slug || o.value) + '"><span title="' + esc(o.name || o.value) + '">' + esc(o.name || o.value) + '</span><em>' + (o.count != null ? nf(o.count) : '') + '</em></label>'; });
+      box.innerHTML = h || '<div class="none">No values yet</div>';
+    }
+    var f = facets || {};
+    opts('review_status', f.review_status); opts('study_type', f.study_type); opts('trust_tier', f.trust_tier); opts('topic', f.topics);
+    var tagBox = document.querySelector('.pb-mlist[data-key="tag"]'), tags = f.tags || [], cats = {}, order = [];
+    tags.forEach(function (t) { var c = t.category || 'other'; if (!cats[c]) { cats[c] = []; order.push(c); } cats[c].push(t); });
+    var h = '';
+    order.forEach(function (c) {
+      h += '<div class="grp" data-g="' + esc(c) + '">' + esc(c) + '</div>';
+      cats[c].forEach(function (t) { h += '<label data-g="' + esc(c) + '" data-s="' + esc((t.name + ' ' + t.slug + ' ' + c).toLowerCase()) + '"><input type="checkbox" value="' + esc(t.slug) + '"><span title="' + esc(t.name) + '">' + esc(t.name) + '</span><em>' + (t.count != null ? nf(t.count) : '') + '</em></label>'; });
+    });
+    tagBox.innerHTML = h || '<div class="none">No values yet</div>';
+    if (facets) {
+      if (isNum(facets.year_min)) $('fYmin').placeholder = String(facets.year_min);
+      if (isNum(facets.year_max)) $('fYmax').placeholder = String(facets.year_max);
+    }
+    syncControls();
+  }
+  function msearch(input) {
+    var q = input.value.trim().toLowerCase(), box = document.querySelector('.pb-mlist[data-key="' + input.getAttribute('data-for') + '"]');
+    Array.prototype.forEach.call(box.querySelectorAll('label'), function (l) { l.hidden = q && l.getAttribute('data-s').indexOf(q) < 0; });
+    Array.prototype.forEach.call(box.querySelectorAll('.grp'), function (g) {
+      var any = false; Array.prototype.forEach.call(box.querySelectorAll('label[data-g="' + g.getAttribute('data-g') + '"]'), function (l) { if (!l.hidden) any = true; });
+      g.hidden = !any;
+    });
+  }
+  function facetName(key, val) {
+    var f = facets || {};
+    var list = key === 'topic' ? f.topics : key === 'tag' ? f.tags : null;
+    if (list) for (var i = 0; i < list.length; i++) if (list[i].slug === val) return list[i].name || val;
+    return val;
+  }
+
+  /* ── lenses (quick filters for audit passes) + active pills ── */
+  var LENSES = [
+    { id: 'gate',   l: 'Passes relevance gate', on: function () { return S.min_relevance === String(GATE) && S.max_relevance === ''; },
+      set: function () { S.min_relevance = String(GATE); S.max_relevance = ''; }, off: function () { S.min_relevance = ''; } },
+    { id: 'below',  l: 'Below gate', on: function () { return S.max_relevance === String(GATE - 1) && S.min_relevance === ''; },
+      set: function () { S.max_relevance = String(GATE - 1); S.min_relevance = ''; }, off: function () { S.max_relevance = ''; } },
+    { id: 'doi',    l: 'Has DOI', on: function () { return S.has_doi === '1'; }, set: function () { S.has_doi = '1'; }, off: function () { S.has_doi = ''; } },
+    { id: 'nodoi',  l: 'No DOI', on: function () { return S.has_doi === '0'; }, set: function () { S.has_doi = '0'; }, off: function () { S.has_doi = ''; } },
+    { id: 'noabs',  l: 'No abstract', on: function () { return S.has_abstract === '0'; }, set: function () { S.has_abstract = '0'; }, off: function () { S.has_abstract = ''; } },
+    { id: 'untag',  l: 'Untagged', on: function () { return S.has_tags === '0'; }, set: function () { S.has_tags = '0'; }, off: function () { S.has_tags = ''; } },
+    { id: 'orin',   l: 'In Oracle corpus', on: function () { return S.in_oracle === '1'; }, set: function () { S.in_oracle = '1'; }, off: function () { S.in_oracle = ''; } },
+    { id: 'orout',  l: 'Not in Oracle corpus', on: function () { return S.in_oracle === '0'; }, set: function () { S.in_oracle = '0'; }, off: function () { S.in_oracle = ''; } },
+    { id: 'rev',    l: 'Reviews only', on: function () { return S.is_review === '1'; }, set: function () { S.is_review = '1'; }, off: function () { S.is_review = ''; } },
+    { id: 'cited',  l: 'Cited ≥ 10', on: function () { return S.min_citations === '10'; }, set: function () { S.min_citations = '10'; }, off: function () { S.min_citations = ''; } }
+  ];
+  var pillActs = [];
+  function renderChips() {
+    var h = '<span class="lab">Lenses</span>';
+    LENSES.forEach(function (L) { var on = L.on(); h += '<button type="button" class="fchip' + (on ? ' on' : '') + '" data-lens="' + L.id + '" aria-pressed="' + on + '">' + esc(L.l) + '</button>'; });
+    pillActs = [];
+    function pill(label, fn) { pillActs.push(fn); return '<span class="pill">' + esc(label) + '<button type="button" data-pill="' + (pillActs.length - 1) + '" aria-label="Remove filter: ' + esc(label) + '">&times;</button></span>'; }
+    var p = '';
+    if ((S.q || '').trim()) p += pill('Search: “' + S.q.trim() + '”', function () { S.q = ''; });
+    if (S.year_min !== '' || S.year_max !== '') p += pill('Year ' + (S.year_min || '…') + '–' + (S.year_max || '…'), function () { S.year_min = ''; S.year_max = ''; });
+    if (S.min_relevance !== '' || S.max_relevance !== '') p += pill('Relevance ' + (S.min_relevance || '0') + '–' + (S.max_relevance || '100'), function () { S.min_relevance = ''; S.max_relevance = ''; });
+    [['review_status', 'Status'], ['study_type', 'Study'], ['trust_tier', 'Trust'], ['topic', 'Topic'], ['tag', 'Tag']].forEach(function (g) {
+      S[g[0]].forEach(function (v) { p += pill(g[1] + ': ' + facetName(g[0], v), function () { S[g[0]] = S[g[0]].filter(function (x) { return x !== v; }); }); });
+    });
+    [['has_doi', 'Has DOI', 'No DOI'], ['has_abstract', 'Has abstract', 'No abstract'], ['has_tags', 'Has tags', 'Untagged'], ['in_oracle', 'In Oracle corpus', 'Not in Oracle corpus']].forEach(function (g) {
+      if (S[g[0]] !== '') p += pill(S[g[0]] === '1' ? g[1] : g[2], function () { S[g[0]] = ''; });
+    });
+    if (S.has_url) p += pill('Has URL', function () { S.has_url = false; });
+    if (S.is_review !== '') p += pill(S.is_review === '1' ? 'Reviews only' : 'Excluding reviews', function () { S.is_review = ''; });
+    if (S.min_citations !== '') p += pill('Citations ≥ ' + S.min_citations, function () { S.min_citations = ''; });
+    if (p) h += '<span class="pb-sep"></span>' + p + '<button type="button" class="pb-clear" data-act="clearall">Clear all</button>';
+    $('pbChips').innerHTML = h;
+  }
+  function changed() { S.page = 1; load(); }
+  function clearAll() { var keep = { sort: S.sort, dir: S.dir }; S = defaultState(); S.sort = keep.sort; S.dir = keep.dir; syncControls(); load(); }
+
+  /* ───────────── selection ───────────── */
+  function renderSelBar() {
+    var n = sel.size; $('pbSel').hidden = n === 0; $('pbSelN').textContent = nf(n);
+    var more = data.total > 0 && n < data.total && data.total <= 2000;
+    $('pbSelAll').hidden = !more; $('pbSelAll').textContent = 'Select all ' + nf(data.total) + (filtersActive() ? ' matching' : '');
+  }
+  function toggleRow(id, on, tr) {
+    if (on) sel.add(id); else sel.delete(id);
+    if (tr) { tr.classList.toggle('sel', on); tr.setAttribute('aria-selected', on); }
+    syncPageCk(); renderSelBar();
+  }
+  function selectAllMatching() {
+    var btn = $('pbSelAll'), total = data.total; if (total > 2000) { toast('Too many to select at once (limit 2,000). Narrow the filters first.', { err: true }); return; }
+    btn.disabled = true; var s = JSON.parse(JSON.stringify(S)), pg = 1, pages = Math.ceil(total / PAGE_SIZE), got = [];
+    (function next() {
+      s.page = pg; btn.textContent = 'Selecting… ' + got.length + '/' + total;
+      apiList(s).then(function (r) {
+        if (!r.ok || !r.data) throw new Error('status ' + r.status);
+        r.data.items.forEach(function (it) { got.push(it.id); });
+        if (++pg <= pages) return next();
+        got.forEach(function (id) { sel.add(id); }); btn.disabled = false;
+        renderBody(); renderSelBar(); toast('Selected ' + nf(got.length) + ' papers across all pages of this view.');
+      }).catch(function () { btn.disabled = false; renderSelBar(); toast('Couldn’t select all matching papers — try again.', { err: true }); });
+    })();
+  }
+
+  /* ───────────── exports ───────────── */
+  function download(blob, name) {
+    var u = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(u); }, 4000);
+  }
+  function busy(btn, on, label) { if (!btn) return; btn.disabled = on; btn.classList.toggle('busy', on); if (label != null) { if (on) { btn._t = btn.textContent; btn.textContent = label; } else if (btn._t) { btn.textContent = btn._t; btn._t = null; } } }
+  function csvEscape(v) { if (v == null) return ''; var s = Array.isArray(v) ? v.join('; ') : String(v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+  function csvOfRows(list) {
+    var keys = COLS.map(function (c) { return c.k; });
+    return '﻿' + keys.join(',') + '\r\n' + list.map(function (r) { return keys.map(function (k) { return csvEscape(r[k]); }).join(','); }).join('\r\n');
+  }
+  function navDownload(url) { var a = document.createElement('a'); a.href = url; a.setAttribute('download', ''); document.body.appendChild(a); a.click(); a.remove(); }
+  function exportFiltered() {
+    if (MOCK) { download(new Blob([csvOfRows(Mock.csvOf(S))], { type: 'text/csv' }), 'MOCK_papers_filtered.csv'); toast('MOCK export — synthetic rows.'); return; }
+    navDownload(API + '/export.csv?' + listParams(S, { paging: false }));
+    toast('Preparing CSV of ' + nf(data.total) + ' matching rows — your browser will download it.');
+  }
+  function exportAll() {
+    if (MOCK) { download(new Blob([csvOfRows(Mock.all())], { type: 'text/csv' }), 'MOCK_papers_all.csv'); toast('MOCK export — synthetic rows.'); return; }
+    navDownload(API + '/export.csv');
+    toast('Preparing the entire papers table (CSV) — your browser will download it.');
+  }
+  function exportSelCsv() {
+    var ids = Array.from(sel), btn = $('pbSelCsv'); if (!ids.length) return;
+    if (ids.length > 2000) { toast('Selection exceeds the 2,000-row export limit.', { err: true }); return; }
+    busy(btn, true, 'Exporting…');
+    if (MOCK) { var set = new Set(ids); download(new Blob([csvOfRows(Mock.all().filter(function (r) { return set.has(r.id); }))], { type: 'text/csv' }), 'MOCK_papers_selected.csv'); busy(btn, false); return; }
+    postRaw(API + '/export.csv', { ids: ids }).then(function (r) {
+      if (!r.ok) throw new Error('status ' + r.status);
+      var cd = r.headers.get('Content-Disposition') || '', m = cd.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+      return r.blob().then(function (b) { download(b, m ? decodeURIComponent(m[1]) : 'papers_selected_' + stamp() + '.csv'); toast('Exported ' + nf(ids.length) + ' selected papers (CSV).'); });
+    }).catch(function (e) { toast('CSV export failed' + (e && e.message ? ' (' + e.message + ')' : '') + '. Try again.', { err: true }); }).then(function () { busy(btn, false); });
+  }
+  function flattenRow(item) {
+    var o = {};
+    Object.keys(item).forEach(function (k) {
+      var v = item[k];
+      if (v == null) o[k] = '';
+      else if (Array.isArray(v)) o[k] = v.map(function (x) { return (x && typeof x === 'object') ? ((x.category ? x.category + ': ' : '') + (x.name || x.slug || JSON.stringify(x))) : String(x); }).join('; ');
+      else if (typeof v === 'object') o[k] = JSON.stringify(v);
+      else o[k] = (typeof v === 'string' && v.length > 32000) ? v.slice(0, 32000) : v;
+    });
+    return o;
+  }
+  function chunkRows(ids) {
+    var out = [], missing = [], i = 0;
+    return (function next() {
+      if (i >= ids.length) return Promise.resolve({ items: out, missing: missing });
+      var part = ids.slice(i, i + 2000); i += 2000;
+      return apiRows(part).then(function (r) {
+        if (!r.ok || !r.data) throw new Error('rows status ' + r.status);
+        out = out.concat(r.data.items || []); missing = missing.concat(r.data.missing || []); return next();
+      });
+    })();
+  }
+  function exportSelXlsx() {
+    var ids = Array.from(sel), btn = $('pbSelXlsx'); if (!ids.length) return;
+    if (!window.XLSX) { toast('The XLSX library (SheetJS) didn’t load — check your connection, or use Export CSV.', { err: true }); return; }
+    busy(btn, true, 'Building…');
+    chunkRows(ids).then(function (res) {
+      if (!res.items.length) throw new Error('no rows returned');
+      var flat = res.items.map(flattenRow), pref = COLS.map(function (c) { return c.k; }), seen = {}, keys = [];
+      pref.concat(['abstract', 'main_claim', 'tags']).forEach(function (k) { if (!seen[k]) { seen[k] = 1; keys.push(k); } });
+      flat.forEach(function (o) { Object.keys(o).forEach(function (k) { if (!seen[k]) { seen[k] = 1; keys.push(k); } }); });
+      keys = keys.filter(function (k) { return flat.some(function (o) { return k in o; }); });
+      var ws = XLSX.utils.json_to_sheet(flat, { header: keys }), wb = XLSX.utils.book_new();
+      ws['!cols'] = keys.map(function (k) { return { wch: k === 'title' ? 60 : (k === 'abstract' || k === 'main_claim') ? 50 : 18 }; });
+      XLSX.utils.book_append_sheet(wb, ws, 'papers');
+      XLSX.writeFile(wb, (MOCK ? 'MOCK_' : 'meatcode_') + 'papers_selected_' + stamp() + '.xlsx');
+      toast('Exported ' + nf(flat.length) + ' papers (XLSX, all columns)' + (res.missing.length ? ' — ' + res.missing.length + ' ids no longer exist.' : '.'));
+    }).catch(function (e) { toast('XLSX export failed (' + (e && e.message ? e.message : 'error') + '). Try again.', { err: true }); }).then(function () { busy(btn, false); });
+  }
+
+  /* ───────────── PDF (lazy, best-effort, honest) ───────────── */
+  function openPdf(btn) {
+    var id = btn.getAttribute('data-id'); if (btn.classList.contains('busy')) return;
+    var cached = pdfCache[id];
+    if (cached && cached.pdf_url && safeUrl(cached.pdf_url)) { window.open(safeUrl(cached.pdf_url), '_blank', 'noopener,noreferrer'); return; }
+    // open a blank tab synchronously (popup blockers) and navigate it once the lookup returns
+    var w = null; try { w = window.open('about:blank', '_blank'); if (w) { w.opener = null; w.document.title = 'Finding open-access PDF…'; w.document.body.style.cssText = 'font:14px system-ui;padding:24px;color:#4A4A4A'; w.document.body.textContent = 'Finding an open-access PDF…'; } } catch (e) { w = null; }
+    var orig = btn.innerHTML; btn.classList.add('busy'); btn.innerHTML = '<span class="spin" aria-hidden="true"></span> PDF'; btn.setAttribute('aria-busy', 'true');
+    function done() { btn.classList.remove('busy'); btn.innerHTML = orig; btn.removeAttribute('aria-busy'); }
+    function go(url, note) {
+      if (!url) { if (w) try { w.close(); } catch (e) {} toast(note || 'No link available for this paper.', { err: true }); return; }
+      if (w) { try { w.location.replace(url); } catch (e) { try { w.close(); } catch (e2) {} toast(note || 'Pop-up blocked.', { href: url, linkText: 'Open link' }); return; } if (note) toast(note); }
+      else toast((note ? note + ' ' : '') + 'Your browser blocked the new tab —', { href: url, linkText: 'open it here', ms: 9000 });
+    }
+    apiPdf(id).then(function (r) {
+      done();
+      if (r.status === 404) { go('', 'PDF lookup isn’t enabled on this environment.'); return; }
+      if (!r.ok || !r.data) { go('', 'PDF lookup failed' + (r.status ? ' (' + r.status + ')' : '') + '. Use “Open” for the publisher page.'); return; }
+      var d = r.data; pdfCache[id] = d;
+      if (d._mock) { go('', 'MOCK — no real PDF lookup in mock mode.'); return; }
+      var pdf = safeUrl(d.pdf_url), land = safeUrl(d.landing_url);
+      if (pdf) go(pdf, '');
+      else if (land) go(land, d.source === 'unavailable' ? 'PDF lookup is unavailable right now — opened the publisher page.' : 'No open-access PDF found — opened the publisher page.');
+      else go('', 'No open-access PDF found, and no publisher link on record.');
+    }).catch(function () { done(); go('', 'Couldn’t reach the PDF lookup. Try again, or use “Open”.'); });
+  }
+
+  /* ───────────── detail drawer ───────────── */
+  function openDrawer(id, trigger) {
+    drawerId = id; if (trigger) drawerReturn = trigger;
+    var row = data.items.filter(function (r) { return String(r.id) === String(id); })[0];
+    var dr = $('pbDrawer'); $('pbScrim').hidden = false; dr.hidden = false;
+    paintDrawer(row || { id: id, title: '(loading…)' }, rowCache[id] || null, !rowCache[id]);
+    var closeBtn = $('pbDClose'); if (closeBtn) closeBtn.focus();
+    if (rowCache[id]) return;
+    apiRows([Number(id)]).then(function (r) {
+      if (String(drawerId) !== String(id)) return;
+      if (!r.ok || !r.data || !r.data.items || !r.data.items[0]) { paintDrawer(row || { id: id }, null, false, r.status === 404 ? 'Detail lookup isn’t enabled on this environment.' : 'Couldn’t load the full record (' + (r.status || 'network') + ').'); return; }
+      rowCache[id] = r.data.items[0]; paintDrawer(row || rowCache[id], rowCache[id], false);
+    }).catch(function () { if (String(drawerId) === String(id)) paintDrawer(row || { id: id }, null, false, 'Couldn’t reach the server.'); });
+  }
+  function closeDrawer() {
+    if (!drawerId && $('pbDrawer').hidden) return;
+    drawerId = null; $('pbDrawer').hidden = true; $('pbScrim').hidden = true;
+    if (drawerReturn && document.contains(drawerReturn)) { try { drawerReturn.focus(); } catch (e) {} }
+  }
+  function paintDrawer(r, full, loading, err) {
+    var f = full || {}, merged = {}; Object.keys(r).forEach(function (k) { merged[k] = r[k]; }); Object.keys(f).forEach(function (k) { merged[k] = f[k]; });
+    var idx = -1; data.items.forEach(function (x, i) { if (String(x.id) === String(drawerId)) idx = i; });
+    var href = paperLink(merged), au = authorsText(merged.authors);
+    var h = '<div class="pb-dh"><button type="button" id="pbDPrev" ' + (idx < 1 ? 'disabled' : '') + ' aria-label="Previous paper on this page">&lsaquo; Prev</button><button type="button" id="pbDNext" ' + (idx < 0 || idx >= data.items.length - 1 ? 'disabled' : '') + ' aria-label="Next paper on this page">Next &rsaquo;</button><span class="sp"></span><button type="button" id="pbDClose" aria-label="Close details">Close ✕</button></div>';
+    h += '<div class="pb-db"><h2>' + esc(merged.title || '(untitled)') + '</h2>';
+    h += '<div class="meta">' + (au ? esc(au) + '<br>' : '') + esc([merged.journal || merged.venue, merged.year].filter(Boolean).join(' · ')) + (merged.doi ? '<br><span class="mono">DOI ' + esc(merged.doi) + '</span>' : '') + '</div>';
+    h += '<div class="chips">' + [merged.study_type, merged.review_status, merged.trust_tier, merged.is_review ? 'review article' : null].filter(Boolean).map(function (t) { return '<span class="tag teal">' + esc(t) + '</span>'; }).join('') + (merged.relevance_llm != null ? '<span class="tag ' + (merged.relevance_llm >= GATE ? 'ok' : 'warn') + '">relevance ' + esc(Math.round(merged.relevance_llm)) + '</span>' : '') + (merged.citation_count != null ? '<span class="tag">' + nf(merged.citation_count) + ' citations</span>' : '') + (merged.in_oracle != null ? '<span class="tag ' + (merged.in_oracle ? 'ok' : 'warn') + '" title="Oracle corpus = citable and relevance >= ' + GATE + '">' + (merged.in_oracle ? 'In Oracle corpus ✓' : 'Not in Oracle corpus') + '</span>' : '') + '</div>';
+    h += '<div class="acts">' + (href ? '<a class="pb-btn primary" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">Open paper</a>' : '<span class="pb-btn" aria-disabled="true" style="opacity:.45">Open paper</span>') + ((merged.doi || href) ? '<button type="button" class="pb-btn pb-pdf" data-id="' + esc(merged.id) + '">PDF</button>' : '') + '<button type="button" class="pb-btn" id="pbDSel">' + (sel.has(merged.id) ? 'Unselect' : 'Select for export') + '</button></div>';
+    if (loading) h += '<p class="none">Loading abstract and tags…</p>';
+    if (err) h += '<p class="none">' + esc(err) + '</p>';
+    if (full) {
+      h += '<h5>Main claim</h5>' + (f.main_claim ? '<div class="claim">' + esc(f.main_claim) + '</div>' : '<p class="none">No main claim extracted for this paper yet.</p>');
+      h += '<h5>Abstract</h5>' + (f.abstract ? '<div class="txt">' + esc(f.abstract) + '</div>' : '<p class="none">No abstract on record.</p>');
+      var tags = Array.isArray(f.tags) ? f.tags : [];
+      h += '<h5>Tags</h5>' + (tags.length ? '<div class="chips">' + tags.map(function (t) { var o = (t && typeof t === 'object') ? t : { name: String(t) }; return '<span class="tag" title="' + esc(o.category || '') + '">' + (o.category ? esc(o.category) + ' · ' : '') + esc(o.name || o.slug || '') + '</span>'; }).join('') + '</div>' : '<p class="none">No tags yet.</p>');
+      var skip = { id: 1, title: 1, authors: 1, abstract: 1, main_claim: 1, tags: 1 }, dl = '';
+      Object.keys(merged).forEach(function (k) {
+        var v = merged[k]; if (skip[k] || v == null || v === '' || (Array.isArray(v) && !v.length)) return;
+        dl += '<dt>' + esc(k) + '</dt><dd>' + esc(typeof v === 'object' ? JSON.stringify(v) : v) + '</dd>';
+      });
+      if (dl) h += '<h5>All fields</h5><dl>' + dl + '</dl>';
+    }
+    h += '</div>';
+    $('pbDrawer').innerHTML = h;
+    var c = $('pbDClose'); if (c && !loading) { /* keep focus where it is */ }
+  }
+  function stepDrawer(d) {
+    var idx = -1; data.items.forEach(function (x, i) { if (String(x.id) === String(drawerId)) idx = i; });
+    var n = data.items[idx + d]; if (n) { openDrawer(n.id); var b = $(d < 0 ? 'pbDPrev' : 'pbDNext'); if (b && !b.disabled) b.focus(); }
+  }
+
+  /* ───────────── events ───────────── */
+  var qT = null, nT = null;
+  $('pbQ').addEventListener('input', function (e) {
+    var v = e.target.value; $('pbQClr').hidden = !v; clearTimeout(qT);
+    qT = setTimeout(function () { if (v !== S.q) { S.q = v; changed(); } }, 320);
+  });
+  $('pbQ').addEventListener('keydown', function (e) { if (e.key === 'Enter') { clearTimeout(qT); if (e.target.value !== S.q) { S.q = e.target.value; changed(); } } });
+  $('pbQClr').addEventListener('click', function () { $('pbQ').value = ''; S.q = ''; $('pbQClr').hidden = true; changed(); $('pbQ').focus(); });
+
+  function numField(id, key) {
+    $(id).addEventListener('input', function (e) {
+      var v = e.target.value.trim(); clearTimeout(nT);
+      nT = setTimeout(function () { var nv = /^\d+$/.test(v) ? v : ''; if (key === 'min_relevance' || key === 'max_relevance') { if (nv !== '') nv = String(Math.min(100, +nv)); } if (nv !== S[key]) { S[key] = nv; changed(); } }, 450);
+    });
+  }
+  numField('fYmin', 'year_min'); numField('fYmax', 'year_max'); numField('fRmin', 'min_relevance'); numField('fRmax', 'max_relevance'); numField('fCit', 'min_citations');
+  [['fDoi', 'has_doi'], ['fAbs', 'has_abstract'], ['fTags', 'has_tags'], ['fOra', 'in_oracle']].forEach(function (g) { $(g[0]).addEventListener('change', function (e) { S[g[1]] = e.target.value; changed(); }); });
+  $('fUrl').addEventListener('change', function (e) { S.has_url = e.target.checked; changed(); });
+  $('fRev').addEventListener('change', function (e) { S.is_review = e.target.value; changed(); });
+  $('pbFilters').addEventListener('change', function (e) {
+    var t = e.target; if (!t.closest || !t.closest('.pb-mlist')) return;
+    var key = t.closest('.pb-mlist').getAttribute('data-key'), a = S[key].slice(), i = a.indexOf(t.value);
+    if (t.checked && i < 0) a.push(t.value); if (!t.checked && i > -1) a.splice(i, 1);
+    S[key] = a; changed();
+  });
+  $('pbFilters').addEventListener('input', function (e) { if (e.target.classList && e.target.classList.contains('pb-msearch')) msearch(e.target); });
+
+  function setFilters(open) {
+    $('pbFilters').hidden = !open; $('pbFiltBtn').setAttribute('aria-expanded', open); $('pbFiltBtn').classList.toggle('on', open);
+  }
+  $('pbFiltBtn').addEventListener('click', function () { setFilters($('pbFilters').hidden); });
+
+  /* menus */
+  function closeMenus() { ['pbColMenu', 'pbKeyMenu'].forEach(function (id) { $(id).hidden = true; }); $('pbColBtn').setAttribute('aria-expanded', 'false'); $('pbKeyBtn').setAttribute('aria-expanded', 'false'); }
+  $('pbColBtn').addEventListener('click', function (e) { e.stopPropagation(); var open = $('pbColMenu').hidden; closeMenus(); if (open) { buildColMenu(); $('pbColMenu').hidden = false; $('pbColBtn').setAttribute('aria-expanded', 'true'); } });
+  $('pbKeyBtn').addEventListener('click', function (e) { e.stopPropagation(); var open = $('pbKeyMenu').hidden; closeMenus(); if (open) { $('pbKeyMenu').hidden = false; $('pbKeyBtn').setAttribute('aria-expanded', 'true'); } });
+  document.addEventListener('click', function (e) { if (!e.target.closest || !e.target.closest('.pb-pop')) closeMenus(); });
+  $('pbColMenu').addEventListener('click', function (e) { e.stopPropagation(); });
+  $('pbColMenu').addEventListener('change', function (e) {
+    var t = e.target, k = t.getAttribute && t.getAttribute('data-col'); if (!k) return;
+    var keys = visCols.slice(), i = keys.indexOf(k);
+    if (t.checked && i < 0) keys.push(k); if (!t.checked && i > -1) keys.splice(i, 1);
+    setCols(keys); renderHead(); renderBody();
+  });
+  $('pbColMenu').addEventListener('click', function (e) {
+    var a = e.target.getAttribute && e.target.getAttribute('data-colact'); if (!a) return;
+    setCols(a === 'all' ? COLS.map(function (c) { return c.k; }) : COLS.filter(function (c) { return c.def; }).map(function (c) { return c.k; }));
+    buildColMenu(); renderHead(); renderBody();
+  });
+
+  /* density */
+  function setDensity(d, skipSave) {
+    density = d === 'compact' ? 'compact' : 'comfortable'; $('pbT').classList.toggle('compact', density === 'compact');
+    $('pbDenC').classList.toggle('on', density === 'comfortable'); $('pbDenK').classList.toggle('on', density === 'compact');
+    $('pbDenC').setAttribute('aria-pressed', density === 'comfortable'); $('pbDenK').setAttribute('aria-pressed', density === 'compact');
+    if (!skipSave) lsSet(DENS_KEY, density);
+  }
+  $('pbDenC').addEventListener('click', function () { setDensity('comfortable'); });
+  $('pbDenK').addEventListener('click', function () { setDensity('compact'); });
+
+  /* chips / pills / generic actions */
+  $('pbChips').addEventListener('click', function (e) {
+    var t = e.target.closest && e.target.closest('button'); if (!t) return;
+    var lens = t.getAttribute('data-lens'), pill = t.getAttribute('data-pill'), act = t.getAttribute('data-act');
+    if (lens) { var L = LENSES.filter(function (x) { return x.id === lens; })[0]; if (L) { if (L.on()) L.off(); else L.set(); syncControls(); changed(); } }
+    else if (pill != null) { pillActs[+pill](); syncControls(); changed(); }
+    else if (act === 'clearall') clearAll();
+  });
+  $('pbState').addEventListener('click', function (e) {
+    var act = e.target.getAttribute && e.target.getAttribute('data-act');
+    if (act === 'clearall') clearAll(); else if (act === 'retry') { loadFacets(); load(); }
+  });
+
+  /* header sort + select-page */
+  $('pbHead').addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('button[data-sort]');
+    if (b) {
+      var k = b.getAttribute('data-sort');
+      if (S.sort === k) S.dir = S.dir === 'asc' ? 'desc' : 'asc'; else { S.sort = k; S.dir = ASC_FIRST[k] ? 'asc' : 'desc'; }
+      S.page = 1; load(); return;
+    }
+    if (e.target.id === 'pbAllPg') {
+      var on = e.target.checked; data.items.forEach(function (r) { if (on) sel.add(r.id); else sel.delete(r.id); });
+      renderBody(); renderSelBar();
+    }
+  });
+
+  /* rows */
+  $('pbBody').addEventListener('click', function (e) {
+    var tr = e.target.closest && e.target.closest('tr[data-id]'); if (!tr) return;
+    var pdf = e.target.closest('.pb-pdf'); if (pdf) { e.stopPropagation(); openPdf(pdf); return; }
+    var id = isNaN(tr.getAttribute('data-id')) ? tr.getAttribute('data-id') : Number(tr.getAttribute('data-id'));
+    if (e.target.classList && e.target.classList.contains('pb-ck')) {
+      var i = +tr.getAttribute('data-i');
+      if (e.shiftKey && lastRowIdx > -1) {
+        var lo = Math.min(lastRowIdx, i), hi = Math.max(lastRowIdx, i), on = e.target.checked;
+        for (var j = lo; j <= hi; j++) { var rr = data.items[j]; if (on) sel.add(rr.id); else sel.delete(rr.id); }
+        renderBody(); renderSelBar();
+      } else toggleRow(id, e.target.checked, tr);
+      lastRowIdx = i; return;
+    }
+    if (e.target.closest('a,button,input,label')) return;
+    openDrawer(id, tr);
+  });
+  $('pbBody').addEventListener('keydown', function (e) {
+    var tr = e.target.closest && e.target.closest('tr[data-id]');
+    if (e.key === 'Enter' && tr && e.target === tr) { e.preventDefault(); var v = tr.getAttribute('data-id'); openDrawer(isNaN(v) ? v : Number(v), tr); }
+  });
+
+  /* pager */
+  $('pbPager').addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('[data-pg]'); if (b && !b.disabled) goPage(b.getAttribute('data-pg')); });
+  $('pbJumpGo').addEventListener('click', function () { goPage($('pbJumpIn').value); $('pbJumpIn').value = ''; });
+  $('pbJumpIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') { goPage(e.target.value); e.target.value = ''; } });
+
+  /* selection bar + exports */
+  $('pbSelCsv').addEventListener('click', exportSelCsv);
+  $('pbSelXlsx').addEventListener('click', exportSelXlsx);
+  $('pbSelAll').addEventListener('click', selectAllMatching);
+  $('pbSelClr').addEventListener('click', function () { sel.clear(); renderBody(); renderSelBar(); });
+  $('pbExpF').addEventListener('click', exportFiltered);
+  $('pbExpAll').addEventListener('click', exportAll);
+
+  /* drawer */
+  $('pbScrim').addEventListener('click', closeDrawer);
+  $('pbDrawer').addEventListener('click', function (e) {
+    var t = e.target; if (!t.closest) return;
+    var pdf = t.closest('.pb-pdf'); if (pdf) { openPdf(pdf); return; }
+    var b = t.closest('button'); if (!b) return;
+    if (b.id === 'pbDClose') closeDrawer();
+    else if (b.id === 'pbDPrev') stepDrawer(-1);
+    else if (b.id === 'pbDNext') stepDrawer(1);
+    else if (b.id === 'pbDSel') {
+      var id = isNaN(drawerId) ? drawerId : Number(drawerId), on = !sel.has(id);
+      if (on) sel.add(id); else sel.delete(id);
+      b.textContent = on ? 'Unselect' : 'Select for export'; renderBody(); renderSelBar();
+    }
+  });
+
+  /* keyboard */
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { if (!$('pbDrawer').hidden) closeDrawer(); else closeMenus(); return; }
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var tg = e.target, tag = tg && tg.tagName; if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (!$('pbDrawer').hidden) { if (e.key === 'ArrowLeft') stepDrawer(-1); else if (e.key === 'ArrowRight') stepDrawer(1); return; }
+    if (e.key === '/') { e.preventDefault(); $('pbQ').focus(); $('pbQ').select(); }
+    else if (e.key === 'f') setFilters($('pbFilters').hidden);
+    else if (e.key === '[') goPage(S.page - 1);
+    else if (e.key === ']') goPage(S.page + 1);
+    else if (e.key === '?') { $('pbKeyBtn').click(); }
+    else if (e.key === 'j' || e.key === 'k') {
+      var rows = Array.prototype.slice.call($('pbBody').querySelectorAll('tr[data-id]')); if (!rows.length) return;
+      var cur = rows.indexOf(tg.closest ? tg.closest('tr[data-id]') : null), n = e.key === 'j' ? cur + 1 : cur - 1;
+      n = Math.max(0, Math.min(rows.length - 1, cur < 0 ? 0 : n)); rows[n].focus(); e.preventDefault();
+    } else if (e.key === 'x') {
+      var tr = tg.closest && tg.closest('tr[data-id]'); if (!tr) return;
+      var v = tr.getAttribute('data-id'), id = isNaN(v) ? v : Number(v), ck = tr.querySelector('.pb-ck');
+      ck.checked = !sel.has(id); toggleRow(id, ck.checked, tr);
+    }
+  });
+
+  /* ───────────── init ───────────── */
+  function renderStats() {
+    var t = facets && facets.totals; if (!t) { $('pbStats').innerHTML = '&nbsp;'; return; }
+    $('pbStats').innerHTML = '<b>' + nf(t.papers) + '</b> papers · ' + nf(t.with_doi) + ' with DOI · ' + nf(t.with_url) + ' with URL · ' + nf(t.reviews) + ' reviews' + (MOCK ? ' · <b>MOCK</b>' : '');
+  }
+  function loadFacets() {
+    apiFacets().then(function (r) {
+      if (r.ok && r.data) { facets = r.data; buildMulti(); renderStats(); renderFoot(); renderChips(); }
+    }).catch(function () {});
+  }
+  function init() {
+    if (MOCK) $('pbMock').hidden = false;
+    S = readHash(); loadCols(); setDensity(lsGet(DENS_KEY) || 'comfortable', true);
+    buildMulti(); renderHead(); renderChips(); syncControls();
+    if (S.q || filterBadgeCount() > 0) setFilters(filterBadgeCount() > 0 && window.innerWidth >= 1100);
+    loadFacets(); load();
+  }
+  init();
+})();
+</script>
+</body>
+</html>

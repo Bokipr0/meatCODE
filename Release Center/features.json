@@ -94,6 +94,21 @@
       "dev": true,
       "prod": false
     },
+    "papers_browser": {
+      "label": "Papers browser",
+      "description": "Dev-team module: browse every paper in Neon (sources) with filters/sort, 50 per page, tick rows to export CSV/XLSX, export the whole table as CSV, open each paper's link / best-effort open-access PDF.",
+      "kind": "feature",
+      "added": "2026-10-05",
+      "status": "preview",
+      "where": {
+        "screen": "Top nav chip 'Papers' + in-app #papers scene (iframes app/dev/papers_browser.html?embed=1)",
+        "spot": "Top-nav chip + backend routes /api/papers-browser/* (flag OFF → 404)",
+        "file": "app/meatcode_mockup.html + app/dev/papers_browser.html + server/papers_browser.py + server/meatcode_server.py"
+      },
+      "note": "Dev-only on purpose (dev:true / prod:false). Backend routes 404 when the flag is off for the environment, so prod exposes nothing until Lior flips prod:true and runs promote-to-prod.command.",
+      "dev": true,
+      "prod": false
+    },
     "maillard_sim": {
       "label": "Maillard simulator",
       "description": "Call the Maillard chemistry simulator from MeatCODE: submit precursors + conditions, get ranked compounds with yields (ppb), confidence intervals and reaction-family attribution.",

@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-# Last updated: 2026-09-21 · Full-Stack · NEW GET /api/data-backup — downloads the ACTUAL Neon
+# Last updated: 2026-10-05 · Full-Stack · NEW dev "Papers browser" API behind flag `papers_browser`
+#   (dev ON / prod OFF; flag off -> every /api/papers-browser* route 404s {"error":"not found"}, like
+#   maillard_sim). Routes (all behind the site-password gate, SELECT-only, never 500 -> 503):
+#   GET /api/papers-browser (filter/sort/page<=50), /facets, /export.csv, /pdf?id=N and
+#   POST /rows, /export.csv. Logic lives in the NEW server/papers_browser.py (handed pg_rows);
+#   this file is route glue only. Existing /api/papers/{id} and /api/papers/recent untouched.
+#   Env: UNPAYWALL_EMAIL (optional) enables best-effort open-access PDF lookup; unset -> "unavailable".
+# Prev 2026-09-21 · Full-Stack · NEW GET /api/data-backup — downloads the ACTUAL Neon
 #   data (every row, all 47 tables), not the curated pipeline/export_snapshot.py xlsx sample.
 #   Tries a real `pg_dump` first (schema+data+indexes, directly restorable) if that binary is on
 #   the host; otherwise falls back to a zip of one CSV per table (COPY ... TO STDOUT, real full
@@ -190,6 +197,19 @@ Endpoints
   GET  /api/simulate/health     which Maillard backend is active (mock/http/cli) + reachability
   GET  /api/papers/{id}         single paper (citation modal)
   GET  /api/papers/recent[?limit=]  recent papers (dashboard rows)
+  GET  /api/papers-browser[?page=&page_size<=50&q=&year_min=&year_max=&min_relevance=&max_relevance=
+                                 &review_status=a,b&study_type=&trust_tier=&topic=slug,..&tag=slug,..
+                                 &has_doi=1&has_url=1&is_review=1|0&min_citations=&sort=year|citations|
+                                 relevance|priority|title|authors|journal|created&dir=asc|desc]
+                                 dev Papers browser (flag `papers_browser`; flag off -> 404): ALL rows of
+                                 `sources`, filtered/sorted/paged -> {items,total,page,page_size,pages,sort,dir}
+  GET  /api/papers-browser/facets   filter option lists + counts + totals (same flag)
+  POST /api/papers-browser/rows     body {"ids":[...]} (<=2000) -> full rows + missing[] (same flag)
+  GET  /api/papers-browser/export.csv[?same filters/sort, no paging]  whole/filtered table as UTF-8-BOM CSV
+  POST /api/papers-browser/export.csv  body {"ids":[...]} -> CSV of just those ids, order preserved
+  GET  /api/papers-browser/pdf?id=N  best-effort FREE open-access PDF URL via Unpaywall (needs env
+                                 UNPAYWALL_EMAIL; URL only, never proxies bytes) -> {ok,id,doi,landing_url,
+                                 pdf_url,source:unpaywall|none|unavailable,cached}
   GET  /api/templates           lists deployed Claude Design templates in app/templates/
   GET  /templates/ ...          serves app/templates/ (the template gallery + exports)
   GET  /api/backup              downloads a zip of the live repo's git-tracked files (HEAD) —
@@ -457,6 +477,13 @@ try:
 except Exception as _e:                      # never let a missing/broken adapter stop the server
     maillard_adapter = None
     sys.stderr.write("[maillard] adapter unavailable: %s\n" % str(_e)[:200])
+
+# Papers browser logic (flag `papers_browser`) — pure stdlib; handed pg_rows at call time.
+try:
+    import papers_browser
+except Exception as _e:                      # never let a broken module stop the server
+    papers_browser = None
+    sys.stderr.write("[papers_browser] module unavailable: %s\n" % str(_e)[:200])
 
 # Reaction-network builder (GET /api/reaction-network) — curated skeleton + live MVL
 # enrichment. Owns no SQL execution; it is handed pg_rows at call time. A failed import
@@ -1083,6 +1110,11 @@ class Handler(SimpleHTTPRequestHandler):
             return self._send_json(
                 reaction_network.build(branch, pg_rows if DATABASE_URL else None))
 
+        # ── Papers browser (flag-gated, dev-only until promoted) — handled before the generic DB
+        #    guard so flag-off is a clean 404 regardless of DB state; own try/except -> 503. ──
+        if path == "/api/papers-browser" or path.startswith("/api/papers-browser/"):
+            return self._handle_papers_browser("GET", path, qs)
+
         if not DATABASE_URL:
             return self._send_json({"error": "DATABASE_URL not configured"}, 503)
         if path == "/api/data-backup":
@@ -1549,6 +1581,42 @@ class Handler(SimpleHTTPRequestHandler):
             return self._send_json({"error": "unknown endpoint " + path}, 404)
         except Exception as e:
             return self._send_json({"error": "database error: " + str(e)[:200]}, 503)
+
+    # ─── Papers browser glue (logic in server/papers_browser.py) ───
+    def _handle_papers_browser(self, method, path, qs):
+        """All /api/papers-browser* routes. Flag off -> 404 {"error":"not found"} (identical to
+        maillard_sim). SELECT-only; any failure degrades to 503 JSON, never a 500."""
+        if not _flag_on("papers_browser"):
+            return self._send_json({"error": "not found"}, 404)
+        if papers_browser is None:
+            return self._send_json({"error": "papers browser unavailable on this server"}, 503)
+        if not DATABASE_URL:
+            return self._send_json({"error": "DATABASE_URL not configured"}, 503)
+        try:
+            body = {}
+            if method == "POST":
+                body = self._read_json_body()
+                if not isinstance(body, dict):
+                    return self._send_json({"error": "body must be a JSON object"}, 400)
+            if method == "GET" and path == "/api/papers-browser":
+                return self._send_json(papers_browser.list_papers(qs, pg_rows))
+            if method == "GET" and path == "/api/papers-browser/facets":
+                return self._send_json(papers_browser.facets(pg_rows))
+            if method == "POST" and path == "/api/papers-browser/rows":
+                return self._send_json(papers_browser.rows_by_ids(body, pg_rows))
+            if path == "/api/papers-browser/export.csv":
+                if method == "GET":
+                    data, fname = papers_browser.export_csv_filtered(qs, pg_rows)
+                else:
+                    data, fname = papers_browser.export_csv_ids(body, pg_rows)
+                return self._send_binary(data, "text/csv; charset=utf-8", fname)
+            if method == "GET" and path == "/api/papers-browser/pdf":
+                code, out = papers_browser.resolve_pdf(
+                    qs, pg_rows, os.environ.get("UNPAYWALL_EMAIL", ""))
+                return self._send_json(out, code)
+            return self._send_json({"error": "not found"}, 404)
+        except Exception as e:
+            return self._send_json({"error": "papers browser unavailable: " + str(e)[:200]}, 503)
 
     # ─── repo backup, straight off the running server ───
     def _handle_backup_download(self):
@@ -2018,6 +2086,9 @@ class Handler(SimpleHTTPRequestHandler):
         #    query (via _molecule_detail) so a compared profile == its detail-page profile. ──
         if path == "/api/compare":
             return self._handle_compare_post()
+        # ── Papers browser rows / CSV-by-ids (flag-gated; see _handle_papers_browser) ──
+        if path in ("/api/papers-browser/rows", "/api/papers-browser/export.csv"):
+            return self._handle_papers_browser("POST", path, {})
         if path != "/api/ask":
             self.send_error(404, "POST not supported for " + path); return
 
