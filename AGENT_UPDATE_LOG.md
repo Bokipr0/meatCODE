@@ -1,5 +1,8 @@
 # MeatCODE — Agent Update Log
 
+## 2026-10-25 · Yochai (PM) with Claude · PROMOTED live Ecosystem data to production
+Yochai confirmed staging's Ecosystem shows live data. main fast-forwarded 36d84a4 → fe504c6 (the exact commit checked on staging) and tagged `prod-20261025-2033`; /api/version reports fe504c6, /api/health db:true. (First push attempt used a bad short hash and failed; the tag was created before the retry but points at the same fe504c6.) Docs-only follow-up commit stays on dev until the next release.
+
 ## 2026-10-25 · Yochai (PM) with Claude · Ecosystem people + papers LIVE from Neon
 Yochai: "The Ecosystem should also draw from the Neon DB." Schema mapped and the query verified through the Neon
 connector (read-only SELECTs on project holy-mode-78356834; nothing written).
