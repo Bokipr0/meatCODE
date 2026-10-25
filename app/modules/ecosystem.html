@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<!-- Last updated: 2026-10-25 20:05 UTC · Yochai (PM) with Claude · NEW product module: MeatCODE Ecosystem (People + Radar),
+     ported from the "MeatCODE Ecosystem prototype v0.8" Chat artifact (Lior's 10 Oct review applied: no map on landing,
+     guided first visit, interests, follow + new-paper badges, short topic chips). Re-skinned onto the live platform tokens
+     (mc-brand.css). Production changes: data moved to ecosystem_data.json (sanitised, public information only); taxonomy
+     from the bible via /api/ecosystem/bootstrap; AI request reading via POST /api/ecosystem/intent (keyword fallback);
+     only human-reviewed Radar/Inbox rows shown; intro + correction/removal requests by email to the GFI team; live h-index /
+     ORCID refresh from /api/experts/{id}; links into the Oracle and Science via mc-bridge.js; feedback widget removed.
+     Embedded in the platform as the #ecosystem scene (flag ecosystem_module). -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MeatCODE · Ecosystem</title>
+<link rel="stylesheet" href="/app/modules/mc-brand.css">
+<script src="/app/modules/mc-bridge.js"></script>
+<style>
+:root{
+  /* Live MeatCODE palette (mc-brand.css): --bg --surface --ink --line --shadow come from there. */
+  --sunk:var(--bg-deep); --muted:var(--ink-dim); --faint:var(--ink-faint);
+  --brand:var(--wine); --brand-ink:#FFFFFF; --brand-soft:var(--wine-mist); --spark:var(--brass);
+  --acad:var(--brass); --ind:var(--wine); --ngo:var(--olive);
+  --map-dot:var(--line-strong); --c-events:var(--brass); --c-courses:var(--olive); --c-news:var(--wine); --c-eco:#7C5A8F;
+  --sans:var(--round);
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--sans);font-size:15px;line-height:1.5;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:6px}
+.sr{position:absolute;left:-9999px}
+
+/* top bar */
+.top{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;height:68px;padding:0 32px;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(14px)}
+.logo{display:flex;align-items:center;gap:10px;border:0;background:none;padding:0;color:var(--ink)}
+.logo svg{width:26px;height:26px}
+.lw{font-size:19px;font-weight:700;letter-spacing:-.025em}
+.lw span{color:var(--brand)}
+.lp{font-size:15px;color:var(--muted);padding-left:10px;margin-left:2px;border-left:1px solid var(--line);font-weight:500}
+.demo{font-size:12.5px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:5px 12px;background:var(--surface)}
+
+/* start */
+.start{max-width:880px;margin:0 auto;padding:9vh 24px 60px;text-align:center}
+.start h1{font-size:clamp(40px,6vw,64px);font-weight:600;letter-spacing:-.045em;line-height:1.02;margin:0 0 14px}
+.start .lead{color:var(--muted);font-size:17px;margin:0 auto 30px;max-width:520px}
+.composer{display:flex;gap:10px;align-items:flex-end;background:var(--surface);border:1px solid var(--line);border-radius:26px;padding:8px 8px 8px 22px;box-shadow:var(--shadow);text-align:left}
+.composer:focus-within{border-color:color-mix(in srgb,var(--brand) 55%,var(--line))}
+.composer textarea{flex:1;border:0;background:none;resize:none;outline:none;font-size:17px;line-height:1.45;padding:11px 0;max-height:150px;min-height:26px}
+.composer textarea::placeholder{color:var(--faint)}
+.send{flex-shrink:0;width:46px;height:46px;border-radius:50%;border:0;background:var(--ink);color:var(--bg);display:grid;place-items:center}
+.send svg{width:18px;height:18px}
+.starters{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}
+.chip{display:inline-flex;align-items:center;gap:8px;min-height:40px;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:0 16px;font-size:14px;color:var(--ink)}
+.chip:hover{border-color:var(--brand)}
+.mapwrap{margin-top:56px}
+.mapcap{font-size:13.5px;color:var(--muted);margin-top:8px}
+.maphead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;text-align:left;margin-bottom:8px}
+.maphead b{font-size:16px;font-weight:600;letter-spacing:-.01em}
+svg.map .pinlbl{font:600 11px var(--sans);fill:var(--brand-ink);pointer-events:none}
+.ccchips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:12px}
+.ccchips button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:0 12px;min-height:36px;font-size:13.5px;color:var(--ink)}
+.ccchips button:hover{border-color:var(--brand)}
+.ccchips small{color:var(--faint);margin-left:4px}
+.rhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.rtitle{font-weight:600;font-size:14px;color:var(--ink)}
+.rhint{font-size:12.5px;color:var(--brand)}
+.addt input{border:1px dashed color-mix(in srgb,var(--brand) 60%,var(--line));background:transparent;border-radius:999px;padding:6px 14px;font-size:13.5px;min-height:36px;width:170px;color:var(--ink)}
+.addt input::placeholder{color:var(--brand)}
+.rsel:not(:disabled){border-color:color-mix(in srgb,var(--brand) 45%,var(--line))}
+.rsel:not(:disabled):hover{border-color:var(--brand)}
+svg.map{width:100%;height:auto;display:block}
+svg.map .land{fill:var(--map-dot);stroke:var(--map-dot);stroke-width:.9}
+.mapframe{background:var(--sunk);border:1px solid var(--line);border-radius:20px;padding:14px}
+svg.map .pin{fill:var(--brand);stroke:var(--surface);stroke-width:2;opacity:1;cursor:pointer;transition:r .2s}
+svg.map .pin.dim{opacity:.25}
+svg.map .pin:hover{opacity:1}
+svg.map .pin:focus{outline:none;stroke:var(--ink);stroke-width:2}
+svg.map .halo{fill:var(--brand);opacity:.22;pointer-events:none}
+
+/* results */
+.results{max-width:1180px;margin:0 auto;padding:12px 32px 200px;display:grid;grid-template-columns:minmax(0,760px);justify-content:center;gap:40px}
+.results.wide{grid-template-columns:minmax(0,700px) minmax(0,380px)}
+@media (max-width:1100px){.results.wide{grid-template-columns:minmax(0,760px)}}
+.turn{padding:28px 0 8px;border-top:1px solid var(--line)}
+.turn:first-child{border-top:0}
+.q{font-size:28px;font-weight:600;letter-spacing:-.03em;line-height:1.18;margin:0 0 14px}
+.reading{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.rline{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:14px;color:var(--muted)}
+.rsel{appearance:none;border:1px solid var(--line);background:var(--sunk);border-radius:999px;padding:6px 30px 6px 14px;font-size:14px;color:var(--ink);font-weight:500;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 15px) 52%,calc(100% - 10px) 52%;background-size:5px 5px;background-repeat:no-repeat;min-height:36px}
+.guide{position:fixed;inset:0;z-index:40;background:rgba(16,23,24,.42);display:flex;align-items:center;justify-content:center;padding:20px}
+.guide[hidden]{display:none}
+.gcard{width:min(520px,100%);max-height:92vh;overflow:auto;background:var(--surface);border-radius:24px;padding:26px 26px 20px;box-shadow:0 30px 80px rgba(16,23,24,.3)}
+.gcard h2{font-size:26px;font-weight:600;letter-spacing:-.03em;margin:10px 0 8px}
+.gcard p{margin:0 0 12px;color:var(--muted)}
+.gdots{display:flex;gap:6px}.gdots i{width:22px;height:4px;border-radius:2px;background:var(--line)}.gdots i.on{background:var(--brand)}
+.gtiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 4px}
+.gtile{background:var(--sunk);border-radius:16px;padding:14px}.gtile b{display:block;font-size:16px;margin-bottom:4px}.gtile span{font-size:13.5px;color:var(--muted)}
+.gex{background:var(--brand-soft);border-radius:14px;padding:12px 14px;margin:4px 0 12px;font-size:15px}
+.gpick{display:flex;flex-wrap:wrap;gap:8px}
+.gpick button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:0 14px;min-height:40px;font-size:14px;color:var(--ink)}
+.gpick button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.gnav{display:flex;gap:8px;align-items:center;margin-top:20px}
+.btn[aria-pressed="true"][data-follow]{background:var(--brand-soft);border-color:var(--brand)}
+.foryou{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:22px;font-size:13.5px;color:var(--muted)}
+.foryou button{border:0;background:none;color:var(--brand);padding:0;font-size:13.5px}
+.follows{margin-top:34px;text-align:left}
+.follows h3{font-size:15px;font-weight:600;margin:0 0 10px}
+.frow{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px}
+.fp{position:relative;flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:6px;width:86px;border:0;background:none;padding:0;color:var(--ink);font-size:12.5px;text-align:center}
+.fp .av{width:52px;height:52px}
+.fp .newdot{position:absolute;top:-2px;right:14px;background:var(--spark);color:#fff;font-size:10.5px;font-weight:600;border-radius:999px;padding:1px 6px}
+.newb{font-size:12px;font-weight:600;color:var(--ink);background:color-mix(in srgb,var(--spark) 20%,transparent);border-radius:999px;padding:2px 9px;margin-left:8px;vertical-align:middle}
+.tchip{font-size:12.5px!important;padding:4px 5px 4px 10px!important}
+
+.tchip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;background:var(--brand-soft);color:var(--ink);padding:5px 6px 5px 12px;font-size:13.5px}
+.tchip button{border:0;background:none;width:24px;height:24px;border-radius:50%;color:var(--muted);font-size:15px;line-height:1}
+.tchip button:hover{background:color-mix(in srgb,var(--brand) 18%,transparent)}
+.seg{display:inline-flex;background:var(--sunk);border-radius:999px;padding:3px;gap:2px}
+.seg button{border:0;background:none;border-radius:999px;padding:6px 14px;font-size:13.5px;color:var(--muted);min-height:34px}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(16,23,24,.12)}
+.how{font-size:13px;color:var(--faint)}
+.list{display:flex;flex-direction:column;gap:12px;margin-top:18px}
+.card{display:grid;grid-template-columns:52px minmax(0,1fr);gap:16px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px 20px}
+.av{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-weight:600;font-size:17px;letter-spacing:-.02em;color:var(--ink);background:var(--sunk);position:relative}
+.av::after{content:"";position:absolute;right:1px;bottom:1px;width:12px;height:12px;border-radius:50%;border:2px solid var(--surface);background:var(--sec,var(--brand))}
+.nm{border:0;background:none;padding:0;font-size:19px;font-weight:600;letter-spacing:-.02em;color:var(--ink);text-align:left}
+.nm:hover{color:var(--brand)}
+.org{font-size:14px;color:var(--muted);margin-top:1px}
+.sec{font-size:12px;font-weight:500;color:var(--sec);margin-left:6px}
+.why{margin:10px 0 0;font-size:15px}
+.stats{display:flex;gap:18px;margin-top:10px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.stats b{color:var(--ink);font-weight:600}
+.stats .hot b{color:var(--spark)}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.btn{min-height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-size:14px;color:var(--ink)}
+.btn:hover{border-color:var(--brand)}
+.btn.pri{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.pri:hover{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.also{margin-top:26px}
+.also h3,.side h3{font-size:15px;font-weight:600;margin:0 0 10px;letter-spacing:-.01em}
+.mini{display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px;border-radius:16px;background:var(--sunk);margin-bottom:8px}
+.mini .av{width:40px;height:40px;font-size:14px;background:var(--surface)}
+.mini .av::after{width:10px;height:10px;border-color:var(--sunk)}
+.mini p{margin:0;font-size:14px}
+.mini small{display:block;color:var(--muted);font-size:13px}
+.refine{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.note{font-size:13.5px;color:var(--muted)}
+.thinking{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:14px;padding:18px 0}
+.dot3{display:inline-flex;gap:4px}.dot3 i{width:6px;height:6px;border-radius:50%;background:var(--brand);animation:b 1s infinite ease-in-out}
+.dot3 i:nth-child(2){animation-delay:.15s}.dot3 i:nth-child(3){animation-delay:.3s}
+@keyframes b{50%{transform:translateY(-4px);opacity:.4}}
+.side{position:sticky;top:84px;align-self:start;display:flex;flex-direction:column;gap:14px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px}
+.split{display:flex;height:10px;border-radius:999px;overflow:hidden;margin:6px 0 10px;background:var(--sunk)}
+.split i{display:block;height:100%}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--c);margin-right:6px}
+.rows .row{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.rows .row:first-child{border-top:0}
+.rows .av{width:36px;height:36px;font-size:13px}
+.rows .av::after{width:9px;height:9px}
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:9;padding:16px 24px calc(18px + env(safe-area-inset-bottom,0px));background:linear-gradient(to top,var(--bg) 62%,transparent)}
+.dock .composer{max-width:760px;margin:0 auto}
+.results.wide~.dock .composer{max-width:760px}
+
+/* profile sheet */
+.scrim{position:fixed;inset:0;z-index:20;background:rgba(16,23,24,.28);opacity:0;pointer-events:none;transition:opacity .3s}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;z-index:21;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--surface);transform:translateX(102%);transition:transform .4s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;box-shadow:-24px 0 64px rgba(16,23,24,.16)}
+.sheet.open{transform:none}
+.sheet .inner{overflow-y:auto;padding:30px 34px 48px;padding-top:calc(30px + env(safe-area-inset-top,0px))}
+.x{position:absolute;top:calc(16px + env(safe-area-inset-top,0px));right:18px;width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:16px}
+.ph{display:flex;gap:18px;align-items:center}
+.ph .av{width:76px;height:76px;font-size:26px}
+.ph .av::after{width:16px;height:16px;border-width:3px}
+.ph h2{font-size:30px;font-weight:600;letter-spacing:-.035em;line-height:1.1;margin:0}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:22px}
+.kpi{background:var(--sunk);border-radius:14px;padding:12px 14px}
+.kpi b{display:block;font-size:24px;font-weight:600;letter-spacing:-.03em}
+.kpi span{font-size:12.5px;color:var(--muted)}
+.blk{margin-top:28px}
+.blk h3{font-size:15px;font-weight:600;margin:0 0 10px}
+.contact{display:flex;flex-wrap:wrap;gap:8px}
+.contact .btn{display:inline-flex;align-items:center;gap:8px}
+.contact svg{width:16px;height:16px}
+.prov{font-size:12.5px;color:var(--faint);margin-top:8px;line-height:1.5}
+.ktags{display:flex;flex-wrap:wrap;gap:6px}
+.ktags button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:13.5px;color:var(--ink)}
+.ktags button:hover{border-color:var(--brand)}
+.ktags small{color:var(--faint);margin-left:4px}
+.faces{display:flex;flex-wrap:wrap;gap:14px}
+.face{display:flex;flex-direction:column;align-items:center;gap:6px;width:78px;border:0;background:none;padding:0;color:var(--ink);font-size:12.5px;text-align:center}
+.face .av{width:46px;height:46px;font-size:15px}
+.paper{border-top:1px solid var(--line);padding:12px 0}
+.paper .t{border:0;background:none;padding:0;text-align:left;color:var(--ink);font-size:14.5px;font-weight:500}
+.paper .t:hover{color:var(--brand)}
+.paper .m{font-size:13px;color:var(--muted)}
+.paper .authors{font-size:13px;color:var(--muted);margin-top:6px}
+.paper .authors button{border:0;background:none;padding:0;color:var(--brand);font-size:13px}
+.mol{display:inline-block;font-size:12.5px;border:1px solid var(--line);border-radius:999px;padding:2px 10px;margin:6px 4px 0 0}
+.toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%) translateY(20px);opacity:0;z-index:30;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;transition:all .25s;pointer-events:none;max-width:min(520px,90vw)}
+.toast.on{opacity:1;transform:translateX(-50%)}
+
+.topl{display:flex;align-items:center;gap:22px}
+.xlinks{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.linkq{border:0;background:none;padding:0;margin-top:8px;color:var(--faint);font-size:12.5px;text-decoration:underline;cursor:pointer}
+.linkq:hover{color:var(--brand)}
+.nav{display:flex;gap:2px;background:var(--sunk);border-radius:999px;padding:3px}
+.nav button{border:0;background:none;border-radius:999px;padding:7px 16px;font-size:14px;color:var(--muted);font-weight:500;min-height:36px}
+.nav button[aria-current="page"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(16,23,24,.12)}
+.nav .n{font-size:12px;color:var(--faint);margin-left:5px;font-weight:400}
+.radar{max-width:1040px;margin:0 auto;padding:26px 32px 120px}
+.radar h1{font-size:40px;font-weight:600;letter-spacing:-.04em;margin:0 0 6px}
+.radar .lead2{color:var(--muted);margin:0;max-width:640px}
+.banner{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 16px;margin:20px 0 16px;font-size:14px}
+.tgl{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);cursor:pointer}
+.tgl input{width:18px;height:18px;accent-color:var(--brand)}
+.rtabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 18px}
+.rtabs button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:0 14px;min-height:38px;font-size:14px;color:var(--ink)}
+.rtabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.rtabs .n{opacity:.6;margin-left:4px}
+.filt{width:100%;max-width:360px;border:1px solid var(--line);border-radius:999px;background:var(--surface);padding:9px 16px;margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:28px}
+@media (max-width:900px){.grid2{grid-template-columns:1fr}}
+.rlist{display:flex;flex-direction:column;gap:10px}
+.rc{display:grid;grid-template-columns:52px minmax(0,1fr);gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 18px}
+.tierbox{display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:2px}
+.tier{font-size:12px;font-weight:700;border-radius:8px;padding:3px 8px;background:var(--sunk);color:var(--ink)}
+.tier.P0{background:var(--ink);color:var(--bg)}
+.tier.P1{background:var(--brand-soft)}
+.scr{font-size:12px;color:var(--faint)}
+.rname{border:0;background:none;padding:0;text-align:left;font-size:16px;font-weight:600;letter-spacing:-.015em;color:var(--ink);line-height:1.3}
+.rname:hover{color:var(--brand)}
+.clamp{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rc .why{font-size:14px;color:var(--muted);margin-top:6px}
+.badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.bdg{font-size:12.5px;border-radius:999px;padding:3px 10px;background:var(--sunk);color:var(--muted)}
+.bdg.soon{background:color-mix(in srgb,var(--spark) 18%,transparent);color:var(--ink)}
+.bdg.in{background:var(--brand-soft);color:var(--ink)}
+.ttag{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;color:var(--ink);background:color-mix(in srgb,var(--tc) 14%,transparent);border-radius:999px;padding:3px 10px 3px 8px;white-space:nowrap}
+.ttag::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--tc)}
+.rc2{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 18px;border-left:3px solid var(--tc)}
+.rc2 .rname{margin-top:8px;display:block}
+.dotl::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--tc);margin-right:7px}
+.srcs{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:8px}
+.srcs a{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px;color:var(--ink);text-decoration:none}
+.srcs a:hover{border-color:var(--brand)}
+.tl .ms{display:grid;grid-template-columns:92px minmax(0,1fr);gap:14px;padding:12px 0;border-top:1px solid var(--line);align-items:baseline}
+.tl .ms:first-of-type{border-top:0}
+.tl .ms b{font-size:15px;display:block}
+.tl small{color:var(--muted);font-size:12.5px}
+.radarblk{margin-top:26px}
+.radarblk h3{font-size:15px;font-weight:600;margin:0 0 4px}
+.rrow{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.rrow .ar{font-size:12.5px;color:var(--muted)}
+.rrow .rname{font-size:14.5px}
+.rrow small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+.seeall{border:0;background:none;padding:6px 0;color:var(--brand);font-size:14px}
+.crit .cr{display:grid;grid-template-columns:160px minmax(0,1fr) 22px;gap:10px;align-items:center;font-size:13.5px;padding:4px 0}
+.crit .bar{height:6px;border-radius:3px;background:var(--sunk);overflow:hidden}
+.crit .bar i{display:block;height:100%;background:var(--brand)}
+.evl{padding-left:18px;margin:0}
+.evl li{margin:7px 0;font-size:13.5px;color:var(--muted)}
+.evl a,.facts a{color:var(--brand)}
+.facts{display:grid;grid-template-columns:150px minmax(0,1fr);gap:8px 14px;font-size:14px;margin:0}
+.facts dt{color:var(--muted)}
+.facts dd{margin:0;word-break:break-word}
+.extl{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:999px;background:var(--ink);color:var(--bg);text-decoration:none;font-size:14px}
+.extl:hover{background:var(--brand);color:var(--brand-ink)}
+.radarline{display:inline-flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;margin-top:26px;font-size:14px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:8px 10px 8px 16px;background:var(--surface)}
+.radarline button{border:0;background:var(--sunk);border-radius:999px;padding:6px 12px;font-size:13.5px;color:var(--ink)}
+@media (max-width:700px){.nav button{padding:7px 11px}.lp{display:none}.radar{padding:20px 18px 120px}}
+
+@media (max-width:700px){.top{padding:0 18px}.results{padding:8px 18px 200px}.q{font-size:23px}.demo{display:none}.kpis{grid-template-columns:repeat(3,1fr)}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="topl"><button class="logo" id="home" type="button" aria-label="MeatCODE, start over" data-mc-standalone>
+    <svg viewBox="0 0 28 28" aria-hidden="true"><polygon points="14,3 23.5,8.5 23.5,19.5 14,25 4.5,19.5 4.5,8.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="14" cy="3.4" r="3.2" fill="var(--brand)"/><circle cx="14" cy="24.6" r="3.2" fill="var(--spark)"/></svg>
+    <span class="lw">Meat<span>CODE</span></span><span class="lp">Ecosystem</span>
+  </button>
+  <nav class="nav" aria-label="Sections"><button type="button" id="navPeople" aria-current="page">People</button><button type="button" id="navRadar" aria-current="false">Radar<span class="n" id="navRadarN"></span></button></nav></div>
+  <span style="display:flex;gap:10px;align-items:center"><button class="btn" type="button" id="helpBtn" style="min-height:36px">How it works</button><span class="demo" role="note" id="snapNote">People &amp; papers as of 8 Oct 2026</span></span>
+</header>
+
+<main id="app"></main>
+
+<div class="dock" id="dock" hidden>
+  <form class="composer" id="formB" autocomplete="off">
+    <label class="sr" for="qB">Refine or ask something new</label>
+    <textarea id="qB" rows="1" placeholder="Refine, or ask something new"></textarea>
+    <button class="send" type="submit" aria-label="Send"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 16V4M4.5 9.5 10 4l5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </form>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="sheet" id="sheet" aria-label="Profile" aria-hidden="true">
+  <button class="x" id="sheetClose" type="button" aria-label="Close profile">✕</button>
+  <div class="inner" id="sheetInner"></div>
+</aside>
+<div class="toast" id="toast" role="status"></div>
+
+<div class="guide" id="guide" hidden role="dialog" aria-modal="true" aria-label="Introduction"><div class="gcard" id="guideCard"></div></div>
+
+<script>
+(async function(){
+'use strict';
+/* Boot: the topic taxonomy comes from the server (the bible, db/taxonomy/keywords_topics.json) and the people /
+   papers / Radar data from the snapshot file named by /api/ecosystem/bootstrap. */
+async function bootData(){
+  const get=u=>fetch(u,{credentials:'same-origin'}).then(r=>r.ok?r.json():Promise.reject(new Error(u+' '+r.status)));
+  try{const b=await get('/api/ecosystem/bootstrap');const d=await get(b.data_url||'/app/modules/ecosystem_data.json');return{b,d};}
+  catch(err){document.getElementById('app').innerHTML='<section class="start"><h1>Ecosystem isn\u2019t available right now</h1><p class="lead">Please refresh in a moment. If this keeps happening, the Ecosystem may be switched off on this server.</p></section>';return null;}
+}
+const BOOT=await bootData();if(!BOOT)return;
+const CONTACT=BOOT.b.contact_email||'';
+const TAX=BOOT.b.taxonomy, MAP=BOOT.d.map;
+const TOPIC=Object.fromEntries(TAX.map(t=>[t.s,t])), BYNAME=Object.fromEntries(TAX.map(t=>[t.n,t.s]));
+const BRANCHES=['flavor_chemistry','flavor_ingredients','meat_analogs','meat_science','analytics'];
+
+/* ── REAL DATA (app/modules/ecosystem_data.json — see its _about) ──
+   People + papers: Neon "GFI database", read-only SELECT on 8 Oct 2026. People = authors of the
+   319 sources with relevance_llm >= 60, matched to public.experts by exact normalised name (deduplicated), kept if they have
+   >= 2 such papers or are a curated OpenAlex-backed record (153 people, 108 papers). Country/sector inferred from affiliation
+   where the DB field is empty. Radar rows and new people: MeatCODE DB Agent Inbox (Google Sheet), run 7 Oct 2026. */
+const RD=BOOT.d.rd;
+const COUNTRIES={CN:'China',KR:'South Korea',DE:'Germany',CH:'Switzerland',US:'United States',SE:'Sweden',ES:'Spain',NZ:'New Zealand',NL:'Netherlands',TH:'Thailand',AT:'Austria',BE:'Belgium',CA:'Canada',EE:'Estonia',GB:'United Kingdom',FR:'France',SG:'Singapore',BR:'Brazil',IL:'Israel',JP:'Japan',IT:'Italy',DK:'Denmark',IE:'Ireland',FI:'Finland',IN:'India',AU:'Australia',PL:'Poland'};
+const REGION={DE:'europe',CH:'europe',SE:'europe',ES:'europe',NL:'europe',AT:'europe',BE:'europe',EE:'europe',GB:'europe',FR:'europe',IT:'europe',DK:'europe',IE:'europe',FI:'europe',PL:'europe',US:'north_america',CA:'north_america',CN:'asia_pacific',KR:'asia_pacific',TH:'asia_pacific',NZ:'asia_pacific',SG:'asia_pacific',JP:'asia_pacific',IN:'asia_pacific',AU:'asia_pacific',IL:'israel',BR:'latin_america'};
+const REGIONS={any:'Anywhere',europe:'Europe',north_america:'North America',asia_pacific:'Asia-Pacific',israel:'Israel',latin_america:'Latin America'};
+const SECTORS={all:'All',academic:'Academic',industry:'Industry',ngo:'NGO & gov'};
+const SECVAR={academic:'--acad',industry:'--ind',ngo:'--ngo',unknown:'--faint'};
+const ISO={'Germany':'DE','China':'CN','France':'FR','United Kingdom':'GB','New Zealand':'NZ','Sweden':'SE','Singapore':'SG','Brazil':'BR','Canada':'CA','United States':'US','Israel':'IL','Netherlands':'NL','Belgium':'BE','Spain':'ES','Switzerland':'CH'};
+const PAPERS=RD.papers.map(p=>({id:p.id,title:p.t,year:p.y,journal:p.j,doi:p.doi,claim:p.c,na:p.na,dbTopics:p.tp,topics:[],authors:[]}));
+const P=Object.fromEntries(PAPERS.map(p=>[p.id,p]));
+const EXPERTS=RD.people.map(r=>({id:r.id,name:r.name,org:r.org||'',sector:r.sector,country:r.country,h:r.h,orcid:r.orcid,oa:r.oa,papers:r.sids.filter(s=>P[s]),links:{},radar:[]}));
+const E=Object.fromEntries(EXPERTS.map(e=>[e.id,e]));
+EXPERTS.forEach(e=>e.papers.forEach(pid=>P[pid].authors.push(e.id)));
+let LINKED=[],MAXH=1;
+const nameKey=n=>String(n||'').replace(/^(prof\.?\s*)?(dr\.?\s*)?/i,'').replace(/\s*\(.*\)$/,'').toLowerCase().normalize('NFD').replace(/[^a-z]/g,'');
+function sectorOf(a){a=String(a||'').toLowerCase();if(!a)return 'unknown';if(/co\.,? ?ltd|nestl|adm \(|gmbh|\binc\b|b\.v\./.test(a))return 'industry';if(/ministry|academy of agricultural|inrae|agresearch|a\*star|national institute|food research institute/.test(a))return 'ngo';return 'academic';}
+/* Paper tagger: narrow, one regex per taxonomy slug (the broad CONCEPTS list is for reading questions only). */
+const PAPER_TAGS=[[/beany|grassy/,'beany_note_reduction'],[/off[- ]?(flavou?r|note|odou?r)s?|masking|mask /,'off_note_masking'],[/bitter/,'bitter_blockers'],[/lipoxygenase/,'lipoxygenase_pathway'],
+ [/lipid oxidation|oxidation of lipid|warmed-over|rancid/,'lipid_oxidation_topic'],[/intramuscular fat|marbl/,'marbling'],[/oleogel/,'oleogels_topic'],[/strecker/,'strecker_degradation_topic'],[/amadori/,'amadori_rearrangement'],[/heyns/,'heyns_rearrangement'],
+ [/maillard/,'reaction_flavors_topic'],[/maillard.*(lipid|fatty)|(lipid|fatty).*maillard/,'maillard_lipid'],[/intermediate/,'maillard_intermediates_ing'],[/pyrazine/,'pyrazine_chemistry'],[/furan/,'furan_chemistry'],
+ [/thiol|thioalcohol/,'thiols'],[/disulfide|trisulfide/,'disulfides'],[/thioph/,'thiophenes'],[/cysteine|methionine|glutathione|lysine|histidine|amino acid/,'amino_acids'],[/xylose|glucose|fructose|reducing sugar|pentose/,'primary_sugars'],[/peptide/,'peptide'],[/thiamine|vitamin/,'vitamins'],
+ [/yeast extract/,'yeast_extract_topic'],[/hydrolysate|hydrolyzed|hydrolysed/,'hvp_topic'],[/umami/,'umami_enhancers'],[/kokumi/,'kokumi_enhancers'],[/salt(iness| enhanc)|nacl/,'salt_enhancers'],[/encapsul/,'encapsulated_flavors'],[/enzym|protease/,'enzymatic_processing'],
+ [/ferment/,'fermentation_topic'],[/precision ferment/,'precision_fermentation'],[/pea[- ]protein|pea milk|\bpea\b|soy|plant[- ]based|plant protein|corn protein|peanut protein/,'plant_based_proteins'],[/high[- ]moisture|extru|texturi[sz]ed/,'hmma'],[/cultivated|cell[- ]based|cultured/,'cultivated_meat'],[/hybrid/,'hybrid_products'],[/mycoprotein|mushroom|fung/,'mycoprotein_analog'],
+ [/heme|haem|myoglobin|hemoglobin/,'myoglobin'],[/metallic/,'metallic'],[/meat flavou?r|meaty|meat aroma|beef|pork|lamb|mutton|sheep|goat|chicken|duck|quail|sausage|bacon|meat ball|meatball/,'meat_aroma'],
+ [/grill/,'grill'],[/roast|fried|frying|braise|braising|boil|stew|cooking|cooked/,'cooking'],[/dry-aging|dry-ageing|postmortem|post-mortem|aging/,'ageing'],[/dry-cured|curing|cured/,'curing'],[/smoke/,'smoking'],
+ [/gc[- –]?ms|gc–ms|gas chromatography/,'gcms_topic'],[/gc[- –]?o\b|gc-o-ms|olfactometr/,'gc_olfactometry'],[/spme/,'hs_spme_topic'],[/lc-ms|uplc|lc–ms/,'lcms_topic'],[/gc-ims|ion mobility/,'mass_spectrometry'],[/lipidomic/,'lipidomics_topic'],[/metabolomic|multi-omics|flavoromics/,'metabolomics_topic'],[/peptidomic|sensoproteomic/,'peptidomics_topic'],
+ [/e-nose|electronic nose/,'electronic_nose'],[/odou?r activity|oav|threshold/,'threshold_testing'],[/aroma recombination|omission|sensomics|aroma extract dilution|aeda/,'aeda'],[/sensory|panel|perception|perceptual/,'consumer_panel_topic'],[/machine learning|neural|predictive model|docking|computational/,'ai_ml']];
+function paperTopics(text){const t=String(text||'').toLowerCase(),s=new Set();PAPER_TAGS.forEach(([re,slug])=>{if(TOPIC[slug]&&re.test(t))s.add(slug);});return s;}
+function finishPeople(){
+  PAPERS.forEach(p=>{const s=paperTopics(p.title+' '+(p.claim||''));(p.dbTopics||[]).forEach(t=>{if(TOPIC[t])s.add(t);});p.topics=[...s];});
+  const byKey=Object.fromEntries(EXPERTS.map(e=>[nameKey(e.name),e]));
+  INBOX.experts.filter(x=>reviewed(x.status)).forEach(x=>{const f=x.f;let e=byKey[nameKey(x.name)];
+    if(!e){e={id:'x-'+x.id,name:x.name.replace(/^(prof\.?\s*)?(dr\.?\s*)?/i,'').trim(),org:(f.Affiliation||'').split(/[,;]/)[0],sector:sectorOf(f.Affiliation),country:ISO[f.Country]||null,h:null,papers:[],links:{},radar:[],isNew:true};EXPERTS.push(e);E[e.id]=e;byKey[nameKey(x.name)]=e;}
+    const pu=f['Profile URL']||'';if(pu){if(/researchgate|linkedin/i.test(pu)){}else if(/orcid\.org/.test(pu)){if(!e.orcid)e.orcid=pu.split('orcid.org/')[1];}else if(/scholar\.google/.test(pu))e.links.gs=pu;else if(/openalex\.org/.test(pu)){if(!e.oa)e.oa=pu.split('openalex.org/')[1];}else e.links.page=pu;}
+    if(f.OpenAlex&&!e.oa)e.oa=f.OpenAlex.split('openalex.org/')[1];
+    e.role=e.role||f.Role;e.expertise=e.expertise||f.Expertise;e.inbox=x.id;});
+  INBOX.news.forEach(n=>authorsOf(n).forEach(a=>{const e=byKey[nameKey(a)];if(e&&!e.radar.includes(n.id))e.radar.push(n.id);}));
+  EXPERTS.forEach(e=>{const c={};e.papers.forEach(pid=>P[pid].topics.forEach(t=>c[t]=(c[t]||0)+1));
+    if(!e.papers.length)paperTopics([e.expertise||'',...e.radar.map(id=>BYID[id]?BYID[id].name:'')].join(' ')).forEach(t=>c[t]=(c[t]||0)+1);
+    e.topics=Object.entries(c).sort((a,b)=>b[1]-a[1]);e.tc=c;
+    e.latest=e.papers.length?Math.max(...e.papers.map(p=>P[p].year)):(e.isNew?2026:null);
+    e.linked=e.papers.length>0||(!!e.isNew&&e.topics.length>0);
+    const co=new Map();e.papers.forEach(pid=>P[pid].authors.forEach(a=>{if(a!==e.id)co.set(a,(co.get(a)||0)+1);}));e.co=[...co.entries()].sort((a,b)=>b[1]-a[1]);});
+  LINKED=EXPERTS.filter(e=>e.linked);MAXH=Math.max(1,...LINKED.map(e=>e.h||0));
+}
+const place=e=>[e.org,COUNTRIES[e.country]].filter(Boolean).join(', ');
+
+
+/* ── helpers ── */
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ini=n=>n.split(' ').map(w=>w[0]).join('').slice(0,2);
+const av=(e,cls)=>`<span class="av ${cls||''}" aria-hidden="true" style="--sec:var(${SECVAR[e.sector]})">${esc(ini(e.name))}</span>`;
+const and=a=>a.length<2?(a[0]||''):a.slice(0,-1).join(', ')+' and '+a[a.length-1];
+const toastEl=document.getElementById('toast');let tt;
+function toast(m){toastEl.textContent=m;toastEl.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>toastEl.classList.remove('on'),3200);}
+
+/* ── intent model ── */
+const INTENTS={
+  collaborate:{label:'Find a research collaborator',w:{fit:.7,rec:.3,sen:0},how:'Ranked by topic fit in their papers (70%) and recent activity (30%).'},
+  partner:{label:'Find an industry partner',w:{fit:.75,rec:.25,sen:0},how:'Ranked by topic fit (75%) and recent activity (25%). Company pages shown.'},
+  review:{label:'Find a reviewer or advisor',w:{fit:.5,rec:.1,sen:.4},how:'Ranked by topic fit (50%), seniority by h-index (40%) and recent activity (10%).'},
+  explore:{label:'See who works on this',w:{fit:.8,rec:.2,sen:0},how:'Everyone with matching papers, mapped. Ordered by topic fit.'},
+  learn:{label:'Learn a skill',w:{fit:.7,rec:.3,sen:0},how:'Courses from the Radar first, then people who work on the topic.'},
+  events:{label:'Find events to attend or present at',w:{fit:.7,rec:.3,sen:0},how:'Events from the Radar first, with deadlines, then people who work on the topic.'}
+};
+const CONCEPTS=[
+  [/off[- ]?(flavou?r|note|taste)|beany|grassy|mask/,['Off-note masking','Beany note reduction','Bitter blockers','Lipoxygenase pathway (LOX)']],
+  [/meaty|meat flavou?r|aroma|savou?ry|roast/,['Meat aroma','Reaction flavors / process flavors','Maillard-Lipid interaction','Strecker degradation']],
+  [/fat|lipid|oil|marbl/,['Lipid oxidation','Oleogels','Structured fats','Marbling / intramuscular fat','Maillard-Lipid interaction']],
+  [/sulfur|sulphur|thiol/,['Thiols','Disulfides','Polysulfides','Thiophenes']],
+  [/heme|haem|blood|iron|metallic/,['Hemoglobin','Leghemoglobin','Myoglobin','Heme analogues (synthetic biology)','Metallic']],
+  [/ingredient|raw material|yeast|precursor/,['Yeast extract','Maillard intermediates as ingredients','Hydrolyzed Vegetable Protein (HVP)','Amino acids','Primary sugars']],
+  [/grill|cook|heat|thermal|fry/,['Cooking','Grill','Thermal']],
+  [/gc|mass spec|measure|analy|volatile|sniff|olfact/,['GCMS','GC-Olfactometry (GC-O)','HS-SPME','Volatilomics']],
+  [/umami|kokumi|salt/,['Umami enhancers','Kokumi enhancers','Salt enhancers']],
+  [/pea\b|soy|plant[- ]based|plant protein/,['Plant-based proteins','HMMA (high-moisture meat analogs)']],
+  [/ferment/,['Fermentation','Precision fermentation']],
+  [/cultivat|cell[- ]based/,['Cultivated / cell-based meat']],
+  [/extru|texture|high[- ]moisture/,['HMMA (high-moisture meat analogs)','LMMA (low-moisture meat analogs / TVP)','Matrix interactions']],
+  [/machine learning|\bml\b|\bai\b|artificial intelligence|neural|predict|model/,['AI / ML']],
+  [/maillard/,['Maillard-Lipid interaction','Amadori rearrangement','Strecker degradation','Maillard intermediates as ingredients']]
+];
+const STOP=new Set(['flavor','flavors','flavour','flavours','source','sources','based','other','about','which','there','their','closer','animal','during','people','works','whose','things','better','reduce','tastes','after','getting','someone','should','where','products','product','looking','partner','review','advisor','industry','europe','academic','company','companies','supplier','course','courses','conference','conferences','events','present','training','learn','science','could','where']);
+function localRead(text,prev){
+  const t=text.toLowerCase(), r={topics:[],sector:'all',region:'any',since:null,intent:'collaborate',person:null};
+  const named=LINKED.find(e=>t.includes(e.name.toLowerCase())); if(named){r.intent='person';r.person=named.id;return r;}
+  if(!/machine learning|deep learning/.test(t)&&/\bcourses?\b|\blearn\b|training|certificat|\bclass\b|mooc|upskill|up to speed/.test(t))r.intent='learn';
+  else if(/conference|webinar|meetup|symposi|\bevents?\b|call for (papers|abstracts)|\bcfp\b|trade show|\bexpo\b|present (meatcode|our|it)/.test(t))r.intent='events';
+  else if(/partner|supplier|vendor|compan|co-?manufactur|commerciali|scale[- ]?up|licen/.test(t))r.intent='partner';
+  else if(/review|validat|advis|council|second opinion|sanity|peer|senior|check our/.test(t))r.intent='review';
+  else if(/who works|who is working|landscape|map\b|where are|overview|how many|which countries|in (europe|israel|asia|america)/.test(t))r.intent='explore';
+  if(/industr|compan|commercial|supplier/.test(t))r.sector='industry';
+  if(/academ|universit|professor|lab\b/.test(t))r.sector='academic';
+  if(/ngo|non-?profit|government|gov\b|agency|foundation/.test(t))r.sector='ngo';
+  if(/europe|\beu\b/.test(t))r.region='europe';else if(/israel/.test(t))r.region='israel';else if(/asia|japan|china|korea|singapore|india|australia/.test(t))r.region='asia_pacific';else if(/america|us\b|usa|canada/.test(t))r.region='north_america';else if(/brazil|latin/.test(t))r.region='latin_america';
+  for(const[k,v]of Object.entries(COUNTRIES))if(t.includes(v.toLowerCase())){r.country=k;}
+  const y=t.match(/(since|after|from)\s+(20\d\d)/);if(y)r.since=+y[2];
+  const want=new Set();CONCEPTS.forEach(([re,names])=>{if(re.test(t))names.forEach(n=>BYNAME[n]&&want.add(BYNAME[n]));});
+  t.split(/[^a-z0-9]+/).filter(w=>w.length>=5&&!STOP.has(w)).forEach(w=>TAX.forEach(x=>{if(x.n.toLowerCase().includes(w.slice(0,6)))want.add(x.s);}));
+  r.topics=[...want].slice(0,6);
+  const refining=prev&&(!r.topics.length)&&/^(only|just|active|since|in |from |and |but |more |industry|academ|europe|ngo|gov|senior|show)/i.test(text.trim());
+  if(refining){r.topics=prev.topics.slice();if(r.intent==='collaborate'&&!/review|partner|who works|map/.test(t))r.intent=prev.intent;if(r.sector==='all')r.sector=prev.sector;if(r.region==='any'&&!r.country){r.region=prev.region;r.country=prev.country;}if(!r.since)r.since=prev.since;}
+  return r;
+}
+/* AI reading runs on the MeatCODE server (POST /api/ecosystem/intent builds the prompt from the taxonomy bible). Any
+   failure returns null and the caller falls back to the local keyword reader above. */
+async function aiRead(text,prev){
+  try{const res=await fetch('/api/ecosystem/intent',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text,prev:prev?{intent:prev.intent,topics:prev.topics,sector:prev.sector,region:prev.region,since:prev.since}:null})});
+    if(!res.ok)return null;const r=await res.json();if(!r||r.error)return null;
+    const out={intent:(INTENTS[r.intent]||r.intent==='person')?r.intent:'collaborate',topics:(Array.isArray(r.topics)?r.topics:[]).filter(s=>TOPIC[s]).slice(0,6),sector:SECTORS[r.sector]?r.sector:'all',region:REGIONS[r.region]?r.region:'any',since:Number.isInteger(r.since)?r.since:null,person:null,engine:'ai'};
+    if(out.intent==='person'){const n=String(r.person||'').toLowerCase();const e=LINKED.find(x=>x.name.toLowerCase()===n)||LINKED.find(x=>n&&x.name.toLowerCase().includes(n));if(e)out.person=e.id;else out.intent='collaborate';}
+    return out;}catch(_){return null;}
+}
+
+/* ── ranking, deterministic ── */
+function eligible(e,r){return(r.sector==='all'||e.sector===r.sector)&&(r.region==='any'||REGION[e.country]===r.region)&&(!r.country||e.country===r.country)&&(!r.since||e.latest>=r.since);}
+let IDF=null;
+function idf(t){if(!IDF){const df={};PAPERS.forEach(p=>p.topics.forEach(x=>df[x]=(df[x]||0)+1));IDF={};Object.keys(TOPIC).forEach(x=>IDF[x]=Math.log(1+PAPERS.length/((df[x]||0)+1)));}return IDF[t]||1;}
+const isGeneric=t=>idf(t)<1.2;
+function personText(e){if(!e._txt)e._txt=[e.expertise||'',e.org||'',...e.papers.map(p=>P[p].title+' '+(P[p].claim||'')),...e.radar.map(id=>BYID[id]?BYID[id].name:'')].join(' ').toLowerCase();return e._txt;}
+const PLACEWORDS=new Set(Object.values(COUNTRIES).join(' ').toLowerCase().split(/\s+/).concat(['europe','european','north','america','american','asia','pacific','latin','world','country','countries','where']));
+function qWords(q){return String(q||'').toLowerCase().split(/[^a-z0-9]+/).filter(w=>w.length>=5&&!STOP.has(w)&&!PLACEWORDS.has(w));}
+function rank(r){
+  const w=(INTENTS[r.intent]||INTENTS.collaborate).w, want=new Set(r.topics), words=qWords(r.q);
+  const rows=LINKED.filter(e=>eligible(e,r)).map(e=>{
+    const hit=e.topics.filter(([s])=>want.has(s)).sort((a,b)=>b[1]*idf(b[0])-a[1]*idf(a[0]));
+    const fitN=hit.reduce((a,[t,n])=>a+n*idf(t),0);
+    const fitPapers=e.papers.filter(pid=>P[pid].topics.some(t=>want.has(t))).length;
+    const txt=personText(e), lex=words.filter(x=>txt.includes(x.slice(0,7))).length;
+    return{e,hit,fitN:fitN+lex*1.5,fitPapers,lex};}).filter(x=>(want.size||words.length)?x.fitN>0:true);
+  const maxFit=Math.max(1,...rows.map(x=>x.fitN));
+  rows.forEach(x=>{x.score=w.fit*(x.fitN/maxFit)+w.rec*(((x.e.latest||2008)-2008)/18)+w.sen*((x.e.h||0)/MAXH);});
+  rows.sort((a,b)=>b.score-a.score);
+  return rows;
+}
+function why(x,intent){const n=x.fitPapers,ts=x.hit.filter(([t])=>!isGeneric(t)).slice(0,2).map(([s])=>TOPIC[s].n);
+  if(!x.e.papers.length)return (x.e.expertise?'Works on '+x.e.expertise.replace(/;/g,',').toLowerCase()+'.':'Spotted on the Radar this month.')+(x.e.radar.length?' New work on the Radar.':'');
+  if(!ts.length||!n)return `${x.e.papers.length} paper${x.e.papers.length===1?'':'s'} in MeatCODE that match your words, most recently in ${x.e.latest}.`;
+  let s=`${n} of their ${x.e.papers.length} papers in MeatCODE cover ${and(ts)}, most recently in ${x.e.latest}.`;
+  if(intent==='review')s+=` h-index ${x.e.h}.`;return s;}
+function alsoTalk(r,shown){
+  if(!r.topics.length)return[];
+  const want=new Set(r.topics), co={};
+  PAPERS.forEach(p=>{const hits=p.topics.filter(t=>want.has(t));if(!hits.length)return;p.topics.forEach(t=>{if(!want.has(t)){co[t]=co[t]||{n:0,with:{}};co[t].n++;hits.forEach(h=>co[t].with[h]=(co[t].with[h]||0)+1);}});});
+  const qb=new Set(r.topics.map(s=>TOPIC[s].b));
+  const sc=([t,v])=>v.n*idf(t)*(qb.has(TOPIC[t].b)?1:1.6);const cands=Object.entries(co).filter(([t,v])=>v.n>=2&&!isGeneric(t)).sort((a,b)=>sc(b)-sc(a));
+  const out=[],used=new Set(shown);
+  for(const[t,v]of cands){if(out.length>=3)break;
+    const best=LINKED.filter(e=>!used.has(e.id)&&e.tc[t]&&eligible(e,Object.assign({},r,{sector:'all'}))).sort((a,b)=>b.tc[t]-a.tc[t]||b.latest-a.latest)[0];
+    if(!best)continue;used.add(best.id);
+    const w=Object.entries(v.with).sort((a,b)=>b[1]*idf(b[0])-a[1]*idf(a[0]))[0];
+    out.push({e:best,t,why:`${TOPIC[t].n} shows up alongside ${TOPIC[w[0]].n} in ${w[1]} corpus paper${w[1]>1?'s':''}. ${best.name} has ${best.tc[t]} on it.`});}
+  return out;
+}
+
+/* ── map ── */
+function mapSVG(counts,opts){
+  opts=opts||{};const max=Math.max(1,...Object.values(counts));
+  let pins='';Object.entries(counts).forEach(([c,n])=>{const p=MAP.c[c];if(!p)return;const r=4+9*Math.sqrt(n/max);
+    const lbl=r>=8?`<text class="pinlbl" x="${p[0]}" y="${p[1]+4}" text-anchor="middle">${n}</text>`:'';pins+=`<circle class="halo" cx="${p[0]}" cy="${p[1]}" r="${(r*2.1).toFixed(1)}"/><circle class="pin" tabindex="0" role="button" data-cc="${c}" cx="${p[0]}" cy="${p[1]}" r="${r.toFixed(1)}" aria-label="${esc(COUNTRIES[c])}: ${n} ${n>1?'people':'person'}"><title>${esc(COUNTRIES[c])}: ${n}</title></circle>${lbl}`;});
+  return `<div class="mapframe"><svg class="map" viewBox="0 0 ${MAP.W} ${MAP.H}" role="img" aria-label="${esc(opts.label||'World map of people')}"><path class="land" d="${MAP.d}"/>${pins}</svg></div>`;
+}
+function wireMap(root,fn){root.querySelectorAll('[data-cc]').forEach(c=>{c.onclick=()=>fn(c.dataset.cc);c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fn(c.dataset.cc);}};});}
+
+/* ── views ── */
+const app=document.getElementById('app'), dock=document.getElementById('dock');
+const turns=[];let MODE='people';
+const STARTERS=['Our pea-protein patty tastes beany after grilling','Find an industry partner for yeast-extract reaction flavors','Conferences where we could present MeatCODE','A course to get the team up to speed on sensory science'];
+function followRow(){const f=[...FOLLOW].map(id=>E[id]).filter(Boolean);if(!f.length)return '';
+  return `<div class="follows"><h3>People you follow</h3><div class="frow">${f.map(e=>`<button class="fp" type="button" data-open="${e.id}">${av(e)}${e.radar.length?'<span class="newdot">New</span>':''}<span>${esc(e.name)}</span></button>`).join('')}</div></div>`;}
+function viewStart(){
+  MODE='people';setNav('people');dock.hidden=true;turns.length=0;
+  const cc={};LINKED.forEach(e=>{if(e.country)cc[e.country]=(cc[e.country]||0)+1;});
+  app.innerHTML=`<section class="start"><h1>Who should you talk to?</h1>
+   <p class="lead">Describe what you're working on. MeatCODE Ecosystem finds the people, papers, events and courses that fit, and tells you why.</p>
+   <form class="composer" id="formA" autocomplete="off"><label class="sr" for="qA">Describe what you're working on</label>
+    <textarea id="qA" rows="1" placeholder="e.g. our pea-protein patty tastes beany after grilling"></textarea>
+    <button class="send" type="submit" aria-label="Find people"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 16V4M4.5 9.5 10 4l5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></form>
+   <div class="starters">${starters().map(s=>`<button class="chip" type="button" data-start>${esc(s)}</button>`).join('')}</div>
+   <div class="foryou">${PREFS.branches.length||PREFS.role?`<span>Tuned for ${[...PREFS.branches.map(b=>BRANCH_LABEL[b]),PREFS.role?ROLES[PREFS.role]:''].filter(Boolean).join(', ')}.</span>`:'<span>Tell us what you work on to tune this page.</span>'}<button type="button" id="tune">${PREFS.branches.length||PREFS.role?'Change':'Choose'}</button></div>
+   ${followRow()}</div></section>`;
+  wireComposer('formA','qA');wireItems(app);
+  app.querySelectorAll('[data-start]').forEach(b=>b.onclick=()=>ask(b.textContent));
+  document.getElementById('tune').onclick=()=>openGuide(3);
+  app.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openProfile(b.dataset.open));
+  if(innerWidth<600){const qa=document.getElementById('qA');if(qa)qa.placeholder='Describe your problem…';}
+}
+function renderTurns(){
+  dock.hidden=false;
+  const last=turns[turns.length-1];
+  const wide=last&&last.status==='done'&&(last.r.intent==='explore'||last.r.intent==='partner');
+  let main='';
+  turns.forEach((t,i)=>{main+=turnHTML(t,i===turns.length-1);});
+  let side='';
+  if(wide){const rows=last.rows;const cc={};rows.forEach(x=>{if(x.e.country)cc[x.e.country]=(cc[x.e.country]||0)+1;});
+    const sc={academic:0,industry:0,ngo:0};rows.forEach(x=>sc[x.e.sector]++);const tot=rows.length||1;
+    side=`<aside class="side" aria-label="Where they are"><div class="panel"><h3>Where they are</h3>${mapSVG(cc,{label:'Map of matching people'})}<p class="note" style="margin:8px 0 0">Pick a country to narrow down.</p></div>
+      <div class="panel"><h3>By sector</h3><div class="split">${['academic','industry','ngo'].map(s=>`<i style="width:${sc[s]/tot*100}%;background:var(${SECVAR[s]})"></i>`).join('')}</div>
+      <div class="legend">${['academic','industry','ngo'].map(s=>`<span style="--c:var(${SECVAR[s]})">${SECTORS[s]} ${sc[s]}</span>`).join('')}</div></div></aside>`;}
+  app.innerHTML=`<div class="results${wide?' wide':''}"><div id="thread">${main}</div>${side}</div>`;
+  wireThread();
+  if(wide)wireMap(app.querySelector('.side'),c=>{last.r.country=c;last.r.region='any';rerank(last);});
+}
+function turnHTML(t,isLast){
+  if(t.status==='thinking')return `<section class="turn"><p class="q">${esc(t.q)}</p><div class="thinking"><span class="dot3"><i></i><i></i><i></i></span>Reading what you need</div></section>`;
+  const r=t.r, I=INTENTS[r.intent];
+  let h=`<section class="turn" data-turn="${turns.indexOf(t)}"><p class="q">${esc(t.q)}</p>`;
+  h+=`<div class="reading" aria-label="How MeatCODE read your request">
+    <div class="rhead"><span class="rtitle">How I read your request</span>${isLast?'<span class="rhint">✎ Not quite right? Change any part below</span>':''}</div>
+    <div class="rline"><span>Looking to</span>
+      <label class="sr" for="in${t.k}">Intent</label><select class="rsel" id="in${t.k}" data-ctl="intent" ${isLast?'':'disabled'}>${Object.entries(INTENTS).map(([k,v])=>`<option value="${k}" ${k===r.intent?'selected':''}>${v.label}</option>`).join('')}</select>
+      ${(r.topics.length||isLast)?'<span>on</span>':''}${r.topics.map(s=>`<span class="tchip" title="${esc(TOPIC[s].n)}">${esc(shortTopic(s))}${isLast?`<button type="button" aria-label="Remove ${esc(TOPIC[s].n)}" data-rmt="${s}">×</button>`:''}</span>`).join('')}${isLast?`<span class="addt"><label class="sr" for="at${t.k}">Add a topic</label><input id="at${t.k}" list="taxlist" placeholder="+ Add a topic" data-addtopic autocomplete="off"></span>`:''}
+      <span>in</span><label class="sr" for="rg${t.k}">Region</label><select class="rsel" id="rg${t.k}" data-ctl="region" ${isLast?'':'disabled'}>${r.country?`<option value="cc" selected>${esc(COUNTRIES[r.country])}</option>`:''}${Object.entries(REGIONS).map(([k,v])=>`<option value="${k}" ${!r.country&&k===r.region?'selected':''}>${v}</option>`).join('')}</select>
+      ${r.since?`<span class="tchip">Active since ${r.since}${isLast?'<button type="button" aria-label="Remove year limit" data-rmsince>×</button>':''}</span>`:''}</div>
+    <div class="rline"><div class="seg" role="group" aria-label="Sector">${Object.entries(SECTORS).map(([k,v])=>`<button type="button" data-sector="${k}" aria-pressed="${k===r.sector}" ${isLast?'':'disabled'}>${v}</button>`).join('')}</div>
+      <span class="how">${I.how}${t.engine==='ai'?' Request read by AI.':' Request read by keywords.'}</span></div></div>`;
+  const radarFirst=r.intent==='learn'||r.intent==='events';
+  if(!r.topics.length&&r.intent!=='explore'&&!radarFirst)h+=`<p class="note" style="margin-top:14px">I couldn't connect that to a topic in the MeatCODE taxonomy, so this is everyone who fits the other settings. Naming a process, ingredient or method helps.</p>`;
+  const rows=t.rows;
+  if(!rows.length&&!radarFirst)h+=`<p class="note" style="margin-top:16px">Nobody matches all of this. Try another sector or region above.</p>`;
+  if(r.intent==='explore'){
+    h+=`<div class="panel rows" style="margin-top:18px">${rows.slice(0,12).map(x=>`<div class="row">${av(x.e)}<div><button class="nm" style="font-size:16px" type="button" data-open="${x.e.id}">${esc(x.e.name)}</button><div class="org">${esc(place(x.e))}</div></div><span class="note">${x.fitPapers||x.e.papers.length} papers</span></div>`).join('')}</div>`;
+    if(rows.length>12)h+=`<p class="note">${rows.length-12} more. Narrow by sector, region or map.</p>`;
+  } else if(radarFirst){
+    const area=r.intent==='learn'?'courses':'events';
+    let prim=(t.radar||[]).filter(i=>i.area===area);
+    if(!prim.length)prim=ALL.filter(i=>i.area===area&&visible(i)).sort(area==='events'?(x,y)=>((dt(x.f['Start date'])||new Date(2100,0))-(dt(y.f['Start date'])||new Date(2100,0))):(x,y)=>y.score-x.score);
+    h+=`<p class="note" style="margin:16px 0 0">${prim.length} ${area==='courses'?'course':'event'}${prim.length===1?'':'s'} on the Radar.</p>`;
+    h+=prim.length?`<div class="list">${prim.slice(0,5).map(rcard).join('')}</div>`:'';
+    if(rows.length)h+=`<div class="radarblk"><h3>People who work on this</h3><div class="panel rows">${rows.slice(0,4).map(x=>`<div class="row">${av(x.e)}<div><button class="nm" style="font-size:16px" type="button" data-open="${x.e.id}">${esc(x.e.name)}</button><div class="org">${esc(place(x.e))}</div></div><span class="note">${x.fitPapers||x.e.papers.length} papers</span></div>`).join('')}</div></div>`;
+  } else {
+    h+=`<div class="list">${rows.slice(0,5).map(x=>card(x,r.intent)).join('')}</div>`;
+  }
+  if(t.also&&t.also.length)h+=`<div class="also"><h3>You might also want to talk to</h3>${t.also.map(a=>`<div class="mini">${av(a.e)}<div><p><button class="nm" style="font-size:15px" type="button" data-open="${a.e.id}">${esc(a.e.name)}</button>, about ${esc(TOPIC[a.t].n)}</p><small>${esc(a.why)}</small></div><button class="btn" type="button" data-open="${a.e.id}">View</button></div>`).join('')}</div>`;
+  h+=radarBlock(t);
+  h+=crossLinks(t);
+  if(isLast){const ref=[];if(r.sector!=='industry')ref.push('Only industry');if(r.region!=='europe')ref.push('Only Europe');if(r.intent!=='review')ref.push('Someone senior to review this');if(!r.since)ref.push('Active since 2023');
+    h+=`<div class="refine">${ref.slice(0,3).map(x=>`<button class="chip" type="button" data-refine>${x}</button>`).join('')}</div>`;}
+  return h+'</section>';
+}
+/* Links into the rest of MeatCODE (mc-bridge.js): the Oracle answers the same question with sources; Science
+   explains the basics when the reading's topics map onto one of its precursors. */
+const SCIENCE_OF=[['fat',/lipid|oleogel|structured_fats|marbling|beta_oxidation|lipoxygenase/],
+  ['juice',/amino|sugar|peptide|vitamin|maillard|strecker|amadori|heyns|reaction_flavors|pyrazine|furan|thiol|sulfide|thiophene|yeast_extract|hvp|umami|kokumi/],
+  ['matrix',/matrix|hmma|lmma|collagen|elastin|printed_meat/]];
+function scienceTopic(topics){for(const[k,re]of SCIENCE_OF)if((topics||[]).some(t=>re.test(t)))return k;return null;}
+function crossLinks(t){const sci=scienceTopic(t.r.topics);
+  return `<div class="xlinks"><button class="mc-xlink" type="button" data-oracle="${esc(t.q)}">Ask the Oracle about this</button>${sci?`<button class="mc-xlink" type="button" data-science="${sci}">The basics, in Science</button>`:''}</div>`;}
+function wireCross(root){root.querySelectorAll('[data-oracle]').forEach(b=>b.onclick=()=>MC.open('oracle',{ask:b.dataset.oracle,send:true}));
+  root.querySelectorAll('[data-science]').forEach(b=>b.onclick=()=>MC.open('science',{topic:b.dataset.science}));}
+function card(x,intent){const e=x.e;
+  return `<article class="card">${av(e)}<div style="min-width:0"><button class="nm" type="button" data-open="${e.id}">${esc(e.name)}</button>${e.radar.length?'<span class="newb">New paper</span>':''}
+    <div class="org">${esc(place(e))}${e.sector!=='unknown'?`<span class="sec" style="--sec:var(${SECVAR[e.sector]})">${SECTORS[e.sector]}</span>`:''}</div>
+    <p class="why">${esc(why(x,intent))}</p>
+    <div class="stats">${e.papers.length?`<span><b>${e.papers.length}</b> papers in MeatCODE</span><span>Latest <b>${e.latest}</b></span>`:'<span>New on the Radar</span>'}${e.h?`<span class="${intent==='review'?'hot':''}">h-index <b>${e.h}</b></span>`:''}</div>
+    <div class="acts"><button class="btn pri" type="button" data-open="${e.id}">View profile</button><button class="btn" type="button" data-intro="${e.id}">Ask GFI for an introduction</button>${followBtn(e.id)}</div>
+    <button class="linkq" type="button" data-correct="${e.id}">Suggest a correction or removal</button></div></article>`;}
+function wireThread(){
+  wireItems(app);wireFollow(app);
+  app.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openProfile(b.dataset.open));
+  app.querySelectorAll('[data-intro]').forEach(b=>b.onclick=()=>intro(b.dataset.intro));
+  app.querySelectorAll('[data-correct]').forEach(b=>b.onclick=()=>correction(b.dataset.correct));
+  wireCross(app);
+  app.querySelectorAll('[data-refine]').forEach(b=>b.onclick=()=>ask(b.textContent));
+  const last=turns[turns.length-1];if(!last||last.status!=='done')return;
+  const sec=app.querySelector(`[data-turn="${turns.length-1}"]`);if(!sec)return;
+  sec.querySelectorAll('[data-sector]').forEach(b=>b.onclick=()=>{last.r.sector=b.dataset.sector;rerank(last);});
+  sec.querySelectorAll('[data-rmt]').forEach(b=>b.onclick=()=>{last.r.topics=last.r.topics.filter(s=>s!==b.dataset.rmt);rerank(last);});
+  const rs=sec.querySelector('[data-rmsince]');if(rs)rs.onclick=()=>{last.r.since=null;rerank(last);};
+  sec.querySelector('[data-ctl="intent"]').onchange=e=>{last.r.intent=e.target.value;rerank(last);};
+  const at=sec.querySelector('[data-addtopic]');if(at)at.onchange=()=>{const sl=BYNAME[at.value];if(sl&&!last.r.topics.includes(sl)){last.r.topics.push(sl);rerank(last);}else if(!sl){at.value='';toast('Pick a topic from the list.');}};
+  sec.querySelector('[data-ctl="region"]').onchange=e=>{if(e.target.value==='cc')return;last.r.region=e.target.value;last.r.country=null;rerank(last);};
+}
+function rerank(t){t.rows=rank(t.r);t.radar=radarFor(t.r,t.q);t.also=t.r.intent==='explore'?[]:alsoTalk(t.r,t.rows.slice(0,5).map(x=>x.e.id));const y=scrollY;renderTurns();scrollTo(0,y);}
+function mailGFI(subject,text){if(!CONTACT){toast('Requests to the GFI team aren\u2019t switched on here yet.');return;}
+  const a=document.createElement('a');a.href='mailto:'+CONTACT+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(text);a.rel='noopener';document.body.appendChild(a);a.click();a.remove();}
+function intro(id){const e=E[id];if(!e)return;mailGFI('Introduction request: '+e.name,'Hi GFI Israel team,\n\nI would like an introduction to '+e.name+(e.org?' ('+e.org+')':'')+'.\n\nWhat I am working on:\n\n');}
+function correction(id){const e=E[id];if(!e)return;mailGFI('MeatCODE directory: correction or removal for '+e.name,'Profile: '+e.name+(e.org?' ('+e.org+')':'')+'\n\nWhat should change (or "please remove me"):\n\n');}
+let kseq=0;
+async function ask(text,force){
+  text=(text||'').trim();if(!text)return;closeProfile();
+  if(MODE!=='people'){MODE='people';setNav('people');}
+  const prev=[...turns].reverse().find(t=>t.status==='done');
+  const t={q:text,status:'thinking',k:++kseq};turns.push(t);renderTurns();scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+  let r=force?Object.assign(localRead(text),{topics:[]},force):await aiRead(text,prev&&prev.r);
+  t.engine=r&&r.engine==='ai'?'ai':'keywords';
+  if(!r)r=localRead(text,prev&&prev.r);
+  if(r.intent==='person'&&r.person){turns.pop();if(!turns.length)viewStart();else renderTurns();openProfile(r.person);return;}
+  if(r.intent==='person')r.intent='collaborate';
+  r.q=r.q||text;t.r=r;t.status='done';rerank(t);
+  const el=app.querySelector(`[data-turn="${turns.length-1}"]`);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ── profile ── */
+const sheet=document.getElementById('sheet'),inner=document.getElementById('sheetInner'),scrim=document.getElementById('scrim');
+function openProfile(id){const e=E[id];if(!e)return;
+  const papers=e.papers.map(p=>P[p]).sort((a,b)=>b.year-a.year);
+  const enc=encodeURIComponent(e.name);
+  const prof=[],find=[];
+  if(e.links.page)prof.push(['University page',e.links.page]);
+  find.push(['LinkedIn','https://www.linkedin.com/search/results/people/?keywords='+enc]);
+  if(e.links.gs)prof.push(['Google Scholar',e.links.gs]);else find.push(['Google Scholar','https://scholar.google.com/citations?view_op=search_authors&mauthors='+enc]);
+  find.push(['ResearchGate','https://www.researchgate.net/search/researcher?q='+enc]);
+  if(e.orcid)prof.push(['ORCID','https://orcid.org/'+e.orcid]);
+  if(e.oa)prof.push(['OpenAlex','https://openalex.org/'+e.oa]);
+  const ext=(l,u)=>`<a class="btn" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(l)} ↗</a>`;
+  const kp=[];if(papers.length)kp.push([papers.length,'papers in MeatCODE']);if(e.latest)kp.push([e.latest,'latest work']);if(e.h)kp.push([e.h,'h-index (OpenAlex)']);if(e.radar.length)kp.push([e.radar.length,'new on the Radar']);
+  inner.innerHTML=`<div class="ph">${av(e)}<div><h2>${esc(e.name)}</h2><div class="org">${esc(place(e))}${e.sector!=='unknown'?`<span class="sec" style="--sec:var(${SECVAR[e.sector]})">${SECTORS[e.sector]}</span>`:''}</div>${e.role?`<div class="note" style="margin:4px 0 0">${esc(e.role)}</div>`:''}</div></div>
+   ${kp.length?`<div class="kpis">${kp.slice(0,3).map(([v,l])=>`<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join('')}</div>`:''}
+   <div class="blk"><h3>Get in touch</h3><div class="contact"><button class="btn pri" type="button" id="pIntro">Ask GFI for an introduction</button>${followBtn(e.id)}${prof.map(([l,u])=>ext(l,u)).join('')}</div>
+     ${find.length?`<p class="prov">Search for them on ${find.map(([l,u])=>`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer" style="color:var(--brand)">${l}</a>`).join(', ')}.</p>`:''}
+     <p class="prov"><button type="button" id="pClaim" style="border:0;background:none;padding:0;color:var(--brand);font-size:12.5px">Is this you? Suggest a correction or ask to be removed</button></p>
+     <p class="prov">Public information only: papers in the MeatCODE corpus and open profiles (ORCID, OpenAlex, institution pages). Snapshot of ${esc(fmtD(dt(BOOT.d.snapshot.people_papers)))}.</p></div>
+   ${e.expertise?`<div class="blk"><h3>Works on</h3><p style="margin:0">${esc(e.expertise)}</p></div>`:''}
+   ${e.topics.length?`<div class="blk"><h3>Known for</h3><div class="ktags">${e.topics.slice(0,12).map(([s,n])=>`<button type="button" data-topic="${s}">${esc(TOPIC[s].n)}${papers.length?`<small>${n}</small>`:''}</button>`).join('')}</div></div>`:''}
+   ${e.co.length?`<div class="blk"><h3>Works with</h3><div class="faces">${e.co.slice(0,8).map(([o])=>`<button class="face" type="button" data-open="${o}">${av(E[o])}<span>${esc(E[o].name)}</span></button>`).join('')}</div><p class="prov">Co-authors on MeatCODE papers.</p></div>`:''}
+   ${e.radar.length?`<div class="blk"><h3>New on the Radar</h3>${e.radar.map(id=>BYID[id]?rrow(BYID[id]):'').join('')}</div>`:''}
+   ${papers.length?`<div class="blk"><h3>Papers in MeatCODE</h3>${papers.map(p=>{const others=Math.max(0,(p.na||0)-p.authors.length);const co=p.authors.filter(a=>a!==e.id);
+     return `<div class="paper"><button class="t" type="button" aria-expanded="false" data-paper>${esc(p.title)}</button><div class="m">${esc(p.journal||'')}${p.journal?', ':''}${p.year}</div>
+     <div hidden><p class="note" style="margin:6px 0">${esc(p.claim||'')}</p><div class="authors">${co.length?'With '+co.map(a=>`<button type="button" data-open="${a}">${esc(E[a].name)}</button>`).join(', ')+(others?` and ${others} other author${others>1?'s':''}`:''):(others?others+' other authors':'')}</div>
+     <div class="acts">${p.doi?`<a class="btn" style="display:inline-flex;align-items:center" href="${esc(/^10\./.test(p.doi)?'https://doi.org/'+p.doi:p.doi)}" target="_blank" rel="noopener noreferrer">Open paper ↗</a>`:''}<button class="btn" type="button" data-oracle="${esc('What does the study "'+p.title+'"'+(p.journal?' ('+p.journal+', '+p.year+')':'')+' find, and what does it mean for meat flavor?')}">Ask the Oracle</button></div></div></div>`;}).join('')}
+     <p class="prov">Papers are linked to people by exact author-name match. Abstracts only.</p></div>`:''}`;
+  sheet.classList.add('open');sheet.setAttribute('aria-hidden','false');scrim.classList.add('on');inner.scrollTop=0;
+  inner.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openProfile(b.dataset.open));
+  inner.querySelectorAll('[data-paper]').forEach(b=>b.onclick=()=>{const box=b.parentElement.lastElementChild;box.hidden=!box.hidden;b.setAttribute('aria-expanded',String(!box.hidden));});
+  inner.querySelectorAll('[data-topic]').forEach(b=>b.onclick=()=>ask('Who else works on '+TOPIC[b.dataset.topic].n+'?'));
+  wireItems(inner);
+  document.getElementById('pIntro').onclick=()=>intro(id);wireFollow(inner,()=>{if(MODE==='people'&&!turns.length)viewStart();});
+  document.getElementById('pClaim').onclick=()=>correction(id);
+  wireCross(inner);refreshLive(id);
+  document.getElementById('sheetClose').focus({preventScroll:true});
+}
+
+/* Live refresh from Neon (GET /api/experts/{id}) for people that are database records: h-index and ORCID only.
+   Never shows email. Silent on any failure (DB asleep / unreachable) — the snapshot stays on screen. */
+const LIVE=new Set();
+function refreshLive(id){const e=E[id];if(!e||typeof e.id!=='number'||LIVE.has(e.id))return;LIVE.add(e.id);
+  fetch('/api/experts/'+e.id,{credentials:'same-origin'}).then(r=>r.ok?r.json():null).then(x=>{if(!x||x.error)return;let ch=false;
+    if(Number.isInteger(x.h_index)&&x.h_index!==e.h){e.h=x.h_index;ch=true;}
+    if(x.orcid&&!e.orcid){e.orcid=String(x.orcid).replace(/^https?:\/\/orcid\.org\//,'');ch=true;}
+    if(ch&&sheet.classList.contains('open')&&document.getElementById('pIntro'))openProfile(id);}).catch(()=>{});}
+function closeProfile(){sheet.classList.remove('open');sheet.setAttribute('aria-hidden','true');scrim.classList.remove('on');}
+document.getElementById('sheetClose').onclick=closeProfile;scrim.onclick=closeProfile;
+addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet.classList.contains('open')&&!document.body.classList.contains('fbmode'))closeProfile();});
+document.getElementById('home').onclick=()=>{closeProfile();viewStart();scrollTo(0,0);};
+
+const LAST_RUN=BOOT.d.snapshot.radar;
+/* ── Radar: real rows from the MeatCODE Agent Inbox (runs 27–30 Sep 2026) ── */
+const INBOX=BOOT.d.inbox;
+const AREA={events:{label:'Events & webinars',one:'Event'},courses:{label:'Courses',one:'Course'},news:{label:'Articles & news',one:'Article'},eco:{label:'Organisations & funding',one:'Organisation'}};
+const AREAORDER=['events','courses','news','eco'];
+/* Product rule (11 Oct): only rows a person reviewed reach users — status Approved, or Merged (a person merged it into
+   MeatCODE). Agent-only rows (Pending / Draft) stay hidden. SHOW_UNREVIEWED exists for internal previews only. */
+const SHOW_UNREVIEWED=false;
+const reviewed=s=>s==='Approved'||s==='Merged'||(SHOW_UNREVIEWED&&/^Pending/.test(s));
+const ALL=[];AREAORDER.forEach(a=>INBOX[a].forEach(it=>{it.area=a;ALL.push(it);}));
+const BYID=Object.fromEntries(ALL.map(i=>[i.id,i]));
+const TODAY=new Date();TODAY.setHours(0,0,0,0);
+const dt=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec((s||'').trim());return m?new Date(+m[1],+m[2]-1,+m[3]):null;};
+const fmtD=d=>d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+const daysTo=d=>Math.round((d-TODAY)/864e5);
+const STATUS={'Pending (Agent)':'Awaiting review','Pending (Human)':'Awaiting review','Merged':'Already in MeatCODE','Approved':'Approved','Draft (Agent)':'Draft, low confidence','Expired':'Expired','On hold':'On hold','Declined':'Declined'};
+function isPast(it){if(it.area!=='events')return false;const e=dt(it.f['End date']||it.f['Start date']);return !!(e&&e<TODAY);}
+function visible(it){if(isPast(it))return false;return reviewed(it.status);}
+function kind(it){const t=(it.name+' '+it.why).toLowerCase(),f=it.f;
+  if(it.area==='events'){const n=it.name.toLowerCase(),w=it.why.toLowerCase();return /webinar/.test(t)?'Webinar':/meetup/.test(t)?'Meetup':/symposium|conference/.test(n)?'Conference':/ingredients show|exhibition|trade show/.test(w)?'Trade show':/meeting|symposium|conference/.test(w)?'Conference':/expo|\bshow\b/.test(w)?'Trade show':'Conference';}
+  if(it.area==='courses')return /certificate/i.test(it.name)?'Certificate':'Course';
+  if(it.area==='news')return /review$/i.test((f.Type||'').trim())?'Review':/news|feature/i.test(f.Type||'')?'News':'Paper';
+  return /grant|funder/i.test((f.Type||'')+(f.Segment||''))?'Funding':/service/i.test(f.Type||'')?'Service provider':'Company';}
+const ttag=it=>`<span class="ttag" style="--tc:var(--c-${it.area})">${kind(it)}</span>`;
+function cleanWhy(s){const t=String(s||'').replace(/\s*\([^)]*(master|experts db|neon|ex-\d)[^)]*\)/gi,'');
+  return t.split(/(?<=[.;])\s+/).filter(x=>!/\bmaster\b|experts db|neon|already in|^not in|not in the|first run|no action|questionnaire target|this run/i.test(x)).join(' ').replace(/[;,\s-]+$/,'').replace(/^(new facts|update):\s*/i,'').trim().replace(/^./,c=>c.toUpperCase());}
+function desc(it){return it.area==='news'&&it.f.Summary?it.f.Summary:cleanWhy(it.why);}
+function topicsOf(text){const t=text.toLowerCase(),s=new Set();CONCEPTS.forEach(([re,names])=>{if(re.test(t))names.forEach(n=>BYNAME[n]&&s.add(BYNAME[n]));});TAX.forEach(x=>{const n=x.n.toLowerCase();if(n.length>5&&t.includes(n))s.add(x.s);});return s;}
+ALL.forEach(it=>{it.text=[it.name,it.why,it.f.Expertise,it.f.Summary,it.f.Segment,it.f.Type,it.f.Level].filter(Boolean).join(' ');it.topics=topicsOf(it.text);});
+const clean=n=>n.replace(/^(prof\.?\s*)?(dr\.?\s*)?/i,'').replace(/\s*\(.*\)$/,'').trim();
+const nkey=n=>{const p=clean(n).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/\s+/).filter(Boolean);return p.length?p[p.length-1]+'|'+p[0][0]:'';};
+const EXPKEY=Object.fromEntries(INBOX.experts.map(e=>[nkey(e.name),e.id]));
+function authorsOf(it){return (it.f.Authors||'').split(/[;,]/).map(s=>s.replace(/et al\.?|\(corresponding\)/g,'').trim()).filter(Boolean);}
+function linkedExperts(it){return [...new Set(authorsOf(it).map(a=>EXPKEY[nkey(a)]).filter(Boolean))];}
+function articlesBy(exp){const k=nkey(exp.name);return INBOX.news.filter(n=>authorsOf(n).some(a=>nkey(a)===k));}
+function milestones(){const out=[];const add=(d,label,it)=>{if(d&&d>=TODAY&&daysTo(d)<=200)out.push({d,label,it});};
+  ALL.filter(visible).forEach(it=>{const f=it.f;
+    if(it.area==='events'){add(dt(f['CFP deadline']),'Abstracts due',it);add(dt(f['Registration deadline']),'Registration closes',it);add(dt(f['Start date']),'Starts',it);}
+    if(it.area==='courses')add(dt(f['Next start']),'Next start',it);
+    if(it.area==='eco'&&/award|decision/i.test(f['Recent activity']||''))(f['Recent activity'].match(/\d{4}-\d{2}-\d{2}/g)||[]).forEach(s=>add(dt(s),'Award decisions due',it));});
+  return out.sort((a,b)=>a.d-b.d);}
+function meta(it){const f=it.f;
+  if(it.area==='events'){const s=dt(f['Start date']),e=dt(f['End date']);return [s?(e&&+e!==+s?`${s.getDate()}–${fmtD(e)}`:fmtD(s)):'Dates not published',f['Location / online']].filter(Boolean).join(', ');}
+  if(it.area==='courses')return [f.Provider,f.Format,f.Cost].filter(Boolean).join(', ');
+  if(it.area==='news')return [f.Publication,f['Published date']?fmtD(dt(f['Published date'])):''].filter(Boolean).join(', ');
+  if(it.area==='eco')return [f.Type,f.Country].filter(Boolean).join(', ');
+  return [f.Affiliation,f.Country].filter(Boolean).join(', ');}
+function timeBadge(it){const f=it.f;let d,l;
+  if(it.area==='events'){const c=dt(f['CFP deadline']);if(c&&c>=TODAY){d=c;l='Abstracts due';}else{d=dt(f['Start date']);l='Starts';}}
+  else if(it.area==='courses'){d=dt(f['Next start']);l='Starts';if(!d&&/anytime/i.test(f['Next start']||''))return '<span class="bdg in">Start anytime</span>';}
+  if(!d||d<TODAY)return '';const n=daysTo(d);return `<span class="bdg ${n<=45?'soon':''}">${l} in ${n} day${n===1?'':'s'}</span>`;}
+function statusBadge(it){return `<span class="bdg ${it.status==='Merged'||it.status==='Approved'?'in':''}">${STATUS[it.status]||it.status}</span>`;}
+function rcard(it){return `<article class="rc2" style="--tc:var(--c-${it.area})">${ttag(it)}
+  <button class="rname" type="button" data-item="${it.id}">${esc(it.name)}</button><div class="org">${esc(meta(it))}</div>
+  <p class="why clamp" style="margin:6px 0 0;font-size:14px;color:var(--muted)">${esc(desc(it))}</p>${timeBadge(it)?`<div class="badges">${timeBadge(it)}</div>`:''}</article>`;}
+function rrow(it){return `<div class="rrow" style="grid-template-columns:128px minmax(0,1fr)"><span>${ttag(it)}</span><div style="min-width:0"><button class="rname" type="button" data-item="${it.id}">${esc(it.name)}</button><small>${esc(meta(it))}</small></div></div>`;}
+function radarFor(r,q){const want=new Set(r.topics);const words=(q||'').toLowerCase().split(/[^a-z0-9]+/).filter(w=>w.length>=5&&!STOP.has(w));
+  return ALL.filter(visible).map(it=>{let s=0;it.topics.forEach(t=>{if(want.has(t))s+=2;});const tl=it.text.toLowerCase();words.forEach(w=>{if(tl.includes(w.slice(0,6)))s+=1;});const ord=RORDER[r.intent]||RORDER.collaborate;return{it,s:s?s+({P0:1.5,P1:1,P2:.5}[it.tier]||0)+(4-ord.indexOf(it.area))*0.4:0};}).filter(x=>x.s>=3).sort((a,b)=>b.s-a.s).map(x=>x.it);}
+const RORDER={collaborate:['news','events','courses','eco'],partner:['eco','events','news','courses'],review:['news','events','courses','eco'],explore:['eco','events','news','courses'],learn:['courses','events','news','eco'],events:['events','courses','news','eco']};
+function radarBlock(t){const items=t.radar||[];if(!items.length)return '';
+  const order=RORDER[t.r.intent]||RORDER.collaborate, prim=t.r.intent==='learn'?'courses':t.r.intent==='events'?'events':null;
+  const per={},pickd=[];items.forEach(i=>{if(i.area===prim||pickd.length>=6||(per[i.area]||0)>=2)return;per[i.area]=(per[i.area]||0)+1;pickd.push(i);});const rows=pickd.map(rrow).join('');
+  if(!rows)return '';
+  return `<div class="radarblk"><h3>On the radar</h3>${rows}<button class="seeall" type="button" data-goradar>Open Radar</button></div>`;}
+
+/* radar page */
+const RADAR={tab:'overview',all:false,filter:''};
+function setNav(m){document.getElementById('navPeople').setAttribute('aria-current',m==='people'?'page':'false');document.getElementById('navRadar').setAttribute('aria-current',m==='radar'?'page':'false');}
+function viewRadar(tab){MODE='radar';setNav('radar');dock.hidden=true;closeProfile();if(tab)RADAR.tab=tab;
+  const vis=ALL.filter(visible);
+  const cnt=a=>vis.filter(i=>i.area===a).length;
+  let h=`<section class="radar"><h1>Radar</h1><p class="lead2" style="margin-bottom:20px">Events, courses, articles and organisations in meat-flavor R&D. Updated every week; last update ${fmtD(dt(LAST_RUN))}.</p>
+   <div class="rtabs" role="group" aria-label="Radar sections"><button type="button" data-rtab="overview" aria-pressed="${RADAR.tab==='overview'}">Overview</button>${AREAORDER.map(a=>`<button type="button" data-rtab="${a}" aria-pressed="${RADAR.tab===a}"><span class="dotl" style="--tc:var(--c-${a})"></span>${AREA[a].label}<span class="n">${cnt(a)}</span></button>`).join('')}</div>`;
+  if(RADAR.tab==='overview'){const ms=milestones().slice(0,8);const top=vis.filter(i=>i.tier==='P0'||i.tier==='P1'||forYouScore(i)).sort((a,b)=>forYouScore(b)-forYouScore(a)||b.score-a.score).slice(0,6);
+    h+=`<div class="grid2"><div><h3 style="font-size:15px;margin:0 0 10px">${PREFS.branches.length?'Highlights for you':'Highlights'}</h3><div class="rlist">${top.map(rcard).join('')}</div></div>
+      <div><div class="panel tl"><h3 style="font-size:15px;margin:0 0 4px">Coming up</h3>${ms.length?ms.map(m=>`<div class="ms"><div><b>${m.d.getDate()} ${m.d.toLocaleDateString('en-GB',{month:'short'})}</b><small>in ${daysTo(m.d)} days</small></div><div><small class="dotl" style="--tc:var(--c-${m.it.area})">${m.label}</small><br><button class="rname" style="font-size:14.5px" type="button" data-item="${m.it.id}">${esc(m.it.name)}</button></div></div>`).join(''):'<p class="note">No dated items in the next six months.</p>'}</div></div></div>`;}
+  else{const a=RADAR.tab;let list=vis.filter(i=>i.area===a);const q=RADAR.filter.toLowerCase().trim();if(q)list=list.filter(i=>(i.name+' '+i.text+' '+meta(i)).toLowerCase().includes(q));
+    list.sort(a==='events'?(x,y)=>((dt(x.f['Start date'])||new Date(2100,0))-(dt(y.f['Start date'])||new Date(2100,0))):(x,y)=>y.score-x.score);
+    h+=`<label class="sr" for="rFilt">Filter ${AREA[a].label}</label><input class="filt" id="rFilt" type="search" placeholder="Filter ${AREA[a].label.toLowerCase()}" value="${esc(RADAR.filter)}">`;
+    h+=list.length?`<div class="rlist">${list.map(rcard).join('')}</div>`:`<p class="note">Nothing here${q?' matches “'+esc(RADAR.filter)+'”':''}.</p>`;}
+  app.innerHTML=h+'</section>';
+  app.querySelectorAll('[data-rtab]').forEach(b=>b.onclick=()=>{RADAR.filter='';viewRadar(b.dataset.rtab);});
+  const fi=document.getElementById('rFilt');if(fi){fi.oninput=()=>{RADAR.filter=fi.value;const pos=fi.selectionStart;viewRadar();const n=document.getElementById('rFilt');n.focus();n.setSelectionRange(pos,pos);};}
+  wireItems(app);}
+function wireItems(root){root.querySelectorAll('[data-item]').forEach(b=>b.onclick=()=>openItem(b.dataset.item));root.querySelectorAll('[data-goradar]').forEach(b=>b.onclick=()=>{viewRadar('overview');scrollTo(0,0);});}
+function linkify(s){const parts=String(s||'').split(/(https?:\/\/[^\s);]+)/g);return parts.map((p,i)=>{if(i%2){let host=p;try{host=new URL(p).hostname.replace(/^www\./,'');}catch(_){}return `<a href="${esc(p)}" target="_blank" rel="noopener noreferrer">${esc(host)}</a>`;}return esc(p);}).join('');}
+function openItem(id){const it=BYID[id];if(!it)return;
+  const HIDE=new Set(['Summary','Database people involved','Authors']);
+  const facts=Object.entries(it.f).filter(([k])=>!HIDE.has(k)).map(([k,v])=>[k,/^\d{4}-\d{2}-\d{2}$/.test(v)?fmtD(dt(v)):v]);
+  const urls=[...new Set((it.evidence.match(/https?:\/\/[^\s);]+/g)||[]))].filter(u=>u!==it.link);
+  inner.innerHTML=`<div>${ttag(it)}</div>
+   <h2 style="font-size:26px;font-weight:600;letter-spacing:-.03em;line-height:1.15;margin:10px 44px 0 0">${esc(it.name)}</h2>
+   <div class="org" style="margin-top:6px">${esc(meta(it))}</div>${timeBadge(it)?`<div class="badges">${timeBadge(it)}</div>`:''}
+   <div class="blk"><p style="margin:0">${esc(desc(it))}</p>${it.f.Authors?`<p class="note" style="margin-top:8px">${esc(it.f.Authors)}</p>`:''}</div>
+   <div class="acts"><a class="extl" href="${esc(it.link)}" target="_blank" rel="noopener noreferrer">Open</a></div>
+   ${facts.length?`<div class="blk"><h3>Details</h3><dl class="facts">${facts.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${linkify(v)}</dd>`).join('')}</dl></div>`:''}
+   ${urls.length?`<div class="blk"><h3>More sources</h3><ul class="srcs">${urls.map(u=>{let h=u;try{h=new URL(u).hostname.replace(/^www\./,'');}catch(_){}return `<li><a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(h)}</a></li>`;}).join('')}</ul></div>`:''}`;
+  sheet.classList.add('open');sheet.setAttribute('aria-hidden','false');scrim.classList.add('on');inner.scrollTop=0;wireItems(inner);
+  document.getElementById('sheetClose').focus({preventScroll:true});}
+
+document.getElementById('navRadar').onclick=()=>{viewRadar();scrollTo(0,0);};
+document.getElementById('navPeople').onclick=()=>{if(turns.length){MODE='people';setNav('people');renderTurns();}else viewStart();scrollTo(0,0);};
+document.getElementById('navRadarN').textContent=ALL.filter(visible).length;
+
+/* ── v0.8 (Lior, 10 Oct): guided first visit, user interests, follow, short topic labels ── */
+const PREFS_KEY='mc-eco-prefs', FOLLOW_KEY='mc-eco-follow';
+function loadJ(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(_){return d;}}
+function saveJ(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(_){}}
+let PREFS=loadJ(PREFS_KEY,{seen:false,branches:[],role:''});
+let FOLLOW=new Set(loadJ(FOLLOW_KEY,[]).map(String));
+const BRANCH_LABEL={flavor_chemistry:'Flavor chemistry',flavor_ingredients:'Flavor ingredients',meat_analogs:'Meat analogs',meat_science:'Meat science',analytics:'Analytics & sensory'};
+const ROLES={academic:'Academic research',industry:'Industry R&D',ngo:'NGO or government',student:'Student'};
+const BRANCH_STARTER={flavor_chemistry:'How do Maillard and lipid oxidation interact during cooking?',flavor_ingredients:'Find an industry partner for yeast-extract reaction flavors',meat_analogs:'Our pea-protein patty tastes beany after grilling',meat_science:'Who studies how breed and cooking change meat aroma?',analytics:'Who can help us set up GC-O for meat aroma?'};
+function starters(){const base=['Our pea-protein patty tastes beany after grilling','Find an industry partner for yeast-extract reaction flavors'];
+  const mine=PREFS.branches.map(b=>BRANCH_STARTER[b]).filter(Boolean);
+  const out=[...new Set([...mine,...base])].slice(0,2);
+  out.push('Conferences where we could present MeatCODE');out.push(PREFS.role==='student'?'A free course on sensory science':'A course to get the team up to speed on sensory science');return out;}
+const GENERIC_WORDS=/\b(reduction|masking|blockers?|enhancers?|pathway|topic|interaction|chemistry|analysis)\b/gi;
+function shortTopic(s){const n=TOPIC[s]?TOPIC[s].n:s;const m=n.match(/^([A-Z0-9-]{2,8})\s*\(/);if(m)return m[1];const pa=n.match(/\(([A-Z][A-Z0-9-]{1,6})\)/);if(pa)return pa[1];
+  let t=n.replace(/\s*\(.*?\)\s*/g,' ').split(' / ')[0].replace(GENERIC_WORDS,'').replace(/\s+/g,' ').trim();
+  if(!t)t=n;return /^[A-Z]{2,}/.test(t)?t:t.toLowerCase();}
+function isFollowing(id){return FOLLOW.has(String(id));}
+function toggleFollow(id){const k=String(id);if(FOLLOW.has(k)){FOLLOW.delete(k);toast('Unfollowed '+E[id].name+'.');}else{FOLLOW.add(k);toast('Following '+E[id].name+'. Their new papers will show on your start page.');}saveJ(FOLLOW_KEY,[...FOLLOW]);}
+function followBtn(id,extra){return `<button class="btn ${extra||''}" type="button" data-follow="${id}" aria-pressed="${isFollowing(id)}">${isFollowing(id)?'Following':'Follow'}</button>`;}
+function wireFollow(root,after){root.querySelectorAll('[data-follow]').forEach(b=>b.onclick=()=>{toggleFollow(b.dataset.follow);const on=isFollowing(b.dataset.follow);root.querySelectorAll(`[data-follow="${b.dataset.follow}"]`).forEach(x=>{x.textContent=on?'Following':'Follow';x.setAttribute('aria-pressed',String(on));});if(after)after();});}
+function itemBranches(it){return new Set([...it.topics].map(t=>TOPIC[t]&&TOPIC[t].b).filter(Boolean));}
+function forYouScore(it){if(!PREFS.branches.length)return 0;const b=itemBranches(it);return PREFS.branches.some(x=>b.has(x))?1:0;}
+/* guided first visit */
+let OB=0;
+function openGuide(step){OB=step||0;renderGuide();document.getElementById('guide').hidden=false;document.body.style.overflow='hidden';}
+function closeGuide(){document.getElementById('guide').hidden=true;document.body.style.overflow='';PREFS.seen=true;saveJ(PREFS_KEY,PREFS);viewStart();}
+function renderGuide(){const g=document.getElementById('guideCard');const dots=[0,1,2,3].map(i=>`<i class="${i===OB?'on':''}"></i>`).join('');
+  let body='';
+  if(OB===0)body=`<h2>Welcome to MeatCODE Ecosystem</h2><p>The people, papers, events and courses behind meat-flavor R&D, in one place. It has two parts.</p>
+    <div class="gtiles"><div class="gtile"><b>People</b><span>Ask who to talk to about your problem.</span></div><div class="gtile"><b>Radar</b><span>Events, courses, articles and funders, updated weekly.</span></div></div>`;
+  if(OB===1)body=`<h2>People</h2><p>Describe a problem in your own words, like you would to a colleague. You get the researchers whose papers fit, why they fit, and a way to reach them.</p>
+    <div class="gex">“Our pea-protein patty tastes beany after grilling”</div><p class="note">Follow anyone to see their new papers on your start page.</p>`;
+  if(OB===2)body=`<h2>Radar</h2><p>What's happening in the field: conferences with deadlines, courses, new papers and funding calls. It also shows up next to your People results when it's relevant.</p>`;
+  if(OB===3)body=`<h2>What do you work on?</h2><p>Pick what you'd like to see more of. You can change this later.</p>
+    <div class="gpick" role="group" aria-label="Areas">${Object.entries(BRANCH_LABEL).map(([k,v])=>`<button type="button" data-br="${k}" aria-pressed="${PREFS.branches.includes(k)}">${v}</button>`).join('')}</div>
+    <p class="note" style="margin-top:14px">And you are mostly in…</p>
+    <div class="gpick" role="group" aria-label="Role">${Object.entries(ROLES).map(([k,v])=>`<button type="button" data-role="${k}" aria-pressed="${PREFS.role===k}">${v}</button>`).join('')}</div>`;
+  g.innerHTML=`<div class="gdots" aria-hidden="true">${dots}</div>${body}
+    <div class="gnav"><button class="btn" type="button" id="gSkip">${OB===3?'Skip':'Skip intro'}</button><span style="flex:1"></span>${OB>0?'<button class="btn" type="button" id="gBack">Back</button>':''}<button class="btn pri" type="button" id="gNext">${OB===3?'Start':'Next'}</button></div>`;
+  g.querySelectorAll('[data-br]').forEach(b=>b.onclick=()=>{const k=b.dataset.br;PREFS.branches=PREFS.branches.includes(k)?PREFS.branches.filter(x=>x!==k):[...PREFS.branches,k];b.setAttribute('aria-pressed',String(PREFS.branches.includes(k)));});
+  g.querySelectorAll('[data-role]').forEach(b=>b.onclick=()=>{PREFS.role=b.dataset.role;g.querySelectorAll('[data-role]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.role===PREFS.role)));});
+  document.getElementById('gSkip').onclick=closeGuide;
+  const bk=document.getElementById('gBack');if(bk)bk.onclick=()=>{OB--;renderGuide();};
+  document.getElementById('gNext').onclick=()=>{if(OB<3){OB++;renderGuide();}else closeGuide();};
+  document.getElementById('gNext').focus({preventScroll:true});}
+
+function wireComposer(fid,tid){const f=document.getElementById(fid),ta=document.getElementById(tid);
+  const grow=()=>{ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,150)+'px';};
+  ta.addEventListener('input',grow);ta.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();f.requestSubmit();}});
+  f.addEventListener('submit',e=>{e.preventDefault();const v=ta.value;ta.value='';grow();ask(v);});}
+wireComposer('formB','qB');
+finishPeople();
+(()=>{const dl=document.createElement('datalist');dl.id='taxlist';dl.innerHTML=TAX.map(t=>`<option value="${esc(t.n)}"></option>`).join('');document.body.appendChild(dl);})();
+document.getElementById('navRadarN').textContent=ALL.filter(visible).length;
+viewStart();
+document.getElementById('helpBtn').onclick=()=>openGuide(0);
+if(!PREFS.seen)openGuide(0);
+MC.init('ecosystem',p=>{if(!p)return;const g=document.getElementById('guide');if(!g.hidden){g.hidden=true;document.body.style.overflow='';}
+  if(p.expert&&E[p.expert])openProfile(p.expert);else if(p.q)ask(String(p.q).slice(0,600));});
+
+})();
+</script>
+</body>
+</html>

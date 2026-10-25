@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-# Last updated: 2026-10-05 · Full-Stack · NEW dev "Papers browser" API behind flag `papers_browser`
+# Last updated: 2026-10-25 19:45 UTC · Yochai (PM) with Claude · NEW Ecosystem module API behind flag
+#   `ecosystem_module` (flag off -> every /api/ecosystem/* route 404s, like papers_browser):
+#   GET /api/ecosystem/bootstrap (taxonomy from the bible + ECOSYSTEM_CONTACT_EMAIL for intro/correction
+#   requests) and POST /api/ecosystem/intent ({text, prev} -> validated intent JSON; one small
+#   CONSENSUS_MODEL call; the prompt is built server-side in the NEW server/ecosystem.py, never sent by the
+#   browser). Route glue only here; any failure -> 503 JSON and the page falls back to its keyword reader.
+# Prev 2026-10-05 · Full-Stack · NEW dev "Papers browser" API behind flag `papers_browser`
 #   (dev ON / prod OFF; flag off -> every /api/papers-browser* route 404s {"error":"not found"}, like
 #   maillard_sim). Routes (all behind the site-password gate, SELECT-only, never 500 -> 503):
 #   GET /api/papers-browser (filter/sort/page<=50), /facets, /export.csv, /pdf?id=N and
@@ -493,6 +499,14 @@ try:
 except Exception as _e:
     reaction_network = None
     sys.stderr.write("[reaction-network] module unavailable: %s\n" % str(_e)[:200])
+
+# Ecosystem module helpers (flag `ecosystem_module`) — taxonomy bootstrap + request reading.
+# No SQL, no HTTP; a failed import must never stop the server (routes then answer 503).
+try:
+    import ecosystem
+except Exception as _e:
+    ecosystem = None
+    sys.stderr.write("[ecosystem] module unavailable: %s\n" % str(_e)[:200])
 
 MAILLARD_SYNC_WAIT      = float(os.environ.get("MAILLARD_SYNC_WAIT", "8"))    # s waited inline before 202
 MAILLARD_JOB_TTL        = float(os.environ.get("MAILLARD_JOB_TTL", "3600"))   # s a finished job is kept
@@ -1114,6 +1128,9 @@ class Handler(SimpleHTTPRequestHandler):
         #    guard so flag-off is a clean 404 regardless of DB state; own try/except -> 503. ──
         if path == "/api/papers-browser" or path.startswith("/api/papers-browser/"):
             return self._handle_papers_browser("GET", path, qs)
+        # ── Ecosystem module (flag-gated; no DB needed) — see _handle_ecosystem ──
+        if path.startswith("/api/ecosystem/"):
+            return self._handle_ecosystem("GET", path)
 
         if not DATABASE_URL:
             return self._send_json({"error": "DATABASE_URL not configured"}, 503)
@@ -1618,6 +1635,32 @@ class Handler(SimpleHTTPRequestHandler):
         except Exception as e:
             return self._send_json({"error": "papers browser unavailable: " + str(e)[:200]}, 503)
 
+    def _handle_ecosystem(self, method, path):
+        """All /api/ecosystem/* routes. Flag off -> 404 {"error":"not found"} (same as papers_browser).
+        No DB access. Any failure -> 503 JSON (the page then reads requests with its keyword fallback)."""
+        if not _flag_on("ecosystem_module"):
+            return self._send_json({"error": "not found"}, 404)
+        if ecosystem is None:
+            return self._send_json({"error": "ecosystem module unavailable on this server"}, 503)
+        try:
+            if method == "GET" and path == "/api/ecosystem/bootstrap":
+                return self._send_json(ecosystem.bootstrap())
+            if method == "POST" and path == "/api/ecosystem/intent":
+                body = self._read_json_body()
+                def call_model(prompt):
+                    resp = client.messages.create(
+                        model=CONSENSUS_MODEL, max_tokens=400,
+                        messages=[{"role": "user", "content": prompt}])
+                    return "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
+                try:
+                    return self._send_json(ecosystem.read_intent(body, call_model))
+                except ValueError as e:
+                    return self._send_json({"error": str(e)[:200]}, 400)
+            return self._send_json({"error": "not found"}, 404)
+        except Exception as e:
+            sys.stderr.write("[ecosystem] %s failed: %s\n" % (path, str(e)[:300]))
+            return self._send_json({"error": "ecosystem service unavailable"}, 503)
+
     # ─── repo backup, straight off the running server ───
     def _handle_backup_download(self):
         """GET /api/backup — stream a zip of the repo AS COMMITTED at the currently-deployed
@@ -2089,6 +2132,9 @@ class Handler(SimpleHTTPRequestHandler):
         # ── Papers browser rows / CSV-by-ids (flag-gated; see _handle_papers_browser) ──
         if path in ("/api/papers-browser/rows", "/api/papers-browser/export.csv"):
             return self._handle_papers_browser("POST", path, {})
+        # ── Ecosystem request reading (flag-gated; see _handle_ecosystem) ──
+        if path.startswith("/api/ecosystem/"):
+            return self._handle_ecosystem("POST", path)
         if path != "/api/ask":
             self.send_error(404, "POST not supported for " + path); return
 
