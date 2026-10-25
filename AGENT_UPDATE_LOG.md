@@ -1,5 +1,72 @@
 # MeatCODE — Agent Update Log
 
+## 2026-10-25 · Yochai (PM) with Claude · Science + Ecosystem + guided Oracle integrated into the platform (flag-gated)
+Yochai asked to bring the three modules designed in Chat (Ecosystem, Science/Educational, Oracle) into the production
+site, fully embedded and tethered, keeping the live branding. Decisions (Yochai, 25 Oct): guided questions go INSIDE
+the existing Oracle tab (not a second Oracle); tabs are named **Science** and **Ecosystem**; staging first, then
+promote to prod on Yochai's OK. Built one module at a time, each behind its own flag (dev ON / prod OFF).
+
+### Shared module shell — `app/modules/mc-brand.css` (new) · `app/modules/mc-bridge.js` (new) · `app/meatcode_mockup.html`
+- mc-brand.css copies the mockup's :root tokens verbatim (seaweed teal #00736E, cream #FAF6EF, coral, olive, Varela
+  Round) so modules match the platform. The low-fi mockup's darker #0B5962 was NOT used (Yochai: keep the live brand).
+- mc-bridge.js = cross-module handoff bus (same-origin postMessage; contract in the file header). Modules call
+  `MC.open('oracle'|'science'|'ecosystem'|'research', payload)`; the shell (`window.mcOpenModule`) switches scene and
+  delivers the payload once the target iframe says `ready`. Oracle handoffs open a NEW chat and ask the question.
+- Mockup: flag-gated "Science" + "Ecosystem" chips right after Oracle (all topbars), `#science` / `#ecosystem` scenes
+  (full-width iframes, same pattern as `#papers`), NAV_CAT + chipCat + trimNav ORDER entries.
+
+### Science — `app/modules/science.html` (new) · flag `science_module`
+- Ported from the "MeatCODE Science Mockup" artifact (v0.2, 18 Oct): Foundations tour (raw → cooked) + Precursors
+  (juice / fat / meat matrix). Mock chat screen + presenter panel removed; every "Ask" goes to the REAL Oracle with a
+  topic question (+ species/state focus), "Experts on …" goes to the Ecosystem, "Molecular map" opens Research.
+- Honesty fixes: example-study cards labelled **Illustrative** (status pills removed, placeholder line removed; each card
+  offers "Ask the Oracle" / "Experts"); the flavor-benchmark panel is held back until the TVP rationale exists;
+  "Process flavor" door says "Coming soon".
+
+### Ecosystem — `app/modules/ecosystem.html` + `app/modules/ecosystem_data.json` (new) · `server/ecosystem.py` (new) · flag `ecosystem_module`
+- Ported from "MeatCODE Ecosystem prototype v0.8" (Lior's 10 Oct review already applied). Re-skinned to the live tokens.
+- Data: the 8 Oct Neon snapshot (153 people, 108 papers) + Agent Inbox run 7 Oct, moved into ecosystem_data.json and
+  SANITISED for the 14 Oct public-information-only rule: no emails (4 removed), no outreach notes/scores on people, no
+  agent-suggested LinkedIn/ResearchGate links (legal check 6 Oct). NOTE: a static snapshot in the repo deviates from
+  "never cache Neon in the repo" — accepted for the v1 demo; the planned successor is a live /api endpoint with the
+  same JSON shape (needs DB access to build + verify the people↔papers query).
+- Review gate (11 Oct decision): only rows a person set to **Approved** or **Merged** reach users. Today that is 4 Radar
+  items (2 news, 2 organisations) and the merged experts; all agent-only "Pending" rows are hidden (`SHOW_UNREVIEWED`).
+- Taxonomy from the bible via `GET /api/ecosystem/bootstrap` (db/taxonomy.py); AI request reading via
+  `POST /api/ecosystem/intent` (server-built prompt, CONSENSUS_MODEL, validated output; keyword fallback on any error).
+- "Ask GFI for an introduction" + "Suggest a correction or removal" (on every card + profile) open an email to
+  `ECOSYSTEM_CONTACT_EMAIL` (new env var in render.yaml, sync:false; unset → "not switched on yet" message).
+- Profiles refresh h-index/ORCID live from `/api/experts/{id}` (email never shown). Results offer "Ask the Oracle about
+  this" + "The basics, in Science"; each paper offers "Ask the Oracle". Feedback widget (artifact db) removed.
+
+### Guided Oracle — `server/oracle_guided.py` (new) · `server/meatcode_server.py` · mockup · flag `oracle_guided`
+- Implements the Oracle elicitation spec (closed 11 Oct, prompt as tested in the Oracle Sandbox): classify the question
+  (LOOKUP/FORMULATION/METHOD/LANDSCAPE/GAP/FIND/OUT_OF_SCOPE), gather parameters, ask at most 3 short questions (one per
+  turn, tap options + "Not sure" + "Just answer"), then answer with a "Working from: … Open: …" line, no fixed defaults,
+  both-cases where an open parameter matters, and a "Next step:" line.
+- `POST /api/ask {question, guided:true, history, skip}` → `_handle_guided_ask`: one MODEL decision call, then either a
+  NEW additive `ask` SSE event or the answer. Retrieval/grounding/citations/consensus are the existing functions,
+  UNCHANGED (Algorithm-role functions not edited); flag off or `guided` absent → the old single-turn path, unchanged.
+  Kept Lior's 2026-07-20 rule (never narrate retrieval) — so no "[general]" markers from the spec.
+- Mockup: askOracle sends history; `ask` event → question card (`.oracle-qback`; `.oracle-ask` was already the Ask
+  button's class); turns filed with kind:'ask'; renderAnswerHTML/finalizeAnswer wrapped for the playback/next-step
+  styling and the "Open in Science" / "Experts on this" row under every answer.
+
+### Verification
+- Local server (APP_ENV=dev) + a local stand-in for the model API: Science → "Ask the Oracle" opens a new Oracle chat
+  and asks; Ecosystem search → results, profile (no email), correction links, Radar = 4 reviewed items; Ecosystem →
+  Science (Fat) and Science → Ecosystem ("lipid oxidation and meat aroma") both land; guided ask → tap "Pea" → answer
+  with playback + next step + cross-links; history carries the ask turn.
+- APP_ENV=prod: the three flags are off, `/api/ecosystem/*` 404, a guided:true request runs the normal Oracle path.
+- 17/17 mockup inline scripts and every module script parse; server compiles.
+- NOT verified: real model output (prompt quality) and real Neon retrieval in the guided path — check on staging.
+
+### Next
+- Staging click-through (all three modules, real model + Neon). Set `ECOSYSTEM_CONTACT_EMAIL` on both Render services.
+- Decide: approve more Agent-Inbox rows (or refresh the snapshot) so the Radar isn't thin; then flip
+  `science_module` / `ecosystem_module` / `oracle_guided` prod → true and promote.
+- Follow-up: live `/api/ecosystem/data` from Neon (replace the snapshot); Science "Process flavor" path.
+
 ## 2026-10-05 · Project Coordinator · PARALLEL team run — Papers browser module (consolidated, flag-gated dev-only)
 Lior asked for a dev-team module to browse/filter/sort every paper in Neon `sources`, 50/page, tick rows → CSV/XLSX, whole-table CSV, open each paper / open-access PDF. Decisions (Lior): PDF = open link + best-effort Unpaywall OA PDF (no PDFs stored); default columns = minimal; placement = top-nav module. Designer + Full-Stack + Advisory ran in parallel on disjoint files; Coordinator added the flag, closed the gaps below, and verified end to end. **Not deployed.**
 

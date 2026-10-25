@@ -4,7 +4,20 @@
 > Asana owns *tasks & priorities*; this file owns *technical reality* — what's built, what's broken,
 > what's in flight. Keep it short and current, not a changelog.
 
-_Last updated: 2026-10-05 · Project Coordinator — NEW dev-only **Papers browser** module (flag `papers_browser`, dev ON / prod OFF): top-nav chip + `#papers` scene + `/api/papers-browser/*`. Awaiting deploy-dev. See AGENT_UPDATE_LOG.md._
+_Last updated: 2026-10-25 21:10 UTC · Yochai (PM) with Claude — Science + Ecosystem + guided Oracle integrated (flags science_module / ecosystem_module / oracle_guided, dev ON / prod OFF); pushed to dev for staging. Prior: 2026-10-05 · Project Coordinator — NEW dev-only **Papers browser** module (flag `papers_browser`, dev ON / prod OFF): top-nav chip + `#papers` scene + `/api/papers-browser/*`. Awaiting deploy-dev. See AGENT_UPDATE_LOG.md._
+
+## Science + Ecosystem + guided Oracle — integrated 2026-10-25 (flag-gated: dev ON / prod OFF)
+Three Chat-designed modules are now part of the platform, re-skinned onto the live tokens and tethered by a handoff bus
+(`app/modules/mc-bridge.js` ↔ `window.mcOpenModule` in the mockup). **Science** (`science_module`): top-nav chip →
+`#science` iframes `app/modules/science.html` (Foundations tour + Precursors; every Ask → the real Oracle, Experts →
+Ecosystem). **Ecosystem** (`ecosystem_module`): chip → `#ecosystem` iframes `app/modules/ecosystem.html` (People
+directory + Radar on the sanitised 8 Oct snapshot `ecosystem_data.json`; only Approved/Merged inbox rows shown — 4 Radar
+items today; intro + correction/removal by email to `ECOSYSTEM_CONTACT_EMAIL`; `/api/ecosystem/bootstrap` + `/intent`,
+404 when off). **Guided Oracle** (`oracle_guided`): `POST /api/ask` with `guided:true` may answer with a new `ask` SSE
+event (≤3 questions, tap options, Just answer); answers open with "Working from:" and end with Open in Science / Experts
+on this. Verified locally (stand-in model) + flag-off in prod mode. **Open:** staging check with the real model + Neon;
+`ECOSYSTEM_CONTACT_EMAIL` on Render; Radar content approval; then flip the three prod flags + promote. See
+AGENT_UPDATE_LOG.md 2026-10-25.
 
 ## Papers browser — dev module for the whole `sources` table — shipped to the repo 2026-10-05 (awaiting deploy-dev)
 Top-nav **Papers** chip (flag `papers_browser`, dev:true / prod:false) → in-app `#papers` scene iframing `app/dev/papers_browser.html`. Browse all 818 papers 50/page, sort/filter (search, year, relevance, review status, study type, topic, tag, audit lenses No DOI / No abstract / Untagged / In-Oracle-corpus), shareable URL state, column picker (default minimal), tick rows across pages → CSV (server) / XLSX (client SheetJS), "Export filtered" + "Download entire table" CSV (UTF-8 BOM, formula-injection-safe), per-paper Open link + best-effort Unpaywall open-access PDF (links only; needs `UNPAYWALL_EMAIL`, optional). Backend `server/papers_browser.py` + routes in `meatcode_server.py`; **all routes 404 when the flag is off** (so prod exposes nothing until `papers_browser.prod` is flipped). Read-only by design — write-back (quarantine/flag) deliberately deferred (see `platform_docs/PAPERS_BROWSER.md`). Design notes: `UI-UX Designer/PAPERS_BROWSER_DESIGN_NOTES.md`. Verified live vs Neon (818 / 50 per page, filters, CSV parse, flag-off 404, jsdom end-to-end); real-browser render + `.xlsx` output still need a staging click-test. **Not deployed — `deploy-dev.command`.** Open: set `UNPAYWALL_EMAIL` on the Render dev service; Daniel/Lior decisions in the advisory doc §6.
