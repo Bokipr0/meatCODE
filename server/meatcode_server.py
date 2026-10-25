@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-# Last updated: 2026-10-25 19:45 UTC · Yochai (PM) with Claude · NEW Ecosystem module API behind flag
+# Last updated: 2026-10-25 20:40 UTC · Yochai (PM) with Claude · Guided Oracle behind flag `oracle_guided`:
+#   POST /api/ask with {guided:true, history:[...], skip} runs the elicitation step from the Oracle spec (closed
+#   11 Oct) first — one MODEL call decides ask/clarify/answer; "ask" is a NEW additive SSE event carrying the
+#   question + tap options (max 3 per conversation). Answers reuse _retrieve_sources / _grounding_system_prompt /
+#   _consensus_classify UNCHANGED, over the whole conversation, plus server/oracle_guided.py's answer rules
+#   ("Working from:" line, no fixed defaults). Flag off or guided absent -> the old single-turn path, unchanged.
+# Prev 2026-10-25 19:45 UTC · Yochai (PM) with Claude · NEW Ecosystem module API behind flag
 #   `ecosystem_module` (flag off -> every /api/ecosystem/* route 404s, like papers_browser):
 #   GET /api/ecosystem/bootstrap (taxonomy from the bible + ECOSYSTEM_CONTACT_EMAIL for intro/correction
 #   requests) and POST /api/ecosystem/intent ({text, prev} -> validated intent JSON; one small
@@ -507,6 +513,13 @@ try:
 except Exception as _e:
     ecosystem = None
     sys.stderr.write("[ecosystem] module unavailable: %s\n" % str(_e)[:200])
+
+# Guided Oracle prompt + parsing (flag `oracle_guided`). Retrieval/grounding stay in this file, unchanged.
+try:
+    import oracle_guided
+except Exception as _e:
+    oracle_guided = None
+    sys.stderr.write("[oracle-guided] module unavailable: %s\n" % str(_e)[:200])
 
 MAILLARD_SYNC_WAIT      = float(os.environ.get("MAILLARD_SYNC_WAIT", "8"))    # s waited inline before 202
 MAILLARD_JOB_TTL        = float(os.environ.get("MAILLARD_JOB_TTL", "3600"))   # s a finished job is kept
@@ -1635,6 +1648,86 @@ class Handler(SimpleHTTPRequestHandler):
         except Exception as e:
             return self._send_json({"error": "papers browser unavailable: " + str(e)[:200]}, 503)
 
+    def _handle_guided_ask(self, body, question):
+        """POST /api/ask with guided:true (flag oracle_guided). Same SSE contract as the single-turn path
+        (status / sources / chunk / consensus / done / error) plus ONE additive event:
+            event: ask   data: {"intent","action":"ask|clarify","question","options":[..],"params":[..],
+                                "why","asked":n,"max":3}
+        sent INSTEAD of an answer when the elicitation step wants one more parameter (max 3 per conversation).
+        Retrieval, grounding prompt, citations and the consensus signal are the existing functions, unchanged;
+        the conversation (history) and oracle_guided.guided_answer_rules() are what's added. Never a 500: a
+        failed decision call answers straight away, a failed answer sends the usual vendor-neutral error."""
+        history = oracle_guided.clean_history(body.get("history"))
+        skip = bool(body.get("skip"))
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "keep-alive")
+        self.end_headers()
+
+        def send_event(event, data):
+            lines = str(data).split("\n")
+            payload = "event: %s\n%s\n\n" % (event, "\n".join("data: " + l for l in lines))
+            try:
+                self.wfile.write(payload.encode("utf-8")); self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+
+        # 1) DECIDE — ask one more question, or answer now. Any failure -> answer (never strand the user).
+        try:
+            resp = client.messages.create(
+                model=MODEL, max_tokens=500,
+                messages=[{"role": "user", "content": oracle_guided.decision_prompt(history, question, skip)}])
+            raw = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
+            decision = oracle_guided.parse_decision(raw, history, skip)
+        except Exception as e:
+            sys.stderr.write("[oracle-guided] decision skipped: %s\n" % str(e)[:300])
+            decision = oracle_guided.parse_decision("", history, True)
+        if decision["action"] != "answer":
+            out = dict(decision)
+            out["asked"] = oracle_guided.questions_asked(history) + 1
+            out["max"] = oracle_guided.MAX_QUESTIONS
+            send_event("ask", json.dumps(out))
+            send_event("done", "")
+            return
+
+        # 2) ANSWER — the existing retrieval + grounding, over the whole conversation.
+        send_event("status", "retrieving")
+        sources_rows, used_fallback, retrieval_ok = [], False, True
+        if DATABASE_URL:
+            try:
+                sources_rows, used_fallback = _retrieve_sources(oracle_guided.retrieval_query(history, question))
+            except Exception as e:
+                retrieval_ok = False
+                sys.stderr.write("[oracle-guided] retrieval error: %s\n" % str(e)[:300])
+        grounded = bool(DATABASE_URL) and retrieval_ok
+        send_event("sources", json.dumps(_attach_claims(_public_source_fields(sources_rows)), default=str))
+        system_prompt = ((_grounding_system_prompt(sources_rows, used_fallback) if grounded else SYSTEM_PROMPT)
+                         + oracle_guided.guided_answer_rules(decision))
+        send_event("status", "answering")
+        try:
+            answer_parts = []
+            with client.messages.stream(
+                model=MODEL,
+                max_tokens=MAX_TOKENS,
+                system=system_prompt,
+                messages=oracle_guided.answer_messages(history, question),
+            ) as stream:
+                for text in stream.text_stream:
+                    if text:
+                        answer_parts.append(text)
+                        send_event("chunk", text)
+            if grounded and sources_rows:
+                try:
+                    consensus = _consensus_classify(sources_rows, "".join(answer_parts))
+                    send_event("consensus", json.dumps(consensus, default=str))
+                except Exception as e:
+                    sys.stderr.write("[oracle-guided] consensus skipped: %s\n" % str(e)[:300])
+            send_event("done", "")
+        except Exception as e:
+            sys.stderr.write("[oracle-guided] answer error: %s\n" % str(e)[:300])
+            send_event("error", "The MeatCODE Oracle is unavailable right now. Please try again in a moment.")
+
     def _handle_ecosystem(self, method, path):
         """All /api/ecosystem/* routes. Flag off -> 404 {"error":"not found"} (same as papers_browser).
         No DB access. Any failure -> 503 JSON (the page then reads requests with its keyword fallback)."""
@@ -2145,6 +2238,12 @@ class Handler(SimpleHTTPRequestHandler):
         question = (body.get("question") or "").strip()
         if not question:
             self.send_error(400, "Missing 'question'"); return
+
+        # ── Guided Oracle (flag oracle_guided): the elicitation step may ASK one short question before
+        #    answering. Flag off, or a client that doesn't send guided:true -> the single-turn path below,
+        #    byte-for-byte unchanged. See _handle_guided_ask + server/oracle_guided.py. ──
+        if body.get("guided") and _flag_on("oracle_guided") and oracle_guided is not None:
+            return self._handle_guided_ask(body, question)
 
         # ─── RETRIEVE — before opening the SSE stream, so the very first event can
         # carry the real citation set (matches docs/DECISION_Oracle_Answer_Engine.docx:
