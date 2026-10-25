@@ -1,0 +1,49 @@
+/* Last updated: 2026-10-25 · Yochai (PM) with Claude · NEW shared brand sheet for the embedded product
+   modules (Science, Ecosystem). Copies the live platform's design tokens from app/meatcode_mockup.html
+   :root VERBATIM, so every module renders in the same GFI seaweed-teal + cream + Varela Round look as the
+   rest of MeatCODE. If the mockup's palette ever changes, change it there AND here (same names). */
+@import url("https://fonts.googleapis.com/css2?family=Varela+Round&display=swap");
+
+:root {
+  color-scheme: light;
+  /* ── GFI Israel · seaweed teal palette (mirrors app/meatcode_mockup.html :root) ── */
+  --bg:           #FAF6EF;
+  --bg-deep:      #F2EBDA;
+  --surface:      #FFFFFF;
+  --surface-2:    #F7F0E0;
+  --wine:         #00736E;   /* the platform's name for its primary teal */
+  --wine-deep:    #015A56;
+  --wine-soft:    #4FA59F;
+  --wine-tint:    #B5DDD8;
+  --wine-mist:    #E0F0EE;
+  --ink:          #1A1A1A;
+  --ink-dim:      #4A4A4A;
+  --ink-faint:    #8A8A8A;
+  --line:         #E5DDD0;
+  --line-strong:  #D2C8B5;
+  --brass:        #C77E5F;   /* warm coral complement to teal */
+  --brass-soft:   #F2D7C8;
+  --olive:        #7A8C5F;
+  --olive-soft:   #D6DCC4;
+  --shadow:       0 4px 16px rgba(0, 67, 64, 0.08);
+  --shadow-lg:    0 10px 32px rgba(0, 67, 64, 0.12);
+  --round:        "Varela Round", "Heebo", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono:         "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+
+/* Embedded inside the platform shell (?embed=1, set by mc-bridge.js): the platform already draws the
+   top bar, so a module hides its own standalone header/footer chrome via [data-mc-standalone]. */
+html.mc-embed [data-mc-standalone] { display: none !important; }
+html:not(.mc-embed) [data-mc-embedded-only] { display: none !important; }
+
+/* Shared "open in another module" link button, used by every module for cross-links. */
+.mc-xlink {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 36px; padding: 6px 14px;
+  border: 1px solid var(--wine); border-radius: 999px;
+  background: var(--surface); color: var(--wine);
+  font: inherit; font-size: 13.5px; font-weight: 700;
+  text-decoration: none; cursor: pointer;
+}
+.mc-xlink:hover { background: var(--wine); color: #fff; }
+.mc-xlink:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }

@@ -1,7 +1,7 @@
 {
   "_schema": {
     "version": 2,
-    "updated": "2026-08-15",
+    "updated": "2026-10-25",
     "doc": "platform_docs/DEV_AREA.md",
     "about": "Registry of every flagged FEATURE and every dev SCREEN. Backward compatible: the server still reads flags.<key>.dev / .prod, and the app still turns each ON flag into a body class ff-<key>. Everything else here is descriptive metadata rendered by the Dev Area hub.",
     "fields": {
@@ -270,6 +270,55 @@
       "destination": "LIVE INTEGRATION (2026-09-01): Top-nav 'Analytics' (3rd chip, additive) -> in-app #analytics scene that iframes the workspace (embed mode). /analytics pretty-URL kept as a secondary direct entry. dev ON / prod OFF.",
       "url": "/analytics",
       "note": "Additive nav chip (Oracle/Research/Simulate untouched). Server serves /analytics + /analytics/ as a clean alias for /app/dev/analytics_workspace.html. Distinct from the analytics_workspace flag (which lists the workspace under Dev Area screens).",
+      "dev": true,
+      "prod": false
+    },
+    "science_module": {
+      "label": "Science module (top nav)",
+      "description": "MeatCODE Science: guided Foundations tour (raw -> cooked meat) + Precursors (juice, fat, meat matrix) with illustrative example studies; every 'Ask' hands off to the real Oracle and 'Experts' to the Ecosystem.",
+      "kind": "screen",
+      "added": "2026-10-25",
+      "status": "preview",
+      "where": {
+        "screen": "Top nav (all topbars), 2nd chip right after Oracle",
+        "spot": "Chip 'Science' -> in-app #science scene iframing /app/modules/science.html?embed=1 (full-width, no context panel).",
+        "file": "app/modules/science.html + app/modules/mc-brand.css + app/modules/mc-bridge.js + app/meatcode_mockup.html"
+      },
+      "destination": "Top-nav 'Science' (Yochai, 2026-10-25). Ported from the 'MeatCODE Science Mockup' Chat artifact (v0.2, 18 Oct) onto the live platform tokens.",
+      "url": "/app/modules/science.html",
+      "note": "Static, pre-generated content (per the Science brief). Example-study cards are labelled Illustrative; the flavor-benchmark panel is held back until the TVP rationale exists. Process-flavor path is 'Coming soon'.",
+      "dev": true,
+      "prod": false
+    },
+    "ecosystem_module": {
+      "label": "Ecosystem module (top nav)",
+      "description": "MeatCODE Ecosystem: intent-first expert directory (People) + Radar of approved events/courses/news; public-information-only expert cards with 'Ask GFI for an introduction'; hands off to the Oracle and Science.",
+      "kind": "screen",
+      "added": "2026-10-25",
+      "status": "preview",
+      "where": {
+        "screen": "Top nav (all topbars), chip right after Science",
+        "spot": "Chip 'Ecosystem' -> in-app #ecosystem scene iframing /app/modules/ecosystem.html?embed=1 (full-width, no context panel).",
+        "file": "app/modules/ecosystem.html + app/modules/ecosystem_data.json + server/meatcode_server.py (/api/ecosystem/*) + app/meatcode_mockup.html"
+      },
+      "destination": "Top-nav 'Ecosystem' (Yochai, 2026-10-25). Ported from 'MeatCODE Ecosystem prototype v0.8' (Chat artifact, 13 Oct) incl. Lior's 11 Oct review notes.",
+      "url": "/app/modules/ecosystem.html",
+      "note": "People + papers come from the 8 Oct Neon snapshot bundled with the module; profile details refresh live from /api/experts/{id} when the DB is reachable. Privacy per the 14 Oct decision: no emails, no relevance score/tier, correction/removal link on every card.",
+      "dev": true,
+      "prod": false
+    },
+    "oracle_guided": {
+      "label": "Guided Oracle (elicitation questions)",
+      "description": "The Oracle asks up to 3 short clarifying questions (one per turn, with typical values to tap, 'Just answer' always available) before answering formulation-type questions; answers open with a 'Working from:' line and end with 'Open in Science' / 'Experts on this'.",
+      "kind": "feature",
+      "added": "2026-10-25",
+      "status": "preview",
+      "where": {
+        "screen": "Oracle (landing scene)",
+        "spot": "askOracle() sends {guided:true, history} to POST /api/ask; the server's elicitation step may reply with an `ask` SSE event (question + options) instead of an answer.",
+        "file": "app/meatcode_mockup.html + server/meatcode_server.py + server/oracle_guided.py"
+      },
+      "note": "Implements the Oracle elicitation spec (closed 11 Oct). Flag OFF -> /api/ask behaves exactly as before (single-turn, no questions). Retrieval and citations are the existing grounded pipeline, unchanged.",
       "dev": true,
       "prod": false
     }
