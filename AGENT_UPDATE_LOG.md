@@ -1,5 +1,8 @@
 # MeatCODE — Agent Update Log
 
+## 2026-10-25 · Yochai (PM) with Claude · PROMOTED Science + Ecosystem + guided Oracle to production
+Yochai checked staging and approved. `science_module`, `ecosystem_module`, `oracle_guided` flipped to prod:true (status live) in `Release Center/features.json`; dev fast-forwarded onto main (same as promote-to-prod.command) and tagged `prod-*`. Also carried to main: Lior's pending dev commits (Papers browser, Backups button) — their flags stay prod:false, so nothing of them shows in production. Corrected the 25 Oct file stamps that had been written with future UTC times. Still open: `ECOSYSTEM_CONTACT_EMAIL` on both Render services; Radar content approval; live Neon endpoint for the Ecosystem.
+
 ## 2026-10-25 · Yochai (PM) with Claude · Science + Ecosystem + guided Oracle integrated into the platform (flag-gated)
 Yochai asked to bring the three modules designed in Chat (Ecosystem, Science/Educational, Oracle) into the production
 site, fully embedded and tethered, keeping the live branding. Decisions (Yochai, 25 Oct): guided questions go INSIDE

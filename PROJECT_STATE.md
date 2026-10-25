@@ -4,9 +4,9 @@
 > Asana owns *tasks & priorities*; this file owns *technical reality* — what's built, what's broken,
 > what's in flight. Keep it short and current, not a changelog.
 
-_Last updated: 2026-10-25 21:10 UTC · Yochai (PM) with Claude — Science + Ecosystem + guided Oracle integrated (flags science_module / ecosystem_module / oracle_guided, dev ON / prod OFF); pushed to dev for staging. Prior: 2026-10-05 · Project Coordinator — NEW dev-only **Papers browser** module (flag `papers_browser`, dev ON / prod OFF): top-nav chip + `#papers` scene + `/api/papers-browser/*`. Awaiting deploy-dev. See AGENT_UPDATE_LOG.md._
+_Last updated: 2026-10-25 19:25 UTC · Yochai (PM) with Claude — Science + Ecosystem + guided Oracle PROMOTED to production (flags science_module / ecosystem_module / oracle_guided now dev ON / prod ON) after Yochai's staging check. Prior: 2026-10-05 · Project Coordinator — NEW dev-only **Papers browser** module (flag `papers_browser`, dev ON / prod OFF): top-nav chip + `#papers` scene + `/api/papers-browser/*`. Awaiting deploy-dev. See AGENT_UPDATE_LOG.md._
 
-## Science + Ecosystem + guided Oracle — integrated 2026-10-25 (flag-gated: dev ON / prod OFF)
+## Science + Ecosystem + guided Oracle — LIVE in production 2026-10-25 (flags dev ON / prod ON)
 Three Chat-designed modules are now part of the platform, re-skinned onto the live tokens and tethered by a handoff bus
 (`app/modules/mc-bridge.js` ↔ `window.mcOpenModule` in the mockup). **Science** (`science_module`): top-nav chip →
 `#science` iframes `app/modules/science.html` (Foundations tour + Precursors; every Ask → the real Oracle, Experts →
@@ -15,8 +15,9 @@ directory + Radar on the sanitised 8 Oct snapshot `ecosystem_data.json`; only Ap
 items today; intro + correction/removal by email to `ECOSYSTEM_CONTACT_EMAIL`; `/api/ecosystem/bootstrap` + `/intent`,
 404 when off). **Guided Oracle** (`oracle_guided`): `POST /api/ask` with `guided:true` may answer with a new `ask` SSE
 event (≤3 questions, tap options, Just answer); answers open with "Working from:" and end with Open in Science / Experts
-on this. Verified locally (stand-in model) + flag-off in prod mode. **Open:** staging check with the real model + Neon;
-`ECOSYSTEM_CONTACT_EMAIL` on Render; Radar content approval; then flip the three prod flags + promote. See
+on this. Verified locally (stand-in model) + flag-off in prod mode; staging checked by Yochai 25 Oct, then promoted.
+**Open:** `ECOSYSTEM_CONTACT_EMAIL` on both Render services; Radar content approval (4 reviewed items today);
+live Neon endpoint to replace the Ecosystem snapshot. See
 AGENT_UPDATE_LOG.md 2026-10-25.
 
 ## Papers browser — dev module for the whole `sources` table — shipped to the repo 2026-10-05 (awaiting deploy-dev)

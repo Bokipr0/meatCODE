@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-# Last updated: 2026-10-25 20:40 UTC · Yochai (PM) with Claude · Guided Oracle behind flag `oracle_guided`:
+# Last updated: 2026-10-25 19:15 UTC · Yochai (PM) with Claude · Guided Oracle behind flag `oracle_guided`:
 #   POST /api/ask with {guided:true, history:[...], skip} runs the elicitation step from the Oracle spec (closed
 #   11 Oct) first — one MODEL call decides ask/clarify/answer; "ask" is a NEW additive SSE event carrying the
 #   question + tap options (max 3 per conversation). Answers reuse _retrieve_sources / _grounding_system_prompt /
 #   _consensus_classify UNCHANGED, over the whole conversation, plus server/oracle_guided.py's answer rules
 #   ("Working from:" line, no fixed defaults). Flag off or guided absent -> the old single-turn path, unchanged.
-# Prev 2026-10-25 19:45 UTC · Yochai (PM) with Claude · NEW Ecosystem module API behind flag
+# Prev 2026-10-25 19:05 UTC · Yochai (PM) with Claude · NEW Ecosystem module API behind flag
 #   `ecosystem_module` (flag off -> every /api/ecosystem/* route 404s, like papers_browser):
 #   GET /api/ecosystem/bootstrap (taxonomy from the bible + ECOSYSTEM_CONTACT_EMAIL for intro/correction
 #   requests) and POST /api/ecosystem/intent ({text, prev} -> validated intent JSON; one small

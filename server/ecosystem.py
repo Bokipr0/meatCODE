@@ -1,4 +1,4 @@
-# Last updated: 2026-10-25 19:40 UTC · Yochai (PM) with Claude · NEW server helpers for the Ecosystem module
+# Last updated: 2026-10-25 19:05 UTC · Yochai (PM) with Claude · NEW server helpers for the Ecosystem module
 #   (flag `ecosystem_module`). No HTTP and no SQL here — meatcode_server.py owns routing + auth and hands in the
 #   model call, same split as papers_browser.py / reaction_network.py.
 """MeatCODE Ecosystem — server-side helpers for app/modules/ecosystem.html.

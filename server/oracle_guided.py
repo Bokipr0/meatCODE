@@ -1,4 +1,4 @@
-# Last updated: 2026-10-25 20:30 UTC · Yochai (PM) with Claude · NEW guided-Oracle (elicitation) helpers behind flag
+# Last updated: 2026-10-25 19:12 UTC · Yochai (PM) with Claude · NEW guided-Oracle (elicitation) helpers behind flag
 #   `oracle_guided`. Prompt text only + parsing — no HTTP, no SQL, no retrieval (meatcode_server.py owns those and
 #   reuses the existing _retrieve_sources / _grounding_system_prompt unchanged). Flag OFF -> nothing here runs.
 """Guided Oracle — the elicitation step from the Oracle spec (section 5, closed 11 Oct; tested in the Oracle Sandbox).
