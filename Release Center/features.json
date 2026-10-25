@@ -300,11 +300,11 @@
       "where": {
         "screen": "Top nav (all topbars), chip right after Science",
         "spot": "Chip 'Ecosystem' -> in-app #ecosystem scene iframing /app/modules/ecosystem.html?embed=1 (full-width, no context panel).",
-        "file": "app/modules/ecosystem.html + app/modules/ecosystem_data.json + server/meatcode_server.py (/api/ecosystem/*) + app/meatcode_mockup.html"
+        "file": "app/modules/ecosystem.html + app/modules/ecosystem_data.json + server/ecosystem.py + server/meatcode_server.py (/api/ecosystem/bootstrap, /intent, /people) + app/meatcode_mockup.html"
       },
       "destination": "Top-nav 'Ecosystem' (Yochai, 2026-10-25). Ported from 'MeatCODE Ecosystem prototype v0.8' (Chat artifact, 13 Oct) incl. Lior's 11 Oct review notes.",
       "url": "/app/modules/ecosystem.html",
-      "note": "People + papers come from the 8 Oct Neon snapshot bundled with the module; profile details refresh live from /api/experts/{id} when the DB is reachable. Privacy per the 14 Oct decision: no emails, no relevance score/tier, correction/removal link on every card. PROMOTED 2026-10-25: prod ON after Yochai's staging check.",
+      "note": "People + papers LIVE from Neon (GET /api/ecosystem/people, SELECT-only, 10-min cache; 155 people / 109 papers on 25 Oct = the 8 Oct snapshot's 153/108 + 2 accented names it had missed). The bundled 8 Oct copy in ecosystem_data.json is only a labelled fallback when Neon is unreachable. Radar = human-reviewed Agent Inbox rows only. Privacy per the 14 Oct decision: no emails, no relevance score/tier, correction/removal link on every card. PROMOTED 2026-10-25: prod ON after Yochai's staging check.",
       "dev": true,
       "prod": true,
       "updated": "2026-10-25"

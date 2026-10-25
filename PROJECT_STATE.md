@@ -4,7 +4,7 @@
 > Asana owns *tasks & priorities*; this file owns *technical reality* — what's built, what's broken,
 > what's in flight. Keep it short and current, not a changelog.
 
-_Last updated: 2026-10-25 19:25 UTC · Yochai (PM) with Claude — Science + Ecosystem + guided Oracle PROMOTED to production (flags science_module / ecosystem_module / oracle_guided now dev ON / prod ON) after Yochai's staging check. Prior: 2026-10-05 · Project Coordinator — NEW dev-only **Papers browser** module (flag `papers_browser`, dev ON / prod OFF): top-nav chip + `#papers` scene + `/api/papers-browser/*`. Awaiting deploy-dev. See AGENT_UPDATE_LOG.md._
+_Last updated: 2026-10-25 20:45 UTC · Yochai (PM) with Claude — Ecosystem people + papers now LIVE from Neon (GET /api/ecosystem/people), on dev for staging. Prior: 2026-10-25 19:25 UTC — Science + Ecosystem + guided Oracle PROMOTED to production (flags science_module / ecosystem_module / oracle_guided now dev ON / prod ON) after Yochai's staging check. Prior: 2026-10-05 · Project Coordinator — NEW dev-only **Papers browser** module (flag `papers_browser`, dev ON / prod OFF): top-nav chip + `#papers` scene + `/api/papers-browser/*`. Awaiting deploy-dev. See AGENT_UPDATE_LOG.md._
 
 ## Science + Ecosystem + guided Oracle — LIVE in production 2026-10-25 (flags dev ON / prod ON)
 Three Chat-designed modules are now part of the platform, re-skinned onto the live tokens and tethered by a handoff bus
@@ -16,8 +16,9 @@ items today; intro + correction/removal by email to `ECOSYSTEM_CONTACT_EMAIL`; `
 404 when off). **Guided Oracle** (`oracle_guided`): `POST /api/ask` with `guided:true` may answer with a new `ask` SSE
 event (≤3 questions, tap options, Just answer); answers open with "Working from:" and end with Open in Science / Experts
 on this. Verified locally (stand-in model) + flag-off in prod mode; staging checked by Yochai 25 Oct, then promoted.
+**Live data (25 Oct, on dev):** People + papers now come LIVE from Neon via `GET /api/ecosystem/people` (server/ecosystem.py `live_people`, SELECT-only, 10-min cache) — 155 people / 109 papers vs the snapshot's 153/108 (+ José M. Lorenzo, Igor Tomašević, whose accents the 8 Oct match missed). The 8 Oct copy stays only as a labelled fallback. `source_experts` is EMPTY in Neon, so the link is a normalised author-name match (rule in the module docstring); filling `source_experts` would make it exact.
 **Open:** `ECOSYSTEM_CONTACT_EMAIL` on both Render services; Radar content approval (4 reviewed items today);
-live Neon endpoint to replace the Ecosystem snapshot. See
+promote the live-data change to prod after the staging check. See
 AGENT_UPDATE_LOG.md 2026-10-25.
 
 ## Papers browser — dev module for the whole `sources` table — shipped to the repo 2026-10-05 (awaiting deploy-dev)

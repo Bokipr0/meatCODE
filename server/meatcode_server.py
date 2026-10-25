@@ -1738,6 +1738,12 @@ class Handler(SimpleHTTPRequestHandler):
         try:
             if method == "GET" and path == "/api/ecosystem/bootstrap":
                 return self._send_json(ecosystem.bootstrap())
+            if method == "GET" and path == "/api/ecosystem/people":
+                # Live people + papers from Neon (SELECT-only, 10-min cache in ecosystem.live_people).
+                # No DB / DB error -> 503 and the page falls back to its labelled snapshot.
+                if not DATABASE_URL:
+                    return self._send_json({"error": "DATABASE_URL not configured"}, 503)
+                return self._send_json(ecosystem.live_people(pg_rows))
             if method == "POST" and path == "/api/ecosystem/intent":
                 body = self._read_json_body()
                 def call_model(prompt):

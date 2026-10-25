@@ -1,5 +1,27 @@
 # MeatCODE — Agent Update Log
 
+## 2026-10-25 · Yochai (PM) with Claude · Ecosystem people + papers LIVE from Neon
+Yochai: "The Ecosystem should also draw from the Neon DB." Schema mapped and the query verified through the Neon
+connector (read-only SELECTs on project holy-mode-78356834; nothing written).
+- **Findings:** `source_experts` exists but is EMPTY, so people↔papers is a name match (as on 8 Oct). `sources.authors`
+  = full names separated by "; " (older rows ", "). `experts.org_type` is NULL everywhere and `experts.country` mixes ISO
+  codes and names ("CN"/"China"/"USA"/"UK"); affiliation text sometimes embeds emails (stripped before display).
+  No `unaccent` extension — accents folded with `translate()` (no DDL).
+- **Rule reproduced:** authors of `relevance_llm >= 60` sources, normalised (accents folded, Prof/Dr + "(…)" dropped,
+  letters only, >= 6 letters), matched to `experts`; duplicate expert rows = one person (lowest id, first non-empty
+  current_org→affiliation / country / h-index / ORCID / OpenAlex id); kept if >= 2 papers or OpenAlex-backed. Result
+  155 people / 109 papers = the snapshot's 153/108 + José M. Lorenzo (h 119) and Igor Tomašević (h 48).
+- **Files:** `server/ecosystem.py` (`live_people`, LIVE_PEOPLE_SQL / LIVE_PAPERS_SQL, org clean-up, country/sector
+  inference, 10-min cache), `server/meatcode_server.py` (`GET /api/ecosystem/people`, flag-gated, 503 without DB),
+  `app/modules/ecosystem.html` (loads live first; header note + profile provenance say "live" or "offline copy of
+  8 Oct"; more countries in the region maps), `app/modules/ecosystem_data.json` (_about: rd is the fallback),
+  `Release Center/features.json` (ecosystem_module note).
+- **Verified:** the exact production SQL run on Neon through the connector (155 / 109; papers query shape = snapshot);
+  org/country/sector functions checked on every kept row vs the snapshot; local UI on both paths (test-only stand-in
+  for live data → "live from the MeatCODE database", results + profile with no email; no DB → "offline copy of 8 Oct").
+- **Not verified here:** the endpoint against real Neon through psycopg2 — first real run is on staging.
+- **Next:** staging check → promote. Filling `source_experts` (pipeline) would make the people↔papers link exact.
+
 ## 2026-10-25 · Yochai (PM) with Claude · PROMOTED Science + Ecosystem + guided Oracle to production
 Yochai checked staging and approved. `science_module`, `ecosystem_module`, `oracle_guided` flipped to prod:true (status live) in `Release Center/features.json`; dev fast-forwarded onto main (same as promote-to-prod.command) and tagged `prod-*`. Also carried to main: Lior's pending dev commits (Papers browser, Backups button) — their flags stay prod:false, so nothing of them shows in production. Corrected the 25 Oct file stamps that had been written with future UTC times. Still open: `ECOSYSTEM_CONTACT_EMAIL` on both Render services; Radar content approval; live Neon endpoint for the Ecosystem.
 

@@ -1,5 +1,8 @@
 <!DOCTYPE html>
-<!-- Last updated: 2026-10-25 19:08 UTC · Yochai (PM) with Claude · NEW product module: MeatCODE Ecosystem (People + Radar),
+<!-- Last updated: 2026-10-25 20:40 UTC · Yochai (PM) with Claude · People + papers now LIVE from Neon
+     (GET /api/ecosystem/people); ecosystem_data.json's "rd" is only the labelled offline copy; header note + profile
+     provenance say which one is showing; more countries in the region maps (RS, GR, HR, MX, CL, EG, PK).
+     Prev 2026-10-25 19:08 UTC · Yochai (PM) with Claude · NEW product module: MeatCODE Ecosystem (People + Radar),
      ported from the "MeatCODE Ecosystem prototype v0.8" Chat artifact (Lior's 10 Oct review applied: no map on landing,
      guided first visit, interests, follow + new-paper badges, short topic chips). Re-skinned onto the live platform tokens
      (mc-brand.css). Production changes: data moved to ecosystem_data.json (sanitised, public information only); taxonomy
@@ -309,27 +312,33 @@ svg.map .halo{fill:var(--brand);opacity:.22;pointer-events:none}
 <script>
 (async function(){
 'use strict';
-/* Boot: the topic taxonomy comes from the server (the bible, db/taxonomy/keywords_topics.json) and the people /
-   papers / Radar data from the snapshot file named by /api/ecosystem/bootstrap. */
+/* Boot: the topic taxonomy comes from the server (the bible, db/taxonomy/keywords_topics.json); people + papers
+   LIVE from Neon (GET /api/ecosystem/people); the Radar, the map outline and the offline copy of people/papers from
+   the data file named by /api/ecosystem/bootstrap. If the live call fails (Neon asleep or unreachable) the page uses
+   that offline copy and says so in the header note. */
 async function bootData(){
   const get=u=>fetch(u,{credentials:'same-origin'}).then(r=>r.ok?r.json():Promise.reject(new Error(u+' '+r.status)));
-  try{const b=await get('/api/ecosystem/bootstrap');const d=await get(b.data_url||'/app/modules/ecosystem_data.json');return{b,d};}
+  try{const b=await get('/api/ecosystem/bootstrap');
+    const [d,live]=await Promise.all([get(b.data_url||'/app/modules/ecosystem_data.json'),get('/api/ecosystem/people').catch(()=>null)]);
+    return{b,d,live:(live&&Array.isArray(live.people)&&live.people.length)?live:null};}
   catch(err){document.getElementById('app').innerHTML='<section class="start"><h1>Ecosystem isn\u2019t available right now</h1><p class="lead">Please refresh in a moment. If this keeps happening, the Ecosystem may be switched off on this server.</p></section>';return null;}
 }
 const BOOT=await bootData();if(!BOOT)return;
+const PEOPLE_AS_OF=BOOT.live?BOOT.live.as_of.slice(0,10):BOOT.d.snapshot.people_papers;
+document.getElementById('snapNote').textContent=BOOT.live?'People & papers: live from the MeatCODE database':'People & papers: offline copy of '+new Date(PEOPLE_AS_OF+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
 const CONTACT=BOOT.b.contact_email||'';
 const TAX=BOOT.b.taxonomy, MAP=BOOT.d.map;
 const TOPIC=Object.fromEntries(TAX.map(t=>[t.s,t])), BYNAME=Object.fromEntries(TAX.map(t=>[t.n,t.s]));
 const BRANCHES=['flavor_chemistry','flavor_ingredients','meat_analogs','meat_science','analytics'];
 
-/* ── REAL DATA (app/modules/ecosystem_data.json — see its _about) ──
-   People + papers: Neon "GFI database", read-only SELECT on 8 Oct 2026. People = authors of the
-   319 sources with relevance_llm >= 60, matched to public.experts by exact normalised name (deduplicated), kept if they have
-   >= 2 such papers or are a curated OpenAlex-backed record (153 people, 108 papers). Country/sector inferred from affiliation
-   where the DB field is empty. Radar rows and new people: MeatCODE DB Agent Inbox (Google Sheet), run 7 Oct 2026. */
-const RD=BOOT.d.rd;
-const COUNTRIES={CN:'China',KR:'South Korea',DE:'Germany',CH:'Switzerland',US:'United States',SE:'Sweden',ES:'Spain',NZ:'New Zealand',NL:'Netherlands',TH:'Thailand',AT:'Austria',BE:'Belgium',CA:'Canada',EE:'Estonia',GB:'United Kingdom',FR:'France',SG:'Singapore',BR:'Brazil',IL:'Israel',JP:'Japan',IT:'Italy',DK:'Denmark',IE:'Ireland',FI:'Finland',IN:'India',AU:'Australia',PL:'Poland'};
-const REGION={DE:'europe',CH:'europe',SE:'europe',ES:'europe',NL:'europe',AT:'europe',BE:'europe',EE:'europe',GB:'europe',FR:'europe',IT:'europe',DK:'europe',IE:'europe',FI:'europe',PL:'europe',US:'north_america',CA:'north_america',CN:'asia_pacific',KR:'asia_pacific',TH:'asia_pacific',NZ:'asia_pacific',SG:'asia_pacific',JP:'asia_pacific',IN:'asia_pacific',AU:'asia_pacific',IL:'israel',BR:'latin_america'};
+/* ── REAL DATA ──
+   People + papers: LIVE from Neon via GET /api/ecosystem/people (server/ecosystem.py live_people — the rule is
+   documented there: authors of relevance_llm >= 60 sources matched to public.experts by normalised name). Offline
+   copy when that call fails: ecosystem_data.json "rd" (8 Oct 2026, same rule). Radar rows and new people: MeatCODE DB
+   Agent Inbox (Google Sheet), human-reviewed rows only. */
+const RD=BOOT.live||BOOT.d.rd;
+const COUNTRIES={CN:'China',KR:'South Korea',DE:'Germany',CH:'Switzerland',US:'United States',SE:'Sweden',ES:'Spain',NZ:'New Zealand',NL:'Netherlands',TH:'Thailand',AT:'Austria',BE:'Belgium',CA:'Canada',EE:'Estonia',GB:'United Kingdom',FR:'France',SG:'Singapore',BR:'Brazil',IL:'Israel',JP:'Japan',IT:'Italy',DK:'Denmark',IE:'Ireland',FI:'Finland',IN:'India',AU:'Australia',PL:'Poland',RS:'Serbia',GR:'Greece',HR:'Croatia',MX:'Mexico',CL:'Chile',EG:'Egypt',PK:'Pakistan'};
+const REGION={DE:'europe',CH:'europe',SE:'europe',ES:'europe',NL:'europe',AT:'europe',BE:'europe',EE:'europe',GB:'europe',FR:'europe',IT:'europe',DK:'europe',IE:'europe',FI:'europe',PL:'europe',RS:'europe',GR:'europe',HR:'europe',US:'north_america',CA:'north_america',CN:'asia_pacific',KR:'asia_pacific',TH:'asia_pacific',NZ:'asia_pacific',SG:'asia_pacific',JP:'asia_pacific',IN:'asia_pacific',AU:'asia_pacific',PK:'asia_pacific',IL:'israel',BR:'latin_america',MX:'latin_america',CL:'latin_america'};
 const REGIONS={any:'Anywhere',europe:'Europe',north_america:'North America',asia_pacific:'Asia-Pacific',israel:'Israel',latin_america:'Latin America'};
 const SECTORS={all:'All',academic:'Academic',industry:'Industry',ngo:'NGO & gov'};
 const SECVAR={academic:'--acad',industry:'--ind',ngo:'--ngo',unknown:'--faint'};
@@ -639,7 +648,7 @@ function openProfile(id){const e=E[id];if(!e)return;
    <div class="blk"><h3>Get in touch</h3><div class="contact"><button class="btn pri" type="button" id="pIntro">Ask GFI for an introduction</button>${followBtn(e.id)}${prof.map(([l,u])=>ext(l,u)).join('')}</div>
      ${find.length?`<p class="prov">Search for them on ${find.map(([l,u])=>`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer" style="color:var(--brand)">${l}</a>`).join(', ')}.</p>`:''}
      <p class="prov"><button type="button" id="pClaim" style="border:0;background:none;padding:0;color:var(--brand);font-size:12.5px">Is this you? Suggest a correction or ask to be removed</button></p>
-     <p class="prov">Public information only: papers in the MeatCODE corpus and open profiles (ORCID, OpenAlex, institution pages). Snapshot of ${esc(fmtD(dt(BOOT.d.snapshot.people_papers)))}.</p></div>
+     <p class="prov">Public information only: papers in the MeatCODE corpus and open profiles (ORCID, OpenAlex, institution pages). ${BOOT.live?'Live from the MeatCODE database':'Offline copy of '+esc(fmtD(dt(PEOPLE_AS_OF)))}.</p></div>
    ${e.expertise?`<div class="blk"><h3>Works on</h3><p style="margin:0">${esc(e.expertise)}</p></div>`:''}
    ${e.topics.length?`<div class="blk"><h3>Known for</h3><div class="ktags">${e.topics.slice(0,12).map(([s,n])=>`<button type="button" data-topic="${s}">${esc(TOPIC[s].n)}${papers.length?`<small>${n}</small>`:''}</button>`).join('')}</div></div>`:''}
    ${e.co.length?`<div class="blk"><h3>Works with</h3><div class="faces">${e.co.slice(0,8).map(([o])=>`<button class="face" type="button" data-open="${o}">${av(E[o])}<span>${esc(E[o].name)}</span></button>`).join('')}</div><p class="prov">Co-authors on MeatCODE papers.</p></div>`:''}
