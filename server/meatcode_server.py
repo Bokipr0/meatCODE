@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-# Last updated: 2026-10-25 19:15 UTC · Yochai (PM) with Claude · Guided Oracle behind flag `oracle_guided`:
+# Last updated: 2026-10-25 20:45 UTC · Yochai (PM) with Claude · NEW GET /api/ecosystem/people (flag
+#   `ecosystem_module`): the Ecosystem's people + papers LIVE from Neon via ecosystem.live_people(pg_rows)
+#   (SELECT-only, 10-min cache); no DATABASE_URL or a DB error -> 503 and the page uses its labelled offline copy.
+# Prev 2026-10-25 19:15 UTC · Yochai (PM) with Claude · Guided Oracle behind flag `oracle_guided`:
 #   POST /api/ask with {guided:true, history:[...], skip} runs the elicitation step from the Oracle spec (closed
 #   11 Oct) first — one MODEL call decides ask/clarify/answer; "ask" is a NEW additive SSE event carrying the
 #   question + tap options (max 3 per conversation). Answers reuse _retrieve_sources / _grounding_system_prompt /
