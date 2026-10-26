@@ -1,7 +1,7 @@
 {
   "_schema": {
     "version": 2,
-    "updated": "2026-10-25",
+    "updated": "2026-10-26",
     "doc": "platform_docs/DEV_AREA.md",
     "about": "Registry of every flagged FEATURE and every dev SCREEN. Backward compatible: the server still reads flags.<key>.dev / .prod, and the app still turns each ON flag into a body class ff-<key>. Everything else here is descriptive metadata rendered by the Dev Area hub.",
     "fields": {
@@ -324,6 +324,21 @@
       "dev": true,
       "prod": true,
       "updated": "2026-10-25"
+    },
+    "research_nav_hidden": {
+      "label": "Hide Research tab (Science replaces it)",
+      "description": "Science takes Research's place in the top nav: the Research chip is hidden in every topbar while science_module is also on. Hidden, not deleted — the #research scene, its wizard and every in-content link into it (e.g. Science's 'Molecular map' card) keep working.",
+      "kind": "feature",
+      "added": "2026-10-26",
+      "status": "live",
+      "where": {
+        "screen": "Top nav (all topbars)",
+        "spot": "The static 'Research' chip gets class .mc-nav-hidden (display:none) from the product-modules chip pass; turning either flag off brings it back.",
+        "file": "app/meatcode_mockup.html"
+      },
+      "note": "Yochai, 26 Oct: \"Science module replaces Research (hide, don't delete)\". Requires science_module ON as well, so the nav can never lose both.",
+      "dev": true,
+      "prod": true
     }
   }
 }

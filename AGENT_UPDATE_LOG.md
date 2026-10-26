@@ -1,5 +1,13 @@
 # MeatCODE — Agent Update Log
 
+## 2026-10-26 · Yochai (PM) with Claude · Science replaces Research in the top nav (hidden, not deleted)
+Yochai: "Science module replaces Research (hide, don't delete)".
+- **What:** new flag `research_nav_hidden` (dev ON / prod ON — takes effect in prod on the next promotion). The product-modules chip pass in `app/meatcode_mockup.html` toggles class `.mc-nav-hidden` (display:none) on the static Research chip in all 18 topbars, only while `science_module` is ON too (so the nav can never lose both).
+- **Kept:** the `#research` scene, the research wizard (flag `research_reaction_network`), `/api/reaction-network`, and every in-content route into Research (Science "Molecular map" card, Home tile, Inventory breadcrumbs, molecule-detail link). Nothing deleted.
+- **Files:** `app/meatcode_mockup.html` (CSS rule + chip pass + stamp), `Release Center/features.json`.
+- **Verified locally (APP_ENV=dev):** nav = Oracle · Science · Ecosystem · Analytics · Papers · Simulate with 18 Research chips hidden; removing the flag class brings Research back in place; `#research` still opens; 17/17 inline scripts parse.
+- **Next:** staging check → promote.
+
 ## 2026-10-25 · Yochai (PM) with Claude · PROMOTED live Ecosystem data to production
 Yochai confirmed staging's Ecosystem shows live data. main fast-forwarded 36d84a4 → fe504c6 (the exact commit checked on staging) and tagged `prod-20261025-2033`; /api/version reports fe504c6, /api/health db:true. (First push attempt used a bad short hash and failed; the tag was created before the retry but points at the same fe504c6.) Docs-only follow-up commit stays on dev until the next release.
 
