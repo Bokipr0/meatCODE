@@ -1,0 +1,22 @@
+# Last updated: 2026-10-20 · Codex / Full-Stack · local GROBID service using the existing downloaded image.
+name: meatcode-grobid
+services:
+  grobid:
+    # Pin the actual image already present on this Mac; no unrequested upgrade.
+    image: grobid/grobid:0.8.2@sha256:0057fdcff9280c4b2596b050bb75cc799dc31f57255b001bf2e5144be0f5c190
+    platform: linux/amd64
+    container_name: meatcode-grobid
+    init: true
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8070:8070"
+    mem_limit: 4g
+    cpus: 2
+    ulimits:
+      core: 0
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8070/api/isalive | grep -q true"]
+      interval: 15s
+      timeout: 5s
+      start_period: 90s
+      retries: 8

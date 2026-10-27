@@ -1,6 +1,11 @@
 # MeatCODE — repository guide for agents
 
-_Last updated: 2026-08-31 · state-curation pass · refreshed the start-of-session reads (added MVP_BOARD + TEAM_BROADCAST), corrected the deploy flow (Release Center; `deploy.command`/`sync_meatcode.command` retired), fixed the brand (→ seaweed-teal) and the stale corpus/phase facts (~818 sources, MVP focus)_
+_Last updated: 2026-10-11 · Advisory · handoff pass — START_HERE banner, reading order aligned, `dev` branch rule, removed dead `db/connect.py` + `run_oracle.command` refs, phase refreshed · prev 2026-08-31 · state-curation pass · refreshed the start-of-session reads (added MVP_BOARD + TEAM_BROADCAST), corrected the deploy flow (Release Center; `deploy.command`/`sync_meatcode.command` retired), fixed the brand (→ seaweed-teal) and the stale corpus/phase facts (~818 sources, MVP focus)_
+
+> 🧭 **New account, new agent, or new collaborator? Open [`START_HERE.md`](START_HERE.md) first** — the
+> reading order, every external system (Neon · Render · GitHub · Asana · this folder) in
+> `platform_docs/SYSTEMS_MAP.md`, and live numbers in `platform_docs/SYSTEM_SNAPSHOT.md`
+> (regenerate with `Release Center/refresh-handoff.command`). Agent skills are versioned in `orchestration/skills/`.
 
 **Read `ROLES.md` FIRST (who does what + file ownership), then this file, then `PROJECT_STATE.md`.** This repo is the single source of truth for everything
 file-based on MeatCODE. If anything here conflicts with a scattered copy elsewhere on disk
@@ -10,7 +15,7 @@ Those old copies are being retired.
 > **Canonical working location — all agents operate HERE:**
 > `/Users/lior/Documents/Claude/Projects/Claude Database/meatCODE`
 > This folder is mounted into every cowork session, so every agent reaches it directly.
-> Do all reads, edits, commits, and pushes inside this folder. Remote: `Bokipr0/meatCODE`.
+> Do all reads and edits inside this folder. Remote: `Bokipr0/meatCODE` (Lior commits + pushes from his Mac).
 > Never edit MeatCODE files in the parent *Claude Database* folder or in iCloud — only here.
 
 ---
@@ -21,9 +26,9 @@ MeatCODE state lives in three places, each authoritative for one kind of thing:
 
 | Kind of thing | Authoritative home | How an agent uses it |
 |---|---|---|
-| Code, docs, mockup, SQL, **technical status** | **This git repo** (`Bokipr0/meatCODE`) | Pull at start, commit + push at end. Edit files here, nowhere else. |
+| Code, docs, mockup, SQL, **technical status** | **This git repo** (`Bokipr0/meatCODE`) | Edit files here, nowhere else. Agents don't run git; Lior publishes via `Release Center/`. |
 | Structured data (literature, molecules, experts, protocols) | **Neon Postgres** | Query live via `DATABASE_URL`. Never cache copies into the repo. |
-| Tasks, milestones, phases, priorities | **Asana** ("MeatCODE – Open Flavor & Aroma Initiative", owned by Daniel) | Read live. Don't track task status in docs. |
+| Tasks, milestones, phases, priorities | **Asana** ("MeatCODE - Open Flavor & Aroma Initiative", project owner in Asana: Daniel; priorities set by Daniel + Lior) | Read live. Don't track task status in docs. |
 
 Why agents used to fall out of sync: code/knowledge were smeared across a local folder, an iCloud
 folder, GitHub, and ephemeral uploads. **One home per kind of thing fixes that.** Never use a local
@@ -47,7 +52,7 @@ meatCODE/
     meatcode_server.py        ← THE server: serves the mockup + the GROUNDED Oracle (POST /api/ask, SSE —
                                  retrieves from the corpus + cites real source ids) + Neon-backed read
                                  endpoints (experts, molecules, sources, companies, /api/corpus, /api/compare, …).
-                                 Launch via run_oracle.command (repo root). Deployed on Render.
+                                 Run locally via Release Center/run-local.command. Deployed on Render.
     MeatCODE_API_Quickstart.md
   db/                  ← schema, migrations, seeds (source-controlled SQL)
     taxonomy/                 ← topics hierarchy CSVs
@@ -63,18 +68,18 @@ meatCODE/
 ## Agent operating protocol (this is what keeps every session current)
 
 **At the start of every session:**
-1. `git pull`
-2. Read, in order: `CLAUDE.md` (this file) → `PROJECT_STATE.md` (technical reality) → `MVP_BOARD.md` (open
-   deliverables for the end-of-August MVP) → `TEAM_BROADCAST.md` (the short "what you must know now").
-   `ROLES.md` covers who owns which files.
-3. Check the current task (Asana / MVP_BOARD) if the work is task-driven.
+1. Read, in order (same as `START_HERE.md`): `ROLES.md` → `CLAUDE.md` (this file) →
+   `platform_docs/SYSTEMS_MAP.md` → `platform_docs/SYSTEM_SNAPSHOT.md` → `PROJECT_STATE.md` →
+   `MVP_BOARD.md` → `TEAM_BROADCAST.md`.
+2. Check the current task in Asana (it wins over MVP_BOARD for priorities) if the work is task-driven.
+   _(No `git pull` — agents don't run git here. The folder on disk is always current.)_
 
 **While working:**
 - Edit files in this repo only. Query Neon and Asana live — don't snapshot them into files.
-- **Parallel safety (Lior runs a mix of sequential + parallel cowork agents):**
-  - Single agent at a time → just work on `main`.
-  - Spawning parallel agents → give each its own `git worktree` (or branch), then merge back.
-    Never have two agents writing `main` in the same clone at once.
+- The checked-out branch is **`dev`**. All work lands on `dev`; `main` is production and only changes through
+  `promote-to-prod.command`. Never edit with the intent of committing straight to `main`.
+- **Parallel safety:** parallel agents must have disjoint file ownership (`ROLES.md`) so they never write the
+  same file — that, not git branches, is what keeps concurrent sessions from clobbering each other.
 
 **At the end of every session:**
 1. **Stamp** every file you created or materially changed with a last-updated note (see *File-update conventions* below).
@@ -111,8 +116,9 @@ Two requirements on every working session — this is how Lior tracks who change
 
 ## Connecting to Neon (data)
 One `.env` at the repo root (`meatCODE/.env`, git-ignored) holds `DATABASE_URL` + `ANTHROPIC_API_KEY`. Copy from `.env.example`.
-- **Agents / scripts:** `from db.connect import get_conn`, or run `python3 db/connect.py` for a live row-count + citable-corpus snapshot. Never hard-code credentials.
-- **The mockup never talks to Neon directly.** It calls `server/meatcode_server.py` (port 8000), which reads the same root `.env`. Double-click `run_oracle.command` (repo root) to start the server AND open the mockup; verify at `http://localhost:8000/api/health` (expects `db: true`). That one server serves the mockup, the Oracle (`/api/ask`), and the Neon-backed `/api/experts`, `/api/experts/{id}`, `/api/papers/{id}`.
+- **Agents / scripts:** read `DATABASE_URL` from `.env` (production) or `.env.dev` (dev branch) and connect with `psycopg2` — never print the value. For a live overview run `python3 orchestration/build_system_snapshot.py` (writes `platform_docs/SYSTEM_SNAPSHOT.md`, no secrets). Never hard-code credentials. _(There is no `db/connect.py`.)_
+- **Network:** the desktop Cowork sandbox reaches Neon directly (verified 2026-10-11). Cloud/web sessions may be network-blocked — if a connection fails there, ask Lior to run the script on his Mac.
+- **The mockup never talks to Neon directly.** It calls `server/meatcode_server.py` (port 8000), which reads the same root `.env`. Double-click `Release Center/run-local.command` to start the server against the dev DB; verify at `http://localhost:8000/api/health` (expects `db: true`). That one server serves the mockup, the Oracle (`/api/ask`), and the Neon-backed `/api/experts`, `/api/experts/{id}`, `/api/papers/{id}`.
 - Neon auto-sleeps; the first query after idle wakes it (a few seconds).
 
 ## Conventions
@@ -125,13 +131,14 @@ One `.env` at the repo root (`meatCODE/.env`, git-ignored) holds `DATABASE_URL` 
 ## Key facts an agent should know
 - **2026 is the validation year, not launch.** The #1 risk is building the full vision too early —
   prefer a narrow, validated MVP. Push back on scope creep.
-- **Current target (set 2026-07-22):** a credible, source-backed prototype — **internal demo end of August
-  2026**, external P1 expert validation **mid-September**. Open deliverables live in `MVP_BOARD.md`.
+- **Current phase (Oct 2026):** Asana *Phase 2 — MVP knowledge hub (Sep–Nov 2026)*; public project launch
+  moved to end of October, MVP to ~50 closed testers by end of 2026. (The earlier end-of-August demo /
+  mid-September validation target has passed.) Priorities: Asana first, then `MVP_BOARD.md`.
 - The strategic hypothesis: meaty flavor should be engineered as **process flavor** (cooking-generated
   precursor + lipid + matrix + heat chemistry), not only added as a final flavor mix.
 - The corpus now stands at **~818 citable sources** (from ~34 at migration) — the Phase-1 foundation gap is
   largely closed. The live crux is **corpus trust** (only ~39% pass the Oracle's `relevance_llm ≥ 60` gate)
-  and **deploying the built backlog**. See `PROJECT_STATE.md` + `MVP_BOARD.md`.
+  and the **paper↔molecule bridge** (23 links). The built backlog is deployed (prod = 2026-09-21 release). See `PROJECT_STATE.md`.
 - Ecosystem interest already in: Wageningen (WUR — joint GC-MS / volatile-atlas idea), Masha Niv, FSI.
 - Stack: Neon Postgres · Dimensions.ai-fed pipeline (Layer C typed extraction + Layer E store, 3-tier
   relevance) · Streamlit (internal) · Metabase planned (stakeholder self-serve) · mockup → Next.js planned.

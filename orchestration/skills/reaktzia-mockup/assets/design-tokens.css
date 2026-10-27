@@ -1,0 +1,47 @@
+/* ──────────────────────────────────────────────
+   Reaktzia design tokens — wine / pomegranate
+   Drop this :root block at the top of any
+   stylesheet to inherit the brand system.
+   ────────────────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --bg:           #F2E6DD;
+  --bg-deep:      #ECDCD0;
+  --surface:      #FBF4EE;
+  --surface-2:    #F7EBE0;
+
+  /* Wine / pomegranate (primary) */
+  --wine:         #7E2E2E;
+  --wine-deep:    #5E1F1F;
+  --wine-soft:    #A14848;
+  --wine-tint:    #EAD2CF;
+  --wine-mist:    #F4DFDB;
+
+  /* Ink (text) */
+  --ink:          #2A1F1F;
+  --ink-dim:      #6B5550;
+  --ink-faint:    #9C8478;
+
+  /* Lines / borders */
+  --line:         #E2D2CB;
+  --line-strong:  #D2BCAF;
+
+  /* Secondary accents */
+  --brass:        #A8814E;
+  --brass-soft:   #E6D2B8;
+  --olive:        #7A8C5F;
+  --olive-soft:   #D6DCC4;
+
+  /* Shadows — always wine-tinted, never grey */
+  --shadow:       0 4px 16px rgba(94, 31, 31, 0.07);
+  --shadow-lg:    0 10px 32px rgba(94, 31, 31, 0.10);
+
+  /* Type stack — Varela Round primary, Heebo for Hebrew */
+  --round: "Varela Round", "Heebo", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Required Google Fonts import (add to <head>):
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+*/

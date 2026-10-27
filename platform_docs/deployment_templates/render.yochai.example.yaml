@@ -1,0 +1,30 @@
+# Last updated: 2026-10-26 · Codex / Advisory · proposed isolated Yochai sandbox.
+# REVIEW TEMPLATE ONLY. Not registered with Render and not deployed.
+# Replace REPLACE_WITH_YOCHAI_BRANCH with an existing agreed GitHub branch before use.
+# Keep the production root render.yaml intact. Select this file explicitly as Blueprint Path.
+services:
+  - type: web
+    name: meatcode-yochai
+    repo: https://github.com/Bokipr0/meatCODE
+    branch: REPLACE_WITH_YOCHAI_BRANCH
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python3 server/meatcode_server.py
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.4
+      - key: APP_ENV
+        value: dev
+      - key: SITE_USER
+        value: meatcode
+      - key: SITE_PASSWORD
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: MAILLARD_MODE
+        value: mock

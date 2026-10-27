@@ -1,0 +1,1 @@
+{"service": "meatcode-oracle", "env": "prod", "commit": "6394c039749a", "commit_full": "6394c039749ad0e6d7279dabd00a380dfb95ee87", "branch": "main", "server_started_utc": "2026-10-26T07:24:41+00:00", "model": "claude-sonnet-4-6", "password_gate": true, "features": {"sse_status_event": true, "vendor_neutral_errors": true, "html_no_cache": true}}

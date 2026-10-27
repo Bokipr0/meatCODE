@@ -1,4 +1,4 @@
-# Last updated: 2026-10-05 · Full-Stack · NEW — logic for the dev "Papers browser" API
+# Last updated: 2026-10-18 10:00 UTC · Codex / RAG · remove unvalidated Oracle relevance gate; wire extracted-graph demo.
 #   (flag `papers_browser`). Pure stdlib + SQL handed in by the caller: every function takes a
 #   `run(sql, params) -> list[dict]` callable (the server passes its `pg_rows`), so this module
 #   opens no connections itself and is trivially testable. SELECT-only, fully parameterized;
@@ -224,8 +224,8 @@ def _build_where(qs):
             ("has_abstract", "(s.abstract IS NOT NULL AND btrim(s.abstract) <> '')"),
             ("has_main_claim", "(s.main_claim IS NOT NULL AND btrim(s.main_claim) <> '')"),
             ("has_tags", "EXISTS (SELECT 1 FROM source_tags x WHERE x.source_id = s.id)"),
-            # Same predicate the Oracle retrieval uses: citable (search_vec) AND relevance_llm >= 60.
-            ("in_oracle", "(s.search_vec IS NOT NULL AND s.relevance_llm >= 60)")):
+            # Same FTS eligibility as Oracle; no relevance-score gate.
+            ("in_oracle", "(s.search_vec IS NOT NULL)")):
         t = _tri(key)
         if t is True:
             where.append(present)
@@ -260,7 +260,7 @@ def list_papers(qs, run):
     offset = (page - 1) * ps
 
     sql = ("SELECT " + _select_list(_LIST_COLS) +
-           ", (s.search_vec IS NOT NULL AND s.relevance_llm >= 60) AS in_oracle"
+           ", (s.search_vec IS NOT NULL) AS in_oracle"
            " FROM sources s" + where_sql +
            " ORDER BY " + _order_by(sort, d) + " LIMIT %s OFFSET %s")
     rows = run(sql, tuple(params + [ps, offset]))

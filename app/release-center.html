@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- Last updated: 2026-10-27 11:44 UTC · Full-Stack · show saved versus observed production switches; clarify Analytics entry points. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -24,6 +25,12 @@
   .flag .meta{ flex:1; min-width:0; }
   .flag .name{ font-weight:650; }
   .flag .desc{ color:var(--dim); font-size:13px; margin-top:2px; }
+  .flag .location,.published{ color:var(--dim); font-size:12px; margin-top:6px; }
+  .published.pending{ color:#8a5a2a; font-weight:600; }
+  .statusline{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .statusline h2{ font-size:15px; margin:0; color:var(--ink); }
+  .statuscopy{ margin-top:8px; }
+  .statuscopy a{ color:var(--wine-dark); }
   .switches{ display:flex; gap:20px; }
   .sw{ display:flex; flex-direction:column; align-items:center; gap:6px; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--dim); }
   .toggle{ position:relative; width:46px; height:26px; border-radius:999px; background:#d9cfca; cursor:pointer; transition:background .15s; border:none; padding:0; }
@@ -56,9 +63,14 @@
     <h1>MeatCODE · Release Center</h1>
     <span class="badge" id="envBadge">…</span>
   </header>
-  <div class="sub">Flip a feature ON for <b>Dev</b> to test it, then ON for <b>Prod</b> when it's ready to go live.</div>
+  <div class="sub">Choose the features for your next staging or production release.</div>
   <div class="banner" id="banner" style="display:none"></div>
-  <div class="note" id="note">Toggling saves to <code>features.json</code> right away. <b>Nothing reaches users until you Promote.</b> Dev switches appear on staging after you <b>Deploy</b>; Prod switches go live on your next <b>Promote</b>.</div>
+  <div class="note" id="note">Switches below are <b>saved settings for the next release</b>. Changes apply locally after refreshing the platform. Use <b>Deploy to staging</b>, test there, then <b>Promote to production</b>. A switch is live only after the Render deployment succeeds.</div>
+  <div class="note" id="productionStatus" style="display:none">
+    <div class="statusline"><h2>Observed production</h2><button class="btn dev" id="btnCheck" type="button">Check live site</button></div>
+    <div class="statuscopy" id="productionCopy" role="status">Checking the deployed build…</div>
+  </div>
+  <div class="note">For an <b>Analytics</b> button in the platform navigation, use <b>Analytics zone</b>. The older <b>Analytics module</b> switch is a fallback only for installations without an Analytics zone setting. The separate <b>Analytics workspace</b> switch lists its preview in the Dev Area. The workspace still uses illustrative data.</div>
   <div id="flags"><div class="locked">Loading…</div></div>
 
   <div id="historyWrap" style="display:none">
@@ -76,16 +88,44 @@
 
 <script>
 const $ = s => document.querySelector(s);
+let savedFlags = {}, observedProduction = null;
 function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),3600); }
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-function ctl(key,env,on,admin){
-  if(admin) return `<div class="sw">${env}<button class="toggle" aria-pressed="${!!on}" data-key="${key}" data-env="${env}"></button></div>`;
+function ctl(key,env,on,admin,label){
+  if(admin) return `<div class="sw">${env} · saved<button class="toggle" aria-label="${esc(label||key)} — ${env}" aria-pressed="${!!on}" data-key="${esc(key)}" data-env="${env}"></button></div>`;
   return `<div class="sw">${env}<span class="ro ${on?'on':''}">${on?'ON':'off'}</span></div>`;
+}
+function updatePublished(){
+  const live = observedProduction && observedProduction.feature_flags;
+  document.querySelectorAll('[data-published-key]').forEach(el=>{
+    const key=el.dataset.publishedKey, desired=!!(savedFlags[key]||{}).prod;
+    const known=live && typeof live[key]==='boolean';
+    el.classList.toggle('pending', !!known && live[key]!==desired);
+    el.textContent = !known ? 'Live production switch: unverified' :
+      `Live production: ${live[key]?'ON':'off'}${live[key]!==desired?' · saved setting differs; publish and verify the deployment':''}`;
+  });
+}
+async function checkProduction(){
+  const button=$('#btnCheck'); button.disabled=true;
+  try{
+    const response=await fetch('/api/release/status',{credentials:'same-origin',cache:'no-store'});
+    const data=await response.json();
+    if(!response.ok || !data.ok) throw new Error(data.error||'Live production could not be checked.');
+    observedProduction=data.production;
+    $('#productionCopy').innerHTML=`<a href="https://meatcode-oracle.onrender.com" target="_blank" rel="noopener">Open production</a> · commit <b>${esc(observedProduction.commit||'unknown')}</b> · ${esc(observedProduction.env||'unknown')}<br>Checked ${esc(data.checked_at||'now')}. ${observedProduction.feature_flags?'Per-feature results appear below.':'This deployed version does not report its feature switches; their live state is unverified.'}`;
+  }catch(error){
+    observedProduction=null;
+    $('#productionCopy').textContent=error.message+' Saved settings are unchanged; live production switches are unverified.';
+  }finally{ button.disabled=false; updatePublished(); }
 }
 
 async function load(){
   let data;
-  try{ data = await (await fetch('/api/flags/all',{credentials:'same-origin'})).json(); }
+  try{
+    const response=await fetch('/api/flags/all',{credentials:'same-origin',cache:'no-store'});
+    if(!response.ok) throw new Error('flags unavailable');
+    data=await response.json();
+  }
   catch(e){ $('#flags').innerHTML='<div class="locked">Can’t reach the local server. Start it with <b>release-center.command</b>.</div>'; return; }
   const admin = !!data.admin;
   $('#envBadge').textContent = admin ? 'admin · local' : (data.env||'dev');
@@ -95,14 +135,18 @@ async function load(){
     $('#note').style.display='none';
   } else {
     $('#deploybar').style.display='flex';
+    $('#productionStatus').style.display='block';
+    checkProduction();
   }
-  const flags = data.flags||{};
+  const flags = savedFlags = data.flags||{};
   const keys = Object.keys(flags);
   $('#flags').innerHTML = keys.length ? keys.map(k=>{
     const f=flags[k]||{};
     return `<div class="flag">
-      <div class="meta"><div class="name">${esc(f.label||k)}</div><div class="desc">${esc(f.description||'')}</div></div>
-      <div class="switches">${ctl(k,'dev',f.dev,admin)}${ctl(k,'prod',f.prod,admin)}</div>
+      <div class="meta"><div class="name">${esc(f.label||k)}</div><div class="desc">${esc(f.description||'')}</div>
+        ${f.where?`<div class="location">Where: ${esc(f.where.screen||'')}${f.where.spot?' · '+esc(f.where.spot):''}</div>`:''}
+        ${admin?`<div class="published" data-published-key="${esc(k)}">Live production switch: unverified</div>`:''}</div>
+      <div class="switches">${ctl(k,'dev',f.dev,admin,f.label)}${ctl(k,'prod',f.prod,admin,f.label)}</div>
     </div>`;
   }).join('') : '<div class="locked">No features yet. Add one to <b>features.json</b>.</div>';
   if(admin) document.querySelectorAll('.toggle').forEach(b=> b.addEventListener('click', onToggle));
@@ -116,9 +160,12 @@ async function onToggle(e){
   try{
     const r=await fetch('/api/flags/set',{method:'POST',credentials:'same-origin',
       headers:{'Content-Type':'application/json'}, body:JSON.stringify({key,env,value:next})});
-    if(!r.ok) throw 0;
+    const result=await r.json();
+    if(!r.ok || !result.ok) throw new Error(result.error||'Could not save');
+    savedFlags=result.flags||savedFlags;
     b.setAttribute('aria-pressed', next?'true':'false');
-    toast(`${key}: ${env} → ${next?'ON':'off'} (saved)`);
+    updatePublished();
+    toast(`${key}: ${env} → ${next?'ON':'off'} saved. ${env==='prod'?'Promote and verify to publish.':'Deploy to update staging.'}`);
   }catch(_){ toast('Could not save — is the local server running?'); }
   finally{ b.disabled=false; }
 }
@@ -131,9 +178,11 @@ async function loadHistory(){
   $('#historyWrap').style.display='block';
   if(!d.versions.length){ $('#history').innerHTML='<div class="locked">No snapshots yet — one is saved each time you Promote.</div>'; return; }
   $('#history').innerHTML = d.versions.map(v=>{
-    const live = v.tag===d.current;
+    const deployed=(observedProduction||{}).commit_full||(observedProduction||{}).commit||'';
+    const live=!!(deployed && v.commit && (deployed.startsWith(v.commit)||v.commit.startsWith(deployed)));
+    const mainSnapshot=v.tag===d.current;
     return `<div class="ver">
-      <div class="vmeta"><div class="vtag">${esc(v.tag)}${live?'<span class="livebadge">live now</span>':''}</div>
+      <div class="vmeta"><div class="vtag">${esc(v.tag)}${live?'<span class="livebadge">matches observed production</span>':mainSnapshot?'<span class="ro">main snapshot · deployment unverified</span>':''}</div>
         <div class="vsub">${esc(v.date||'')}${v.subject?' · '+esc(v.subject):''}</div></div>
       ${live ? '<span class="ro on">current</span>' : `<button class="btn back" data-tag="${esc(v.tag)}">Roll back to this</button>`}
     </div>`;
@@ -164,6 +213,7 @@ async function runRelease(kind, confirmMsg){
 }
 $('#btnDeploy').addEventListener('click',()=>runRelease('deploy-dev','Deploy your current work to the PRIVATE staging site?'));
 $('#btnPromote').addEventListener('click',()=>runRelease('promote','Promote to the PUBLIC site? A Terminal will open where you type “yes” to confirm.'));
+$('#btnCheck').addEventListener('click',async()=>{ await checkProduction(); loadHistory(); });
 
 load();
 </script>

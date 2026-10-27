@@ -1,0 +1,295 @@
+{
+  "created_utc": "2026-10-26T12:32:31.873892+00:00",
+  "files": [
+    {
+      "path": "MeatCODE-One-Pager.md",
+      "bytes": 2652,
+      "sha256": "ba3ef38a40c6d03b218457bcd509dcb8735c13a660dfbf048ef4287df12d7a66"
+    },
+    {
+      "path": "MeatCODE-One-Pager.pdf",
+      "bytes": 66020,
+      "sha256": "50d1e12d4d44a8d1c28e89a6ec67b77be13c338fac13121ab1e5bbe7b0ed4350"
+    },
+    {
+      "path": "MeatCODE-System-Visuals.pdf",
+      "bytes": 199906,
+      "sha256": "da65532561cffd1a39de98c52855c98bb365fdb8b06245d598db71ffa00305a6"
+    },
+    {
+      "path": "READ_ME_FIRST.md",
+      "bytes": 8237,
+      "sha256": "ea78fede674c1bb92a18fb6f7104f306e12412feea34713d880a63bea34e18b6"
+    },
+    {
+      "path": "index.html",
+      "bytes": 5976,
+      "sha256": "ad6baa12814d43cc3a19db20793fc212d58c93787c0adfde3316d89e14b21a18"
+    },
+    {
+      "path": "schema/SCHEMA_REFERENCE.md",
+      "bytes": 60515,
+      "sha256": "c035942a552de377044f119b868cb1081554402a6b8f8e67f7c1a4591b4dde03"
+    },
+    {
+      "path": "schema/live_schema_inventory.json",
+      "bytes": 415234,
+      "sha256": "f4504c47e601c8de98a300b7e74650f0349ab44259b9af794ccedc937ee96610"
+    },
+    {
+      "path": "schema/local_graph_inventory.json",
+      "bytes": 261,
+      "sha256": "f23f76efb5e16d9eb92e9c4e48f0d30eda66cb73207ba815f7058c2eeb88fcb3"
+    },
+    {
+      "path": "schema/production_version.json",
+      "bytes": 346,
+      "sha256": "f76d191da2a3d2e6cab5d9bf4d0ab8df507a1c3bc920084ba6078ca1fdf0770a"
+    },
+    {
+      "path": "source_documents/MeatCODE-external-collaborator-2-pager-original.docx",
+      "bytes": 55447,
+      "sha256": "f05f10ca31b521fcb259c4bc436c76eb21b1ea282f2db490f3a1ff81a0264c36"
+    },
+    {
+      "path": "source_documents/PROJECT_STATE.md",
+      "bytes": 15301,
+      "sha256": "e4414b19a0182e08990b533d8c593a7e429ab982dd8cc493331427ec7ee85aa6"
+    },
+    {
+      "path": "source_documents/START_HERE.md",
+      "bytes": 5674,
+      "sha256": "389be5291ce57391b7dbcea6c3c1dcdf2825b74b9c099355de785055e0e0a832"
+    },
+    {
+      "path": "source_documents/analysis/rag_eval/PROTOCOL.md",
+      "bytes": 19828,
+      "sha256": "4edf07d1ed3f5cab79838ba9b8923254422b67a67cbf2afff51285e082d9b290"
+    },
+    {
+      "path": "source_documents/db/migrations/0002_source_scoring.sql",
+      "bytes": 816,
+      "sha256": "c5448f726921b796b657c82261d27be4e4dfa95d8a12992f3e67e6ffae4d9a76"
+    },
+    {
+      "path": "source_documents/db/migrations/0003_source_audits.sql",
+      "bytes": 2746,
+      "sha256": "7ea15334b91401bd1bd846e718f3764e5ffb8e4a91114606f22f67ff371a694f"
+    },
+    {
+      "path": "source_documents/db/migrations/0004_seed_organizations.sql",
+      "bytes": 6098,
+      "sha256": "86b0b88ad23b4436056c482e1c9c7c3590be8a2f81d127b486369db3ff307e8b"
+    },
+    {
+      "path": "source_documents/db/migrations/0005_source_tag_columns.sql",
+      "bytes": 2094,
+      "sha256": "4c8e42cfabdad33bde248e87ebf7babba1dc5d15652eb18d6652ca39a41f6101"
+    },
+    {
+      "path": "source_documents/db/migrations/0006_relational_tags.sql",
+      "bytes": 1743,
+      "sha256": "bac55f43ed27b2fa969483e5e51b23fb90fc23df52122c0ff00d8a577f8f606e"
+    },
+    {
+      "path": "source_documents/db/migrations/0007_drop_unused_source_columns.sql",
+      "bytes": 3243,
+      "sha256": "a048f38b8cd070ce391235b6b3f5900938e5c3488632eca70f115161c6d74a6d"
+    },
+    {
+      "path": "source_documents/db/migrations/0008_drop_unused_molecule_columns.sql",
+      "bytes": 1753,
+      "sha256": "a2298bf898aea1529040f508f7305fc67a1e75d2c6ee833bee995e5d2d5f467e"
+    },
+    {
+      "path": "source_documents/db/migrations/0009_molecule_enrichment_and_tailored_abstract.sql",
+      "bytes": 4473,
+      "sha256": "d13f9b5a26b1e9d79b6699fde3b05a3159e44d4c60467af578389ff567a811f7"
+    },
+    {
+      "path": "source_documents/db/migrations/0010_molecule_structure_identity.sql",
+      "bytes": 3016,
+      "sha256": "9117051146f1c359686f6354135d56534b282eb188093fdf06d372f23f08eb52"
+    },
+    {
+      "path": "source_documents/db/migrations/0011_molecule_target_properties.sql",
+      "bytes": 7452,
+      "sha256": "74f6ce4166d7ac3661dfde9e1f69b4ef720b8173a0bca11072404d66775b96ca"
+    },
+    {
+      "path": "source_documents/db/migrations/0012_molecule_target_properties_seed.sql",
+      "bytes": 69367,
+      "sha256": "0190b841ec819a513802548a619630c34bd6279c00581bb31eb5a15c8cf99f53"
+    },
+    {
+      "path": "source_documents/db/migrations/0013_drop_empty_molecule_columns.sql",
+      "bytes": 2349,
+      "sha256": "ff0002d04b4c14af34c4b1f2c5e19b016cc8876a92d4fba9feec46c50541c3af"
+    },
+    {
+      "path": "source_documents/db/migrations/0014_drop_taste_use_notes.sql",
+      "bytes": 2831,
+      "sha256": "6ff066b62e6ef1f1b53ea2e226f0c5d65e639be7c818e6d0df980025387646e4"
+    },
+    {
+      "path": "source_documents/db/migrations/0015_lightrag_demo_pgvector.sql",
+      "bytes": 4035,
+      "sha256": "f4021b239eed103f7517dc879797568b95afaec1bf92c387a962432e50a42e89"
+    },
+    {
+      "path": "source_documents/db/migrations/README.md",
+      "bytes": 1113,
+      "sha256": "6d9799adb9cd91096c1166d15233a4b317513e7172cc9c93bf49d26f7b740cf6"
+    },
+    {
+      "path": "source_documents/db/migrations/migration_phase1_alter.sql",
+      "bytes": 3475,
+      "sha256": "eeccafa9dbbad16ecfac337e8521b5f61d41f424f6426d2286c559b9fd434c0b"
+    },
+    {
+      "path": "source_documents/docs/MeatCODE_MVP_Definition_and_User_Journeys.md",
+      "bytes": 3137,
+      "sha256": "b60985d3fcf86b7f36fd44df4519af8f77870df0fce5ed8e0634c7218cb1643d"
+    },
+    {
+      "path": "source_documents/pipeline/grobid/README.md",
+      "bytes": 2663,
+      "sha256": "d7bb14f162d1751bf3c8b8537e69821a7363ac88b5e8250f329e8d632f0ee2af"
+    },
+    {
+      "path": "source_documents/pipeline/grobid/mcp/README.md",
+      "bytes": 2399,
+      "sha256": "1026ea8ec8213cdacc205a213153e6d8c140d12c863692d1a16063ad42739520"
+    },
+    {
+      "path": "source_documents/platform_docs/DATA_PROCESSING_ARCHITECTURE.md",
+      "bytes": 14507,
+      "sha256": "3cdc3aece735e976104c00d4dcbb845af8981d07d474cb8f030115ebcd5e26bc"
+    },
+    {
+      "path": "source_documents/platform_docs/DECISIONS.md",
+      "bytes": 8242,
+      "sha256": "13d87206d3ad021b41ad3e3fe75cff2c5ef898436f1b457995adf18c98b3ee08"
+    },
+    {
+      "path": "source_documents/platform_docs/ENGINEERED_RAG_ARCHITECTURE.md",
+      "bytes": 5695,
+      "sha256": "21d90faa810180dbdb30a6cc7c1df3d071b00d57271fe2cd892f4e7559f8af90"
+    },
+    {
+      "path": "source_documents/platform_docs/GITHUB_READINESS.md",
+      "bytes": 4451,
+      "sha256": "c92de5dec54ed1a87a7f0e7cab1f970cb8485a0dc206af8bf38fc7a996408a2b"
+    },
+    {
+      "path": "source_documents/platform_docs/KG_CLAIM_MODEL.md",
+      "bytes": 5385,
+      "sha256": "6b576034070b9c4e76949162a574e0fb20baf984f088b1fe18eb75a8d1b7cd91"
+    },
+    {
+      "path": "source_documents/platform_docs/KG_DECISION.md",
+      "bytes": 3908,
+      "sha256": "8cd56b1497ad3927ee05b0e42206904df07c61c908379f1bf92f8fac3813fbe2"
+    },
+    {
+      "path": "source_documents/platform_docs/LIGHTRAG_CURATION_AND_SCALING.md",
+      "bytes": 12841,
+      "sha256": "3c789fc7d2c1c21fd0b62ea854a8a6d287ede2ef753700da7c225b480c54620f"
+    },
+    {
+      "path": "source_documents/platform_docs/LIGHTRAG_DEMO_IMPLEMENTATION.md",
+      "bytes": 10517,
+      "sha256": "062b7b0e5de5a1a9c610b1f0bcf3964216a96f9e1fe84312e9c131f3793289e8"
+    },
+    {
+      "path": "source_documents/platform_docs/LOCAL_CLOUD_HOSTING_DECISION.md",
+      "bytes": 10689,
+      "sha256": "f627b33d41f3c7fa7cdf3feace346b72462965c2c200ab07d6dfdf0794691598"
+    },
+    {
+      "path": "source_documents/platform_docs/PEOPLE.md",
+      "bytes": 2985,
+      "sha256": "b5b51b27520058322bfe529a53475aad728980f167272790271220e5d4429c62"
+    },
+    {
+      "path": "source_documents/platform_docs/SYSTEMS_MAP.md",
+      "bytes": 7104,
+      "sha256": "c8b1ccb3342b0074d0475fab2faea1f64c1ccfe481a1ac063a2f5988d34206e7"
+    },
+    {
+      "path": "source_documents/platform_docs/SYSTEM_SNAPSHOT.md",
+      "bytes": 6936,
+      "sha256": "2527e4799f940002afad02133c02040835853421a758d7553081d7e30d493e98"
+    },
+    {
+      "path": "source_documents/platform_docs/TWO_ENVIRONMENT_WORKFLOW.md",
+      "bytes": 6903,
+      "sha256": "435b0633c877830fd36bba5aa2bd34e752bcc8093e965366732e6ab2781179cc"
+    },
+    {
+      "path": "source_documents/platform_docs/decks/MeatCODE for WUR.pdf",
+      "bytes": 3671006,
+      "sha256": "72e1278e6ecb2b69a6f8c007fd63d045a19388fc55c5ef02f96c0cd2b37d7709"
+    },
+    {
+      "path": "source_documents/platform_docs/diagrams/MeatCODE-Architecture-Clean-Arrows.png",
+      "bytes": 1534415,
+      "sha256": "4f8f3b7c2aacedc7c83cbd4b2b82464ae420f4d7eb6d58e717820e90f9a28efb"
+    },
+    {
+      "path": "source_documents/platform_docs/diagrams/meatcode-engineered-rag-architecture.svg",
+      "bytes": 11805,
+      "sha256": "3e2d9bde443c1e50fb73bc7099dd129bdfbaa61c3fe82dcff0c3d45cfd94b9e2"
+    },
+    {
+      "path": "source_documents/platform_docs/diagrams/meatcode-rag-demo-overview.png",
+      "bytes": 188611,
+      "sha256": "25e8863a1eadb6364a5fa5ce77c970978c050be2eb0084098247870ba3bae115"
+    },
+    {
+      "path": "source_documents/platform_docs/diagrams/meatcode-rag-demo-overview.svg",
+      "bytes": 12913,
+      "sha256": "5c2265b5ec7f0c087fae2971b50560f941e51f0e7c14c4b3b7a9c20eb1072ef9"
+    },
+    {
+      "path": "source_documents/platform_docs/tagging_relational_guide.md",
+      "bytes": 24359,
+      "sha256": "f04749712f8141b678d5daef451c8d250692e20277ffe012bd2cc508c5766dca"
+    },
+    {
+      "path": "visuals/LightRAG-knowledge-graph-screenshot.png",
+      "bytes": 104397,
+      "sha256": "86351a2fe1ed058ea582754589ae18e158c612075923c13f4d7a5ed9731c757a"
+    },
+    {
+      "path": "visuals/MeatCODE-One-Pager-page-1.png",
+      "bytes": 300371,
+      "sha256": "5566115da201d9038c4bbfebc4d62418ec48f131d005dfad685ddb86504c6ae4"
+    },
+    {
+      "path": "visuals/MeatCODE-System-Visuals-page-1.png",
+      "bytes": 154073,
+      "sha256": "5bd8c1c2c43479fa7dda966e54e137aabfb59113012fd54ddaf6f467a3c4969e"
+    },
+    {
+      "path": "visuals/MeatCODE-System-Visuals-page-2.png",
+      "bytes": 609076,
+      "sha256": "80d09d26235ae875c6f05dc6fb3acf88f27bcb0cdcc4c8b9235de0195361fa3a"
+    },
+    {
+      "path": "visuals/MeatCODE-System-Visuals-page-3.png",
+      "bytes": 149979,
+      "sha256": "d012e07ac20d0eb9af795fec21cc61167f5ab2b4544b0358e77b87530924ae75"
+    },
+    {
+      "path": "visuals/MeatCODE-current-architecture.png",
+      "bytes": 154073,
+      "sha256": "5bd8c1c2c43479fa7dda966e54e137aabfb59113012fd54ddaf6f467a3c4969e"
+    },
+    {
+      "path": "visuals/MeatCODE-schema-map.png",
+      "bytes": 149979,
+      "sha256": "d012e07ac20d0eb9af795fec21cc61167f5ab2b4544b0358e77b87530924ae75"
+    }
+  ]
+}

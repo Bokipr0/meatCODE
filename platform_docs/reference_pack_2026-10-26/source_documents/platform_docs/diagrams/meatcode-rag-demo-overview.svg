@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc" font-family="Avenir Next, Helvetica, sans-serif">
+<!-- Last updated: 2026-10-18 10:12 UTC · Codex / Design-RAG · verified Neon graph/vector demo; Claude credential pending. -->
+<title id="title">MeatCODE: knowledge to answer</title><desc id="desc">Minimal process diagram. GROBID and LightRAG extraction is imported through checks into Neon graph tables and pgvector. Oracle calls the server, which embeds a query, retrieves graph and vector evidence and calls Claude. The model response returns through the server. Graph and vector retrieval are verified live; the Claude key needs repair. No relevance-score cutoff.</desc>
+<defs><style>
+text{fill:#193e3b}.title{font-size:46px;font-weight:700;letter-spacing:-1px}.sub{font-size:19px;fill:#697a70}
+.zone{font-size:13px;font-weight:700;letter-spacing:2px;fill:#648277}.label{font-size:22px;font-weight:650;letter-spacing:-.4px}
+.detail{font-size:14px;fill:#63796e}.edge{font-size:14px;font-weight:600;fill:#58776a}.status{font-size:11px;font-weight:750;letter-spacing:1px}
+.data{fill:none;stroke:#087f75;stroke-width:2.7;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#t)}
+.query{fill:none;stroke:#b17b2e;stroke-width:2.7;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#g)}
+.future{stroke-dasharray:6 7}
+</style><marker id="t" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0L9 4.5L0 9" fill="#087f75"/></marker>
+<marker id="g" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0L9 4.5L0 9" fill="#b17b2e"/></marker>
+<filter id="soft-shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="5" stdDeviation="12" flood-color="#173f39" flood-opacity=".07"/></filter>
+
+<g id="pdf"><circle xmlns="http://www.w3.org/2000/svg" r="64" fill="#E1E9D5" filter="url(#soft-shadow)" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-24-34H12L30-16V34H-24Z" fill="#FFF" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M12-34V-16H30" fill="none" stroke="#64764B" stroke-width="3" stroke-linejoin="round" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-10-4H16M-10 8H16M-10 20H8" fill="none" stroke="#64764B" stroke-width="3" stroke-linecap="round" />
+  </g>
+<g id="parse"><circle xmlns="http://www.w3.org/2000/svg" r="64" fill="#E1E9D5" filter="url(#soft-shadow)" />
+    <rect xmlns="http://www.w3.org/2000/svg" x="-31" y="-27" width="46" height="58" rx="4" fill="#FFF" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-20-14H4M-20-3H4M-20 8H4M-20 19H-4" stroke="#64764B" stroke-width="3" stroke-linecap="round" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-20-36H27V22" fill="none" stroke="#64764B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M29-10H42M29 0H42M29 10H42" stroke="#64764B" stroke-width="3" stroke-linecap="round" />
+  </g>
+<g id="extract"><circle xmlns="http://www.w3.org/2000/svg" r="64" fill="#F7E5DE" filter="url(#soft-shadow)" />
+    <circle xmlns="http://www.w3.org/2000/svg" cx="-21" cy="-8" r="8" fill="#BD5B3A" />
+    <circle xmlns="http://www.w3.org/2000/svg" cx="17" cy="-24" r="8" fill="#BD5B3A" />
+    <circle xmlns="http://www.w3.org/2000/svg" cx="24" cy="18" r="8" fill="#BD5B3A" />
+    <circle xmlns="http://www.w3.org/2000/svg" cx="-17" cy="27" r="8" fill="#BD5B3A" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-14-11L9-21M20-16L23 10M16 20L-9 26M-19 19L-21 0M-14-3L17 14" fill="none" stroke="#BD5B3A" stroke-width="3" stroke-linecap="round" />
+  </g>
+<g id="check"><circle xmlns="http://www.w3.org/2000/svg" r="64" fill="#F7E5DE" filter="url(#soft-shadow)" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M0-38C17-29 31-29 31-29V-3C31 19 16 34 0 42C-16 34-31 19-31-3V-29S-17-29 0-38Z" fill="#FFF" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-16 0L-4 13L18-14" fill="none" stroke="#BD5B3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+<g id="db"><circle xmlns="http://www.w3.org/2000/svg" r="64" fill="#D9EFEC" filter="url(#soft-shadow)" />
+    <ellipse xmlns="http://www.w3.org/2000/svg" cx="0" cy="-25" rx="34" ry="13" fill="#FFF" stroke="#00736E" stroke-width="3" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-34-25V25C-34 32-19 38 0 38S34 32 34 25V-25M-34 0C-34 7-19 13 0 13S34 7 34 0" fill="#FFF" stroke="#00736E" stroke-width="3" />
+    <circle xmlns="http://www.w3.org/2000/svg" cx="-13" cy="-5" r="4" fill="#00736E" /><circle xmlns="http://www.w3.org/2000/svg" cx="14" cy="9" r="4" fill="#00736E" /><circle xmlns="http://www.w3.org/2000/svg" cx="8" cy="-13" r="4" fill="#00736E" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-9-5L4-12M-9-3L11 7M8-9L13 5" stroke="#00736E" stroke-width="2" />
+  </g>
+<g id="search"><circle xmlns="http://www.w3.org/2000/svg" r="64" fill="#D9EFEC" filter="url(#soft-shadow)" />
+    <circle xmlns="http://www.w3.org/2000/svg" cx="-10" cy="-9" r="24" fill="#FFF" stroke="#00736E" stroke-width="4" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M8 9L31 32" stroke="#00736E" stroke-width="6" stroke-linecap="round" />
+    <circle xmlns="http://www.w3.org/2000/svg" cx="-20" cy="-9" r="4" fill="#00736E" /><circle xmlns="http://www.w3.org/2000/svg" cx="0" cy="-18" r="4" fill="#00736E" /><circle xmlns="http://www.w3.org/2000/svg" cx="2" cy="2" r="4" fill="#00736E" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-16-10L-4-16M-16-7L-2 0M0-14L1-2" stroke="#00736E" stroke-width="2" />
+  </g>
+<g id="server"><circle xmlns="http://www.w3.org/2000/svg" r="64" fill="#D9EFEC" filter="url(#soft-shadow)" />
+    <rect xmlns="http://www.w3.org/2000/svg" x="-34" y="-33" width="68" height="25" rx="7" fill="#FFF" />
+    <rect xmlns="http://www.w3.org/2000/svg" x="-34" y="-2" width="68" height="25" rx="7" fill="#FFF" />
+    <circle xmlns="http://www.w3.org/2000/svg" cx="22" cy="-21" r="4" fill="#00736E" /><circle xmlns="http://www.w3.org/2000/svg" cx="22" cy="10" r="4" fill="#00736E" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-20-21H7M-20 10H7" stroke="#00736E" stroke-width="3" stroke-linecap="round" />
+  </g>
+<g id="oracle"><circle xmlns="http://www.w3.org/2000/svg" r="64" fill="#FFF1C8" filter="url(#soft-shadow)" />
+    <rect xmlns="http://www.w3.org/2000/svg" x="-36" y="-28" width="72" height="49" rx="11" fill="#FFF" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-15 21L-25 36L-2 21" fill="#FFF" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-21-12H21M-21 1H11" stroke="#B58920" stroke-width="4" stroke-linecap="round" />
+  </g>
+<g id="model"><circle xmlns="http://www.w3.org/2000/svg" r="64" fill="#F7E5DE" filter="url(#soft-shadow)" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-31 12C-46-12-23-36-2-27C10-46 42-31 38-8C53 2 45 28 25 29H-20C-35 29-42 19-31 12Z" fill="#FFF" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-20 3C-10-14 8-14 20 0M-12 12C-2 2 10 3 18 13" fill="none" stroke="#BD5B3A" stroke-width="3.5" stroke-linecap="round" />
+    <circle xmlns="http://www.w3.org/2000/svg" cx="-10" cy="-6" r="4" fill="#BD5B3A" /><circle xmlns="http://www.w3.org/2000/svg" cx="10" cy="-5" r="4" fill="#BD5B3A" />
+  </g>
+<g id="vectors"><circle r="64" fill="#d9efec"/><g stroke="#087f75" stroke-width="2.8" fill="none" stroke-linecap="round"><path d="M-29-27V28H29M-27 18L-3-13L23-3M-27 18L13 29M-3-13L26-27"/><circle cx="-27" cy="18" r="5" fill="#fff"/><circle cx="-3" cy="-13" r="5" fill="#fff"/><circle cx="23" cy="-3" r="5" fill="#fff"/><circle cx="26" cy="-27" r="5" fill="#fff"/><circle cx="13" cy="29" r="5" fill="#fff"/></g></g></defs>
+<rect width="1920" height="1080" fill="#f8f7f0"/>
+<rect x="54" y="205" width="1812" height="323" rx="30" fill="#edf2e7"/>
+<rect x="54" y="661" width="1812" height="326" rx="30" fill="#edf4f0"/>
+
+<text x="78" y="61" class="zone" >MEATCODE / LIVE DEMO ARCHITECTURE</text>
+<text x="78" y="122" class="title" >Knowledge to answer.</text>
+<text x="79" y="162" class="sub" >Extract once. Store with provenance. Retrieve the evidence. Reason with citations.</text>
+<circle cx="1464" cy="110" r="5" fill="#087f75"/>
+<text x="1480" y="115" class="status" style="fill:#087f75">NEON DEV · RETRIEVAL VERIFIED</text>
+<text x="1480" y="143" class="detail" >No relevance-score cutoff</text>
+<text x="84" y="247" class="zone" >01 / PREPARE KNOWLEDGE</text>
+<text x="1531" y="247" class="zone" >ASYNCHRONOUS INGESTION</text>
+<path d="M226 332H370" class="data"/>
+<text x="300.0" y="310" class="edge" text-anchor="middle" >parse</text>
+<path d="M526 332H670" class="data"/>
+<text x="600.0" y="310" class="edge" text-anchor="middle" >extract</text>
+<path d="M826 332H970" class="data"/>
+<text x="900.0" y="310" class="edge" text-anchor="middle" >check</text>
+<path d="M1126 332H1270" class="data"/>
+<text x="1200.0" y="310" class="edge" text-anchor="middle" >import</text>
+<path d="M1426 332H1570" class="data"/>
+<text x="1500.0" y="310" class="edge" text-anchor="middle" >index</text>
+<path d="M1350 396V409H1460V562H1000V674" class="data"/>
+<path d="M1650 396V409H1784V615H1100V674" class="data"/>
+<text x="1190" y="545" class="edge" text-anchor="middle" >graph context</text>
+<text x="1495" y="599" class="edge" text-anchor="middle" >nearest vector matches</text>
+<use href="#pdf" transform="translate(150 332)"/>
+<text x="150" y="431" class="label" text-anchor="middle" >Source papers</text>
+<text x="150" y="459" class="detail" text-anchor="middle" >3 processed documents</text>
+<use href="#parse" transform="translate(450 332)"/>
+<text x="450" y="431" class="label" text-anchor="middle" >GROBID</text>
+<text x="450" y="459" class="detail" text-anchor="middle" >194 source chunks</text>
+<use href="#extract" transform="translate(750 332)"/>
+<text x="750" y="431" class="label" text-anchor="middle" >LightRAG</text>
+<text x="750" y="459" class="detail" text-anchor="middle" >Entities + relationships</text>
+<use href="#check" transform="translate(1050 332)"/>
+<text x="1050" y="431" class="label" text-anchor="middle" >Import checks</text>
+<text x="1050" y="459" class="detail" text-anchor="middle" >DOI + evidence mapping</text>
+<use href="#db" transform="translate(1350 332)"/>
+<text x="1350" y="431" class="label" text-anchor="middle" >Neon graph</text>
+<text x="1350" y="459" class="detail" text-anchor="middle" >3,418 entities · 4,164 edges</text>
+<use href="#vectors" transform="translate(1650 332)"/>
+<text x="1650" y="431" class="label" text-anchor="middle" >pgvector</text>
+<text x="1650" y="459" class="detail" text-anchor="middle" >7,582 BGE-M3 vectors</text>
+<text x="84" y="583" class="detail" >Original embeddings reused · 1,024 dimensions</text>
+<text x="84" y="612" class="detail" >Extracted demo records retain their provenance and review status.</text>
+<text x="84" y="702" class="zone" >02 / ANSWER A QUESTION</text>
+<text x="1564" y="702" class="zone" >INTERACTIVE SERVING</text>
+<path d="M226 775H474" class="query"/>
+<text x="350" y="753" class="edge" text-anchor="middle" >question</text>
+<path d="M626 775H924" class="query"/>
+<text x="775" y="753" class="edge" text-anchor="middle" >embed + search</text>
+<path d="M1076 775H1424" class="query future"/>
+<text x="1250" y="753" class="edge" text-anchor="middle" >evidence + citations</text>
+<use href="#oracle" transform="translate(150 775)"/>
+<text x="150" y="874" class="label" text-anchor="middle" >Oracle</text>
+<text x="150" y="902" class="detail" text-anchor="middle" >User question</text>
+<use href="#server" transform="translate(550 775)"/>
+<text x="550" y="874" class="label" text-anchor="middle" >MeatCODE server</text>
+<text x="550" y="902" class="detail" text-anchor="middle" >POST /api/ask</text>
+<use href="#search" transform="translate(1000 775)"/>
+<text x="1000" y="874" class="label" text-anchor="middle" >Graph + vector retrieval</text>
+<text x="1000" y="902" class="detail" text-anchor="middle" >Query embedding via local Ollama</text>
+<use href="#model" transform="translate(1500 775)"/>
+<text x="1500" y="874" class="label" text-anchor="middle" >Claude</text>
+<text x="1500" y="902" class="detail" text-anchor="middle" >Reason from retrieved evidence</text>
+<path d="M1500 839V852H1730V953H700V812H610" class="query future"/>
+<text x="1160" y="936" class="edge" text-anchor="middle" >model response → server</text>
+<path d="M497 812H410V952H150V844" class="query"/>
+<text x="312" y="936" class="edge" text-anchor="middle" >stream answer</text>
+<rect x="1400" y="922" width="305" height="25" rx="12" fill="#f4e6cc"/>
+<text x="1552" y="939" class="status" text-anchor="middle" style="fill:#946522">CLAUDE KEY NEEDS REPAIR</text>
+<text x="78" y="1034" class="detail" >Live: imported graph + semantic retrieval. Pending: Claude authentication. Production unchanged.</text>
+<text x="1495" y="1034" class="status" >18 OCT 2026 · DEMO STATE</text>
+</svg>

@@ -1,0 +1,12 @@
+# Last updated: 2026-10-20 · Codex / Full-Stack · server entry for the existing meatcode MCP profile.
+name: grobid
+title: GROBID
+type: server
+image: meatcode/grobid-mcp:0.1.0
+description: Parse local scientific PDFs with GROBID and save TEI and cleaned body text locally.
+env:
+  - name: GROBID_URL
+    value: http://host.docker.internal:8070
+volumes:
+  - /Users/lior/LightRAG/inputs:/pdfs:ro
+  - /Users/lior/Documents/Claude/Projects/Claude Database/meatCODE/data/grobid/mcp:/outputs:rw

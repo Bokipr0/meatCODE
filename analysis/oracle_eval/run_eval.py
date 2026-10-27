@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Last updated: 2026-07-08 10:20 UTC · Algorithm Expert · initial retrieval-only eval harness for
+# Last updated: 2026-10-18 10:00 UTC · Codex / RAG · remove unvalidated Oracle relevance gate; wire extracted-graph demo.
 #   the Oracle's grounded RAG (server/meatcode_server.py's _retrieve_sources). Standalone by design
 #   (see "Why standalone" below). See docs/ORACLE_GROUNDED_RETRIEVAL.md for full context.
 """
@@ -20,7 +20,7 @@ ANTHROPIC_API_KEY, and hard `sys.exit(1)`s if missing, then constructs an Anthro
 client. Importing it here would make a pure DB sanity check depend on the Anthropic
 SDK being installed and a key being present, for zero benefit. So this script
 duplicates the retrieval SQL as a small, self-contained block. IMPORTANT: if
-_RETRIEVAL_SQL / ORACLE_TOP_K / ORACLE_MIN_RELEVANCE change in
+_RETRIEVAL_SQL / ORACLE_TOP_K change in
 server/meatcode_server.py, update the copies below to match (both files carry a
 comment pointing at the other).
 
@@ -75,7 +75,6 @@ except ImportError:
 # provably 0 for any source missing even one query term; see
 # docs/ORACLE_GROUNDED_RETRIEVAL.md for the empirical case for this).
 ORACLE_TOP_K = 6
-ORACLE_MIN_RELEVANCE = 60  # relevance_llm gate; sources scored below this are off-topic
 
 RETRIEVAL_SQL = """
     SELECT * FROM (
@@ -84,7 +83,6 @@ RETRIEVAL_SQL = """
                ts_rank_cd(search_vec, websearch_to_tsquery('english', %s)) AS rank
         FROM sources
         WHERE search_vec IS NOT NULL
-          AND (relevance_llm IS NULL OR relevance_llm >= %s)
     ) ranked
     WHERE rank > 0
     ORDER BY rank DESC
@@ -96,7 +94,7 @@ def _run(query_text, limit):
     conn = psycopg2.connect(DATABASE_URL)
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute(RETRIEVAL_SQL, (query_text, ORACLE_MIN_RELEVANCE, limit))
+            cur.execute(RETRIEVAL_SQL, (query_text, limit))
             return [dict(r) for r in cur.fetchall()]
     finally:
         conn.close()
@@ -164,11 +162,11 @@ def main():
         "from server/meatcode_server.py's `_retrieve_sources()` against live Neon for each question "
         "in eval_questions.md. Does NOT call the Anthropic API — this checks retrieval quality alone._",
         "",
-        "Filter: `search_vec IS NOT NULL AND (relevance_llm IS NULL OR relevance_llm >= %d) AND rank > 0`, "
+        "Filter: `search_vec IS NOT NULL AND rank > 0`, "
         "`ORDER BY ts_rank_cd(search_vec, websearch_to_tsquery('english', query)) DESC LIMIT %d`. Tier 1 "
         "runs `query = question` (strict AND); if that returns 0 rows, tier 2 (\"OR-fallback\" below) "
         "retries with `query = question's words joined by \" OR \"` (recall fallback)."
-        % (ORACLE_MIN_RELEVANCE, args.limit),
+        % args.limit,
         "",
     ]
 

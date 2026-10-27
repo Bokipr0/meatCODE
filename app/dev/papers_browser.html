@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<!-- Last updated: 2026-10-05 · UI/UX Designer · audit lenses added (No DOI / No abstract / Untagged / In Oracle corpus / Not in Oracle corpus via tri-state has_doi, has_abstract, has_tags, in_oracle; optional 'In Oracle?' column) · earlier: NEW dev page — Papers browser (flag papers_browser, dev ON / prod OFF). Browse ALL papers (Neon `sources`), 50/page: sortable headers, filter panel + active pills + quick lenses, minimal default columns + column picker (mc_papers_cols_v1), cross-page row selection → CSV (server) / XLSX (client SheetJS), "Export filtered" + "Download entire table" CSV, per-row Open / lazy open-access PDF, detail drawer, density toggle, keyboard shortcuts, shareable URL-hash state. ?embed=1 (or inside an iframe) hides standalone chrome. ?mock=1 = ~120 clearly-labelled synthetic rows, client-side only (never active without the param). Built against the /api/papers-browser contract. -->
+<!-- Last updated: 2026-10-18 · Codex / RAG · removed Oracle score cutoff and obsolete fixed-score lenses; prior 2026-10-05 · UI/UX Designer · audit lenses added (No DOI / No abstract / Untagged / In Oracle corpus / Not in Oracle corpus via tri-state has_doi, has_abstract, has_tags, in_oracle; optional 'In Oracle?' column) · earlier: NEW dev page — Papers browser (flag papers_browser, dev ON / prod OFF). Browse ALL papers (Neon `sources`), 50/page: sortable headers, filter panel + active pills + quick lenses, minimal default columns + column picker (mc_papers_cols_v1), cross-page row selection → CSV (server) / XLSX (client SheetJS), "Export filtered" + "Download entire table" CSV, per-row Open / lazy open-access PDF, detail drawer, density toggle, keyboard shortcuts, shareable URL-hash state. ?embed=1 (or inside an iframe) hides standalone chrome. ?mock=1 = ~120 clearly-labelled synthetic rows, client-side only (never active without the param). Built against the /api/papers-browser contract. -->
 <title>Papers browser · MeatCODE (dev)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -296,7 +296,7 @@ table.pb-t{border-collapse:separate;border-spacing:0;table-layout:fixed;width:10
         </fieldset>
         <fieldset class="pb-f"><legend>Relevance (LLM, 0&ndash;100)</legend>
           <div class="pb-range"><input id="fRmin" type="number" min="0" max="100" aria-label="Minimum relevance" placeholder="min"><span>to</span><input id="fRmax" type="number" min="0" max="100" aria-label="Maximum relevance" placeholder="max"></div>
-          <div class="hint">The corpus gate is &ge;&nbsp;60. Papers with no score are excluded by any relevance bound.</div>
+          <div class="hint">Relevance scores are provisional. The Oracle currently applies no relevance-score cutoff.</div>
         </fieldset>
         <fieldset class="pb-f"><legend>Citations</legend>
           <input id="fCit" type="number" min="0" inputmode="numeric" aria-label="Minimum citations" placeholder="minimum citations">
@@ -361,7 +361,6 @@ table.pb-t{border-collapse:separate;border-spacing:0;table-layout:fixed;width:10
   var API = '/api/papers-browser';
   var MOCK = /[?&]mock=1(&|$)/.test(location.search);
   var PAGE_SIZE = 50;
-  var GATE = 60;                       // corpus relevance gate (relevance_llm >= 60)
   var COLS_KEY = 'mc_papers_cols_v1';
   var DENS_KEY = 'mc_papers_density_v1';
   var SORTS = ['year', 'citations', 'relevance', 'priority', 'title', 'authors', 'journal', 'created'];
@@ -517,7 +516,7 @@ table.pb-t{border-collapse:separate;border-spacing:0;table-layout:fixed;width:10
         _topics: tp.map(function (t) { return t.slug; }), _tags: tg.map(function (t) { return t.slug; }),
         _full: { abstract: 'MOCK abstract. This is synthetic filler text for paper #' + i + ' to check the drawer layout. It is not from the database.', main_claim: R() < 0.5 ? null : 'MOCK main claim for #' + i + '.', tags: tg }
       });
-      var rr = rows[rows.length - 1]; rr.in_oracle = !!((rr.doi || rr.url) && rr.relevance_llm != null && rr.relevance_llm >= 60);
+      var rr = rows[rows.length - 1]; rr.in_oracle = true; // mock rows all model searchable source records
       if (R() < 0.06) rr._full.abstract = null;
     }
     function wait(v, ms) { return new Promise(function (res) { setTimeout(function () { res(v); }, ms || 160); }); }
@@ -631,13 +630,13 @@ table.pb-t{border-collapse:separate;border-spacing:0;table-layout:fixed;width:10
     relevance_llm: function (r) {
       if (r.relevance_llm == null) return nil();
       var v = Math.max(0, Math.min(100, Number(r.relevance_llm)));
-      return '<span class="db-metric" title="relevance_llm ' + esc(r.relevance_llm) + (v >= GATE ? ' — passes the ≥ ' + GATE + ' gate' : ' — below the ≥ ' + GATE + ' gate') + '"><span class="db-bar' + (v < GATE ? ' low' : '') + '"><i style="width:' + v + '%"></i></span><span class="db-metric-n">' + Math.round(v) + '</span></span>';
+      return '<span class="db-metric" title="relevance_llm ' + esc(r.relevance_llm) + ' — provisional score; no Oracle cutoff' + '"><span class="db-bar' + '' + '"><i style="width:' + v + '%"></i></span><span class="db-metric-n">' + Math.round(v) + '</span></span>';
     },
     priority_score: function (r) { return r.priority_score == null ? nil() : '<span class="mono">' + esc(Number(r.priority_score).toFixed(1)) + '</span>'; },
     review_status: function (r) { return tagCell(r.review_status, r.review_status === 'reviewed' ? 'ok' : (r.review_status === 'flagged' ? 'warn' : '')); },
     trust_tier: function (r) { return tagCell(r.trust_tier, 'teal'); },
     study_type: function (r) { return tagCell(r.study_type); },
-    in_oracle: function (r) { return r.in_oracle == null ? nil() : (r.in_oracle ? '<span class="tag ok" title="Citable and relevance >= 60 — the exact Oracle predicate">✓</span>' : '<span class="nul" title="Not in the Oracle corpus (not citable or relevance < 60)">—</span>'); },
+    in_oracle: function (r) { return r.in_oracle == null ? nil() : (r.in_oracle ? '<span class="tag ok" title="Searchable source — no relevance-score cutoff">✓</span>' : '<span class="nul" title="Source has no full-text search index">—</span>'); },
     is_review: function (r) { return r.is_review == null ? nil() : (r.is_review ? '<span class="tag teal">Review</span>' : '<span class="nul">no</span>'); },
     source_type: function (r) { return tagCell(r.source_type); },
     url: function (r) { return linkCell(r.url, r.url, true); },
@@ -849,10 +848,6 @@ table.pb-t{border-collapse:separate;border-spacing:0;table-layout:fixed;width:10
 
   /* ── lenses (quick filters for audit passes) + active pills ── */
   var LENSES = [
-    { id: 'gate',   l: 'Passes relevance gate', on: function () { return S.min_relevance === String(GATE) && S.max_relevance === ''; },
-      set: function () { S.min_relevance = String(GATE); S.max_relevance = ''; }, off: function () { S.min_relevance = ''; } },
-    { id: 'below',  l: 'Below gate', on: function () { return S.max_relevance === String(GATE - 1) && S.min_relevance === ''; },
-      set: function () { S.max_relevance = String(GATE - 1); S.min_relevance = ''; }, off: function () { S.max_relevance = ''; } },
     { id: 'doi',    l: 'Has DOI', on: function () { return S.has_doi === '1'; }, set: function () { S.has_doi = '1'; }, off: function () { S.has_doi = ''; } },
     { id: 'nodoi',  l: 'No DOI', on: function () { return S.has_doi === '0'; }, set: function () { S.has_doi = '0'; }, off: function () { S.has_doi = ''; } },
     { id: 'noabs',  l: 'No abstract', on: function () { return S.has_abstract === '0'; }, set: function () { S.has_abstract = '0'; }, off: function () { S.has_abstract = ''; } },
@@ -1040,7 +1035,7 @@ table.pb-t{border-collapse:separate;border-spacing:0;table-layout:fixed;width:10
     var h = '<div class="pb-dh"><button type="button" id="pbDPrev" ' + (idx < 1 ? 'disabled' : '') + ' aria-label="Previous paper on this page">&lsaquo; Prev</button><button type="button" id="pbDNext" ' + (idx < 0 || idx >= data.items.length - 1 ? 'disabled' : '') + ' aria-label="Next paper on this page">Next &rsaquo;</button><span class="sp"></span><button type="button" id="pbDClose" aria-label="Close details">Close ✕</button></div>';
     h += '<div class="pb-db"><h2>' + esc(merged.title || '(untitled)') + '</h2>';
     h += '<div class="meta">' + (au ? esc(au) + '<br>' : '') + esc([merged.journal || merged.venue, merged.year].filter(Boolean).join(' · ')) + (merged.doi ? '<br><span class="mono">DOI ' + esc(merged.doi) + '</span>' : '') + '</div>';
-    h += '<div class="chips">' + [merged.study_type, merged.review_status, merged.trust_tier, merged.is_review ? 'review article' : null].filter(Boolean).map(function (t) { return '<span class="tag teal">' + esc(t) + '</span>'; }).join('') + (merged.relevance_llm != null ? '<span class="tag ' + (merged.relevance_llm >= GATE ? 'ok' : 'warn') + '">relevance ' + esc(Math.round(merged.relevance_llm)) + '</span>' : '') + (merged.citation_count != null ? '<span class="tag">' + nf(merged.citation_count) + ' citations</span>' : '') + (merged.in_oracle != null ? '<span class="tag ' + (merged.in_oracle ? 'ok' : 'warn') + '" title="Oracle corpus = citable and relevance >= ' + GATE + '">' + (merged.in_oracle ? 'In Oracle corpus ✓' : 'Not in Oracle corpus') + '</span>' : '') + '</div>';
+    h += '<div class="chips">' + [merged.study_type, merged.review_status, merged.trust_tier, merged.is_review ? 'review article' : null].filter(Boolean).map(function (t) { return '<span class="tag teal">' + esc(t) + '</span>'; }).join('') + (merged.relevance_llm != null ? '<span class="tag ' + 'teal' + '">relevance ' + esc(Math.round(merged.relevance_llm)) + '</span>' : '') + (merged.citation_count != null ? '<span class="tag">' + nf(merged.citation_count) + ' citations</span>' : '') + (merged.in_oracle != null ? '<span class="tag ' + (merged.in_oracle ? 'ok' : 'warn') + '" title="Oracle corpus = searchable; no relevance gate">' + (merged.in_oracle ? 'In Oracle corpus ✓' : 'Not in Oracle corpus') + '</span>' : '') + '</div>';
     h += '<div class="acts">' + (href ? '<a class="pb-btn primary" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">Open paper</a>' : '<span class="pb-btn" aria-disabled="true" style="opacity:.45">Open paper</span>') + ((merged.doi || href) ? '<button type="button" class="pb-btn pb-pdf" data-id="' + esc(merged.id) + '">PDF</button>' : '') + '<button type="button" class="pb-btn" id="pbDSel">' + (sel.has(merged.id) ? 'Unselect' : 'Select for export') + '</button></div>';
     if (loading) h += '<p class="none">Loading abstract and tags…</p>';
     if (err) h += '<p class="none">' + esc(err) + '</p>';

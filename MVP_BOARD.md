@@ -1,3 +1,5 @@
+> ⚠️ **STALE — last refreshed 2026-09-01.** Verified 2026-10-11: **B1 (deploy the backlog) is DONE** — production runs `prod-20260921-1717`. B2 is still open. For current status read `PROJECT_STATE.md`; for priorities, `platform_docs/ASANA_SNAPSHOT.md` / Asana. This file needs a Coordinator refresh before it is trusted again.
+
 _Last updated: 2026-09-01 · Project Coordinator · Research reaction-network **wizard** + Analytics **bring-your-own-data module** built + **LIVE-integrated** (flag-gated iframes) — delivers A2 / A3 / A7. `#analytics` is now the workspace (supersedes the 08-31 measurements browser). Awaiting deploy-dev; B1 (deploy) + B2 (quarantine write-back) stay the critical path._
 
 # MVP_BOARD — what's open for end of August
@@ -50,7 +52,7 @@ Status key: 🟢 working · 🟡 in progress · 🔴 blocked · ⚪ not started 
 
 | # | Item | Owner | Status | Why it matters |
 |---|---|---|---|---|
-| B1 | Deploy the backlog (v12.1 → v12.7) **[CP]** | Lior | 🔴 | A month of built, verified work is not live. `deploy-dev` → check staging → `promote-to-prod`. Nothing here is demoable until this lands. |
+| B1 | Deploy the backlog (v12.1 → v12.7) **[CP]** | Lior | ✅ | **Done** — verified 2026-10-11: production runs `prod-20260921-1717` (promotions 2026-08-31 and 2026-09-21). Only the Papers browser + Backups button (dev, flag-gated) are unpromoted. |
 | B2 | Close quarantine → `relevance_llm` write-back **[CP]** | Data Engineer | 🔴 | Audits write to `source_audits` but never back to `sources.relevance_llm`, so retrieval still gates on unreviewed scores. Must close before external validation. |
 
 ---

@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- Last updated: 2026-10-18 10:00 UTC · Codex / Design-RAG · standalone architecture viewer. -->
+<title>MeatCODE — knowledge to answer</title>
+<style>
+:root{color-scheme:light;--ink:#193e3b;--teal:#087f75;--paper:#f7f7f0;--line:#d4e0d9}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:'Avenir Next','Helvetica Neue',sans-serif}
+header{padding:18px 30px;display:flex;align-items:center;justify-content:space-between;gap:20px;border-bottom:1px solid var(--line);background:#fff;position:sticky;top:0;z-index:2}
+.brand{font-size:15px;font-weight:750;letter-spacing:.12em}.brand small{display:block;font-weight:450;letter-spacing:0;font-size:12px;margin-top:4px;color:#637671}
+nav{display:flex;gap:5px;background:#eef2ec;padding:4px;border-radius:10px}button,a.download{border:0;border-radius:7px;padding:10px 16px;background:transparent;color:var(--ink);font:600 13px inherit;text-decoration:none;cursor:pointer}
+button[aria-pressed=true]{background:var(--ink);color:#fff}button:hover,a:hover{outline:1px solid #98b0a2}button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #b17b2e;outline-offset:3px}
+.actions{display:flex;gap:8px;align-items:center}.download{border:1px solid var(--line)!important}main{max-width:2000px;margin:auto}#stage{padding:10px 12px}svg{width:100%;height:auto;display:block;transition:opacity .15s}
+.notes{margin:0 30px 30px;padding:20px 25px;background:#edf2e9;border:1px solid var(--line);border-radius:14px;font-size:14px;line-height:1.65}.notes summary{font-weight:650;cursor:pointer}.notes p{max-width:1050px;margin-bottom:0}.badge{display:inline-block;width:8px;height:8px;border-radius:50%;background:#b17b2e;margin-right:7px}
+@media(max-width:850px){header{flex-wrap:wrap;padding:14px}nav{order:3;width:100%;justify-content:center}.actions button{display:none}.brand{font-size:13px}#stage{padding:0}.notes{margin:10px;padding:16px}}
+@media print{header,.notes{display:none}#stage{padding:0}svg{max-height:96vh}body{background:white}}
+</style></head><body>
+<header><div class="brand">MEATCODE<small>Knowledge architecture · 18 October 2026</small></div>
+<nav aria-label="Diagram view"><button data-view="overview" aria-pressed="true">Overview</button><button data-view="ingestion" aria-pressed="false">Prepare knowledge</button><button data-view="query" aria-pressed="false">Answer a question</button><button data-view="details" aria-pressed="false">Detailed flow</button><button data-view="benchmark" aria-pressed="false">Benchmark</button></nav>
+<div class="actions"><a class="download" href="meatcode-rag-demo-overview.svg" download>Download SVG</a><button id="print">Print</button></div></header>
+<main><div id="stage"><svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc" font-family="Avenir Next, Helvetica, sans-serif">
+<!-- Last updated: 2026-10-18 10:12 UTC · Codex / Design-RAG · verified Neon graph/vector demo; Claude credential pending. -->
+<title id="title">MeatCODE: knowledge to answer</title><desc id="desc">Minimal process diagram. GROBID and LightRAG extraction is imported through checks into Neon graph tables and pgvector. Oracle calls the server, which embeds a query, retrieves graph and vector evidence and calls Claude. The model response returns through the server. Graph and vector retrieval are verified live; the Claude key needs repair. No relevance-score cutoff.</desc>
+<defs><style>
+text{fill:#193e3b}.title{font-size:46px;font-weight:700;letter-spacing:-1px}.sub{font-size:19px;fill:#697a70}
+.zone{font-size:13px;font-weight:700;letter-spacing:2px;fill:#648277}.label{font-size:22px;font-weight:650;letter-spacing:-.4px}
+.detail{font-size:14px;fill:#63796e}.edge{font-size:14px;font-weight:600;fill:#58776a}.status{font-size:11px;font-weight:750;letter-spacing:1px}
+.data{fill:none;stroke:#087f75;stroke-width:2.7;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#t)}
+.query{fill:none;stroke:#b17b2e;stroke-width:2.7;stroke-linecap:round;stroke-linejoin:round;marker-end:url(#g)}
+.future{stroke-dasharray:6 7}
+</style><marker id="t" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0L9 4.5L0 9" fill="#087f75"/></marker>
+<marker id="g" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0L9 4.5L0 9" fill="#b17b2e"/></marker>
+<filter id="soft-shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="5" stdDeviation="12" flood-color="#173f39" flood-opacity=".07"/></filter>
+
+<g id="pdf"><circle xmlns="http://www.w3.org/2000/svg" r="64" fill="#E1E9D5" filter="url(#soft-shadow)" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-24-34H12L30-16V34H-24Z" fill="#FFF" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M12-34V-16H30" fill="none" stroke="#64764B" stroke-width="3" stroke-linejoin="round" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-10-4H16M-10 8H16M-10 20H8" fill="none" stroke="#64764B" stroke-width="3" stroke-linecap="round" />
+  </g>
+<g id="parse"><circle xmlns="http://www.w3.org/2000/svg" r="64" fill="#E1E9D5" filter="url(#soft-shadow)" />
+    <rect xmlns="http://www.w3.org/2000/svg" x="-31" y="-27" width="46" height="58" rx="4" fill="#FFF" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-20-14H4M-20-3H4M-20 8H4M-20 19H-4" stroke="#64764B" stroke-width="3" stroke-linecap="round" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-20-36H27V22" fill="none" stroke="#64764B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M29-10H42M29 0H42M29 10H42" stroke="#64764B" stroke-width="3" stroke-linecap="round" />
+  </g>
+<g id="extract"><circle xmlns="http://www.w3.org/2000/svg" r="64" fill="#F7E5DE" filter="url(#soft-shadow)" />
+    <circle xmlns="http://www.w3.org/2000/svg" cx="-21" cy="-8" r="8" fill="#BD5B3A" />
+    <circle xmlns="http://www.w3.org/2000/svg" cx="17" cy="-24" r="8" fill="#BD5B3A" />
+    <circle xmlns="http://www.w3.org/2000/svg" cx="24" cy="18" r="8" fill="#BD5B3A" />
+    <circle xmlns="http://www.w3.org/2000/svg" cx="-17" cy="27" r="8" fill="#BD5B3A" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-14-11L9-21M20-16L23 10M16 20L-9 26M-19 19L-21 0M-14-3L17 14" fill="none" stroke="#BD5B3A" stroke-width="3" stroke-linecap="round" />
+  </g>
+<g id="check"><circle xmlns="http://www.w3.org/2000/svg" r="64" fill="#F7E5DE" filter="url(#soft-shadow)" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M0-38C17-29 31-29 31-29V-3C31 19 16 34 0 42C-16 34-31 19-31-3V-29S-17-29 0-38Z" fill="#FFF" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-16 0L-4 13L18-14" fill="none" stroke="#BD5B3A" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+<g id="db"><circle xmlns="http://www.w3.org/2000/svg" r="64" fill="#D9EFEC" filter="url(#soft-shadow)" />
+    <ellipse xmlns="http://www.w3.org/2000/svg" cx="0" cy="-25" rx="34" ry="13" fill="#FFF" stroke="#00736E" stroke-width="3" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-34-25V25C-34 32-19 38 0 38S34 32 34 25V-25M-34 0C-34 7-19 13 0 13S34 7 34 0" fill="#FFF" stroke="#00736E" stroke-width="3" />
+    <circle xmlns="http://www.w3.org/2000/svg" cx="-13" cy="-5" r="4" fill="#00736E" /><circle xmlns="http://www.w3.org/2000/svg" cx="14" cy="9" r="4" fill="#00736E" /><circle xmlns="http://www.w3.org/2000/svg" cx="8" cy="-13" r="4" fill="#00736E" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-9-5L4-12M-9-3L11 7M8-9L13 5" stroke="#00736E" stroke-width="2" />
+  </g>
+<g id="search"><circle xmlns="http://www.w3.org/2000/svg" r="64" fill="#D9EFEC" filter="url(#soft-shadow)" />
+    <circle xmlns="http://www.w3.org/2000/svg" cx="-10" cy="-9" r="24" fill="#FFF" stroke="#00736E" stroke-width="4" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M8 9L31 32" stroke="#00736E" stroke-width="6" stroke-linecap="round" />
+    <circle xmlns="http://www.w3.org/2000/svg" cx="-20" cy="-9" r="4" fill="#00736E" /><circle xmlns="http://www.w3.org/2000/svg" cx="0" cy="-18" r="4" fill="#00736E" /><circle xmlns="http://www.w3.org/2000/svg" cx="2" cy="2" r="4" fill="#00736E" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-16-10L-4-16M-16-7L-2 0M0-14L1-2" stroke="#00736E" stroke-width="2" />
+  </g>
+<g id="server"><circle xmlns="http://www.w3.org/2000/svg" r="64" fill="#D9EFEC" filter="url(#soft-shadow)" />
+    <rect xmlns="http://www.w3.org/2000/svg" x="-34" y="-33" width="68" height="25" rx="7" fill="#FFF" />
+    <rect xmlns="http://www.w3.org/2000/svg" x="-34" y="-2" width="68" height="25" rx="7" fill="#FFF" />
+    <circle xmlns="http://www.w3.org/2000/svg" cx="22" cy="-21" r="4" fill="#00736E" /><circle xmlns="http://www.w3.org/2000/svg" cx="22" cy="10" r="4" fill="#00736E" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-20-21H7M-20 10H7" stroke="#00736E" stroke-width="3" stroke-linecap="round" />
+  </g>
+<g id="oracle"><circle xmlns="http://www.w3.org/2000/svg" r="64" fill="#FFF1C8" filter="url(#soft-shadow)" />
+    <rect xmlns="http://www.w3.org/2000/svg" x="-36" y="-28" width="72" height="49" rx="11" fill="#FFF" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-15 21L-25 36L-2 21" fill="#FFF" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-21-12H21M-21 1H11" stroke="#B58920" stroke-width="4" stroke-linecap="round" />
+  </g>
+<g id="model"><circle xmlns="http://www.w3.org/2000/svg" r="64" fill="#F7E5DE" filter="url(#soft-shadow)" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-31 12C-46-12-23-36-2-27C10-46 42-31 38-8C53 2 45 28 25 29H-20C-35 29-42 19-31 12Z" fill="#FFF" />
+    <path xmlns="http://www.w3.org/2000/svg" d="M-20 3C-10-14 8-14 20 0M-12 12C-2 2 10 3 18 13" fill="none" stroke="#BD5B3A" stroke-width="3.5" stroke-linecap="round" />
+    <circle xmlns="http://www.w3.org/2000/svg" cx="-10" cy="-6" r="4" fill="#BD5B3A" /><circle xmlns="http://www.w3.org/2000/svg" cx="10" cy="-5" r="4" fill="#BD5B3A" />
+  </g>
+<g id="vectors"><circle r="64" fill="#d9efec"/><g stroke="#087f75" stroke-width="2.8" fill="none" stroke-linecap="round"><path d="M-29-27V28H29M-27 18L-3-13L23-3M-27 18L13 29M-3-13L26-27"/><circle cx="-27" cy="18" r="5" fill="#fff"/><circle cx="-3" cy="-13" r="5" fill="#fff"/><circle cx="23" cy="-3" r="5" fill="#fff"/><circle cx="26" cy="-27" r="5" fill="#fff"/><circle cx="13" cy="29" r="5" fill="#fff"/></g></g></defs>
+<rect width="1920" height="1080" fill="#f8f7f0"/>
+<rect x="54" y="205" width="1812" height="323" rx="30" fill="#edf2e7"/>
+<rect x="54" y="661" width="1812" height="326" rx="30" fill="#edf4f0"/>
+
+<text x="78" y="61" class="zone" >MEATCODE / LIVE DEMO ARCHITECTURE</text>
+<text x="78" y="122" class="title" >Knowledge to answer.</text>
+<text x="79" y="162" class="sub" >Extract once. Store with provenance. Retrieve the evidence. Reason with citations.</text>
+<circle cx="1464" cy="110" r="5" fill="#087f75"/>
+<text x="1480" y="115" class="status" style="fill:#087f75">NEON DEV · RETRIEVAL VERIFIED</text>
+<text x="1480" y="143" class="detail" >No relevance-score cutoff</text>
+<text x="84" y="247" class="zone" >01 / PREPARE KNOWLEDGE</text>
+<text x="1531" y="247" class="zone" >ASYNCHRONOUS INGESTION</text>
+<path d="M226 332H370" class="data"/>
+<text x="300.0" y="310" class="edge" text-anchor="middle" >parse</text>
+<path d="M526 332H670" class="data"/>
+<text x="600.0" y="310" class="edge" text-anchor="middle" >extract</text>
+<path d="M826 332H970" class="data"/>
+<text x="900.0" y="310" class="edge" text-anchor="middle" >check</text>
+<path d="M1126 332H1270" class="data"/>
+<text x="1200.0" y="310" class="edge" text-anchor="middle" >import</text>
+<path d="M1426 332H1570" class="data"/>
+<text x="1500.0" y="310" class="edge" text-anchor="middle" >index</text>
+<path d="M1350 396V409H1460V562H1000V674" class="data"/>
+<path d="M1650 396V409H1784V615H1100V674" class="data"/>
+<text x="1190" y="545" class="edge" text-anchor="middle" >graph context</text>
+<text x="1495" y="599" class="edge" text-anchor="middle" >nearest vector matches</text>
+<use href="#pdf" transform="translate(150 332)"/>
+<text x="150" y="431" class="label" text-anchor="middle" >Source papers</text>
+<text x="150" y="459" class="detail" text-anchor="middle" >3 processed documents</text>
+<use href="#parse" transform="translate(450 332)"/>
+<text x="450" y="431" class="label" text-anchor="middle" >GROBID</text>
+<text x="450" y="459" class="detail" text-anchor="middle" >194 source chunks</text>
+<use href="#extract" transform="translate(750 332)"/>
+<text x="750" y="431" class="label" text-anchor="middle" >LightRAG</text>
+<text x="750" y="459" class="detail" text-anchor="middle" >Entities + relationships</text>
+<use href="#check" transform="translate(1050 332)"/>
+<text x="1050" y="431" class="label" text-anchor="middle" >Import checks</text>
+<text x="1050" y="459" class="detail" text-anchor="middle" >DOI + evidence mapping</text>
+<use href="#db" transform="translate(1350 332)"/>
+<text x="1350" y="431" class="label" text-anchor="middle" >Neon graph</text>
+<text x="1350" y="459" class="detail" text-anchor="middle" >3,418 entities · 4,164 edges</text>
+<use href="#vectors" transform="translate(1650 332)"/>
+<text x="1650" y="431" class="label" text-anchor="middle" >pgvector</text>
+<text x="1650" y="459" class="detail" text-anchor="middle" >7,582 BGE-M3 vectors</text>
+<text x="84" y="583" class="detail" >Original embeddings reused · 1,024 dimensions</text>
+<text x="84" y="612" class="detail" >Extracted demo records retain their provenance and review status.</text>
+<text x="84" y="702" class="zone" >02 / ANSWER A QUESTION</text>
+<text x="1564" y="702" class="zone" >INTERACTIVE SERVING</text>
+<path d="M226 775H474" class="query"/>
+<text x="350" y="753" class="edge" text-anchor="middle" >question</text>
+<path d="M626 775H924" class="query"/>
+<text x="775" y="753" class="edge" text-anchor="middle" >embed + search</text>
+<path d="M1076 775H1424" class="query future"/>
+<text x="1250" y="753" class="edge" text-anchor="middle" >evidence + citations</text>
+<use href="#oracle" transform="translate(150 775)"/>
+<text x="150" y="874" class="label" text-anchor="middle" >Oracle</text>
+<text x="150" y="902" class="detail" text-anchor="middle" >User question</text>
+<use href="#server" transform="translate(550 775)"/>
+<text x="550" y="874" class="label" text-anchor="middle" >MeatCODE server</text>
+<text x="550" y="902" class="detail" text-anchor="middle" >POST /api/ask</text>
+<use href="#search" transform="translate(1000 775)"/>
+<text x="1000" y="874" class="label" text-anchor="middle" >Graph + vector retrieval</text>
+<text x="1000" y="902" class="detail" text-anchor="middle" >Query embedding via local Ollama</text>
+<use href="#model" transform="translate(1500 775)"/>
+<text x="1500" y="874" class="label" text-anchor="middle" >Claude</text>
+<text x="1500" y="902" class="detail" text-anchor="middle" >Reason from retrieved evidence</text>
+<path d="M1500 839V852H1730V953H700V812H610" class="query future"/>
+<text x="1160" y="936" class="edge" text-anchor="middle" >model response → server</text>
+<path d="M497 812H410V952H150V844" class="query"/>
+<text x="312" y="936" class="edge" text-anchor="middle" >stream answer</text>
+<rect x="1400" y="922" width="305" height="25" rx="12" fill="#f4e6cc"/>
+<text x="1552" y="939" class="status" text-anchor="middle" style="fill:#946522">CLAUDE KEY NEEDS REPAIR</text>
+<text x="78" y="1034" class="detail" >Live: imported graph + semantic retrieval. Pending: Claude authentication. Production unchanged.</text>
+<text x="1495" y="1034" class="status" >18 OCT 2026 · DEMO STATE</text>
+</svg></div>
+<details class="notes"><summary><span class="badge"></span>Read the implementation status</summary>
+<p>Neon dev contains <strong>3,418 entities, 4,164 relationships, 7,582 entity/relation embeddings and 8,932 evidence links</strong>, from three processed papers. The import was applied and verified, and rerunning it created no duplicates. A real semantic query returned 15 evidence items linked to source 275. The Oracle relevance cutoff has been removed. <strong>The Claude answer credential is rejected (401):</strong> Lior chose to keep Claude configured and will repair its credentials. Production is unchanged.</p>
+<p>The current demo imports extracted candidate descriptions and original vectors without marking them scientifically reviewed. The target model split is Qwen for extraction, an independent validator for curation, and GPT for reasoning. The existing Oracle uses Claude. The diagram keeps the intended architecture separate from verified deployment status.</p>
+</details><template id="detailedDiagram"><svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1420" viewBox="0 0 1920 1420" role="img" aria-labelledby="title desc">
+<!-- Last updated: 2026-10-18 10:00 UTC · Codex / Design-RAG · existing extraction versus prepared Neon demo. -->
+<title id="title">MeatCODE — from extracted knowledge to a cited answer</title>
+<desc id="desc">Two distinct flows: prepare knowledge asynchronously; answer user questions interactively. The graph and its original vectors are imported into Neon dev and semantic retrieval is verified. The relevance cutoff is removed in local code. Claude is retained with credential repair pending. Benchmark detail is separate from the overview.</desc>
+<defs><style>
+text{font-family:'Avenir Next','Helvetica Neue',sans-serif;fill:#193e3b}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:2.3px;fill:#58716b}
+.title{font-size:49px;font-weight:650;letter-spacing:-1.5px}
+.sub{font-size:20px;fill:#637671}
+.lane{font-size:23px;font-weight:650;letter-spacing:-.4px}
+.head{font-size:24px;font-weight:650;letter-spacing:-.6px}
+.body{font-size:18px;fill:#526b64}
+.small{font-size:14px;fill:#637671}
+.status{font-size:11px;font-weight:750;letter-spacing:1.25px}
+.label{font-size:14px;font-weight:600;fill:#59746c}
+.card{fill:#fff;stroke:#d4e0d9;stroke-width:1.3}
+.build{fill:none;stroke:#087f75;stroke-width:2.3;stroke-linejoin:round;stroke-linecap:round;marker-end:url(#teal)}
+.query{fill:none;stroke:#b17b2e;stroke-width:2.7;stroke-linejoin:round;stroke-linecap:round;marker-end:url(#gold)}
+.pending{stroke-dasharray:6 7}
+</style>
+<marker id="teal" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0L9 4.5L0 9" fill="#087f75"/></marker>
+<marker id="gold" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0L9 4.5L0 9" fill="#b17b2e"/></marker>
+<pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r=".7" fill="#c7d7cd"/></pattern>
+</defs>
+<rect width="1920" height="1420" fill="#f7f7f0"/>
+<rect x="1250" y="0" width="670" height="180" fill="url(#dots)" opacity=".6"/>
+
+<text x="80" y="59" class="eyebrow" >MEATCODE / SYSTEM DESIGN</text>
+<text x="80" y="126" class="title" >From extracted knowledge to a cited answer.</text>
+<text x="82" y="164" class="sub" >One knowledge source. Two separate flows. Every answer traces back to a paper.</text>
+<text x="1840" y="59" class="eyebrow" text-anchor="end">18 OCT 2026</text>
+<rect x="58" y="220" width="1804" height="426" rx="24" fill="#edf2e9" />
+<text x="85" y="265" class="eyebrow" >01</text>
+<text x="135" y="269" class="lane" >Prepare the knowledge</text>
+<text x="1832" y="265" class="eyebrow" text-anchor="end">ASYNCHRONOUS · NOT PART OF A USER REQUEST</text>
+<rect x="85" y="310" width="360" height="206" rx="18" fill="#fff" class="card"/>
+<rect x="107" y="332" width="139" height="24" rx="12" fill="#e4f1e9" />
+<text x="117" y="348" class="status" style="fill:#26684f">EXTRACTION EXISTS</text>
+<text x="419" y="350" class="eyebrow" text-anchor="end">A</text>
+<text x="107" y="398" class="head" >Parse &amp; extract</text>
+<text x="107" y="428" class="body" >GROBID → LightRAG</text>
+<text x="107" y="466" class="small" >3 papers · 194 source chunks</text>
+<text x="107" y="490" class="small" >3,418 entities · 4,164 relationships</text>
+<rect x="510" y="310" width="360" height="206" rx="18" fill="#fff" class="card"/>
+<rect x="532" y="332" width="153" height="24" rx="12" fill="#f4e9d4" />
+<text x="542" y="348" class="status" style="fill:#886020">IMPORT CHECKS READY</text>
+<text x="844" y="350" class="eyebrow" text-anchor="end">B</text>
+<text x="532" y="398" class="head" >Check &amp; map</text>
+<text x="532" y="428" class="body" >Evidence → canonical source IDs</text>
+<text x="532" y="466" class="small" >DOI mapping + vector/provenance checks</text>
+<text x="532" y="490" class="small" >Scientific review remains a distinct step</text>
+<rect x="935" y="310" width="360" height="206" rx="18" fill="#fff" class="card"/>
+<rect x="957" y="332" width="153" height="24" rx="12" fill="#e4f1e9" />
+<text x="967" y="348" class="status" style="fill:#26684f">IMPORTED + VERIFIED</text>
+<text x="1269" y="350" class="eyebrow" text-anchor="end">C</text>
+<text x="957" y="398" class="head" >Store the graph</text>
+<text x="957" y="428" class="body" >Neon Postgres</text>
+<text x="957" y="466" class="small" >Entities + relations + evidence links</text>
+<text x="957" y="490" class="small" >Demo records retain “extracted” status</text>
+<rect x="1360" y="310" width="470" height="206" rx="18" fill="#fff" class="card"/>
+<rect x="1382" y="332" width="153" height="24" rx="12" fill="#e4f1e9" />
+<text x="1392" y="348" class="status" style="fill:#26684f">IMPORTED + VERIFIED</text>
+<text x="1804" y="350" class="eyebrow" text-anchor="end">D</text>
+<text x="1382" y="398" class="head" >Index the knowledge</text>
+<text x="1382" y="428" class="body" >pgvector in the same Neon database</text>
+<text x="1382" y="466" class="small" >7,582 existing entity/relation vectors</text>
+<text x="1382" y="490" class="small" >BGE-M3 · 1,024 dimensions · cosine search</text>
+<path d="M450 411H503" class="build"/>
+<text x="477.5" y="389" class="label" text-anchor="middle">verify</text>
+<path d="M875 411H928" class="build"/>
+<text x="902.5" y="389" class="label" text-anchor="middle">import</text>
+<path d="M1300 411H1353" class="build"/>
+<text x="1327.5" y="389" class="label" text-anchor="middle">index</text>
+<rect x="85" y="548" width="1745" height="68" rx="12" fill="#e3eae0" />
+<text x="108" y="575" class="eyebrow" >SOURCE ARTIFACTS IN THIS DEMO</text>
+<text x="108" y="599" class="small" >PDFs, TEI and exact source text stay local.</text>
+<text x="670" y="575" class="eyebrow" >EXISTING EMBEDDINGS</text>
+<text x="670" y="599" class="small" >Reuse the original vectors; embed again only when text/model changes.</text>
+<text x="1422" y="575" class="eyebrow" >TARGET INGESTION</text>
+<text x="1422" y="599" class="small" >Qwen extraction → independent validation</text>
+<text x="82" y="703" class="lane" >No relevance-score cutoff</text>
+<text x="82" y="733" class="body" >Removed in local Oracle code at Lior’s request.</text>
+<rect x="58" y="790" width="1804" height="366" rx="24" fill="#f1eee6" />
+<path d="M1115 516V533H1325V686H1020V865" class="build"/>
+<path d="M1595 516V532H1845V715H1165V865" class="build"/>
+<rect x="996" y="737" width="216" height="32" rx="7" fill="#f7f7f0" />
+<text x="1104" y="759" class="label" text-anchor="middle">graph + vector evidence</text>
+<text x="85" y="828" class="eyebrow" >02</text>
+<text x="135" y="832" class="lane" >Answer a question</text>
+<text x="1832" y="828" class="eyebrow" text-anchor="end">INTERACTIVE · ONLY RETRIEVAL + REASONING</text>
+<rect x="85" y="872" width="310" height="206" rx="18" fill="#fff" class="card"/>
+<rect x="107" y="894" width="125" height="24" rx="12" fill="#eef0ed" />
+<text x="117" y="910" class="status" style="fill:#6c7c73">USER EXPERIENCE</text>
+<text x="369" y="912" class="eyebrow" text-anchor="end">1</text>
+<text x="107" y="960" class="head" >Ask in Oracle</text>
+<text x="107" y="990" class="body" >User question + context</text>
+<text x="107" y="1028" class="small" >The existing platform interface</text>
+<text x="107" y="1052" class="small" >Citations link to source records</text>
+<rect x="465" y="872" width="310" height="206" rx="18" fill="#fff" class="card"/>
+<rect x="487" y="894" width="104" height="24" rx="12" fill="#e4f1e9" />
+<text x="497" y="910" class="status" style="fill:#26684f">EXISTING API</text>
+<text x="749" y="912" class="eyebrow" text-anchor="end">2</text>
+<text x="487" y="960" class="head" >Handle the request</text>
+<text x="487" y="990" class="body" >MeatCODE server</text>
+<text x="487" y="1028" class="small" >POST /api/ask</text>
+<text x="487" y="1052" class="small" >Authentication + streamed response</text>
+<rect x="845" y="872" width="410" height="206" rx="18" fill="#fff" class="card"/>
+<rect x="867" y="894" width="181" height="24" rx="12" fill="#e4f1e9" />
+<text x="877" y="910" class="status" style="fill:#26684f">SEMANTIC QUERY VERIFIED</text>
+<text x="1229" y="912" class="eyebrow" text-anchor="end">3</text>
+<text x="867" y="960" class="head" >Retrieve evidence</text>
+<text x="867" y="990" class="body" >Query embedding + graph context</text>
+<text x="867" y="1028" class="small" >BGE-M3 query via local Ollama → Neon</text>
+<text x="867" y="1052" class="small" >Bounded evidence pack with source IDs</text>
+<rect x="1325" y="872" width="505" height="206" rx="18" fill="#fff" class="card"/>
+<rect x="1347" y="894" width="181" height="24" rx="12" fill="#f4e9d4" />
+<text x="1357" y="910" class="status" style="fill:#886020">CLAUDE KEY NEEDS REPAIR</text>
+<text x="1804" y="912" class="eyebrow" text-anchor="end">4</text>
+<text x="1347" y="960" class="head" >Reason &amp; cite</text>
+<text x="1347" y="990" class="body" >Hosted answer model</text>
+<text x="1347" y="1028" class="small" >Claude kept configured at Lior’s request</text>
+<text x="1347" y="1052" class="small" >User will repair the rejected API credential</text>
+<path d="M401 972H458" class="query"/>
+<text x="430.0" y="949" class="label" text-anchor="middle">question</text>
+<path d="M781 972H838" class="query"/>
+<text x="810.0" y="949" class="label" text-anchor="middle">search</text>
+<path d="M1261 972H1318" class="query"/>
+<text x="1290.0" y="949" class="label" text-anchor="middle">context</text>
+<path d="M1577 1078V1116H620V1084" class="query"/>
+<path d="M555 1078V1135H240V1084" class="query"/>
+<rect x="867" y="1101" width="469" height="30" rx="5" fill="#f1eee6" />
+<text x="1101" y="1121" class="status" text-anchor="middle" style="fill:#986d30">MODEL RESPONSE → SERVER</text>
+<rect x="278" y="1120" width="237" height="30" rx="5" fill="#f1eee6" />
+<text x="396" y="1140" class="status" text-anchor="middle" style="fill:#986d30">SSE ANSWER + CITATIONS</text>
+<rect x="58" y="1200" width="1804" height="138" rx="22" fill="#173f39" />
+<text x="85" y="1239" class="eyebrow" style="fill:#a9c6bb">03 / BENCHMARK THE WHOLE CONFIGURATION</text>
+<text x="85" y="1280" class="lane" style="fill:#fff">Same question. Same model. Same evidence budget.</text>
+<text x="85" y="1310" class="body" style="fill:#c7d9d0">Direct model  →  vector-only RAG  →  graph + vector RAG     |     Then compare GPT and Claude with fixed retrieval.</text>
+<text x="1450" y="1267" class="status" style="fill:#c7d9d0">QUALITY · CITATIONS · LATENCY</text>
+<text x="1450" y="1295" class="status" style="fill:#c7d9d0">COST · COVERAGE · GRAPH VALUE</text>
+<text x="82" y="1377" class="small" >LIVE DEV: graph + pgvector imported; semantic retrieval verified. Answer generation awaits Claude credential repair.</text>
+<text x="1840" y="1377" class="small" text-anchor="end">Teal: knowledge   /   Gold: query and answer</text>
+</svg></template></main>
+<script>
+const stage=document.querySelector('#stage');
+const overview=stage.querySelector('svg').cloneNode(true);
+const views={overview:'0 0 1920 1080',ingestion:'35 195 1850 455',query:'35 650 1850 350',details:'0 0 1920 1420',benchmark:'35 1180 1850 180'};
+document.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>{
+ document.querySelectorAll('[data-view]').forEach(other=>other.setAttribute('aria-pressed',String(other===button)));
+ stage.replaceChildren((button.dataset.view==='details'||button.dataset.view==='benchmark')?document.querySelector('#detailedDiagram').content.cloneNode(true):overview.cloneNode(true));
+ const diagram=stage.querySelector('svg');
+ diagram.setAttribute('viewBox',views[button.dataset.view]);
+ const box=views[button.dataset.view].split(' ').map(Number);diagram.style.aspectRatio=box[2]+'/'+box[3];
+}));
+document.querySelector('#print').addEventListener('click',()=>window.print());
+</script></body></html>

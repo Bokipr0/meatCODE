@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Last updated: 2026-08-15 · Algorithm Expert · closed-corpus verify & score harness (answer + verifier
+# Last updated: 2026-10-18 10:00 UTC · Codex / RAG · remove unvalidated Oracle relevance gate; wire extracted-graph demo.
 #   passes over the server's exact retrieval semantics). Writes results_<date>.json + results_<date>.md.
 """
 MeatCODE RAG eval — closed-corpus VERIFY & SCORE harness.
@@ -9,7 +9,7 @@ quality score". For each question in questions.json this script:
 
   (a) RETRIEVES with the SAME query semantics as server/meatcode_server.py's
       _retrieve_sources(): ts_rank_cd over sources.search_vec, citable filter
-      (search_vec IS NOT NULL), on-topic gate (relevance_llm IS NULL OR >= 60),
+      (search_vec IS NOT NULL), with no relevance-score gate,
       rank > 0, top-6, with the same OR-query recall fallback.
   (b) ANSWERS with the server's grounding prompt (same SYSTEM_PROMPT + ANSWERING RULES +
       numbered sources block, copied verbatim) — one Sonnet call, non-streaming.
@@ -65,7 +65,6 @@ API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 
 # ─── retrieval — KEEP IN SYNC with server/meatcode_server.py _retrieve_sources ───
 ORACLE_TOP_K = 6
-ORACLE_MIN_RELEVANCE = 60
 ANSWER_MODEL = "claude-sonnet-4-6"      # same MODEL as the server
 VERIFIER_MODEL = "claude-sonnet-4-6"    # judging citation support needs a strong reader
 ANSWER_MAX_TOKENS = 1600                # same as server MAX_TOKENS
@@ -78,7 +77,6 @@ RETRIEVAL_SQL = """
                ts_rank_cd(search_vec, websearch_to_tsquery('english', %s)) AS rank
         FROM sources
         WHERE search_vec IS NOT NULL
-          AND (relevance_llm IS NULL OR relevance_llm >= %s)
     ) ranked
     WHERE rank > 0
     ORDER BY rank DESC
@@ -100,13 +98,13 @@ def pg_rows(sql, params=()):
 
 def retrieve(question, limit=ORACLE_TOP_K):
     """(rows, used_fallback) — mirrors the server exactly, incl. the OR recall fallback."""
-    rows = pg_rows(RETRIEVAL_SQL, (question, ORACLE_MIN_RELEVANCE, limit))
+    rows = pg_rows(RETRIEVAL_SQL, (question, limit))
     if rows:
         return rows, False
     or_query = " OR ".join(question.split())
     if not or_query:
         return [], False
-    return pg_rows(RETRIEVAL_SQL, (or_query, ORACLE_MIN_RELEVANCE, limit)), True
+    return pg_rows(RETRIEVAL_SQL, (or_query, limit)), True
 
 
 # ─── grounding prompt — copied from server/meatcode_server.py (keep in sync) ──
@@ -345,8 +343,8 @@ def write_outputs(results, suffix=""):
         "avg_citation_accuracy": avg("citation_accuracy"),
         "avg_coverage": avg("coverage"),
         "answer_model": ANSWER_MODEL, "verifier_model": VERIFIER_MODEL,
-        "retrieval": "search_vec ts_rank_cd · relevance_llm>=%d gate · top-%d · OR fallback"
-                     % (ORACLE_MIN_RELEVANCE, ORACLE_TOP_K),
+        "retrieval": "search_vec ts_rank_cd · no relevance gate · top-%d · OR fallback"
+                     % ORACLE_TOP_K,
     }
     jpath = os.path.join(HERE, "results_%s%s.json" % (date, suffix))
     with open(jpath, "w", encoding="utf-8") as f:

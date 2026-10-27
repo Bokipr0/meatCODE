@@ -1,0 +1,308 @@
+--- a/app/release-center.html	
++++ b/app/release-center.html	
+@@ -1,4 +1,5 @@
+ <!doctype html>
++<!-- Last updated: 2026-10-27 11:44 UTC · Full-Stack · show saved versus observed production switches; clarify Analytics entry points. -->
+ <html lang="en">
+ <head>
+ <meta charset="utf-8">
+@@ -24,6 +25,12 @@
+   .flag .meta{ flex:1; min-width:0; }
+   .flag .name{ font-weight:650; }
+   .flag .desc{ color:var(--dim); font-size:13px; margin-top:2px; }
++  .flag .location,.published{ color:var(--dim); font-size:12px; margin-top:6px; }
++  .published.pending{ color:#8a5a2a; font-weight:600; }
++  .statusline{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
++  .statusline h2{ font-size:15px; margin:0; color:var(--ink); }
++  .statuscopy{ margin-top:8px; }
++  .statuscopy a{ color:var(--wine-dark); }
+   .switches{ display:flex; gap:20px; }
+   .sw{ display:flex; flex-direction:column; align-items:center; gap:6px; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--dim); }
+   .toggle{ position:relative; width:46px; height:26px; border-radius:999px; background:#d9cfca; cursor:pointer; transition:background .15s; border:none; padding:0; }
+@@ -56,9 +63,14 @@
+     <h1>MeatCODE · Release Center</h1>
+     <span class="badge" id="envBadge">…</span>
+   </header>
+-  <div class="sub">Flip a feature ON for <b>Dev</b> to test it, then ON for <b>Prod</b> when it's ready to go live.</div>
++  <div class="sub">Choose the features for your next staging or production release.</div>
+   <div class="banner" id="banner" style="display:none"></div>
+-  <div class="note" id="note">Toggling saves to <code>features.json</code> right away. <b>Nothing reaches users until you Promote.</b> Dev switches appear on staging after you <b>Deploy</b>; Prod switches go live on your next <b>Promote</b>.</div>
++  <div class="note" id="note">Switches below are <b>saved settings for the next release</b>. Changes apply locally after refreshing the platform. Use <b>Deploy to staging</b>, test there, then <b>Promote to production</b>. A switch is live only after the Render deployment succeeds.</div>
++  <div class="note" id="productionStatus" style="display:none">
++    <div class="statusline"><h2>Observed production</h2><button class="btn dev" id="btnCheck" type="button">Check live site</button></div>
++    <div class="statuscopy" id="productionCopy" role="status">Checking the deployed build…</div>
++  </div>
++  <div class="note">For an <b>Analytics</b> button in the platform navigation, use <b>Analytics zone</b>. The older <b>Analytics module</b> switch is a fallback only for installations without an Analytics zone setting. The separate <b>Analytics workspace</b> switch lists its preview in the Dev Area. The workspace still uses illustrative data.</div>
+   <div id="flags"><div class="locked">Loading…</div></div>
+ 
+   <div id="historyWrap" style="display:none">
+@@ -76,16 +88,44 @@
+ 
+ <script>
+ const $ = s => document.querySelector(s);
++let savedFlags = {}, observedProduction = null;
+ function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),3600); }
+ function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+-function ctl(key,env,on,admin){
+-  if(admin) return `<div class="sw">${env}<button class="toggle" aria-pressed="${!!on}" data-key="${key}" data-env="${env}"></button></div>`;
++function ctl(key,env,on,admin,label){
++  if(admin) return `<div class="sw">${env} · saved<button class="toggle" aria-label="${esc(label||key)} — ${env}" aria-pressed="${!!on}" data-key="${esc(key)}" data-env="${env}"></button></div>`;
+   return `<div class="sw">${env}<span class="ro ${on?'on':''}">${on?'ON':'off'}</span></div>`;
++}
++function updatePublished(){
++  const live = observedProduction && observedProduction.feature_flags;
++  document.querySelectorAll('[data-published-key]').forEach(el=>{
++    const key=el.dataset.publishedKey, desired=!!(savedFlags[key]||{}).prod;
++    const known=live && typeof live[key]==='boolean';
++    el.classList.toggle('pending', !!known && live[key]!==desired);
++    el.textContent = !known ? 'Live production switch: unverified' :
++      `Live production: ${live[key]?'ON':'off'}${live[key]!==desired?' · saved setting differs; publish and verify the deployment':''}`;
++  });
++}
++async function checkProduction(){
++  const button=$('#btnCheck'); button.disabled=true;
++  try{
++    const response=await fetch('/api/release/status',{credentials:'same-origin',cache:'no-store'});
++    const data=await response.json();
++    if(!response.ok || !data.ok) throw new Error(data.error||'Live production could not be checked.');
++    observedProduction=data.production;
++    $('#productionCopy').innerHTML=`<a href="https://meatcode-oracle.onrender.com" target="_blank" rel="noopener">Open production</a> · commit <b>${esc(observedProduction.commit||'unknown')}</b> · ${esc(observedProduction.env||'unknown')}<br>Checked ${esc(data.checked_at||'now')}. ${observedProduction.feature_flags?'Per-feature results appear below.':'This deployed version does not report its feature switches; their live state is unverified.'}`;
++  }catch(error){
++    observedProduction=null;
++    $('#productionCopy').textContent=error.message+' Saved settings are unchanged; live production switches are unverified.';
++  }finally{ button.disabled=false; updatePublished(); }
+ }
+ 
+ async function load(){
+   let data;
+-  try{ data = await (await fetch('/api/flags/all',{credentials:'same-origin'})).json(); }
++  try{
++    const response=await fetch('/api/flags/all',{credentials:'same-origin',cache:'no-store'});
++    if(!response.ok) throw new Error('flags unavailable');
++    data=await response.json();
++  }
+   catch(e){ $('#flags').innerHTML='<div class="locked">Can’t reach the local server. Start it with <b>release-center.command</b>.</div>'; return; }
+   const admin = !!data.admin;
+   $('#envBadge').textContent = admin ? 'admin · local' : (data.env||'dev');
+@@ -95,14 +135,18 @@
+     $('#note').style.display='none';
+   } else {
+     $('#deploybar').style.display='flex';
++    $('#productionStatus').style.display='block';
++    checkProduction();
+   }
+-  const flags = data.flags||{};
++  const flags = savedFlags = data.flags||{};
+   const keys = Object.keys(flags);
+   $('#flags').innerHTML = keys.length ? keys.map(k=>{
+     const f=flags[k]||{};
+     return `<div class="flag">
+-      <div class="meta"><div class="name">${esc(f.label||k)}</div><div class="desc">${esc(f.description||'')}</div></div>
+-      <div class="switches">${ctl(k,'dev',f.dev,admin)}${ctl(k,'prod',f.prod,admin)}</div>
++      <div class="meta"><div class="name">${esc(f.label||k)}</div><div class="desc">${esc(f.description||'')}</div>
++        ${f.where?`<div class="location">Where: ${esc(f.where.screen||'')}${f.where.spot?' · '+esc(f.where.spot):''}</div>`:''}
++        ${admin?`<div class="published" data-published-key="${esc(k)}">Live production switch: unverified</div>`:''}</div>
++      <div class="switches">${ctl(k,'dev',f.dev,admin,f.label)}${ctl(k,'prod',f.prod,admin,f.label)}</div>
+     </div>`;
+   }).join('') : '<div class="locked">No features yet. Add one to <b>features.json</b>.</div>';
+   if(admin) document.querySelectorAll('.toggle').forEach(b=> b.addEventListener('click', onToggle));
+@@ -116,9 +160,12 @@
+   try{
+     const r=await fetch('/api/flags/set',{method:'POST',credentials:'same-origin',
+       headers:{'Content-Type':'application/json'}, body:JSON.stringify({key,env,value:next})});
+-    if(!r.ok) throw 0;
++    const result=await r.json();
++    if(!r.ok || !result.ok) throw new Error(result.error||'Could not save');
++    savedFlags=result.flags||savedFlags;
+     b.setAttribute('aria-pressed', next?'true':'false');
+-    toast(`${key}: ${env} → ${next?'ON':'off'} (saved)`);
++    updatePublished();
++    toast(`${key}: ${env} → ${next?'ON':'off'} saved. ${env==='prod'?'Promote and verify to publish.':'Deploy to update staging.'}`);
+   }catch(_){ toast('Could not save — is the local server running?'); }
+   finally{ b.disabled=false; }
+ }
+@@ -131,9 +178,11 @@
+   $('#historyWrap').style.display='block';
+   if(!d.versions.length){ $('#history').innerHTML='<div class="locked">No snapshots yet — one is saved each time you Promote.</div>'; return; }
+   $('#history').innerHTML = d.versions.map(v=>{
+-    const live = v.tag===d.current;
++    const deployed=(observedProduction||{}).commit_full||(observedProduction||{}).commit||'';
++    const live=!!(deployed && v.commit && (deployed.startsWith(v.commit)||v.commit.startsWith(deployed)));
++    const mainSnapshot=v.tag===d.current;
+     return `<div class="ver">
+-      <div class="vmeta"><div class="vtag">${esc(v.tag)}${live?'<span class="livebadge">live now</span>':''}</div>
++      <div class="vmeta"><div class="vtag">${esc(v.tag)}${live?'<span class="livebadge">matches observed production</span>':mainSnapshot?'<span class="ro">main snapshot · deployment unverified</span>':''}</div>
+         <div class="vsub">${esc(v.date||'')}${v.subject?' · '+esc(v.subject):''}</div></div>
+       ${live ? '<span class="ro on">current</span>' : `<button class="btn back" data-tag="${esc(v.tag)}">Roll back to this</button>`}
+     </div>`;
+@@ -164,9 +213,9 @@
+ }
+ $('#btnDeploy').addEventListener('click',()=>runRelease('deploy-dev','Deploy your current work to the PRIVATE staging site?'));
+ $('#btnPromote').addEventListener('click',()=>runRelease('promote','Promote to the PUBLIC site? A Terminal will open where you type “yes” to confirm.'));
++$('#btnCheck').addEventListener('click',async()=>{ await checkProduction(); loadHistory(); });
+ 
+ load();
+ </script>
+ </body>
+ </html>
+-
+--- a/Release Center/features.json	
++++ b/Release Center/features.json	
+@@ -1,7 +1,7 @@
+ {
+   "_schema": {
+     "version": 2,
+-    "updated": "2026-10-26",
++    "updated": "2026-10-27",
+     "doc": "platform_docs/DEV_AREA.md",
+     "about": "Registry of every flagged FEATURE and every dev SCREEN. Backward compatible: the server still reads flags.<key>.dev / .prod, and the app still turns each ON flag into a body class ff-<key>. Everything else here is descriptive metadata rendered by the Dev Area hub.",
+     "fields": {
+@@ -17,7 +17,8 @@
+       "note": "optional caveat / known issue.",
+       "dev": "boolean — ON in the dev environment.",
+       "prod": "boolean — ON in production."
+-    }
++    },
++    "last_updated": "2026-10-27 11:44 UTC · Full-Stack · clarify Analytics navigation and preview registry semantics; preserve saved switches."
+   },
+   "flags": {
+     "new_logo": {
+@@ -158,16 +159,17 @@
+     },
+     "analytics": {
+       "label": "Analytics zone",
+-      "description": "Analytical-methods overview: GC-MS (data exists — Meaty Volatile Library), HPLC, Olfactory, H/C-NMR, Spectroscopy (planned).",
+-      "kind": "screen",
+-      "added": "2026-08-15",
+-      "status": "preview",
+-      "where": {
+-        "screen": "Dev Area → Screens (also reachable from the product)",
+-        "spot": "'Analytics Zone' card in the Dev Area; in the mockup it is the third Research tile ('Analytics', labelled preview).",
+-        "file": "app/dev/analytics.html"
+-      },
+-      "destination": "Research tile → Analytics (already linked from the mockup's Research screen, labelled preview).",
++      "description": "Show Analytics in the platform navigation and the analytical-methods overview. The workspace is a preview using illustrative data; GC-MS literature data is available in the Meaty Volatile Library.",
++      "kind": "screen",
++      "added": "2026-08-15",
++      "status": "preview",
++      "where": {
++        "screen": "Platform top navigation → Analytics; Dev Area → Screens",
++        "spot": "Analytics navigation opens the in-app workspace. The Dev Area card opens the methods overview.",
++        "file": "app/meatcode_mockup.html + app/dev/analytics.html + app/dev/analytics_workspace.html"
++      },
++      "destination": "Platform navigation → Analytics workspace (preview). This canonical switch takes precedence over the legacy analytics_module setting.",
++      "updated": "2026-10-27",
+       "url": "/app/dev/analytics.html",
+       "dev": true,
+       "prod": true
+@@ -224,7 +226,7 @@
+     },
+     "analytics_workspace": {
+       "label": "Analytics workspace (bring-your-own data)",
+-      "description": "Guided GC-MS / NMR upload -> align a scientist's own data to a MeatCODE reference profile and interpret the difference: chromatogram/spectrum overlay, analytical profile, sensory radar, peak alignment.",
++      "description": "List the guided GC-MS / NMR workspace preview in the Dev Area. This switch does not control the platform's Analytics navigation; use Analytics zone for that. Comparisons currently use illustrative data.",
+       "kind": "screen",
+       "added": "2026-08-31",
+       "status": "preview",
+@@ -233,7 +235,8 @@
+         "spot": "'Analytics workspace' card; the page carries a PREVIEW banner - guided stepper on illustrative data, no real parsing.",
+         "file": "app/dev/analytics_workspace.html"
+       },
+-      "destination": "Analytics zone -> GC-MS/NMR 'Compare your data' (MVP board A3). Lior's call once the fingerprint schema + reference-data source land.",
++      "destination": "Dev Area listing only. The platform Analytics entry is controlled by analytics. The legacy analytics_module switch is a fallback only when analytics is absent.",
++      "updated": "2026-10-27",
+       "url": "/app/dev/analytics_workspace.html",
+       "note": "Guided-stepper mockup (method -> upload -> confirm format -> reference -> compare). Figures are generated for demonstration; wiring to real /api/* + a reference-profile source (A1/A3) is the follow-up.",
+       "dev": true,
+@@ -257,19 +260,20 @@
+       "prod": false
+     },
+     "analytics_module": {
+-      "label": "Analytics module (top nav)",
+-      "description": "Adds an 'Analytics' chip as the 3rd top-nav section (Oracle - Research - Analytics - Simulate); clicking it opens the guided Analytics workspace.",
++      "label": "Analytics module (legacy navigation switch)",
++      "description": "Compatibility fallback for installations without an Analytics zone setting. Ignored when Analytics zone exists; use Analytics zone to show or hide the navigation entry.",
+       "kind": "screen",
+       "added": "2026-08-31",
+       "status": "preview",
+       "where": {
+         "screen": "Top nav (all topbars)",
+-        "spot": "Top bar, 3rd chip before Simulate; a load-time pass inserts it only when body.ff-analytics_module is set.",
++        "spot": "Top bar, before Simulate; analytics controls visibility. analytics_module is read only if the canonical analytics key is absent.",
+         "file": "app/meatcode_mockup.html + server/meatcode_server.py (/analytics route)"
+       },
+-      "destination": "LIVE INTEGRATION (2026-09-01): Top-nav 'Analytics' (3rd chip, additive) -> in-app #analytics scene that iframes the workspace (embed mode). /analytics pretty-URL kept as a secondary direct entry. dev ON / prod OFF.",
++      "destination": "Platform navigation → in-app Analytics workspace preview. /analytics remains a secondary direct entry.",
++      "updated": "2026-10-27",
+       "url": "/analytics",
+-      "note": "Additive nav chip (Oracle/Research/Simulate untouched). Server serves /analytics + /analytics/ as a clean alias for /app/dev/analytics_workspace.html. Distinct from the analytics_workspace flag (which lists the workspace under Dev Area screens).",
++      "note": "Legacy fallback only: an explicit analytics true or false takes precedence. analytics_workspace only controls its Dev Area listing. Saved local switches reach production after promotion and successful deployment.",
+       "dev": true,
+       "prod": false
+     },
+@@ -342,4 +346,3 @@
+     }
+   }
+ }
+-
+--- a/server/meatcode_server.py	
++++ b/server/meatcode_server.py	
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env python3
+-# Last updated: 2026-10-25 20:45 UTC · Yochai (PM) with Claude · NEW GET /api/ecosystem/people (flag
++# Last updated: 2026-10-27 11:44 UTC · Full-Stack · local-only observed production status and published feature-switch metadata; preserve Oracle/retrieval behavior.
+ #   `ecosystem_module`): the Ecosystem's people + papers LIVE from Neon via ecosystem.live_people(pg_rows)
+ #   (SELECT-only, 10-min cache); no DATABASE_URL or a DB error -> 503 and the page uses its labelled offline copy.
+ # Prev 2026-10-25 19:15 UTC · Yochai (PM) with Claude · Guided Oracle behind flag `oracle_guided`:
+@@ -259,6 +259,7 @@
+ import shutil, gzip, io, zipfile
+ from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
+ from urllib.parse import urlparse, parse_qs
++from urllib.request import Request, urlopen
+ 
+ # ─── Config ──────────────────────────────────────────────────────────
+ PORT       = int(os.environ.get("PORT", "8000"))  # cloud hosts (Render, etc.) inject $PORT; 8000 locally
+@@ -1084,6 +1085,34 @@
+                                "retryable": False}}, 404)
+             body, code = view
+             return self._send_json(body, code)
++        if path == "/api/release/status":
++            # Compare saved flags with the public live build.
++            # Same local-only gate as release controls. Fixed public URL, no credentials
++            # forwarded and no caller-controlled URL (not an authenticated HTTP proxy).
++            if not self._local_admin_ok():
++                return self._send_json({"error": "not found"}, 404)
++            target = "https://meatcode-oracle.onrender.com/api/version"
++            checked_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
++            try:
++                request = Request(target, headers={"Accept": "application/json"})
++                with urlopen(request, timeout=8) as response:
++                    raw = response.read(65537)
++                if len(raw) > 65536:
++                    raise ValueError("version response too large")
++                live = json.loads(raw)
++                if not isinstance(live, dict) or live.get("env") != "prod":
++                    raise ValueError("unexpected production version response")
++                allowed = ("service", "env", "commit", "commit_full", "branch", "server_started_utc", "model")
++                version = {key: live[key] for key in allowed if key in live}
++                published = live.get("feature_flags")
++                if isinstance(published, dict):
++                    version["feature_flags"] = {key: value for key, value in published.items()
++                                                 if isinstance(value, bool)}
++                return self._send_json({"ok": True, "url": target, "checked_at": checked_at,
++                                        "production": version})
++            except Exception:
++                return self._send_json({"ok": False, "url": target, "checked_at": checked_at,
++                                        "error": "Live production could not be checked. Saved switches are unchanged."}, 502)
+         if path == "/api/release/history":
+             # Promoted snapshots + which is live. READ-ONLY, so it's also visible on the
+             # hosted DEV site (powers app/dev/versions.html); production keeps the 404.
+@@ -1104,6 +1133,8 @@
+                 "server_started_utc": STARTED_AT,
+                 "model": MODEL,
+                 "password_gate": bool(SITE_PASSWORD),
++                "feature_flags": {key: bool(value.get(APP_ENV, False))
++                                  for key, value in load_flags().items()},
+                 "features": {
+                     "sse_status_event": True,        # "Digging the MeatCODE database" phase
+                     "vendor_neutral_errors": True,   # no model name in user-facing errors

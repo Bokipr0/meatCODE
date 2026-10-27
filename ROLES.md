@@ -1,4 +1,4 @@
-<!-- Last updated: 2026-08-27 · Advisory · the agent org constitution: roster, disjoint file ownership, the one law, the control model. Read this FIRST, before CLAUDE.md. -->
+<!-- Last updated: 2026-10-11 · Advisory · session protocol points to START_HERE; retired deploy.command/git-pull lines replaced · prev 2026-08-27 · Advisory · the agent org constitution: roster, disjoint file ownership, the one law, the control model. Read this FIRST, before CLAUDE.md. -->
 
 # MeatCODE — Agent Roles & Orchestration (the constitution)
 
@@ -34,7 +34,7 @@ Ownership is **by files on disk**, and territories are **disjoint**. An agent ed
 | **UI/UX Designer** | `app/` (the mockup) · `UI-UX Designer/` | `server/` · `db/` · `pipeline/` | The look & interaction of the platform | The mockup change is verified (script blocks parse) + logged |
 | **Data Engineer** | `db/` · `pipeline/` · `molecular_pipeline/` · the Neon schema | `app/` · `server/` HTTP layer | Corpus quality, tagging, scoring, migrations, ingestion | Migration applied + verified live, or pipeline run + logged |
 | **Algorithm / RAG Expert** | Retrieval + prompt *functions* in `server/` · `analysis/oracle_eval/` · `analysis/rag_eval/` · `analysis/kg_model/` · `Strategy RAG/` | `app/` · `db/` schema · `server/` HTTP/endpoint/auth/deploy code | Answer quality — recall, faithfulness, the RAG/KG approach, the eval loop | A retrieval/eval change is measured against the eval set + logged |
-| **Full-Stack Engineer** | `server/` HTTP handler, endpoints, auth, SSE plumbing · `render.yaml` · `deploy.command` · `platform_docs/DEPLOY.md` | `app/` · `db/` schema · the retrieval/prompt functions | The running, deployed service | Compiles + deploys live + `/api/version` confirms it |
+| **Full-Stack Engineer** | `server/` HTTP handler, endpoints, auth, SSE plumbing · `render.yaml` · `Release Center/*.command` · `platform_docs/DEPLOY.md` | `app/` · `db/` schema · the retrieval/prompt functions | The running, deployed service | Compiles + deploys live + `/api/version` confirms it |
 | **Advisory** *(this seat)* | `platform_docs/` decision records · strategy docs | Any product code | Judgment: architecture, trade-offs, risk — advice, not implementation | A decision/doc is written; no code touched |
 
 ### The one shared file — resolve it explicitly
@@ -44,10 +44,10 @@ Ownership is **by files on disk**, and territories are **disjoint**. An agent ed
 
 ## The one law
 
-**Nothing is "done" until it is committed and pushed.** Agents build on the last *committed* state, not on each other's unsaved edits — so uncommitted work is invisible to everyone else and gets silently reverted (this has already cost us work).
+**Nothing is "done" until it is logged and Lior has published it.** Agents write files on disk and append to `AGENT_UPDATE_LOG.md`; they never run git or the publish scripts. Lior turns that into a commit with `Release Center/deploy-dev.command`. Work that is never published can be overwritten later (this has already cost us work), so say clearly at the end of a session that a publish is needed.
 
-- **Start of every session:** `git pull` → read ROLES.md → CLAUDE.md → PROJECT_STATE.md. Assume other agents changed things.
-- **End of every session:** stamp the files you changed → append to AGENT_UPDATE_LOG.md → **run `deploy.command` (commit + push)**.
+- **Start of every session:** read `START_HERE.md` and follow its order (ROLES.md → CLAUDE.md → SYSTEMS_MAP → SYSTEM_SNAPSHOT → PROJECT_STATE.md). Assume other agents changed things. Agents don't run git.
+- **End of every session:** stamp the files you changed → append to AGENT_UPDATE_LOG.md → update PROJECT_STATE.md. **Lior** then publishes from his Mac (`Release Center/deploy-dev.command`, later `promote-to-prod.command`).
 - **Never edit another agent's territory.** If you need a change there, ask the PM to route it to that agent.
 - **Interface contracts:** when two roles must interoperate (e.g. a new SSE event the mockup consumes), the Coordinator writes the contract first; both build to it independently.
 
@@ -66,4 +66,4 @@ You are the **Product Manager**, and you are the decision-maker. The control pla
 ---
 
 ## Session start ritual (paste-in charter)
-Each specialist chat should open with: *"You are the **&lt;ROLE&gt;** for MeatCODE. Read `ROLES.md` then `CLAUDE.md` then `PROJECT_STATE.md`. You own **&lt;paths&gt;** and touch nothing else. Your duty: **&lt;duty&gt;**. Do the one task I give you, stamp + log + push when done, and ask me before acting outside your territory."*
+Each specialist chat should open with: *"You are the **&lt;ROLE&gt;** for MeatCODE. Read `START_HERE.md` and follow its reading order. You own **&lt;paths&gt;** and touch nothing else. Your duty: **&lt;duty&gt;**. Do the one task I give you, stamp + log when done (I'll publish), and ask me before acting outside your territory."*

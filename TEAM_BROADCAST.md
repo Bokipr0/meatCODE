@@ -1,3 +1,5 @@
+> ⚠️ **STALE — last refreshed 2026-09-01.** Verified 2026-10-11: **B1 (deploy the backlog) is DONE** — production runs `prod-20260921-1717`. B2 is still open. For current status read `PROJECT_STATE.md`; for priorities, `platform_docs/ASANA_SNAPSHOT.md` / Asana. This file needs a Coordinator refresh before it is trusted again.
+
 # 📣 TEAM BROADCAST — MeatCODE
 
 _From: Project Coordinator (with Lior) · As of: **2026-09-01**_
