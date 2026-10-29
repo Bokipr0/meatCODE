@@ -1,8 +1,8 @@
 {
   "_schema": {
     "version": 2,
-    "updated": "2026-10-27",
-    "last_updated": "2026-10-27 11:44 UTC · Full-Stack · clarify Analytics navigation and preview registry semantics; preserve saved switches.",
+    "updated": "2026-10-28",
+    "last_updated": "2026-10-28 UTC · Full-Stack · add opt-in user testing flag; preserve every existing switch.",
     "doc": "platform_docs/DEV_AREA.md",
     "about": "Registry of every flagged FEATURE and every dev SCREEN. Backward compatible: the server still reads flags.<key>.dev / .prod, and the app still turns each ON flag into a body class ff-<key>. Everything else here is descriptive metadata rendered by the Dev Area hub.",
     "fields": {
@@ -172,7 +172,7 @@
       "updated": "2026-10-27",
       "url": "/app/dev/analytics.html",
       "dev": true,
-      "prod": true
+      "prod": false
     },
     "compare": {
       "label": "Compare screen",
@@ -274,6 +274,22 @@
       "updated": "2026-10-27",
       "url": "/analytics",
       "note": "Legacy fallback only: an explicit analytics true or false takes precedence. analytics_workspace only controls its Dev Area listing. Saved local switches reach production after promotion and successful deployment.",
+      "dev": true,
+      "prod": false
+    },
+    "user_testing": {
+      "label": "User testing and feedback",
+      "description": "Opt-in Microsoft Clarity session research and isolated anonymous feedback; no capture before consent.",
+      "kind": "feature",
+      "added": "2026-10-28",
+      "updated": "2026-10-28",
+      "status": "preview",
+      "where": {
+        "screen": "All product screens",
+        "spot": "Research consent and feedback controls; authenticated /api/research/* routes.",
+        "file": "app/assets/user-research.js + server/research_http.py + server/user_research.py"
+      },
+      "note": "Requires the isolated user_research database schema. USER_RESEARCH_ENABLED=false is an emergency capture switch; withdrawal stays available. Clarity loads only after explicit consent.",
       "dev": true,
       "prod": true
     }

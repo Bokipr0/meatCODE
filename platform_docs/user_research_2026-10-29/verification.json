@@ -1,0 +1,237 @@
+{
+  "date": "2026-10-29",
+  "base_commit": "6394c039749ad0e6d7279dabd00a380dfb95ee87",
+  "files": [
+    {
+      "path": ".env.example",
+      "before_sha256": "1b5213fc7b6a5a39d2913e8c9267e0e79c53880bbb3551fa3841e3fa9aedf8de",
+      "after_sha256": "c902fe4ae8aa34d2564d568fcf27d488a6dedfaf46e4f24953158f74c6bf2ad1",
+      "bytes": 2154
+    },
+    {
+      "path": ".telemetry/changelog.md",
+      "before_sha256": null,
+      "after_sha256": "9fe8d6c317b17b6bd72eab5e94049646f27f3ade022888a2ff244189760dd64c",
+      "bytes": 838
+    },
+    {
+      "path": ".telemetry/delta.md",
+      "before_sha256": null,
+      "after_sha256": "a79819c98cd423706b5d14fd0f06a399b97827dead5d0ed3cdf4ffbc86d73152",
+      "bytes": 1800
+    },
+    {
+      "path": ".telemetry/product.md",
+      "before_sha256": null,
+      "after_sha256": "7f1191154ffbcb017d4a0aaaccdcd2aef33d38861de4ff57a46488eabf811311",
+      "bytes": 2521
+    },
+    {
+      "path": ".telemetry/tracking-plan.yaml",
+      "before_sha256": null,
+      "after_sha256": "578b0fc35bb44b053f89972b64bc8afeddacaeec3439c29973de52c7d1867aaf",
+      "bytes": 5630
+    },
+    {
+      "path": "Release Center/features.json",
+      "before_sha256": "5b143aff30600d9880e65cef737cd1cb4916b26f5ac3197a6ddf70ad1b3530d5",
+      "after_sha256": "0bc641ead7e74eee48085033e66e98d9acd2b536e6a95ae882d5dfdcd434c8b1",
+      "bytes": 21626
+    },
+    {
+      "path": "app/assets/user-research.js",
+      "before_sha256": null,
+      "after_sha256": "7f99b2ce83b5694d675dcbc145f46274eda6e037d9e42bc11246b448d19316a7",
+      "bytes": 20194
+    },
+    {
+      "path": "app/internal/research-dashboard.html",
+      "before_sha256": null,
+      "after_sha256": "dfd883ac69c0f428375af4746f3ce8c09dfd259f14c273e02f9aef94d440aee5",
+      "bytes": 22163
+    },
+    {
+      "path": "app/meatcode_mockup.html",
+      "before_sha256": "794f765d7f69efd206ae103d389fff8fb37dff6697e19f0d3b738c3f2cd797d1",
+      "after_sha256": "7c2fc0f2a7dc605d0013857d572af5bdefc59b3fbbb64dc2c74aecfeab6c3c0b",
+      "bytes": 614955
+    },
+    {
+      "path": "app/release-center.html",
+      "before_sha256": "41bce35510205f0fddab9587291ca31e92d3e2ca7b5fc9c51879c790cebffe60",
+      "after_sha256": "106a7a65fc1ee592dbbef9ee5db9471ae627bfa191d65b9624721acf7715f37b",
+      "bytes": 14765
+    },
+    {
+      "path": "app/vendor/posthog/LICENSE",
+      "before_sha256": null,
+      "after_sha256": "d3fb92ac01f0bef4078f89aac9f20f76da3383ad45becf6204abdf5495f43f8f",
+      "bytes": 21550
+    },
+    {
+      "path": "app/vendor/posthog/README.md",
+      "before_sha256": null,
+      "after_sha256": "c5a436c97829ffeb83284caa548cf77577a824927dcfeadebc3fdc0e385b7af3",
+      "bytes": 1898
+    },
+    {
+      "path": "app/vendor/posthog/array.no-external.js.map",
+      "before_sha256": null,
+      "after_sha256": "a7f888736d0959eb1c1b00af8002a5692e5a9f3a7115577dea08376b91726d6e",
+      "bytes": 502851
+    },
+    {
+      "path": "app/vendor/posthog/manifest.json",
+      "before_sha256": null,
+      "after_sha256": "c7138b57c6db83f14774c79f995b7324644cccc68d108dba8ab4244533a9735c",
+      "bytes": 2210
+    },
+    {
+      "path": "app/vendor/posthog/package-lock.json",
+      "before_sha256": null,
+      "after_sha256": "60354367bd79e52d306ea5e779121baa92e5fb8681fe75fa60d6b5aca98c9467",
+      "bytes": 5315
+    },
+    {
+      "path": "app/vendor/posthog/posthog.js",
+      "before_sha256": null,
+      "after_sha256": "efdce68d72209567183265b3bbc4decc025b10e36d7436c3d600cd8e97e3ef28",
+      "bytes": 384147
+    },
+    {
+      "path": "db/migrations/0016_user_research.sql",
+      "before_sha256": null,
+      "after_sha256": "e44c510f2f4648074fa9b6f84dc6011a65b57fa27e2dad9766a3673fc3e8d608",
+      "bytes": 5085
+    },
+    {
+      "path": "db/migrations/0017_user_research_consent_providers.sql",
+      "before_sha256": null,
+      "after_sha256": "b332f03479e2430808b8dcfd6d0c1ee88380e03be690ebef96fbf204a0d98a94",
+      "bytes": 734
+    },
+    {
+      "path": "pipeline/user_research/README.md",
+      "before_sha256": null,
+      "after_sha256": "cec5d428173f2fcb3509ea1eb9134da8e85b163533fbb8b856135f3f8d832bab",
+      "bytes": 6769
+    },
+    {
+      "path": "pipeline/user_research/clarity_import.py",
+      "before_sha256": null,
+      "after_sha256": "842b46ec07f95c7321649100b89c36816e1739105717db0db4495be27ebce047",
+      "bytes": 7925
+    },
+    {
+      "path": "pipeline/user_research/manage.py",
+      "before_sha256": null,
+      "after_sha256": "bc95d3fd507497ff86d82b9fd37edc58566147a87ec6bb5138e536adc30eb5d7",
+      "bytes": 4378
+    },
+    {
+      "path": "pipeline/user_research/migrate.py",
+      "before_sha256": null,
+      "after_sha256": "f80712ad317575fda73ee2988cc4b1df053122423fef768bc1809bab38bc0988",
+      "bytes": 5537
+    },
+    {
+      "path": "pipeline/user_research/settings.py",
+      "before_sha256": null,
+      "after_sha256": "549ea8941f39ae66a4e0dd121d6809c154f287eb8d552e175d34a9f52901256f",
+      "bytes": 1289
+    },
+    {
+      "path": "pipeline/user_research/verify.py",
+      "before_sha256": null,
+      "after_sha256": "b24c3243fedcca9fddadef87398baa288692c2fa39800a12434f46fc1dcdf8bb",
+      "bytes": 1950
+    },
+    {
+      "path": "platform_docs/CLARITY_INSTALLATION_CHECK_2026-10-29.md",
+      "before_sha256": null,
+      "after_sha256": "89d81838f59c05eabc618e124a921c147afcdd6052a6e2990a1f815e39945718",
+      "bytes": 3739
+    },
+    {
+      "path": "platform_docs/POSTHOG_LIVE_TESTING.md",
+      "before_sha256": null,
+      "after_sha256": "9e638da26e525179e733bcbf1b65703e656642c3d45d9c26661ac1e7866e2603",
+      "bytes": 6669
+    },
+    {
+      "path": "platform_docs/USER_RESEARCH_CLARITY.md",
+      "before_sha256": null,
+      "after_sha256": "60c0ca24d05c759a64d605dca7857423f5b8ad47a853e8c6cf0871ad251b40f4",
+      "bytes": 11315
+    },
+    {
+      "path": "server/meatcode_server.py",
+      "before_sha256": "3b6b561f03364678463e3af52246881ae79f1f2b3e2e21a5cb07feef3bd851ae",
+      "after_sha256": "52f173b49712b921b7d4fe36f2de2a4a3ae513659f4d0c476100254261599bc1",
+      "bytes": 143160
+    },
+    {
+      "path": "server/research_dashboard.py",
+      "before_sha256": null,
+      "after_sha256": "942788f9a268063c880bc727fdf8bfe4838302e301fd635611714de9ad55edc0",
+      "bytes": 10622
+    },
+    {
+      "path": "server/research_http.py",
+      "before_sha256": null,
+      "after_sha256": "d96ef4e601b7ea77393d684e1974dfdbddd026fa59355f7e5fa0b609538da161",
+      "bytes": 8679
+    },
+    {
+      "path": "server/user_research.py",
+      "before_sha256": null,
+      "after_sha256": "518695c2c04efd8339da07ea3e75127b4367dd3ecd9dfe4a9d5170dd2c844a9f",
+      "bytes": 10280
+    },
+    {
+      "path": "tests/test_render_environment_precedence.py",
+      "before_sha256": null,
+      "after_sha256": "88105adca69cb01a079587cd459d69a8319b7e2f753176118f077614c9a65110",
+      "bytes": 4037
+    },
+    {
+      "path": "tests/test_research_dashboard.py",
+      "before_sha256": null,
+      "after_sha256": "7617e25e843d8ea00050ba3960dedde1fce468629cdcbdb3667f421e8f734203",
+      "bytes": 9285
+    },
+    {
+      "path": "tests/test_research_dashboard_client.cjs",
+      "before_sha256": null,
+      "after_sha256": "0f51c3b9c593e287504a8009279e497a06544c636bea46cdeff11742907ce14b",
+      "bytes": 7472
+    },
+    {
+      "path": "tests/test_research_http.py",
+      "before_sha256": null,
+      "after_sha256": "cfeafc9923dc6b9dd0c0901f4bba6ceb09f168b02df5450216d8a5a6283e7c42",
+      "bytes": 16412
+    },
+    {
+      "path": "tests/test_user_research.py",
+      "before_sha256": null,
+      "after_sha256": "252cea2569baa8ad0763feae1e093caf14613637df2d8874d1e41febd3c96fa1",
+      "bytes": 9367
+    },
+    {
+      "path": "tests/test_user_research_client.cjs",
+      "before_sha256": null,
+      "after_sha256": "e6e12a56d04973c6d46db8ab437df176731ce00671f5d35d39b21d6fe008a1f2",
+      "bytes": 13161
+    }
+  ],
+  "patch_bytes": 1190857,
+  "patch_sha256": "8a573d5951600702b88993c5ac7d87d56ca6fe64c76c1ee4e142973e500eac98",
+  "dry_run": true,
+  "byte_exact_reapplication": true,
+  "python_syntax": true,
+  "remote_module_guards": true,
+  "candidate_directory": "/var/folders/h9/jz3l27k97xn_1f5s0th8kyhh0000gn/T/meatcode-posthog-package-zag41njo/after",
+  "publication": "not performed",
+  "provider_delivery": "unverified"
+}

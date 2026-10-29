@@ -1,0 +1,2713 @@
+--- a/.env.example	
++++ b/.env.example	
+@@ -1,3 +1,4 @@
++# Last updated: 2026-10-28 UTC · Full-Stack · opt-in research settings; server-only export token placeholder.
+ # Copy to .env and fill in. .env is gitignored — never commit real keys.
+ 
+ # --- Anthropic (Oracle / pipeline LLM calls) ---
+@@ -23,3 +24,12 @@
+ PORT=8000
+ MODEL=claude-sonnet-4-5
+ 
++# --- Opt-in user testing (Release Center flag: user_testing) ---
++# Public project identifier; the browser receives this only in research config.
++CLARITY_PROJECT_ID=z4upnrbddu
++# Set false/0/off/no to disable capture immediately; withdrawal stays available.
++# Otherwise the Release Center flag and configured research database control it.
++USER_RESEARCH_ENABLED=
++# Optional project-admin Data Export JWT for the manual server-side import only.
++# Never expose it to browser code, public API responses or version control.
++CLARITY_EXPORT_TOKEN=
+--- /dev/null	
++++ b/.telemetry/changelog.md	
+@@ -0,0 +1,7 @@
++# Tracking changelog
++
++_Last updated: 2026-10-28 15:47 UTC · Project Coordinator._
++
++## 1.0.0 — 2026-10-28
++
++Initial MeatCODE testing plan: anonymous opt-in sessions, navigation, Oracle lifecycle and submitted feedback. Separate first-party storage from Clarity replay/dashboard aggregates; exclude chat text and account identities. No previous event names or dashboards are migrated.
+--- /dev/null	
++++ b/.telemetry/delta.md	
+@@ -0,0 +1,11 @@
++# Initial tracking delta
++
++_Last updated: 2026-10-28 15:47 UTC · Project Coordinator · scoped implementation delta._
++
++Before this work, a targeted scan of app/server source found no installed Clarity or first-party research event destination. The sole pre-existing text match was the ordinary word “amplitude” in a preview answer. This is a scoped source inventory, not a full SDK/account audit.
++
++Add the public project configuration, opt-in masked Clarity loader, six allowlisted event types, voluntarily submitted feedback, authenticated same-origin ingestion, an isolated Neon schema and aggregate-import/retention/export tooling. Add an environment-specific Release Center switch and a server emergency kill switch. Preserve the existing Oracle request/stream contract, scientific data and previous UI fixes.
++
++The initial product model and plan in this folder document the intended slice. Runtime code/tests and the migration are the executable contract. No billing, account traits, user identities, keystrokes, automatic model training or arbitrary user-content tracking are added.
++
++Publication and live Clarity dashboard verification remain distinct from local code validation. See platform_docs/USER_RESEARCH_CLARITY.md for verified activation status and operations.
+--- /dev/null	
++++ b/.telemetry/product.md	
+@@ -0,0 +1,13 @@
++# MeatCODE user-testing model
++
++_Last updated: 2026-10-28 15:47 UTC · Project Coordinator · initial model for the user-requested Clarity integration._
++
++MeatCODE is a research platform for flavor and aroma: the Oracle answers literature questions, Science/Research and Ecosystem expose scientific and collaborator resources, and Simulate and Analytics provide additional workflows. The production and dev sites are separate Render services. The current code uses a shared site-password gate, not individual account authentication.
++
++The primary testing question is whether a researcher can obtain a useful Oracle answer and move through the relevant modules without encountering an error. The initial research slice measures navigation adoption, Oracle submissions/completions/failures and duration, and voluntarily submitted ratings/comments. Clarity complements these with masked replay and heatmaps.
++
++Entities are an anonymous browser-tab session, an event, a submitted feedback item, a minimal withdrawal tombstone, and an imported aggregate snapshot. There is no account/organization hierarchy and no cross-device identity. Session count is not a distinct-person count. Dev/prod are recorded separately even when databases or the Clarity project are shared.
++
++Destinations are Microsoft Clarity project z4upnrbddu and the private Neon user_research schema. Scientific evidence, graph entities and embeddings remain separate. Testing feedback is not admitted as scientific evidence or used to train a model automatically. Raw prompts, model answers, attachments, names and email addresses are excluded from event payloads. A tester may deliberately submit a free-text comment to first-party storage only.
++
++This is the initial user-testing instrumentation, not a claim of a full product-wide tracking audit or production activation. Internal testers are included because this phase is user testing; automated QA uses mocks or transactions that are rolled back.
+--- /dev/null	
++++ b/.telemetry/tracking-plan.yaml	
+@@ -0,0 +1,119 @@
++# Last updated: 2026-10-28 15:47 UTC · Project Coordinator · initial consent-gated research tracking plan.
++{
++  "meta": {
++    "product": "MeatCODE",
++    "version": "1.0.0",
++    "created": "2026-10-28",
++    "updated": "2026-10-28",
++    "owner": "Lior / MeatCODE",
++    "implementation": "custom",
++    "destinations": [
++      "Microsoft Clarity",
++      "Neon user_research"
++    ],
++    "pii_policy": "none",
++    "internal_user_policy": "none",
++    "pii_note": "No identity/event PII. Voluntarily submitted first-party comments can contain personal data and are not sent to Clarity.",
++    "last_updated": "2026-10-28 15:47 UTC"
++  },
++  "entities": {
++    "session": {
++      "id_property": "session_id",
++      "id_format": "UUIDv4 stored in sessionStorage",
++      "traits": []
++    }
++  },
++  "groups": [],
++  "events": [
++    {
++      "name": "session.started",
++      "category": "lifecycle",
++      "description": "Testing session begins after explicit opt-in. Reloads can generate another event for the same tab session; count distinct session IDs for session totals.",
++      "properties": [],
++      "expected_frequency": "low"
++    },
++    {
++      "name": "scene.viewed",
++      "category": "navigation",
++      "description": "An allowlisted module becomes active. No URL, query, keystroke, hover or scrolling event is stored first-party.",
++      "properties": [],
++      "expected_frequency": "low"
++    },
++    {
++      "name": "oracle.submitted",
++      "category": "core_value",
++      "description": "Tester submits an Oracle turn. No question text is included.",
++      "properties": [],
++      "expected_frequency": "medium"
++    },
++    {
++      "name": "oracle.completed",
++      "category": "core_value",
++      "description": "Oracle stream finishes successfully, never after an SSE error.",
++      "properties": [
++        {
++          "name": "duration_ms",
++          "type": "integer",
++          "required": false,
++          "minimum": 0,
++          "maximum": 3600000
++        },
++        {
++          "name": "source_count",
++          "type": "integer",
++          "required": false,
++          "minimum": 0,
++          "maximum": 1000
++        }
++      ],
++      "expected_frequency": "medium"
++    },
++    {
++      "name": "oracle.failed",
++      "category": "core_value",
++      "description": "Oracle turn fails, including model errors carried inside HTTP200 SSE.",
++      "properties": [
++        {
++          "name": "duration_ms",
++          "type": "integer",
++          "required": false,
++          "minimum": 0,
++          "maximum": 3600000
++        },
++        {
++          "name": "error_code",
++          "type": "string",
++          "required": false,
++          "enum": [
++            "network",
++            "model_unavailable",
++            "session_expired",
++            "unknown"
++          ]
++        }
++      ],
++      "expected_frequency": "low"
++    },
++    {
++      "name": "feedback.submitted",
++      "category": "core_value",
++      "description": "An explicit first-party rating and optional comment were accepted. Clarity receives the event name only.",
++      "properties": [],
++      "expected_frequency": "low"
++    }
++  ],
++  "snapshot_sync": {
++    "cadence": "manual",
++    "traits": []
++  },
++  "implementation_notes": [
++    "Every first-party event has a random event_id and server timestamp, session_id, environment and allowlisted scene.",
++    "Unknown fields and arbitrary properties are rejected by the server. No raw URLs, chat text, IPs or user agents are stored in this research schema. Existing host access logs have a separate lifecycle.",
++    "Consent version 2026-10-28; no SDK or events before opt-in. Withdrawal deletes first-party session/events/feedback and prevents late requests from recreating them.",
++    "Clarity events contain only approved names and categorical tags, not comments, identifiers or question text. Whole application body is masked before SDK load.",
++    "Feedback is session-level experience feedback, not a question-linked scientific quality score.",
++    "Event transport is best effort; client interruptions, blockers and disabled consent affect denominators. Do not infer unique users or complete operational availability.",
++    "Clarity dashboard export is aggregate-only. Manual import uses a server-side token and safe aggregate dimensions. Recordings remain managed in Clarity.",
++    "Retention policy is 90 days. Purge tooling is provided; no automatic schedule is created by this change."
++  ]
++}
+--- a/Release Center/features.json	
++++ b/Release Center/features.json	
+@@ -1,7 +1,7 @@
+ {
+   "_schema": {
+     "version": 2,
+-    "updated": "2026-10-26",
++    "updated": "2026-10-28",
+     "doc": "platform_docs/DEV_AREA.md",
+     "about": "Registry of every flagged FEATURE and every dev SCREEN. Backward compatible: the server still reads flags.<key>.dev / .prod, and the app still turns each ON flag into a body class ff-<key>. Everything else here is descriptive metadata rendered by the Dev Area hub.",
+     "fields": {
+@@ -17,7 +17,8 @@
+       "note": "optional caveat / known issue.",
+       "dev": "boolean — ON in the dev environment.",
+       "prod": "boolean — ON in production."
+-    }
++    },
++    "last_updated": "2026-10-28 UTC · Full-Stack · add opt-in user testing flag; preserve every existing switch."
+   },
+   "flags": {
+     "new_logo": {
+@@ -158,16 +159,17 @@
+     },
+     "analytics": {
+       "label": "Analytics zone",
+-      "description": "Analytical-methods overview: GC-MS (data exists — Meaty Volatile Library), HPLC, Olfactory, H/C-NMR, Spectroscopy (planned).",
+-      "kind": "screen",
+-      "added": "2026-08-15",
+-      "status": "preview",
+-      "where": {
+-        "screen": "Dev Area → Screens (also reachable from the product)",
+-        "spot": "'Analytics Zone' card in the Dev Area; in the mockup it is the third Research tile ('Analytics', labelled preview).",
+-        "file": "app/dev/analytics.html"
+-      },
+-      "destination": "Research tile → Analytics (already linked from the mockup's Research screen, labelled preview).",
++      "description": "Show Analytics in the platform navigation and the analytical-methods overview. The workspace is a preview using illustrative data; GC-MS literature data is available in the Meaty Volatile Library.",
++      "kind": "screen",
++      "added": "2026-08-15",
++      "status": "preview",
++      "where": {
++        "screen": "Platform top navigation → Analytics; Dev Area → Screens",
++        "spot": "Analytics navigation opens the in-app workspace. The Dev Area card opens the methods overview.",
++        "file": "app/meatcode_mockup.html + app/dev/analytics.html + app/dev/analytics_workspace.html"
++      },
++      "destination": "Platform navigation → Analytics workspace (preview). This canonical switch takes precedence over the legacy analytics_module setting.",
++      "updated": "2026-10-27",
+       "url": "/app/dev/analytics.html",
+       "dev": true,
+       "prod": true
+@@ -224,7 +226,7 @@
+     },
+     "analytics_workspace": {
+       "label": "Analytics workspace (bring-your-own data)",
+-      "description": "Guided GC-MS / NMR upload -> align a scientist's own data to a MeatCODE reference profile and interpret the difference: chromatogram/spectrum overlay, analytical profile, sensory radar, peak alignment.",
++      "description": "List the guided GC-MS / NMR workspace preview in the Dev Area. This switch does not control the platform's Analytics navigation; use Analytics zone for that. Comparisons currently use illustrative data.",
+       "kind": "screen",
+       "added": "2026-08-31",
+       "status": "preview",
+@@ -233,7 +235,8 @@
+         "spot": "'Analytics workspace' card; the page carries a PREVIEW banner - guided stepper on illustrative data, no real parsing.",
+         "file": "app/dev/analytics_workspace.html"
+       },
+-      "destination": "Analytics zone -> GC-MS/NMR 'Compare your data' (MVP board A3). Lior's call once the fingerprint schema + reference-data source land.",
++      "destination": "Dev Area listing only. The platform Analytics entry is controlled by analytics. The legacy analytics_module switch is a fallback only when analytics is absent.",
++      "updated": "2026-10-27",
+       "url": "/app/dev/analytics_workspace.html",
+       "note": "Guided-stepper mockup (method -> upload -> confirm format -> reference -> compare). Figures are generated for demonstration; wiring to real /api/* + a reference-profile source (A1/A3) is the follow-up.",
+       "dev": true,
+@@ -257,19 +260,20 @@
+       "prod": false
+     },
+     "analytics_module": {
+-      "label": "Analytics module (top nav)",
+-      "description": "Adds an 'Analytics' chip as the 3rd top-nav section (Oracle - Research - Analytics - Simulate); clicking it opens the guided Analytics workspace.",
++      "label": "Analytics module (legacy navigation switch)",
++      "description": "Compatibility fallback for installations without an Analytics zone setting. Ignored when Analytics zone exists; use Analytics zone to show or hide the navigation entry.",
+       "kind": "screen",
+       "added": "2026-08-31",
+       "status": "preview",
+       "where": {
+         "screen": "Top nav (all topbars)",
+-        "spot": "Top bar, 3rd chip before Simulate; a load-time pass inserts it only when body.ff-analytics_module is set.",
++        "spot": "Top bar, before Simulate; analytics controls visibility. analytics_module is read only if the canonical analytics key is absent.",
+         "file": "app/meatcode_mockup.html + server/meatcode_server.py (/analytics route)"
+       },
+-      "destination": "LIVE INTEGRATION (2026-09-01): Top-nav 'Analytics' (3rd chip, additive) -> in-app #analytics scene that iframes the workspace (embed mode). /analytics pretty-URL kept as a secondary direct entry. dev ON / prod OFF.",
++      "destination": "Platform navigation → in-app Analytics workspace preview. /analytics remains a secondary direct entry.",
++      "updated": "2026-10-27",
+       "url": "/analytics",
+-      "note": "Additive nav chip (Oracle/Research/Simulate untouched). Server serves /analytics + /analytics/ as a clean alias for /app/dev/analytics_workspace.html. Distinct from the analytics_workspace flag (which lists the workspace under Dev Area screens).",
++      "note": "Legacy fallback only: an explicit analytics true or false takes precedence. analytics_workspace only controls its Dev Area listing. Saved local switches reach production after promotion and successful deployment.",
+       "dev": true,
+       "prod": false
+     },
+@@ -337,9 +341,24 @@
+         "file": "app/meatcode_mockup.html"
+       },
+       "note": "Yochai, 26 Oct: \"Science module replaces Research (hide, don't delete)\". Requires science_module ON as well, so the nav can never lose both.",
++      "dev": true,
++      "prod": true
++    },
++    "user_testing": {
++      "label": "User testing and feedback",
++      "description": "Opt-in Microsoft Clarity session research and isolated anonymous feedback; no capture before consent.",
++      "kind": "feature",
++      "added": "2026-10-28",
++      "updated": "2026-10-28",
++      "status": "preview",
++      "where": {
++        "screen": "All product screens",
++        "spot": "Research consent and feedback controls; authenticated /api/research/* routes.",
++        "file": "app/assets/user-research.js + server/research_http.py + server/user_research.py"
++      },
++      "note": "Requires the isolated user_research database schema. USER_RESEARCH_ENABLED=false is an emergency capture switch; withdrawal stays available. Clarity loads only after explicit consent.",
+       "dev": true,
+       "prod": true
+     }
+   }
+ }
+-
+--- /dev/null	
++++ b/app/assets/user-research.js	
+@@ -0,0 +1,171 @@
++/* Last updated: 2026-10-28 · Codex UI/UX · opt-in testing, masked Clarity, metadata-only events and first-party feedback. */
++(function () {
++  'use strict';
++  if (window.MCResearch) return;
++  var VERSION = '2026-10-28', CONSENT_KEY = 'mc_research_consent_v1', SESSION_KEY = 'mc_research_session_v1';
++  var PENDING_KEY = 'mc_research_withdraw_pending_v1';
++  var SCENES = ['oracle','research','science','ecosystem','simulate','analytics','database','map','papers','dev'];
++  var ERRORS = ['network','model_unavailable','session_expired','unknown'];
++  var config = null, active = false, session = null, queue = [], timer = null, sending = false;
++  var generation = 0, loaded = false, needsReload = false, requests = new Set(), panel, status, consentSection, feedbackSection;
++  var nativeFetch = window.fetch.bind(window);
++  document.body.setAttribute('data-clarity-mask', 'true');
++  function read(key) { try { return sessionStorage.getItem(key); } catch (_) { return null; } }
++  function save(key, value) { try { if (value === null) sessionStorage.removeItem(key); else sessionStorage.setItem(key, value); } catch (_) {} }
++  function uuid() { return window.crypto && typeof window.crypto.randomUUID === 'function' ? window.crypto.randomUUID() : null; }
++  function validUUID(value) { return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value || ''); }
++  function scene() { var value = location.hash.replace(/^#/, ''); return SCENES.indexOf(value) >= 0 ? value : 'other'; }
++  function permitted() { return active && config && config.enabled === true && session; }
++  function speak(text) { if (status) status.textContent = text; }
++  function post(path, body, signal) {
++    return nativeFetch('/api/research/' + path, {method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json','X-MeatCODE-Research':'1'}, body:JSON.stringify(body), referrerPolicy:'no-referrer', signal:signal}).then(function (res) {
++      if (!res.ok) throw new Error('RESEARCH_REQUEST_FAILED');
++      return res;
++    });
++  }
++  function event(name, properties) {
++    if (!permitted()) return;
++    var id = uuid(); if (!id) return;
++    // Callers receive no generic logger: only these allow-listed lifecycle methods reach here.
++    queue.push({event_id:id, name:name, scene:scene(), properties:properties || {}});
++    if (loaded && safeURL()) { clarityCall('set','scene',scene()); clarityCall('event',name); }
++    if (queue.length > 100) queue.shift();
++    if (!timer) timer = setTimeout(flush, 200);
++  }
++  function flush() {
++    timer = null;
++    if (!permitted() || sending || !queue.length) return;
++    var batch = queue.splice(0,20), sid = session, current = generation, controller = new AbortController();
++    sending = true;
++    var request = post('events', {session_id:sid, consent:true, consent_version:VERSION, events:batch}, controller.signal);
++    requests.add(controller);
++    request.catch(function () { /* testing never blocks the product; failed batches are not retained */ }).finally(function () {
++      requests.delete(controller); sending = false;
++      if (current === generation && permitted() && queue.length) timer = setTimeout(flush, 200);
++    });
++  }
++  function clarityCall() { if (typeof window.clarity === 'function') window.clarity.apply(window, arguments); }
++  function safeURL() {
++    // Clarity records page URLs itself: fail closed rather than alter a user's route.
++    return !location.search && (!location.hash || SCENES.indexOf(location.hash.slice(1)) >= 0);
++  }
++  function loadClarity() {
++    if (!permitted() || loaded || config.clarity_project_id !== 'z4upnrbddu') return;
++    if (location.pathname !== '/' && location.pathname !== '/app/meatcode_mockup.html') return;
++    if (!safeURL()) return;
++    document.body.setAttribute('data-clarity-mask', 'true');
++    if (document.querySelector('[data-clarity-unmask]')) return; // fail closed if another integration unmasks content
++    loaded = true;
++    window.clarity = window.clarity || function () { (window.clarity.q = window.clarity.q || []).push(arguments); };
++    // Official Microsoft ConsentV2 API. Advertising remains denied.
++    clarityCall('consentv2', {ad_Storage:'denied', analytics_Storage:'granted'});
++    clarityCall('set','environment',['dev','prod','staging','local'].indexOf(config.environment)>=0 ? config.environment : 'other');
++    var sdk = document.createElement('script'); sdk.async = true; sdk.id = 'mc-clarity-sdk';
++    sdk.src = 'https://www.clarity.ms/tag/z4upnrbddu'; sdk.referrerPolicy = 'no-referrer';
++    sdk.onload = function () { if (!active) { clarityCall('consentv2',{ad_Storage:'denied',analytics_Storage:'denied'}); clarityCall('stop'); } };
++    document.head.appendChild(sdk);
++  }
++  function start() {
++    if (!config || config.enabled !== true || active) return;
++    if (needsReload || read(PENDING_KEY)) { speak('Finish deleting this session before joining another test.'); return; }
++    var previous = read(SESSION_KEY); session = validUUID(previous) ? previous : uuid();
++    if (!session) { speak('Testing is unavailable in this browser. The platform still works normally.'); return; }
++    active = true; generation++; save(SESSION_KEY, session); save(CONSENT_KEY, VERSION + ':yes');
++    loadClarity(); event('session.started'); event('scene.viewed'); renderState();
++    speak('Optional testing is on for this tab. You can stop at any time.');
++  }
++  function stop() {
++    var sid = session || read(PENDING_KEY) || read(SESSION_KEY);
++    active = false; generation++; queue = [];
++    if (timer) clearTimeout(timer); timer = null;
++    requests.forEach(function (controller) { controller.abort(); }); requests.clear();
++    session = null; save(SESSION_KEY, null); save(CONSENT_KEY, VERSION + ':no');
++    needsReload = loaded;
++    if (loaded) {
++      clarityCall('consentv2',{ad_Storage:'denied',analytics_Storage:'denied'});
++      clarityCall('stop');
++      var sdk = document.getElementById('mc-clarity-sdk'); if (sdk) sdk.remove();
++    }
++    if (validUUID(sid)) save(PENDING_KEY, sid);
++    renderState();
++    if (!validUUID(sid)) { speak('Testing is off.'); return Promise.resolve(); }
++    speak('Testing stopped. Deleting this tab’s first-party testing data…');
++    return post('withdraw', {session_id:sid}).then(function () {
++      save(PENDING_KEY, null); renderState();
++      speak('First-party testing data deleted. Microsoft recordings are managed separately in Clarity.');
++      // ConsentV2 denied alone permits cookieless collection. A reload unloads the SDK completely.
++      if (needsReload) location.reload();
++    }).catch(function () {
++      speak('Testing is off, but deletion could not finish. Use “Stop testing & delete session data” again to retry.');
++    });
++  }
++  function startOracle() {
++    if (!permitted()) return null;
++    event('oracle.submitted');
++    return {generation:generation, started:performance.now(), finished:false, source_count:0};
++  }
++  function current(turn) { return turn && permitted() && turn.generation === generation && !turn.finished; }
++  function sourceCount(turn, count) { if (current(turn) && Number.isInteger(count)) turn.source_count = Math.max(0,Math.min(1000,count)); }
++  function finish(turn, code) {
++    if (!current(turn)) return;
++    turn.finished = true;
++    var properties = {duration_ms:Math.max(0,Math.min(3600000,Math.round(performance.now()-turn.started)))};
++    if (code) properties.error_code = ERRORS.indexOf(code) >= 0 ? code : 'unknown';
++    else properties.source_count = turn.source_count;
++    event(code ? 'oracle.failed' : 'oracle.completed', properties);
++  }
++  window.MCResearch = Object.freeze({startOracle:startOracle, sourceCount:sourceCount, completeOracle:function(t){finish(t);}, failOracle:function(t,c){finish(t,c || 'unknown');}});
++  window.addEventListener('hashchange', function () {
++    if (!permitted()) return;
++    if (loaded && !safeURL()) { clarityCall('consentv2',{ad_Storage:'denied',analytics_Storage:'denied'}); clarityCall('stop'); needsReload = true; }
++    event('scene.viewed');
++  });
++  function renderState() {
++    if (!panel) return;
++    consentSection.hidden = active;
++    feedbackSection.hidden = !active;
++    panel.querySelector('[data-research-stop]').hidden = !active && !read(PENDING_KEY) && !validUUID(read(SESSION_KEY));
++    panel.querySelector('[data-research-accept]').disabled = !config || config.enabled !== true || needsReload || !!read(PENDING_KEY);
++  }
++  function ui() {
++    var style = document.createElement('style');
++    style.textContent = '#mcResearchButton{position:fixed;right:14px;bottom:12px;z-index:2100;padding:7px 11px;border:1px solid var(--line,#ddd);border-radius:100px;background:var(--surface,#fff);color:var(--ink-dim,#444);font:11px var(--round,system-ui);cursor:pointer}#mcResearchPanel{width:min(430px,calc(100vw - 32px));max-height:85vh;overflow:auto;padding:24px;border:1px solid var(--line,#ddd);border-radius:18px;background:var(--surface,#fff);color:var(--ink,#222);font:14px/1.5 var(--round,system-ui);box-shadow:var(--shadow-lg)}#mcResearchPanel::backdrop{background:rgba(0,30,28,.25)}#mcResearchPanel h2{margin:0 0 12px;font-size:20px}#mcResearchPanel p{font-size:13px}#mcResearchPanel label{display:block;margin:10px 0}#mcResearchPanel select,#mcResearchPanel textarea{display:block;width:100%;font:inherit;color:inherit;border:1px solid var(--line,#ddd);border-radius:8px;padding:9px;background:var(--surface,#fff)}#mcResearchPanel textarea{min-height:82px}#mcResearchPanel button{font:inherit;padding:8px 11px;margin:5px 5px 5px 0;border:1px solid var(--line,#ddd);border-radius:9px;background:var(--surface-2,#eee);color:inherit;cursor:pointer}#mcResearchPanel [data-research-accept],#mcResearchPanel [type=submit]{background:var(--wine,#00736e);color:white}#mcResearchPanel [hidden]{display:none!important}#mcResearchStatus{font-size:12px;color:var(--ink-dim,#555)}';
++    document.head.appendChild(style);
++    var button = document.createElement('button'); button.id = 'mcResearchButton'; button.type = 'button'; button.textContent = 'Testing privacy'; button.setAttribute('aria-haspopup','dialog');
++    document.body.appendChild(button);
++    panel = document.createElement('dialog'); panel.id = 'mcResearchPanel'; panel.setAttribute('aria-labelledby','mcResearchTitle'); panel.setAttribute('data-clarity-mask','true');
++    panel.innerHTML = '<h2 id="mcResearchTitle">Help improve MeatCODE</h2><section data-research-consent><p>Optional testing records navigation, response timing and success or failure. Microsoft Clarity records masked interactions and uses analytics cookies; advertising storage stays off. Questions, answers, attachments and profile text are masked. No account identity is added.</p><p>MeatCODE has a 90-day testing-data retention policy. You can stop and request deletion of this tab’s testing data below. Microsoft recordings follow the project’s separate Clarity retention settings.</p><button type="button" data-research-accept>Allow optional testing</button><button type="button" data-research-decline>Continue without testing</button></section><section data-research-feedback hidden><form><label>How was this experience?<select name="rating" required><option value="" selected disabled>Choose one</option><option value="helpful">Helpful</option><option value="neutral">Neutral</option><option value="unhelpful">Unhelpful</option></select></label><label>About<select name="category"><option value="answer">Oracle answer</option><option value="usability">Using the platform</option><option value="bug">A problem or bug</option><option value="other">Other</option></select></label><label>Comment (optional)<textarea name="comment" maxlength="2000" placeholder="Please leave out names, contact details and confidential research."></textarea></label><p>Only the comment you submit goes to MeatCODE’s own database. It is never sent as a Clarity event or tag.</p><button type="submit">Send feedback</button></form></section><button type="button" data-research-stop hidden>Stop testing &amp; delete session data</button><p id="mcResearchStatus" role="status" aria-live="polite"></p><button type="button" data-research-close>Close</button>';
++    document.body.appendChild(panel);
++    consentSection = panel.querySelector('[data-research-consent]'); feedbackSection = panel.querySelector('[data-research-feedback]'); status = panel.querySelector('#mcResearchStatus');
++    button.addEventListener('click',function(){renderState();panel.showModal();});
++    panel.querySelector('[data-research-close]').addEventListener('click',function(){panel.close();});
++    panel.querySelector('[data-research-decline]').addEventListener('click',function(){save(CONSENT_KEY,VERSION+':no');panel.close();});
++    panel.querySelector('[data-research-accept]').addEventListener('click',start);
++    panel.querySelector('[data-research-stop]').addEventListener('click',stop);
++    panel.querySelector('form').addEventListener('submit',function(e){
++      e.preventDefault(); if(!permitted())return;
++      var form=e.target, submit=form.querySelector('[type=submit]'), sid=session, current=generation, id=uuid(); if(!id)return;
++      var payload={session_id:sid,event_id:id,consent:true,consent_version:VERSION,rating:form.elements.rating.value,category:form.elements.category.value,comment:form.elements.comment.value.slice(0,2000)};
++      submit.disabled=true;
++      var controller=new AbortController();requests.add(controller);
++      post('feedback',payload,controller.signal).then(function(){
++        if(current!==generation || !permitted())return;
++        form.elements.comment.value='';event('feedback.submitted');speak('Thank you. Your feedback was saved to MeatCODE.');
++      }).catch(function(){if(current===generation && permitted())speak('Feedback could not be saved. Please try again.');}).finally(function(){requests.delete(controller);submit.disabled=false;});
++    });
++    renderState();
++  }
++  nativeFetch('/api/research/config',{credentials:'same-origin',cache:'no-store',referrerPolicy:'no-referrer'}).then(function(res){if(!res.ok)throw new Error('disabled');return res.json();}).then(function(value){
++    if(!value || value.consent_version!==VERSION)return;
++    config=value;
++    if(value.enabled!==true && !read(PENDING_KEY) && !validUUID(read(SESSION_KEY)))return;
++    ui();
++    if(read(PENDING_KEY)){renderState();speak('A previous deletion needs to be retried. Testing remains off.');return;}
++    if(value.enabled!==true){speak('Testing is currently disabled. You can still delete this tab’s earlier testing data.');return;}
++    if(read(CONSENT_KEY)===VERSION+':yes')start();
++    else if(!read(CONSENT_KEY))panel.showModal();
++  }).catch(function(){
++    // Keep first-party deletion reachable even if collection is disabled or config is unavailable.
++    if((read(PENDING_KEY) || validUUID(read(SESSION_KEY))) && !panel){config={enabled:false};ui();speak('Testing is off. Retry deleting the previous session below.');}
++  });
++})();
+--- a/app/meatcode_mockup.html	
++++ b/app/meatcode_mockup.html	
+@@ -2,7 +2,9 @@
+ <html lang="en">
+ <head>
+ <meta charset="utf-8" />
+-<!-- Last updated: 2026-10-26 · Yochai (PM) with Claude · Science replaces Research in the top nav: new flag
++<!-- Last updated: 2026-10-28 · Codex UI/UX · optional masked research integration and content-free Oracle lifecycle hooks; no question/answer payloads. -->
++<!-- Prior update: 2026-10-27 11:37 UTC · Codex UI/UX · removed Simulate sidebar recents, SLR families and presets; Analytics zone switch now exposes the Analytics nav chip (legacy alias supported). -->
++<!-- Prior update: 2026-10-26 · Yochai (PM) with Claude · Science replaces Research in the top nav: new flag
+      research_nav_hidden hides (class .mc-nav-hidden, never removes) the Research chip in every topbar while
+      science_module is also on; #research scene + in-content links untouched. · Prior 2026-10-25 19:15 UTC · Yochai (PM) with Claude · Guided Oracle (flag oracle_guided): askOracle sends {guided, history, skip} via mcOracleRequestBody; streamSSE handles the new `ask` event (mcRenderOracleAsk: question + tap options + Not sure + Just answer, max 3, turn filed as kind:'ask'); renderAnswerHTML wrapped to style the 'Working from:' / 'Next step:' lines; finalizeAnswer wrapped to add 'Open in Science' / 'Experts on this'. · Prior 2026-10-25 18:57 UTC · Yochai (PM) with Claude · Product modules wiring: flag-gated "Science" + "Ecosystem" top-nav chips right after Oracle (flags science_module / ecosystem_module), in-app #science + #ecosystem scenes iframing /app/modules/science.html and /app/modules/ecosystem.html (?embed=1, full-width like #papers), NAV_CAT/chipCat + trimNav ORDER entries, and the cross-module handoff bus (window.mcOpenModule + postMessage listener; contract in app/modules/mc-bridge.js) so modules open the Oracle and each other. · Prior 2026-10-05 · UI/UX Designer · Papers browser wiring (flag papers_browser, dev-only): flag-gated "Papers" top-nav chip (load-time IIFE after the Analytics-chip pass, inserted right after Analytics; body.ff-papers_browser) + in-app #papers scene iframing /app/dev/papers_browser.html?embed=1 (context panel hidden, full-width canvas, same pattern as #analytics) + setScene NAV_CAT/chipCat 'papers' + 'papers' in the nav SCENES list. Nothing else touched. · Prior 2026-09-01 · UI/UX Designer · NEW badge moved Simulate → Analytics. The "new" class was dropped from every Simulate top-nav chip (all ~14 topbars, including the active #simulate chip), so Simulate no longer shows the brass "new" pill. The flag-gated Analytics chip (injected by the ff-analytics_module load-time pass, 3rd nav position) now gets className 'domain new' at creation, so Analytics shows the same NEW badge instead. Badge CSS (.domain.new::after / .domain.active.new::after) unchanged; Oracle/Research chips, the #analytics scene, and the Oracle-delete work untouched. · Prior 2026-09-01 06:53 UTC · UI/UX Designer · #analytics context panel removed (full-width iframe) + Oracle history hover-✕ delete. (1) The #analytics scene no longer renders the platform's left context panel: two scoped CSS rules — `#analytics .context{display:none}` + `#analytics .canvas{grid-column:1/-1}` — hide the 248px "ANALYTICS · Analytical methods · HONEST STATUS" aside and let the embedded workspace iframe span the full canvas width (no left gap; the dev page's own "Guided workflow" taskbar becomes the leftmost element). The aside markup is left in the DOM but display:none'd; NO other scene's context panel is touched. (2) Oracle history rail (Pinned Chats + Oracle History, both rendered by mcOracleRowHTML from mc_oracle_history_v1): each row now carries a `.ctx-del` ✕ button next to the dot — hidden by default, and on row :hover the `.dot` is display:none'd while the ✕ shows in the SAME left spot. Clicking the ✕ calls new mcDeleteOracleChat(id): filters the chat out of oracleChats, clears oracleActiveId if it was active, mcSaveOracleChats() (persists to mc_oracle_history_v1), and re-renders. Delegated click handler intercepts `.ctx-del[data-del-id]` FIRST with stopPropagation so delete never opens the chat; dblclick guard also ignores `.ctx-del`; the right-side bookmark/pin + rename controls are unchanged. Applies to both Pinned + History rows (shared row component). · Prior 2026-09-01 · UI/UX Designer · DEV-PAGE INTEGRATION via iframe + embed-mode (flag-gated). (1) #research is now gated to the polished dev WIZARD: a new load-time IIFE (right after the Analytics-chip pass) watches body.class and, when ff-research_reaction_network is ON, hides the #research .research-wrap phase-picker and injects a full-fill <iframe class=mc-embed-frame src=/app/dev/research_reaction_network.html?embed=1> into #research .canvas (canvas gets .mc-embed-canvas → padding:0/overflow:hidden). Flag OFF → the phase-picker is untouched. MutationObserver handles the async /api/flags race; idempotent via the mc-embed-frame guard. (2) #analytics scene now EMBEDS the dev workspace: its former in-mockup measurements-browser markup (#anMethods/#anResults/#anDetail) was replaced by a full-fill <iframe src=/app/dev/analytics_workspace.html?embed=1> in a .mc-embed-canvas; the mcAnalytics IIFE stays but no-ops cleanly (all DOM accessors null-guard). (3) the flag-gated Analytics nav chip now switches to the in-app scene (location.hash='#analytics') instead of a full-page nav to the dev file; setScene NAV_CAT/chipCat give #analytics its own 'analytics' category so the chip lights when active. New CSS: .canvas.mc-embed-canvas + .mc-embed-frame. Both dev pages gained embed mode (?embed=1 or inside an iframe → body.embed hides their standalone chrome; all in-content honesty labels kept). · Prior 2026-08-31 16:58 UTC · UI/UX Designer · Analytics nav chip (ADDITIVE + flag-gated). A new load-time IIFE (right after the top-nav normalize pass) inserts ONE "Analytics" .domain chip as the 3rd top-nav item across every topbar → order reads Oracle · Research · Analytics · Simulate, but ONLY when body.ff-analytics_module is set (dev ON / prod OFF — set by the async /api/flags pass; the IIFE both tries immediately AND watches body-class mutations so it inserts once the flag resolves). Clicking it does a FULL-PAGE navigation to /app/dev/analytics_workspace.html (NOT an in-app #scene switch). Idempotent (data-analytics-chip guard, never double-inserts); atom-style orbital icon consistent with the set; the existing Oracle/Research/Simulate chips + handlers are untouched. · Prior 2026-08-31 13:38 UTC · UI/UX Designer · GC-MS/NMR measurements browser + live simulator wiring. TASK A: #analytics is now a MEASUREMENTS BROWSER — each .an-method card carries data-method + an "Open method ▸" CTA + a "compare corpus" checkbox (the existing multi-select union in #anResults is preserved via the checkbox; card-body/CTA click opens a detail view #anDetail instead). openDetail() renders three parts into #anDetail: (1) an inline-SVG PLACEHOLDER spectrum built by specSVG() — GC-MS = a chromatogram (baseline + Gaussian retention-time peaks, numbered, legend of representative meaty volatiles: 2-methyl-3-furanthiol/furfural/2-acetyl-1-pyrroline/2,5-dimethylpyrazine/methional/hexanal), NMR = a ¹H spectrum (δ-ppm peaks + assignment legend), both loudly captioned "ILLUSTRATIVE — placeholder spectrum, not measured data"; the four PLANNED methods get an honest .an-spec-planned "no reference spectrum yet" panel instead of a fake trace; (2) a "What it measures / What it detects" honest block from METHOD_META; (3) that method's LIVE corpus slice via the existing GET /api/corpus?phase=analytics&topics=<slugs> (reuses corpusGet/statLine/topTopics/rowsList; 404/error/empty states graceful). GC-MS + NMR fully pressable end-to-end on placeholder data; honest DATA-EXISTS/PLANNED chips kept. TASK B: #simPredictBtn now POSTs /api/simulate (form-built request via buildRequest(): reads the two .sim-prec rows → amino_acids/sugars by data-class, conditions from editable .sim-num contenteditable spans, matrix mapped to the adapter enum, options.top_compounds:8, label; unit is the chemist-natural "mM" — NOT rewritten; credentials:'same-origin', same API_BASE as askOracle/mcAnalytics) → loading state → renders the REAL response into the existing gorgeous card: #simPredictPct/#simPredictFill from mean compound confidence, the compounds table replaced via the SIM_TBODY marker (name + top reaction-family · yield_ppb · descriptor aroma · confidence/backing), #simOffNotes for off_notes, and the MANDATORY "SYNTHETIC — NOT A REAL SIMULATION" #simSynthBanner + disclaimer whenever synthetic:true (never without); the hardcoded literature card is swapped for an honest "no literature backing — synthetic placeholder" note on synthetic runs. Status branch: 200 render inline · 202 poll GET /api/simulate/{job_id} every ~1.2s (give up ~120s) · 404 → "enable the maillard_sim flag in the Release Center" · 4xx/5xx → error.message + Retry (parses the {ok:false,error:{message}} envelope whether it arrives as 200-ok:false or a 4xx/5xx). Precursor amounts + conditions are inline-editable; the initial static profile is framed as an "illustrative preview" until Predict is pressed. askOracle()/SSE + the .sim-select dropdown IIFE untouched. All added inline scripts pass node --check; tags balanced. · Prior 2026-08-16 14:46 UTC · UI/UX Designer · Research live-corpus chips + Analytics scene + Oracle demo chips + dev-banner removal. (T3) removed #ffDevBanner + its CSS (no dangling refs). (T1) #research-sub juice/lipid sub-cards carry data-topics (taxonomy slugs), are a real toggle multi-select (default 3 picked), and live-query GET /api/corpus (debounced 250ms) → count line from totals.{molecules,papers} + per-card source counts from phase_topics (0-source cards honestly greyed + unselectable); loading/empty/error/not-deployed states; selection stashed to localStorage.mc_research_topics for #database. (T4) the 4 Oracle starter chips are capability demos now (data-demo, dispatched by a delegated handler; the generic starter→askOracle handler skips data-demo chips): (a) Maillard route schematic strip + the EXISTING grounded askOracle(); (b) inline lipid-corpus card (GET /api/corpus?phase=lipid); (c) inline simulator card (canned POST /api/simulate) with the MANDATORY synthetic banner + disclaimer, honest 404→"enable maillard_sim"; (d) inline compare card (POST /api/compare, 1–2 molecules, diff via fields[].differs, user-entered labelling) — none navigate away; askOracle()/SSE untouched. (T2) Analytics is a first-class #analytics scene now (4-region shell, Research active) with 6 live-corpus method chips (data-topics from the ANALYTICS map, multi-select+deselect, results panel + per-card counts); the #research Analytics tile routes to #analytics (dev/analytics.html dependency dropped); setScene NAV_CAT + the nav SCENES list register it. New CSS: .mc-demo-*/.mc-route-*/.mc-synth-banner/.mc-cmp-*/#analytics (tokens only). · Prior 2026-08-15 17:40 UTC · UI/UX Designer · ORACLE IS NOW A REAL CHAT (approved design ported from app/dev/oracle_redesign.html v11 onto the live product, on THIS file's tokens — no palette imported). (1) THREAD: the centre column of #oracle is a scrollable multi-turn conversation (#oracleThread, the only scroller in the column) instead of one replaceable answer. Each question renders as a right-aligned user bubble (.oracle-turn.user/.oracle-bubble, wine-mist) and each answer as its own card appended below — a follow-up APPENDS and auto-scrolls to the new turn, it never wipes the previous answer. The ask box + starters moved BELOW the thread into a docked .oracle-composer (attach + mic + Ask + Enter-to-send / Shift+Enter newline all unchanged). #oracleAnswerSlot is gone; `oracleSlot` is now re-pointed at the current turn by mcOpenAnswerTurn(), so setOracleLoading / setOracleError / streamSSE write into the newest turn unchanged. Because several answer cards now coexist, opening a turn RETIRES the previous turns' ids (data-was-id) and the id-based answer CSS (#oracleSourcesList…) moved onto .oracle-sources-list. (2) HEADER: the "ORACLE" eyebrow and the "Ask the Oracle" H1 are REMOVED (Lior — the nav already says Oracle); the grounding line stays IN FULL: "Every answer is grounded in the corpus (818 sources, keyword/FTS retrieval, relevance_llm ≥ 60) with sources you can open." (mono on the threshold). (3) REAL RETRIEVAL KEPT + EXTENDED: status → "Digging the MeatCODE database…", sources → the real paper pills with their real [id] citations (+ NEW: the additive per-source `claims` key renders as an honest claims list when present), chunk → streaming prose with teal [n] cite chips, done → finalize (guard intact, so the double done/stream-close can't double-fire), error → error card; NEW `consensus` handler renders an honest "N support · M oppose · K neutral" chip ONLY when the event actually arrives. Missing events change nothing (full backward compatibility). (4) HISTORY = CONVERSATIONS: mc_oracle_history_v1 records now carry turns:[{q,a}] (12 turns × 4000 chars caps, all try/catch); asking appends a turn to the ACTIVE conversation, clicking a rail entry REPLAYS that whole conversation into the thread, and a legacy/seed record with no stored answer says so instead of inventing one. A small "+ New chat" button in the composer starts a fresh conversation. The left Pinned/History rail itself is untouched (same markup, styling, pin + rename behaviour). Lab Stash highlight-to-save now spans the whole thread (host = #oracleThread), and the related-molecules chip row, SESSION_EXPIRED handling, credentials:'same-origin' + the typeof API_BASE guard, and the no-page-scroll shell are all preserved. · Prior 2026-08-15 14:55 UTC · UI/UX Designer · FOUR changes (Lior's dev-area sprint). (1) ORACLE ATTACH (preview): paperclip button in the ask box next to the mic (#oracleAttachBtn + hidden #oracleFileInput); picking a file renders a removable filename chip (+ "preview" tag) in #oracleAttachRow above the ask controls. CLIENT-SIDE ONLY — nothing is uploaded and NO success/processing message is shown (tooltip: "Attach data or a paper (preview — processing coming soon)"). (2) DEV AREA BUTTON: a flask "Dev Area" link (→ /app/dev/index.html, same tab, plain <a>) authored statically next to the Inventory button on all 14 topbars; FEATURE-FLAGGED — .mc-devarea-btn is display:none unless body.ff-dev_area (set by the existing /api/flags load pass), so it stays off production until the flag flips. (3) HOME OFF THE NAV — Oracle is the landing again: empty hash → #oracle (setScene default), the brand/logo click → #oracle, and the load-time nav pass now REMOVES any Home chip instead of injecting one → top nav everywhere = Oracle · Research · Simulate. The #home scene + its wiring stay in the file but are unreachable from nav (harmless dead scene, cheap rollback; NAV_CAT/ROUTES 'home' entries left in place). (4) RESEARCH TILES: #research now shows THREE tiles — Juice · Lipid (both subtitled "aroma profiles inside", still → #research-sub) · Analytics (→ /app/dev/analytics.html, labelled a dev preview); the Matrix + Volatiles cards and the dashed "Looking for a protocol instead?" card are REMOVED (the #research-sub matrix/volatiles content + #toolbench stay intact off-scene); each tile now carries its own palette (Juice teal · Lipid coral · Analytics olive) whose card background DEEPENS to a darker shade of the same hue on hover (smooth background-color transition via .phase-card[data-phase] rules). · Prior 2026-07-22 14:16 UTC · UI/UX Designer · Home v3 (Lior's review) — TWO changes. (1) DATA OUT OF TOP NAV: the load-time nav pass now removes BOTH Map and Database chips (was: relabel Database→Data and keep) + still injects Home + reorders → net top nav EVERYWHERE = Home · Oracle · Research · Simulate. The Home "Data" TILE (→#database) and the #database scene + all in-content routes are kept — Data stays reachable, just not as an upper-category button. setScene's dynamic active-map no longer activates a Data chip (database/molecule-detail/protocol-detail leave the nav with nothing active, like #map); Oracle/Research/Simulate/Home still highlight. ['data','database'] left in ROUTES (harmless; the tile uses href). (2) INVENTORY = Option A slide-over drawer, built + wired: a compact "Inventory" button on Home (below the tiles) shows live counts and opens a right slide-over (backdrop + 3-way segmented control Articles · Protocols · Sentences; Esc/backdrop/× close; item cards + italic quote cards for sentences), reproduced from outputs/inventory_option_A_drawer.html on the canonical tokens. CLIENT-SIDE ONLY (one shared password, no per-user identity — like Lab Stash; no server store). Stores: Articles → NEW mc_saved_articles_v1 (a save/bookmark button on each #molecule-detail linked-paper row pushes {id,name,meta,href}; exposed window.mcSaveArticle); Protocols → NEW mc_saved_protocols_v1 (a "Save protocol" button on #protocol-detail); Sentences → the real Lab Stash via window.MCStash.list() ({id,text,q}) rendered as quote cards, removable via window.MCStash.remove(id). Counts = the three live store sizes, re-read on open / on entering #home / after any save. Clicks: article → opens its doi/url (else the molecule); protocol → #protocol-detail; sentence → reopens its source question in #oracle. All new storage versioned + try/catch, dedupe by id, cap 50. Prior Home v2 work preserved (mic dictation, 4 tiles, merged recents, molecule/protocol detail scenes) and Toolbench/MCStash, Lab Stash highlight-to-save, Oracle SSE/status, SESSION_EXPIRED/same-origin, no-page-scroll shell untouched. · Prior 2026-07-22 13:48 UTC · UI/UX Designer · Home v2 (Lior's annotated review) — NAV is now Home · Oracle · Data · Research · Simulate: the load-time nav pass (formerly "trim") now drops only Map, RELABELS the Database chip to "Data" (icon kept), still prepends a Home chip, and REORDERS every topbar to the canonical order; nav-active is now DYNAMIC (setScene maps scene→category: database/molecule-detail/protocol-detail→Data, research/research-sub/toolbench→Research, etc. and lights the matching chip in every topbar), replacing the old static per-topbar active; ROUTES gained ['data','database']. HOME: ask box gained a MIC (reuses the Oracle's Web Speech dictation via a shared mcMakeDictation() helper — en-US, interim→final append into #homeAskInput, hidden where unsupported); tiles are now FOUR (Oracle→#oracle, Data→#database, Research→#research, Simulate→#simulate); "Pick up where you left off" now merges recent CHATS + MOLECULES (mc_recent_molecules_v1) + PROTOCOLS (mc_recent_protocols_v1), most-recent-first, labelled by kind, seeded with a representative molecule + protocol when empty (no experts); rows route chat→#oracle, molecule→#molecule-detail, protocol→#protocol-detail. NEW SCENES: #molecule-detail fetches GET {API}/api/molecules/{id} (same-origin guard + credentials:'same-origin'; crumbs Data/Molecules/name, mono title, category·taste·odor meta, tag chips, Linked-papers card with per-paper Open→ via doi/url, cross-links Ask the Oracle→ / See on Map→; loading/empty/error states never blank the page; records the view into mc_recent_molecules_v1). #protocol-detail is a representative TEMPLATE (no protocol backend yet — static placeholder steps/papers; only crumb+title populated live from mc_protocol_focus_id/name; records into mc_recent_protocols_v1). All prior work preserved (Related-molecules chips, widened Oracle answer, Toolbench, Lab Stash, lean restyle, SSE streaming/status, SESSION_EXPIRED/same-origin, no-page-scroll shell); #database/#map scenes + in-content journeys intact (Map off the nav; Data back on it). · Prior 2026-07-22 13:23 UTC · UI/UX Designer · added Home landing module — a new #home scene is now the DEFAULT landing (empty hash → #home via setScene) and the MeatCODE logo routes to #home. Top nav everywhere is now Home · Oracle · Research · Simulate: #home authors its own topbar (Home active), and trimNav — which still drops the Database + Map chips — now also PREPENDS a "Home" chip (house SVG) to every other topbar; nav router gained ['home','home'] in ROUTES + 'home' in SCENES. Home is built on #research's app/topbar/canvas shell (no left rail; #home .canvas spans both columns) and reproduces meatcode_lean_v1's Home on this file's tokens (teal=--wine, coral=--brass), all rules scoped under #home/.home-*. It has a REAL typeable ask box (Enter or Ask → sets #oracleTextarea, routes to #oracle, and streams via askOracle()), three tiles routing to #oracle/#research/#simulate, and a "Pick up where you left off" list wired to the saved Oracle chats (live oracleChats / mcLoadOracleChats seeds; a row → mcOpenOracleChat(id) then #oracle), re-rendered on load and on entering #home. All prior work preserved (Related-molecules chips, widened Oracle answer, Toolbench/window.MCStash, Lab Stash, lean DB/Oracle restyle, advisory Oracle-notes, SSE streaming + status phase, SESSION_EXPIRED + credentials same-origin, no-page-scroll shell); #database/#map scenes + their in-content journeys still intact and still off the top nav. · Prior 2026-07-22 12:10 UTC · UI/UX Designer · TASK 1 — removed Database + Map from the TOP NAV: a small load-time JS pass drops any .domain chip whose exact label is "Database"/"Map" across all ~11 topbars (DRY, can't desync); the #database and #map scenes AND every in-content route into them (dock items, "See on Map →", breadcrumbs, the new Related-molecule chips) are kept fully intact — the screens stay reachable, just not as nav buttons. TASK 2 — widened the Oracle answer to ~1080px via #oracle .oracle-wrap max-width, holding .oracle-heading/.oracle-input/.oracle-starter-row to a centered 780px so only #oracleAnswerSlot / the .oracle-answer card fills the wider wrap; content stays centered (margin:auto) and the no-page-scroll fixed shell is untouched. TASK 3 — added a "Related molecules" teal molecule-pill row at the very end of each answer card (below prose, sources, follow-ups): on completion (finalizeAnswer, guarded so the double SSE done/stream-close fire only requests once) it calls GET {API_BASE}/api/molecule-suggestions?q=<question+answer>&limit=6 with credentials:'same-origin' and the typeof-API_BASE same-origin guard, renders the bare [{id,name,category,taste,mentions_count}] array as chips with loading/empty/error states (all try/catch-wrapped — any fetch/parse failure hides the row silently and never blanks the answer); clicking a chip deep-links into Database → Molecules via mc_db_tab + mc_db_focus_id/name + a prefilled #db-molecules-search (reuses the DB engine's maybeFocus). Only the additions above changed; Toolbench, Lab Stash, lean DB/Oracle restyle, SSE streaming + status phase, SESSION_EXPIRED/same-origin, and the advisory Oracle-notes pass are all preserved. · Prior 2026-07-21 14:40 UTC · advisory session · Oracle notes pass (from Lior's annotated screenshot): removed the "ORACLE" eyebrow; subtitle → "Every answer is based on a closed corpus with information you can access"; shorter one-line placeholder; input textarea auto-grows (overflow hidden, min-height 30px) so there's no scrollbar or wasted gap; starter chips are now showcase quick-suggestions (Maillard synthesis route · Mask beany off-notes · Sulfur notes in cooked beef · Boost roasted aroma); answer SOURCES moved BELOW the prose (was above), recolored to a BLUE palette, and collapsed to the first 2 with a "+N more" toggle. · Prior 2026-07-21 14:16 UTC · UI/UX Designer · Lean restyle (matches UI-UX Designer/meatcode_lean_v1.html). TASK A — Database molecules/experts/companies to the lean .filterbar + .tbl look: filter bar is now a surface-2 panel with a pill search + right-aligned sort; molecules category filter is live .fchip chips (All · real facets) that drive the hidden <select> so every fetch/pager/XLSX wire is reused; per-tab "Data / <Entity>" breadcrumb; columns reworked through the config-driven engine — Molecules = MOLECULE(mono) · CLASS(category) · SOURCES(mono mentions_count) · RELEVANCE(.db-bar from priority_score, 0–100); Experts = NAME · AFFILIATION · COUNTRY · H-INDEX(.db-bar, dynamic max, NO relevance column); Companies = NAME · COUNTRY · WEBSITE(link); Export moved below each table as a lean ghost "⤓ Export (.xlsx)". 50/page pagination + Toolbench bookmark on molecule rows preserved. TASK B — Oracle centre column to the lean look: ORACLE eyebrow + "Ask the Oracle" + corpus subtitle; ask box → .oracle-box proportions (1.5px line-strong, r20); answer card → .answer (r20, 15.5px/1.7); retrieved papers render as coral .ent.paper-style pills wired to the live SSE sources (no fabricated molecule/expert chips); follow-ups → lean "→" chips from the model's Follow-ups line; left Pinned/History rail, Lab Stash highlight-to-save, streaming + "Digging the MeatCODE database…" status phase, SESSION_EXPIRED + credentials same-origin, and no-page-scroll frame all preserved. Only CSS + HTML markup + the DB config-engine columns/chips changed; the Oracle/Lab-Stash/Toolbench script blocks are byte-identical. NOTE: the on-disk base was the 13:19 commit — the Full-Stack Engineer's 13:34 backup Export/Import (mc-backup / mcStashSnapshot) is NOT in this file and must be re-applied + committed. · Prior 2026-07-21 13:19 UTC · UI/UX Designer · (1+3) Every tab is a centered, fixed-height frame with NO page scroll: the app-shell grid (64px 1fr, 100vh, overflow:hidden) bounds each scene and each scene’s .canvas is the internal scroller (min-height:0 + overflow-y:auto). Map keeps canvas overflow:hidden for the globe. Oracle is now a bounded flex column — heading + ask box + starters stay pinned and ONLY #oracleAnswerSlot scrolls. Content stays horizontally centered via each wrap’s max-width + margin:auto. (2) The topbar search bar was removed on every scene and replaced by a Toolbench wrench button that opens a saved-items drawer with three persisted sections — Saved molecules (mc_saved_molecules_v1; bookmark button added to each Database molecules row), Saved sentences (mc_lab_stash_v1 via a new window.MCStash owner API), and Marked chats (pinned mc_oracle_history_v1). The redundant bottom-left “Lab Stash” button was removed; highlight-to-save still writes mc_lab_stash_v1. All three stores are versioned + try/catch-wrapped; molecules capped at 100. · Prior 2026-07-21: full-screen shell (grid 64px 1fr; dock/flow-bar hidden), bulletproof Ask re-enable (.finally + input-listener), verified caches. · Prior: 401/SESSION_EXPIRED “your sign-in expired” + credentials same-origin; “Digging the MeatCODE database…” status phase; Oracle default landing + brand→#oracle; nav Oracle·Research·Database·Simulate·Map; no topbar bell. -->
+ <title>MeatCODE · GFI Israel — flavor & aroma research</title>
+@@ -2518,7 +2520,7 @@
+   .dev-show-tab, .dev-nav { display: none !important; }
+ </style>
+ </head>
+-<body>
++<body data-clarity-mask="true">
+ 
+ <!-- ==================== SCENE 0 :: Home landing (DORMANT since 2026-08-15) ====================
+      Home was removed from the nav — the Oracle is the landing again (empty hash → #oracle;
+@@ -4385,26 +4387,6 @@
+     </header>
+ 
+     <aside class="context">
+-      <div class="context-section">
+-        <div class="context-label">Recent simulations</div>
+-        <div class="context-item active"><div class="dot" style="background:var(--wine)"></div>Cys × Ribose · 110°C</div>
+-        <div class="context-item"><div class="dot"></div>Lys × Glucose · 130°C</div>
+-        <div class="context-item"><div class="dot"></div>Cys × Xylose · 100°C / pH 7</div>
+-        <div class="context-item"><div class="dot"></div>Thiamine × Glucose</div>
+-      </div>
+-      <div class="context-section">
+-        <div class="context-label">SLR family</div>
+-        <div class="context-item active"><div class="dot" style="background:var(--wine)"></div>01 · AA × Sugar Maillard</div>
+-        <div class="context-item"><div class="dot" style="background:var(--brass)"></div>02 · Lipid oxidation</div>
+-        <div class="context-item"><div class="dot"></div>04 · Nucleotide degradation</div>
+-        <div class="context-item"><div class="dot"></div>07 · Reducing sugars</div>
+-        <div class="context-item"><div class="dot"></div>09 · Carbohydrate thermal</div>
+-      </div>
+-      <div class="context-section">
+-        <div class="context-label">Saved presets</div>
+-        <div class="context-item"><div class="dot"></div>Meaty top-note baseline</div>
+-        <div class="context-item"><div class="dot"></div>Popcorn-aroma forecast</div>
+-      </div>
+       <div class="user-card">
+         <div class="user-avatar">
+           <svg viewBox="0 0 44 44">
+@@ -5904,6 +5886,7 @@
+ 
+   // Use fetch + ReadableStream to consume the SSE response. EventSource only
+   // supports GET, so we hand-roll the SSE parsing on POST.
++  var researchTurn = window.MCResearch ? window.MCResearch.startOracle() : null;
+   fetch(API_BASE + '/api/ask', {
+     method: 'POST',
+     credentials: 'same-origin',   // send the site password (Basic Auth) along with the request
+@@ -5915,9 +5898,10 @@
+     // browser sign-in, not a broken Oracle — say so plainly instead of a raw HTTP error.
+     if (res.status === 401) { throw new Error('SESSION_EXPIRED'); }
+     if (!res.ok) { return res.text().then(function (t) { throw new Error(t || ('HTTP ' + res.status)); }); }
+-    return streamSSE(res);
++    return streamSSE(res, researchTurn);
+   }).catch(function (e) {
+     var msg = String(e && e.message ? e.message : e);
++    if (window.MCResearch) window.MCResearch.failOracle(researchTurn, msg === 'SESSION_EXPIRED' ? 'session_expired' : (/load failed|failed to fetch|networkerror|network error/i.test(msg) ? 'network' : 'unknown'));
+     // Safari rejects the fetch outright ("Load failed") when the server returns a password
+     // challenge it can't satisfy, so a network-style error here is usually an expired
+     // sign-in rather than a real outage. Give the user the actual fix.
+@@ -5932,7 +5916,7 @@
+   });
+ }
+ 
+-function streamSSE(res) {
++function streamSSE(res, researchTurn) {
+   // Prep the answer surface for THIS turn: heading + consensus slot + body + sources +
+   // followups + related. It is appended to the thread, so earlier answers stay put.
+   if (!oracleSlot) oracleSlot = mcOpenAnswerTurn();
+@@ -5969,6 +5953,7 @@
+ 
+   return reader.read().then(function pump(chunk) {
+     if (chunk.done) {
++      if (window.MCResearch) window.MCResearch.failOracle(researchTurn, 'unknown'); // no-op after an explicit done/error
+       if (!askedTurn) finalizeAnswer(fullText, bodyEl, followsEl, citedIds, relatedEl, turnRec);
+       return;
+     }
+@@ -6000,6 +5985,7 @@
+         setOraclePhase(ORACLE_PHASE_ANSWERING);
+         try {
+           var arr = JSON.parse(data);
++          if (window.MCResearch && Array.isArray(arr)) window.MCResearch.sourceCount(researchTurn, arr.length);
+           window.__REAKTZIA_SOURCES = {};
+           arr.forEach(function (s) { window.__REAKTZIA_SOURCES[s.id] = s; });
+           var citeHTML = function (s) {
+@@ -6087,8 +6073,10 @@
+         askedTurn = true;
+         if (typeof mcRenderOracleAsk === 'function') mcRenderOracleAsk(data, turnRec);
+       } else if (event === 'done') {
++        if (window.MCResearch) window.MCResearch.completeOracle(researchTurn);
+         if (!askedTurn) finalizeAnswer(fullText, bodyEl, followsEl, citedIds, relatedEl, turnRec);
+       } else if (event === 'error') {
++        if (window.MCResearch) window.MCResearch.failOracle(researchTurn, 'model_unavailable');
+         setOracleError(data);
+       }
+     });
+@@ -8899,9 +8887,9 @@
+ </script>
+ 
+ <script>
+-/* 2026-08-31 · Analytics nav chip (UI/UX) — ADDITIVE + flag-gated. Inserts ONE "Analytics" chip as
+-   the 3rd top-nav item so the order reads Oracle · Research · Analytics · Simulate, but ONLY when the
+-   analytics_module flag is on (body.ff-analytics_module — dev ON / prod OFF until promoted). Clicking
++/* 2026-10-27 · Analytics visibility follows the Analytics zone switch (analytics).
++   analytics_module is a fallback only when the response omits analytics; explicit zone OFF wins.
++   Insert ONE Analytics chip before Simulate, preserving Science/Ecosystem and other existing chips. Clicking
+    it switches to the in-app #analytics scene (location.hash='#analytics'), which embeds the polished
+    dev Analytics workspace via a ?embed=1 iframe (2026-09-01). This
+    never touches the existing Oracle / Research / Simulate chips or their handlers — it only appends a
+@@ -8910,9 +8898,12 @@
+ (function () {
+   var ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="1.5"/><ellipse cx="8" cy="8" rx="6.2" ry="2.6"/><ellipse cx="8" cy="8" rx="6.2" ry="2.6" transform="rotate(60 8 8)"/><ellipse cx="8" cy="8" rx="6.2" ry="2.6" transform="rotate(120 8 8)"/></svg>';
+   function insertChips() {
+-    if (!document.body.classList.contains('ff-analytics_module')) return;
++    var enabled = document.body.classList.contains('ff-analytics');
++    var added = false;
+     document.querySelectorAll('.domains').forEach(function (row) {
+-      if (row.querySelector('.domain[data-analytics-chip]')) return;   // idempotent — never double-insert
++      var existing = row.querySelector('.domain[data-analytics-chip]');
++      if (!enabled) { if (existing) existing.remove(); return; }
++      if (existing) return;   // idempotent — never double-insert
+       var chip = document.createElement('div');
+       chip.className = 'domain new';   // NEW badge (moved from Simulate → Analytics, 2026-09-01)
+       chip.setAttribute('data-analytics-chip', '1');
+@@ -8922,7 +8913,10 @@
+       var chips = Array.prototype.slice.call(row.querySelectorAll('.domain'));
+       var sim = chips.filter(function (d) { return (d.textContent || '').trim() === 'Simulate'; })[0];
+       if (sim) row.insertBefore(chip, sim); else row.appendChild(chip);
++      added = true;
+     });
++    // Flags arrive asynchronously: a direct #analytics link must light the new chip too.
++    if (added && location.hash === '#analytics' && typeof setScene === 'function') setScene();
+   }
+   function ready(fn) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn); else fn(); }
+   ready(function () {
+@@ -9250,6 +9244,10 @@
+     fetch('/api/flags', { credentials:'same-origin' })
+       .then(function(r){ return r.ok ? r.json() : {}; })
+       .then(function(flags){
++        // Analytics zone owns visibility. Legacy nav-only registries still work; an explicit OFF wins.
++        if (flags && !Object.prototype.hasOwnProperty.call(flags, 'analytics') && flags.analytics_module) {
++          document.body.classList.add('ff-analytics');
++        }
+         Object.keys(flags||{}).forEach(function(k){
+           if(flags[k]) document.body.classList.add('ff-'+k);
+         });
+@@ -10064,6 +10062,7 @@
+   else onScene();
+ })();
+ </script>
++<script src="/app/assets/user-research.js" defer></script>
+ </body>
+ </html>
+ 
+--- a/app/release-center.html	
++++ b/app/release-center.html	
+@@ -1,4 +1,5 @@
+ <!doctype html>
++<!-- Last updated: 2026-10-27 11:44 UTC · Full-Stack · show saved versus observed production switches; clarify Analytics entry points. -->
+ <html lang="en">
+ <head>
+ <meta charset="utf-8">
+@@ -24,6 +25,12 @@
+   .flag .meta{ flex:1; min-width:0; }
+   .flag .name{ font-weight:650; }
+   .flag .desc{ color:var(--dim); font-size:13px; margin-top:2px; }
++  .flag .location,.published{ color:var(--dim); font-size:12px; margin-top:6px; }
++  .published.pending{ color:#8a5a2a; font-weight:600; }
++  .statusline{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
++  .statusline h2{ font-size:15px; margin:0; color:var(--ink); }
++  .statuscopy{ margin-top:8px; }
++  .statuscopy a{ color:var(--wine-dark); }
+   .switches{ display:flex; gap:20px; }
+   .sw{ display:flex; flex-direction:column; align-items:center; gap:6px; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--dim); }
+   .toggle{ position:relative; width:46px; height:26px; border-radius:999px; background:#d9cfca; cursor:pointer; transition:background .15s; border:none; padding:0; }
+@@ -56,9 +63,14 @@
+     <h1>MeatCODE · Release Center</h1>
+     <span class="badge" id="envBadge">…</span>
+   </header>
+-  <div class="sub">Flip a feature ON for <b>Dev</b> to test it, then ON for <b>Prod</b> when it's ready to go live.</div>
++  <div class="sub">Choose the features for your next staging or production release.</div>
+   <div class="banner" id="banner" style="display:none"></div>
+-  <div class="note" id="note">Toggling saves to <code>features.json</code> right away. <b>Nothing reaches users until you Promote.</b> Dev switches appear on staging after you <b>Deploy</b>; Prod switches go live on your next <b>Promote</b>.</div>
++  <div class="note" id="note">Switches below are <b>saved settings for the next release</b>. Changes apply locally after refreshing the platform. Use <b>Deploy to staging</b>, test there, then <b>Promote to production</b>. A switch is live only after the Render deployment succeeds.</div>
++  <div class="note" id="productionStatus" style="display:none">
++    <div class="statusline"><h2>Observed production</h2><button class="btn dev" id="btnCheck" type="button">Check live site</button></div>
++    <div class="statuscopy" id="productionCopy" role="status">Checking the deployed build…</div>
++  </div>
++  <div class="note">For an <b>Analytics</b> button in the platform navigation, use <b>Analytics zone</b>. The older <b>Analytics module</b> switch is a fallback only for installations without an Analytics zone setting. The separate <b>Analytics workspace</b> switch lists its preview in the Dev Area. The workspace still uses illustrative data.</div>
+   <div id="flags"><div class="locked">Loading…</div></div>
+ 
+   <div id="historyWrap" style="display:none">
+@@ -76,16 +88,44 @@
+ 
+ <script>
+ const $ = s => document.querySelector(s);
++let savedFlags = {}, observedProduction = null;
+ function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),3600); }
+ function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+-function ctl(key,env,on,admin){
+-  if(admin) return `<div class="sw">${env}<button class="toggle" aria-pressed="${!!on}" data-key="${key}" data-env="${env}"></button></div>`;
++function ctl(key,env,on,admin,label){
++  if(admin) return `<div class="sw">${env} · saved<button class="toggle" aria-label="${esc(label||key)} — ${env}" aria-pressed="${!!on}" data-key="${esc(key)}" data-env="${env}"></button></div>`;
+   return `<div class="sw">${env}<span class="ro ${on?'on':''}">${on?'ON':'off'}</span></div>`;
++}
++function updatePublished(){
++  const live = observedProduction && observedProduction.feature_flags;
++  document.querySelectorAll('[data-published-key]').forEach(el=>{
++    const key=el.dataset.publishedKey, desired=!!(savedFlags[key]||{}).prod;
++    const known=live && typeof live[key]==='boolean';
++    el.classList.toggle('pending', !!known && live[key]!==desired);
++    el.textContent = !known ? 'Live production switch: unverified' :
++      `Live production: ${live[key]?'ON':'off'}${live[key]!==desired?' · saved setting differs; publish and verify the deployment':''}`;
++  });
++}
++async function checkProduction(){
++  const button=$('#btnCheck'); button.disabled=true;
++  try{
++    const response=await fetch('/api/release/status',{credentials:'same-origin',cache:'no-store'});
++    const data=await response.json();
++    if(!response.ok || !data.ok) throw new Error(data.error||'Live production could not be checked.');
++    observedProduction=data.production;
++    $('#productionCopy').innerHTML=`<a href="https://meatcode-oracle.onrender.com" target="_blank" rel="noopener">Open production</a> · commit <b>${esc(observedProduction.commit||'unknown')}</b> · ${esc(observedProduction.env||'unknown')}<br>Checked ${esc(data.checked_at||'now')}. ${observedProduction.feature_flags?'Per-feature results appear below.':'This deployed version does not report its feature switches; their live state is unverified.'}`;
++  }catch(error){
++    observedProduction=null;
++    $('#productionCopy').textContent=error.message+' Saved settings are unchanged; live production switches are unverified.';
++  }finally{ button.disabled=false; updatePublished(); }
+ }
+ 
+ async function load(){
+   let data;
+-  try{ data = await (await fetch('/api/flags/all',{credentials:'same-origin'})).json(); }
++  try{
++    const response=await fetch('/api/flags/all',{credentials:'same-origin',cache:'no-store'});
++    if(!response.ok) throw new Error('flags unavailable');
++    data=await response.json();
++  }
+   catch(e){ $('#flags').innerHTML='<div class="locked">Can’t reach the local server. Start it with <b>release-center.command</b>.</div>'; return; }
+   const admin = !!data.admin;
+   $('#envBadge').textContent = admin ? 'admin · local' : (data.env||'dev');
+@@ -95,14 +135,18 @@
+     $('#note').style.display='none';
+   } else {
+     $('#deploybar').style.display='flex';
++    $('#productionStatus').style.display='block';
++    checkProduction();
+   }
+-  const flags = data.flags||{};
++  const flags = savedFlags = data.flags||{};
+   const keys = Object.keys(flags);
+   $('#flags').innerHTML = keys.length ? keys.map(k=>{
+     const f=flags[k]||{};
+     return `<div class="flag">
+-      <div class="meta"><div class="name">${esc(f.label||k)}</div><div class="desc">${esc(f.description||'')}</div></div>
+-      <div class="switches">${ctl(k,'dev',f.dev,admin)}${ctl(k,'prod',f.prod,admin)}</div>
++      <div class="meta"><div class="name">${esc(f.label||k)}</div><div class="desc">${esc(f.description||'')}</div>
++        ${f.where?`<div class="location">Where: ${esc(f.where.screen||'')}${f.where.spot?' · '+esc(f.where.spot):''}</div>`:''}
++        ${admin?`<div class="published" data-published-key="${esc(k)}">Live production switch: unverified</div>`:''}</div>
++      <div class="switches">${ctl(k,'dev',f.dev,admin,f.label)}${ctl(k,'prod',f.prod,admin,f.label)}</div>
+     </div>`;
+   }).join('') : '<div class="locked">No features yet. Add one to <b>features.json</b>.</div>';
+   if(admin) document.querySelectorAll('.toggle').forEach(b=> b.addEventListener('click', onToggle));
+@@ -116,9 +160,12 @@
+   try{
+     const r=await fetch('/api/flags/set',{method:'POST',credentials:'same-origin',
+       headers:{'Content-Type':'application/json'}, body:JSON.stringify({key,env,value:next})});
+-    if(!r.ok) throw 0;
++    const result=await r.json();
++    if(!r.ok || !result.ok) throw new Error(result.error||'Could not save');
++    savedFlags=result.flags||savedFlags;
+     b.setAttribute('aria-pressed', next?'true':'false');
+-    toast(`${key}: ${env} → ${next?'ON':'off'} (saved)`);
++    updatePublished();
++    toast(`${key}: ${env} → ${next?'ON':'off'} saved. ${env==='prod'?'Promote and verify to publish.':'Deploy to update staging.'}`);
+   }catch(_){ toast('Could not save — is the local server running?'); }
+   finally{ b.disabled=false; }
+ }
+@@ -131,9 +178,11 @@
+   $('#historyWrap').style.display='block';
+   if(!d.versions.length){ $('#history').innerHTML='<div class="locked">No snapshots yet — one is saved each time you Promote.</div>'; return; }
+   $('#history').innerHTML = d.versions.map(v=>{
+-    const live = v.tag===d.current;
++    const deployed=(observedProduction||{}).commit_full||(observedProduction||{}).commit||'';
++    const live=!!(deployed && v.commit && (deployed.startsWith(v.commit)||v.commit.startsWith(deployed)));
++    const mainSnapshot=v.tag===d.current;
+     return `<div class="ver">
+-      <div class="vmeta"><div class="vtag">${esc(v.tag)}${live?'<span class="livebadge">live now</span>':''}</div>
++      <div class="vmeta"><div class="vtag">${esc(v.tag)}${live?'<span class="livebadge">matches observed production</span>':mainSnapshot?'<span class="ro">main snapshot · deployment unverified</span>':''}</div>
+         <div class="vsub">${esc(v.date||'')}${v.subject?' · '+esc(v.subject):''}</div></div>
+       ${live ? '<span class="ro on">current</span>' : `<button class="btn back" data-tag="${esc(v.tag)}">Roll back to this</button>`}
+     </div>`;
+@@ -164,9 +213,9 @@
+ }
+ $('#btnDeploy').addEventListener('click',()=>runRelease('deploy-dev','Deploy your current work to the PRIVATE staging site?'));
+ $('#btnPromote').addEventListener('click',()=>runRelease('promote','Promote to the PUBLIC site? A Terminal will open where you type “yes” to confirm.'));
++$('#btnCheck').addEventListener('click',async()=>{ await checkProduction(); loadHistory(); });
+ 
+ load();
+ </script>
+ </body>
+ </html>
+-
+--- /dev/null	
++++ b/db/migrations/0016_user_research.sql	
+@@ -0,0 +1,80 @@
++-- Last updated: 2026-10-28 15:51 UTC · Data/Backend · isolated consent-based product research storage.
++-- Additive schema only: no scientific tables, existing columns, views or corpus data altered.
++-- Preflight: 0016 unused locally/current main; schema absence checked before application.
++-- Applied and verified 2026-10-28: DEV first, then production; five tables/twelve indexes, no retained test rows.
++-- Reproduce via pipeline/user_research/migrate.py; verify.py always rolls back fixtures.
++BEGIN;
++SET LOCAL lock_timeout = '3s';
++SET LOCAL statement_timeout = '15s';
++CREATE SCHEMA IF NOT EXISTS user_research;
++REVOKE ALL ON SCHEMA user_research FROM PUBLIC;
++
++CREATE TABLE IF NOT EXISTS user_research.sessions (
++    session_id uuid NOT NULL,
++    environment text NOT NULL CHECK (environment IN ('dev','prod')),
++    consent_version text NOT NULL CHECK (consent_version = '2026-10-28'),
++    consent_at timestamptz NOT NULL DEFAULT now(),
++    created_at timestamptz NOT NULL DEFAULT now(),
++    last_seen_at timestamptz NOT NULL DEFAULT now(),
++    PRIMARY KEY (session_id, environment)
++);
++CREATE TABLE IF NOT EXISTS user_research.events (
++    event_id uuid NOT NULL,
++    environment text NOT NULL CHECK (environment IN ('dev','prod')),
++    session_id uuid NOT NULL,
++    name text NOT NULL CHECK (name IN ('session.started','scene.viewed','oracle.submitted',
++                                      'oracle.completed','oracle.failed','feedback.submitted')),
++    scene text NOT NULL CHECK (scene IN ('oracle','research','science','ecosystem','simulate',
++                                        'analytics','database','map','papers','dev','other')),
++    duration_ms integer CHECK (duration_ms BETWEEN 0 AND 3600000),
++    error_code text CHECK (error_code IN ('network','model_unavailable','session_expired','unknown')),
++    source_count integer CHECK (source_count BETWEEN 0 AND 1000),
++    created_at timestamptz NOT NULL DEFAULT now(),
++    PRIMARY KEY (event_id, environment),
++    FOREIGN KEY (session_id,environment) REFERENCES user_research.sessions(session_id,environment) ON DELETE CASCADE
++);
++CREATE TABLE IF NOT EXISTS user_research.feedback (
++    event_id uuid NOT NULL,
++    environment text NOT NULL CHECK (environment IN ('dev','prod')),
++    session_id uuid NOT NULL,
++    rating text NOT NULL CHECK (rating IN ('helpful','neutral','unhelpful')),
++    category text NOT NULL CHECK (category IN ('answer','usability','bug','other')),
++    comment text NOT NULL DEFAULT '' CHECK (char_length(comment) <= 2000),
++    created_at timestamptz NOT NULL DEFAULT now(),
++    PRIMARY KEY (event_id, environment),
++    FOREIGN KEY (session_id,environment) REFERENCES user_research.sessions(session_id,environment) ON DELETE CASCADE
++);
++CREATE TABLE IF NOT EXISTS user_research.withdrawals (
++    session_id uuid NOT NULL,
++    environment text NOT NULL CHECK (environment IN ('dev','prod')),
++    withdrawn_at timestamptz NOT NULL DEFAULT now(),
++    PRIMARY KEY (session_id, environment)
++);
++CREATE TABLE IF NOT EXISTS user_research.clarity_exports (
++    export_id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
++    environment text NOT NULL CHECK (environment IN ('dev','prod')),
++    project_id text NOT NULL CHECK (project_id ~ '^[a-zA-Z0-9]{1,32}$'),
++    export_date date NOT NULL,
++    num_of_days smallint NOT NULL CHECK (num_of_days BETWEEN 1 AND 3),
++    dimensions text[] NOT NULL DEFAULT ARRAY['Browser','Device','OS']::text[]
++        CHECK (dimensions = ARRAY['Browser','Device','OS']::text[]),
++    attempts smallint NOT NULL DEFAULT 0 CHECK (attempts BETWEEN 0 AND 10),
++    status text NOT NULL CHECK (status IN ('pending','complete','failed')),
++    aggregates jsonb,
++    imported_at timestamptz NOT NULL DEFAULT now(),
++    CONSTRAINT clarity_export_daily_unique UNIQUE(environment,project_id,export_date,num_of_days),
++    CHECK (aggregates IS NULL OR jsonb_typeof(aggregates) = 'array')
++);
++CREATE INDEX IF NOT EXISTS ur_sessions_last_seen ON user_research.sessions(last_seen_at);
++CREATE INDEX IF NOT EXISTS ur_events_session_time ON user_research.events(environment,session_id,created_at);
++CREATE INDEX IF NOT EXISTS ur_events_created ON user_research.events(created_at);
++CREATE INDEX IF NOT EXISTS ur_feedback_created ON user_research.feedback(created_at);
++CREATE INDEX IF NOT EXISTS ur_withdrawals_created ON user_research.withdrawals(withdrawn_at);
++CREATE INDEX IF NOT EXISTS ur_exports_created ON user_research.clarity_exports(imported_at);
++REVOKE ALL ON ALL TABLES IN SCHEMA user_research FROM PUBLIC;
++REVOKE ALL ON ALL SEQUENCES IN SCHEMA user_research FROM PUBLIC;
++COMMENT ON SCHEMA user_research IS 'Consent-based product research; isolated from scientific evidence. No prompt/answer/replay storage.';
++COMMENT ON TABLE user_research.feedback IS 'Explicit first-party tester feedback; never forwarded to Clarity.';
++COMMENT ON TABLE user_research.withdrawals IS 'Minimal 90-day tombstones prevent late requests recreating withdrawn sessions.';
++COMMENT ON TABLE user_research.clarity_exports IS 'Sanitized dashboard aggregates only; no raw Clarity session recordings/replays.';
++COMMIT;
+--- /dev/null	
++++ b/pipeline/user_research/README.md	
+@@ -0,0 +1,55 @@
++_Last updated: 2026-10-28 15:51 UTC · Data/Backend · isolated research storage, private export and manual retention/import operations._
++
++# Product research storage
++
++`user_research` is a separate PostgreSQL schema. Scientific evidence tables and Oracle retrieval never read it. The five tables are `sessions`, `events`, `feedback`, `withdrawals` and `clarity_exports`; scientific tables have no foreign keys into this schema. PUBLIC has no schema/table/sequence grants. The server uses its existing private database role; this does not create a new database account.
++
++Explicit consent is required for typed first-party events and feedback. Events accept only the fixed names/scenes and `duration_ms`, `source_count`, `error_code`. Raw prompts, answers, URLs, user agents, IPs, emails and arbitrary JSON properties are rejected. The optional comment is deliberately submitted first-party feedback, never a Clarity property. No public listing/read endpoint exists.
++
++Sessions and event IDs are UUIDv4. Possession of the session ID authorizes withdrawal under the existing site auth and Origin checks; do not expose or enumerate it. Withdrawal atomically deletes a session and cascades events/feedback, then preserves only a UUID/environment/timestamp tombstone for 90 days. Database transaction advisory locks serialize withdrawal and ingestion; queued requests cannot recreate a withdrawn session during that window. This deletes our first-party rows only; it does not delete recordings held by Microsoft.
++
++## Configuration and HTTP contract
++
++`server/user_research.py` exports `config(environ, app_env)`, `write_events(db_url, app_env, payload)`, `write_feedback(...)`, `withdraw(...)`. The HTTP glue supplies auth, same-Origin checks, payload-byte limit and effective enablement; module default `USER_RESEARCH_ENABLED` is false. `InputError`, `WithdrawnError`, `StorageError` expose safe `.code` and `.status` values of 400, 410, 503.
++
++Environment is `dev` or `prod`. CLI settings start with the process environment. Locally, `.env` then non-empty `.env.dev` values overlay it for development. On Render (`RENDER=true`), private runtime variables are authoritative and no dotenv files are loaded. Credentials are never printed. The live migration script refuses a development target that equals production.
++
++```sh
++python3 pipeline/user_research/migrate.py --environment dev
++python3 pipeline/user_research/migrate.py --environment dev --apply
++python3 pipeline/user_research/verify.py --environment dev
++```
++
++Run production only after development passes. Migration `0016` contains no drops or scientific changes. The script strips its transaction wrapper, executes and verifies all tables/indexes/privileges in one transaction, then commits. Verification tests use rolled-back transactions, including withdrawal contention, environment separation, idempotency and quotas. They retain no test feedback/events.
++
++## Review retained research privately
++
++```sh
++python3 pipeline/user_research/manage.py --environment prod export --from-date 2026-10-01 --to-date 2026-10-28
++```
++
++This explicit command exports JSONL to a newly created private-mode file under ignored `data/user_research/`; `--output /absolute/path/research.jsonl` selects another path. Existing files are never overwritten. Dates are UTC and inclusive, at most 90 days; default is the last 90 calendar dates. Each table is filtered by environment and its retention timestamp. No CSV is produced. Files contain explicit feedback and session capabilities: restrict access and delete exported copies when no longer needed. Research export retention is the operator's responsibility; database purge does not erase files already downloaded.
++
++## Retention: manual, not scheduled
++
++```sh
++python3 pipeline/user_research/manage.py --environment prod purge
++python3 pipeline/user_research/manage.py --environment prod purge --apply
++```
++
++The first command previews counts. Only `--apply` deletes rows older than 90 days from this schema. Active sessions use last-seen time; event/feedback rows use creation time; tombstones retain the full 90-day withdrawal window. **No automated purge or Clarity import job is installed or scheduled.** Until an operator runs it or schedules it, 90 days is a configured retention policy, not an enforced daily cleanup guarantee.
++
++## Clarity dashboard aggregates
++
++[Microsoft's Data Export API documentation](https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-data-export-api) describes dashboard aggregates, not a raw-replay download API. It supports the preceding 1–3 days, up to three dimensions, ten requests per project per day, and at most 1,000 rows without pagination. Results use UTC.
++
++The CLI fixes dimensions to Browser/Device/OS, removes page/URL/title/referrer metrics, and retains only allowlisted numeric metrics and bounded dimension labels. Unknown fields are discarded; never use this table as evidence or assume it contains full replay histories. Requests disable redirects to protect the bearer token. The token's project must match `CLARITY_PROJECT_ID`; the endpoint determines project access from that token.
++
++```sh
++python3 pipeline/user_research/clarity_import.py --environment prod
++python3 pipeline/user_research/clarity_import.py --environment prod --days 1 --apply
++```
++
++Preview makes no database write or Microsoft request. `--apply` needs **server-only `CLARITY_EXPORT_TOKEN`**, generated by a Clarity project admin, and optional `CLARITY_PROJECT_ID` (default `z4upnrbddu`). Never send that token to browser configuration. Completed/pending imports deduplicate by UTC date/import environment/project/window. `--retry-failed` explicitly permits retrying failed requests. Reserved attempts count toward a transactional maximum of ten per project/day in one database. **Apply is restricted to the production importer** because separate databases cannot coordinate local counters; development supports preview only. Microsoft's project-wide quota still applies to other clients. A crashed pending reservation intentionally blocks duplicate same-day requests; review it administratively rather than blindly retrying. No real third-party request was made during setup because no export token was configured.
++
++**Aggregate scope is the complete Clarity project.** API results have no environment/custom-tag filter here. If staging and production share a project, the snapshot includes both domains. The `environment` database column labels the import destination/context, not visitor traffic attribution; responses therefore report `scope: project`. First-party events and feedback remain separately tagged by their actual application environment. Do not interpret the aggregate snapshot as a production-only cohort or join it to individual sessions.
+--- /dev/null	
++++ b/pipeline/user_research/clarity_import.py	
+@@ -0,0 +1,145 @@
++# Last updated: 2026-10-28 15:51 UTC · Data/Backend · manual, quota-limited sanitized Clarity dashboard aggregate import.
++"""Import dashboard aggregates, not raw replays. No automatic job is scheduled.
++
++Official contract: https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-data-export-api
++Only Browser/Device/OS dimensions; URL/title/referrer metrics and arbitrary text are discarded.
++"""
++import argparse
++import datetime
++import json
++import math
++import re
++import sys
++from pathlib import Path
++from urllib.error import HTTPError
++from urllib.parse import urlencode
++from urllib.request import Request, HTTPRedirectHandler, build_opener
++
++sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'server'))
++from user_research import transaction, config, StorageError
++from settings import settings
++
++ENDPOINT='https://www.clarity.ms/export-data/api/v1/project-live-insights'
++DIMENSIONS=('Browser','Device','OS')
++METRICS={'Traffic','ScrollDepth','EngagementTime','Browser','Device','OS','DeadClickCount',
++         'ExcessiveScroll','RageClickCount','QuickbackClick','ScriptErrorCount','ErrorClickCount'}
++NUMERIC_FIELDS={'totalSessionCount','totalBotSessionCount','distantUserCount','distinctUserCount',
++                'PagesPerSessionPercentage','sessionsWithMetricPercentage','sessionsWithoutMetricPercentage',
++                'sessionsWithMetricCount','sessionsWithoutMetricCount','totalSessions','engagementTime',
++                'activeTime','totalTime','scrollDepth','averageScrollDepth','averageEngagementTime',
++                'count','percentage','value','metricCount','affectedSessionCount'}
++
++
++def sanitize_aggregates(payload):
++    if not isinstance(payload,list) or len(payload)>100:
++        raise ValueError('Unexpected aggregate response.')
++    result=[]
++    for metric in payload:
++        if not isinstance(metric,dict):
++            raise ValueError('Unexpected aggregate response.')
++        name=metric.get('metricName')
++        if not isinstance(name,str) or name.replace(' ','') not in METRICS:
++            continue
++        rows=metric.get('information')
++        if not isinstance(rows,list) or len(rows)>1000:
++            raise ValueError('Unexpected aggregate response.')
++        clean=[]
++        for row in rows:
++            if not isinstance(row,dict):
++                raise ValueError('Unexpected aggregate response.')
++            item={}
++            for key,value in row.items():
++                if key in DIMENSIONS and isinstance(value,str) and re.fullmatch(r'[A-Za-z0-9 ._()\-]{1,80}',value):
++                    item[key]=value
++                elif key in NUMERIC_FIELDS:
++                    if isinstance(value,str) and re.fullmatch(r'-?\d{1,15}(\.\d{1,10})?',value):
++                        value=float(value) if '.' in value else int(value)
++                    if type(value) in (int,float) and math.isfinite(value) and 0<=value<=10**15:
++                        item[key]=value
++            # No dimension-only rows or arbitrary strings survive storage.
++            if any(key in NUMERIC_FIELDS for key in item):
++                clean.append(item)
++        result.append({'metricName':name.replace(' ',''),'information':clean})
++    return result
++
++
++class NoRedirect(HTTPRedirectHandler):
++    # Never forward the server-only bearer token to a redirected endpoint.
++    def redirect_request(self,*args,**kwargs):
++        return None
++
++
++def _reserve(cur,environment,project,date,days,retry_failed=False):
++    cur.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,0))',
++                ('user_research:clarity:'+project+':'+date.isoformat(),))
++    cur.execute('''SELECT export_id,status,attempts FROM user_research.clarity_exports
++                   WHERE environment=%s AND project_id=%s AND export_date=%s AND num_of_days=%s''',
++                (environment,project,date,days))
++    existing=cur.fetchone()
++    if existing and (existing[1]!='failed' or not retry_failed):
++        return None,existing[1]
++    cur.execute('SELECT coalesce(sum(attempts),0) FROM user_research.clarity_exports WHERE project_id=%s AND export_date=%s',
++                (project,date))
++    if cur.fetchone()[0]>=10:
++        return None,'daily_limit'
++    if existing:
++        cur.execute("UPDATE user_research.clarity_exports SET status='pending',attempts=attempts+1 WHERE export_id=%s",(existing[0],))
++        return existing[0],'reserved'
++    cur.execute('''INSERT INTO user_research.clarity_exports
++                   (environment,project_id,export_date,num_of_days,status,attempts)
++                   VALUES(%s,%s,%s,%s,'pending',1) RETURNING export_id''',(environment,project,date,days))
++    return cur.fetchone()[0],'reserved'
++
++
++def run(environment,days=1,apply=False,retry_failed=False):
++    if type(days) is not int or days not in (1,2,3):
++        raise ValueError('numOfDays must be 1, 2 or 3.')
++    conf=settings(environment)
++    project=config(conf,environment)['clarity_project_id']
++    if not project:
++        raise ValueError('Configure a valid project ID.')
++    if not apply:
++        return {'mode':'preview','environment':environment,'scope':'project','project_id':project,'num_of_days':days,
++                'dimensions':DIMENSIONS,'token_configured':bool(conf.get('CLARITY_EXPORT_TOKEN'))}
++    if environment != 'prod':
++        raise ValueError('Run the shared-project importer against production only; development supports preview.')
++    token=conf.get('CLARITY_EXPORT_TOKEN')
++    if not token:
++        raise ValueError('CLARITY_EXPORT_TOKEN must be set server-side before importing.')
++    if not re.fullmatch(r'[A-Za-z0-9._\-]+',token):
++        raise ValueError('Invalid export token format.')
++    date=datetime.datetime.now(datetime.timezone.utc).date()
++    with transaction(conf.get('DATABASE_URL')) as cur:
++        export_id,state=_reserve(cur,environment,project,date,days,retry_failed)
++    if export_id is None:
++        return {'mode':'skipped','reason':state,'environment':environment,'scope':'project'}
++    try:
++        query=urlencode({'numOfDays':days,**{'dimension'+str(i+1):value for i,value in enumerate(DIMENSIONS)}})
++        request=Request(ENDPOINT+'?'+query,headers={'Accept':'application/json','Authorization':'Bearer '+token})
++        with build_opener(NoRedirect).open(request,timeout=15) as response:
++            raw=response.read(2*1024*1024+1)
++        if len(raw)>2*1024*1024:
++            raise ValueError('Aggregate response too large.')
++        aggregates=sanitize_aggregates(json.loads(raw))
++        with transaction(conf.get('DATABASE_URL')) as cur:
++            cur.execute("UPDATE user_research.clarity_exports SET status='complete',aggregates=%s::jsonb,imported_at=now() WHERE export_id=%s",
++                        (json.dumps(aggregates),export_id))
++        return {'mode':'imported','environment':environment,'scope':'project','export_id':export_id,'metrics':len(aggregates)}
++    except Exception as exc:
++        with transaction(conf.get('DATABASE_URL')) as cur:
++            cur.execute("UPDATE user_research.clarity_exports SET status='failed' WHERE export_id=%s",(export_id,))
++        return {'mode':'failed','environment':environment,'scope':'project','error_code':'clarity_http_'+str(exc.code) if isinstance(exc,HTTPError) else 'clarity_import_failed'}
++
++
++if __name__=='__main__':
++    parser=argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--environment',required=True,choices=('dev','prod'))
++    parser.add_argument('--days',type=int,choices=(1,2,3),default=1)
++    parser.add_argument('--apply',action='store_true')
++    parser.add_argument('--retry-failed',action='store_true')
++    args=parser.parse_args()
++    try:
++        result=run(args.environment,args.days,args.apply,args.retry_failed)
++        print(json.dumps(result));sys.exit(1 if result['mode']=='failed' else 0)
++    except Exception as exc:
++        print(json.dumps({'ok':False,'error_type':type(exc).__name__,'error_code':'clarity_import_stopped'}));sys.exit(1)
+--- /dev/null	
++++ b/pipeline/user_research/manage.py	
+@@ -0,0 +1,77 @@
++# Last updated: 2026-10-28 15:51 UTC · Data/Backend · private JSONL export and explicit 90-day retention command.
++"""Manual maintenance only. No automatic retention/import job is scheduled."""
++import argparse
++import datetime
++import json
++import os
++import sys
++from pathlib import Path
++
++sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'server'))
++from user_research import transaction, RETENTION_DAYS
++from settings import ROOT, settings
++
++TABLES=('sessions','events','feedback','withdrawals','clarity_exports')
++TIMESTAMPS={'sessions':'last_seen_at','events':'created_at','feedback':'created_at',
++            'withdrawals':'withdrawn_at','clarity_exports':'imported_at'}
++
++
++def purge(environment,apply=False):
++    from psycopg2 import sql
++    counts={}
++    with transaction(settings(environment).get('DATABASE_URL')) as cur:
++        # First-party consent/feedback/events and export copies all have a 90-day boundary.
++        # Tombstones persist for the complete 90-day window, preventing late re-ingestion.
++        for table in ('events','feedback','sessions','withdrawals','clarity_exports'):
++            query=sql.SQL('{} FROM user_research.{} WHERE environment=%s AND {} < now() - (%s * interval \'1 day\')').format(
++                sql.SQL('DELETE' if apply else 'SELECT count(*)'),sql.Identifier(table),sql.Identifier(TIMESTAMPS[table]))
++            cur.execute(query,(environment,RETENTION_DAYS))
++            counts[table]=cur.rowcount if apply else cur.fetchone()[0]
++    return {'mode':'purged' if apply else 'preview','environment':environment,'retention_days':RETENTION_DAYS,'rows':counts}
++
++
++def export_jsonl(environment,output=None,start=None,end=None):
++    from psycopg2 import sql
++    today=datetime.datetime.now(datetime.timezone.utc).date()
++    start=datetime.date.fromisoformat(start) if start else today-datetime.timedelta(days=89)
++    end=datetime.date.fromisoformat(end) if end else today
++    if end<start or (end-start).days>=90 or end>today:
++        raise ValueError('Export needs a past UTC date range of at most 90 days.')
++    if output:
++        path=Path(output).expanduser()
++    else:
++        directory=ROOT/'data/user_research';directory.mkdir(parents=True,exist_ok=True)
++        path=directory/('research-'+environment+'-'+datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%f')+'.jsonl')
++    # Exclusive creation + private mode; never overwrite a previous research export.
++    fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
++    rows=0
++    try:
++        with os.fdopen(fd,'w',encoding='utf-8') as stream, transaction(settings(environment).get('DATABASE_URL')) as cur:
++            cur.execute('SET TRANSACTION READ ONLY')
++            for table in TABLES:
++                cur.execute(sql.SQL('SELECT * FROM user_research.{} WHERE environment=%s AND {} >= %s::date AND {} < (%s::date + 1)').format(
++                    sql.Identifier(table),sql.Identifier(TIMESTAMPS[table]),sql.Identifier(TIMESTAMPS[table])),(environment,start,end))
++                columns=[column[0] for column in cur.description]
++                while True:
++                    batch=cur.fetchmany(500)
++                    if not batch:break
++                    for row in batch:
++                        stream.write(json.dumps({'table':table,'row':dict(zip(columns,row))},default=str,ensure_ascii=False)+'\n');rows+=1
++        return {'mode':'exported','environment':environment,'rows':rows,'format':'JSONL','output':str(path),
++                'from_utc_date':start.isoformat(),'to_utc_date':end.isoformat()}
++    except Exception:
++        path.unlink(missing_ok=True)
++        raise
++
++
++if __name__=='__main__':
++    parser=argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--environment',required=True,choices=('dev','prod'))
++    sub=parser.add_subparsers(dest='command',required=True)
++    p=sub.add_parser('purge');p.add_argument('--apply',action='store_true')
++    e=sub.add_parser('export');e.add_argument('--output');e.add_argument('--from-date');e.add_argument('--to-date')
++    args=parser.parse_args()
++    try:
++        print(json.dumps(purge(args.environment,args.apply) if args.command=='purge' else export_jsonl(args.environment,args.output,args.from_date,args.to_date)))
++    except Exception as exc:
++        print(json.dumps({'ok':False,'error_type':type(exc).__name__,'error_code':'research_maintenance_stopped'}));sys.exit(1)
+--- /dev/null	
++++ b/pipeline/user_research/migrate.py	
+@@ -0,0 +1,98 @@
++# Last updated: 2026-10-28 15:51 UTC · Data/Backend · transactional additive migration with in-transaction verification.
++"""Apply only the isolated user_research schema. Run DEV, then production."""
++import argparse
++import json
++import sys
++from pathlib import Path
++
++sys.path.insert(0, str(Path(__file__).resolve().parent))
++from settings import ROOT, settings
++
++EXPECTED = {
++    'sessions': {'session_id','environment','consent_version','consent_at','created_at','last_seen_at'},
++    'events': {'event_id','environment','session_id','name','scene','duration_ms','error_code','source_count','created_at'},
++    'feedback': {'event_id','environment','session_id','rating','category','comment','created_at'},
++    'withdrawals': {'session_id','environment','withdrawn_at'},
++    'clarity_exports': {'export_id','environment','project_id','export_date','num_of_days','dimensions',
++                        'attempts','status','aggregates','imported_at'},
++}
++INDEXES = {'sessions_pkey','events_pkey','feedback_pkey','withdrawals_pkey','clarity_exports_pkey',
++           'clarity_export_daily_unique','ur_sessions_last_seen','ur_events_session_time',
++           'ur_events_created','ur_feedback_created','ur_withdrawals_created','ur_exports_created'}
++
++
++def verify(cur):
++    cur.execute("SELECT table_name,column_name FROM information_schema.columns WHERE table_schema='user_research'")
++    actual = {}
++    for table, column in cur.fetchall():
++        actual.setdefault(table,set()).add(column)
++    if actual != EXPECTED:
++        raise RuntimeError('Unexpected user_research schema; migration rolled back.')
++    cur.execute("SELECT indexname FROM pg_indexes WHERE schemaname='user_research'")
++    indexes = {row[0] for row in cur.fetchall()}
++    if not INDEXES <= indexes:
++        raise RuntimeError('Missing expected user_research indexes.')
++    cur.execute("""SELECT count(*) FROM pg_namespace n,
++                   LATERAL aclexplode(coalesce(n.nspacl,acldefault('n',n.nspowner))) a
++                   WHERE n.nspname='user_research' AND a.grantee=0""")
++    if cur.fetchone()[0] != 0:
++        raise RuntimeError('PUBLIC unexpectedly has research schema privileges.')
++    cur.execute("""SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace,
++                   LATERAL aclexplode(coalesce(c.relacl,acldefault('r',c.relowner))) a
++                   WHERE n.nspname='user_research' AND c.relkind='r' AND a.grantee=0""")
++    if cur.fetchone()[0] != 0:
++        raise RuntimeError('PUBLIC unexpectedly has research table privileges.')
++    cur.execute("""SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace,
++                   LATERAL aclexplode(coalesce(c.relacl,acldefault('s',c.relowner))) a
++                   WHERE n.nspname='user_research' AND c.relkind='S' AND a.grantee=0""")
++    if cur.fetchone()[0] != 0:
++        raise RuntimeError('PUBLIC unexpectedly has research sequence privileges.')
++    return {'tables': sorted(actual), 'indexes': len(indexes), 'public_grants':0}
++
++
++def run(environment, apply=False):
++    import psycopg2
++    conf=settings(environment);prod=settings('prod')
++    if not conf.get('DATABASE_URL') or (environment=='dev' and conf['DATABASE_URL']==prod.get('DATABASE_URL')):
++        raise RuntimeError('Independent dev database configuration is required.')
++    conn=psycopg2.connect(conf['DATABASE_URL'],connect_timeout=5)
++    try:
++        with conn.cursor() as cur:
++            cur.execute("SET LOCAL lock_timeout='3s'; SET LOCAL statement_timeout='15s'")
++            cur.execute("SELECT count(*) FROM information_schema.tables WHERE table_schema='public'")
++            before=cur.fetchone()[0]
++            cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='user_research'")
++            existing={row[0] for row in cur.fetchall()}
++            if existing and existing != set(EXPECTED):
++                raise RuntimeError('Existing research schema differs; stop for review.')
++            if not apply:
++                conn.rollback()
++                return {'environment':environment,'mode':'preflight','existing_tables':sorted(existing),'public_tables':before}
++            cur.execute("SELECT pg_advisory_xact_lock(hashtextextended('meatcode:migration:0016',0))")
++            sql=(ROOT/'db/migrations/0016_user_research.sql').read_text()
++            body='\n'.join(line for line in sql.splitlines() if line.strip() not in ('BEGIN;','COMMIT;'))
++            cur.execute(body)
++            result=verify(cur)
++            cur.execute("SELECT count(*) FROM information_schema.tables WHERE table_schema='public'")
++            if cur.fetchone()[0]!=before:
++                raise RuntimeError('Scientific/public table inventory changed; rolled back.')
++        conn.commit()
++        return {'environment':environment,'mode':'applied',**result,'public_tables_unchanged':True}
++    except Exception:
++        conn.rollback()
++        raise
++    finally:
++        conn.close()
++
++
++if __name__=='__main__':
++    parser=argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--environment',choices=('dev','prod'),required=True)
++    parser.add_argument('--apply',action='store_true')
++    args=parser.parse_args()
++    try:
++        print(json.dumps(run(args.environment,args.apply)))
++    except Exception as exc:
++        # No connection string, SQL payload, row content or raw DB error in CLI output.
++        print(json.dumps({'ok':False,'error_type':type(exc).__name__,'action':'Migration stopped; no unverified transaction committed.'}))
++        sys.exit(1)
+--- /dev/null	
++++ b/pipeline/user_research/settings.py	
+@@ -0,0 +1,29 @@
++# Last updated: 2026-10-28 15:51 UTC · Data/Backend · explicit environment configuration, without printing secrets.
++"""CLI-only settings; .env.dev overlays non-empty values, matching the server."""
++from pathlib import Path
++import os
++
++ROOT = Path(__file__).resolve().parents[2]
++
++
++def settings(environment, environ=None, root=None):
++    if environment not in ('dev', 'prod'):
++        raise ValueError('environment must be dev or prod')
++    result = dict(os.environ if environ is None else environ)
++    # On Render, its private runtime configuration is authoritative. A leftover
++    # local dotenv file must never replace a dashboard-managed database or token.
++    if str(result.get('RENDER', '')).strip().lower() == 'true':
++        return result
++    root = Path(root) if root is not None else ROOT
++    for path in [root / '.env'] + ([root / '.env.dev'] if environment == 'dev' else []):
++        if not path.is_file():
++            continue
++        for raw in path.read_text().splitlines():
++            line = raw.strip()
++            if not line or line.startswith('#') or '=' not in line:
++                continue
++            key, value = line.split('=', 1)
++            value = value.strip().strip('\"\'')
++            if value:
++                result[key.strip()] = value
++    return result
+--- /dev/null	
++++ b/pipeline/user_research/verify.py	
+@@ -0,0 +1,44 @@
++# Last updated: 2026-10-28 15:51 UTC · Data/Backend · live rollback-only verification; no test rows committed.
++import argparse
++import importlib.util
++import json
++import os
++from pathlib import Path
++import sys
++import unittest
++
++from settings import ROOT, settings
++
++
++def run(environment):
++    conf=settings(environment)
++    if not conf.get('DATABASE_URL'):
++        raise RuntimeError('Research database is not configured.')
++    os.environ['USER_RESEARCH_TEST_DB_URL']=conf['DATABASE_URL']
++    spec=importlib.util.spec_from_file_location('test_user_research',ROOT/'tests/test_user_research.py')
++    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
++    suite=unittest.defaultTestLoader.loadTestsFromModule(module)
++    # Suppress full exception/SQL tracebacks so credentials/feedback never enter logs.
++    result=unittest.TestResult();suite.run(result)
++    import psycopg2
++    conn=psycopg2.connect(conf['DATABASE_URL'],connect_timeout=5)
++    try:
++        with conn.cursor() as cur:
++            counts={}
++            for table in ('sessions','events','feedback','withdrawals','clarity_exports'):
++                cur.execute('SELECT count(*) FROM user_research.'+table)
++                counts[table]=cur.fetchone()[0]
++        conn.rollback()
++    finally:conn.close()
++    return {'environment':environment,'tests':result.testsRun,'failures':len(result.failures),
++            'errors':len(result.errors),'skipped':len(result.skipped),'retained_rows':counts,
++            'ok':result.wasSuccessful()}
++
++
++if __name__=='__main__':
++    parser=argparse.ArgumentParser();parser.add_argument('--environment',required=True,choices=('dev','prod'))
++    args=parser.parse_args()
++    try:
++        report=run(args.environment);print(json.dumps(report));sys.exit(0 if report['ok'] else 1)
++    except Exception as exc:
++        print(json.dumps({'ok':False,'error_type':type(exc).__name__,'error_code':'rollback_verification_stopped'}));sys.exit(1)
+--- /dev/null	
++++ b/platform_docs/USER_RESEARCH_CLARITY.md	
+@@ -0,0 +1,108 @@
++# MeatCODE user testing — Clarity and first-party research storage
++
++_Last updated: 2026-10-28 15:50 UTC · Project Coordinator · initial integration and operations handoff; publication status below._
++
++## Current outcome
++
++The public Clarity project ID supplied by Lior is **z4upnrbddu**. The browser integration is built locally, alongside consent controls and explicit feedback. The additive `user_research` schema has been applied to both the dev and production Neon databases. Its records are separate from scientific evidence, entities, relations and embeddings. The existing scientific/public table inventory was verified unchanged.
++
++Application code is **not yet published**. Clarity is not claimed active on either hosted site by these local edits. The new release flag `user_testing` is enabled in the prepared dev/prod configuration, but the browser loads no SDK and sends no testing events until a tester explicitly opts in. `USER_RESEARCH_ENABLED=false` is an environment emergency stop; it overrides an enabled release flag. Missing database configuration also disables capture. Session deletion remains available when capture is disabled.
++
++Original production has a separate unresolved Claude credential problem. Fresh logs on28 October at12:39:19/22 UTC show 401 authentication_error invalid x-api-key. A key is present; its active value is rejected. The original service is [MeatCODE](https://dashboard.render.com/web/srv-d96ftplaeets73da7vng/env), serving meatcode-oracle.onrender.com; the working dev service is dev-meatCODE, serving meatcode.onrender.com. They do not share environment updates. The new source skips local dotenv files on Render so they cannot overwrite dashboard credentials; this does not make an invalid key valid and is not active until deployment.
++
++## How the bridge works
++
++```mermaid
++flowchart LR
++    T[Tester opts in] --> B[MeatCODE browser]
++    B -->|masked interactions and approved event names| C[Microsoft Clarity]
++    B -->|events and submitted feedback| A[Authenticated same-origin research API]
++    A --> N[(Neon user_research)]
++    C -->|dashboard summaries via manual import| N
++    C --> R[Recordings and heatmaps viewed in Clarity]
++```
++
++Clarity handles replay and heatmaps in its dashboard. Its documented Data Export API returns aggregate dashboard metrics, not a full download of raw recordings. Our importer accepts numeric metrics and Browser/Device/OS dimensions; it excludes URL/title/referrer metrics and arbitrary strings. **The shared-project export covers the whole Clarity project**, including both domains if both are recording. The export row's environment is the destination/import context, not proof of a filtered traffic cohort. Use the production importer as the single shared-project collection point; use Clarity's dashboard environment/scene tags to inspect individual cohorts. A separate project would be needed for fully independent exports.
++
++The first-party API receives only a random browser-tab session ID, random event IDs, allowed scene names, timing, source count and categorical outcomes. It does not receive prompts, answers, attachments, user names, emails, IP addresses or arbitrary JSON properties. Consent is tab-scoped; it does not identify a person across devices. No first-party session UUID is sent to Clarity as an identifier because it also acts as a deletion capability. Own feedback and Clarity recordings are not linked one-to-one by this release.
++
++A tester can submit a rating, category and optional comment using **Testing privacy**. Only that deliberately submitted comment is stored as first-party text. It is not forwarded as a Clarity event/tag. These comments are operational research input, not scientific evidence and not automatic model-training data.
++
++## What is stored and where to see it
++
++In Neon, select the intended database branch, open **Tables**, and choose the **user_research** schema:
++
++| Table | Contents |
++|---|---|
++| sessions | Anonymous tab ID, environment, consent version and timestamps |
++| events | Allowlisted navigation and Oracle lifecycle outcomes; optional duration/source count/error category |
++| feedback | Explicit rating, category and optional comment |
++| withdrawals | Minimal tombstone preventing queued requests from recreating a deleted session |
++| clarity_exports | Sanitized aggregate snapshots with project, capture window, status and import timestamp |
++
++No public endpoint lists sessions or comments. Shared scientific database backups exclude the research schema. Private JSONL exports cannot be downloaded through static GET/HEAD routes, including encoded paths, traversal and symlink aliases. PUBLIC has no schema/table grants; the configured application database role can write through the gated API. This is schema separation inside each existing database, not a new paid database or an independently credentialed storage service.
++
++Example read-only query in Neon SQL Editor:
++
++```sql
++SELECT environment, name, count(*) AS events
++FROM user_research.events
++WHERE created_at >= now() - interval '7 days'
++GROUP BY environment, name
++ORDER BY environment, name;
++
++SELECT created_at, environment, rating, category, comment
++FROM user_research.feedback
++ORDER BY created_at DESC
++LIMIT 100;
++```
++
++These are opt-in, best-effort browser measurements. Blockers, disconnections and disabled consent affect counts. HTTP200 alone is not an Oracle success: the client records SSE errors as failures and suppresses a later completion for the same failed turn. Source count is retrieval context, not answer-quality evidence. Feedback refers to the tester's experience/session, not a stored question/answer pair.
++
++## Activation and verification
++
++1. Reconcile the local checkout with current remote main before publication. The local checkout lacks newer Science/Ecosystem/guided Oracle work. Use the narrow reviewed patch package; do not replace newer remote files wholesale.
++2. Lior publishes through the repository's existing dev → staging → production Release Center workflow. The project ID is public configuration. No private export token is needed for browser recording.
++3. In Clarity project settings, enable **Consent Mode** for the intended regions and verify masking. The application also masks the whole body before loading the SDK, denies advertising storage, and does not load the SDK on routes with query parameters or unrecognized hashes. It will not load if an unmask override is present. See [ConsentV2](https://learn.microsoft.com/en-gb/clarity/setup-and-installation/clarity-consent-api-v2) and [masking](https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-api).
++4. On staging, decline testing first: no Clarity tag/collect requests or first-party events should occur. Then explicitly opt in, navigate between modules and submit one Oracle question and one feedback item. Verify the corresponding research rows and Clarity dashboard session/custom events. Actual recording delivery must be confirmed after publication; local browser fixtures do not prove it.
++5. Test **Stop testing & delete session data**. Our first-party session/events/feedback are deleted, pending requests cannot recreate them, and future collection stops. Deleting already-uploaded Microsoft recordings is separate and managed in Clarity; this action does not claim to erase Microsoft's copies.
++6. Verify production separately after promotion. Restore Claude with a valid key on the original production service, choose **Save and deploy**, and confirm a real signed-in answer. Health reports configuration presence only, not valid model authentication.
++
++## Aggregate import and maintenance
++
++The private Clarity export token is optional and must be placed in secure runtime/local configuration as `CLARITY_EXPORT_TOKEN`; never put it in chat, frontend code or committed files. Obtain it in Clarity **Settings → Data Export**. The current [Microsoft export limits](https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-data-export-api) are ten requests/project/day, the previous one to three days, at most three dimensions and 1,000 unpaginated rows. Our application guard is database-local; Microsoft's quota is project-wide, including other consumers.
++
++Manual preview, with no Microsoft request:
++
++```sh
++python3 pipeline/user_research/clarity_import.py --environment prod --days 1
++```
++
++Import when the token is securely configured and the project has real data:
++
++```sh
++python3 pipeline/user_research/clarity_import.py --environment prod --days 1 --apply
++```
++
++Export first-party testing records privately as JSONL (defaults under ignored data/user_research; optional explicit dates/output):
++
++```sh
++python3 pipeline/user_research/manage.py --environment prod export
++```
++
++Preview90-day cleanup, then apply it deliberately:
++
++```sh
++python3 pipeline/user_research/manage.py --environment prod purge
++python3 pipeline/user_research/manage.py --environment prod purge --apply
++```
++
++**No import or retention schedule was created.** Ninety days is the chosen policy; the maintenance command must be run or scheduled before promising automatic expiry. Database deletion does not delete separately downloaded exports; manage those under the same policy. Clarity controls retention of its own recordings independently.
++
++## Implementation and boundaries
++
++Browser: app/assets/user-research.js and small lifecycle hooks in app/meatcode_mockup.html. HTTP: server/research_http.py plus authenticated routing in server/meatcode_server.py. Storage: server/user_research.py and db/migrations/0016_user_research.sql. Operations: pipeline/user_research/. Plan: .telemetry/.
++
++The HTTP boundary rejects oversized/incorrectly framed bodies, unsupported fields, cross-origin requests and unexpected event types. It requires JSON, a custom same-origin header and the existing site gate; capture requests are bounded. Withdrawals are not blocked by the capture switch or capture-rate limit. Inserts are idempotent; transactional session locking and tombstones prevent deletion races. Errors returned to the browser contain no SQL or submitted text. No schema/read-all/administrative capability is exposed to testers.
++
++No model/key/provider change, Git/commit/promotion, hosted activation or paid model test was performed by the agents. No actual Clarity export was made without a token. See `platform_docs/user_research_2026-10-28/` for combined source checks, independent live schema checks, a local HTTP-to-Neon verification and the privacy-dialog screenshot. Both schemas currently contain zero research rows after test cleanup.
+--- a/server/meatcode_server.py	
++++ b/server/meatcode_server.py	
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env python3
+-# Last updated: 2026-10-25 20:45 UTC · Yochai (PM) with Claude · NEW GET /api/ecosystem/people (flag
++# Last updated: 2026-10-28 UTC · Full-Stack · opt-in research HTTP routes and Render-authoritative environment configuration.
+ #   `ecosystem_module`): the Ecosystem's people + papers LIVE from Neon via ecosystem.live_people(pg_rows)
+ #   (SELECT-only, 10-min cache); no DATABASE_URL or a DB error -> 503 and the page uses its labelled offline copy.
+ # Prev 2026-10-25 19:15 UTC · Yochai (PM) with Claude · Guided Oracle behind flag `oracle_guided`:
+@@ -259,6 +259,7 @@
+ import shutil, gzip, io, zipfile
+ from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
+ from urllib.parse import urlparse, parse_qs
++from urllib.request import Request, urlopen
+ 
+ # ─── Config ──────────────────────────────────────────────────────────
+ PORT       = int(os.environ.get("PORT", "8000"))  # cloud hosts (Render, etc.) inject $PORT; 8000 locally
+@@ -293,28 +294,28 @@
+ # ─── tiny .env loader (no python-dotenv needed) ──────────────────────
+ def load_dotenv(path, skip_empty=False):
+     if not path or not os.path.exists(path): return
+-    for line in open(path, encoding="utf-8"):
+-        line = line.strip()
+-        if not line or line.startswith("#") or "=" not in line: continue
+-        k, v = line.split("=", 1)
+-        k, v = k.strip(), v.strip().strip('"').strip("'")
+-        # A blank value in an OVERLAY file (e.g. an empty ANTHROPIC_API_KEY= in
+-        # .env.dev) must never wipe a real value already loaded from .env.
+-        if skip_empty and v == "": continue
+-        # .env is authoritative: overwrite any stale shell export (e.g. an old
+-        # ANTHROPIC_API_KEY left over from `export`), which setdefault would keep.
+-        os.environ[k] = v
+-
+-# .env at repo root first (the convention), then next to this script as fallback
+-load_dotenv(os.path.join(REPO_ROOT, ".env"))
+-load_dotenv(os.path.join(HERE, ".env"))
+-# Two-environment support. APP_ENV is set to "dev" by run-local.command and by the
+-# meatcode-dev Render service; anything else (incl. unset) means production. When dev,
+-# load .env.dev LAST so local dev runs use the DEV database + DEV key, never production.
+-# On Render, .env.dev isn't in the repo (gitignored) — the service's own dashboard env
+-# vars are used instead, so this line is a harmless no-op there.
++    with open(path, encoding="utf-8") as env_file:
++        for line in env_file:
++            line = line.strip()
++            if not line or line.startswith("#") or "=" not in line: continue
++            k, v = line.split("=", 1)
++            k, v = k.strip(), v.strip().strip('"').strip("'")
++            # A blank value in an OVERLAY file (e.g. an empty ANTHROPIC_API_KEY= in
++            # .env.dev) must never wipe a real value already loaded from .env.
++            if skip_empty and v == "": continue
++            # .env is authoritative: overwrite any stale shell export (e.g. an old
++            # ANTHROPIC_API_KEY left over from `export`), which setdefault would keep.
++            os.environ[k] = v
++
++# Render dashboard/linked-group variables are authoritative on hosted services.
++# Local dotenv overlays remain useful on the Mac, but a stale Render Secret File
++# named .env must never replace a dashboard credential or database URL.
++IS_RENDER = os.environ.get("RENDER") == "true"
++if not IS_RENDER:
++    load_dotenv(os.path.join(REPO_ROOT, ".env"))
++    load_dotenv(os.path.join(HERE, ".env"))
+ APP_ENV = os.environ.get("APP_ENV", "prod").strip().lower()
+-if APP_ENV == "dev":
++if APP_ENV == "dev" and not IS_RENDER:
+     load_dotenv(os.path.join(REPO_ROOT, ".env.dev"), skip_empty=True)
+ 
+ # ─── Feature flags (Release Center) ──────────────────────────────────
+@@ -368,7 +369,7 @@
+ FLAG_TEXT_FIELDS = ("label", "description", "kind", "added", "updated", "status",
+                     "destination", "url", "note")
+ FLAG_WHERE_FIELDS = ("screen", "spot", "file")
+-API_KEY = os.environ.get("ANTHROPIC_API_KEY")
++API_KEY = (os.environ.get("ANTHROPIC_API_KEY") or "").strip()
+ if not API_KEY:
+     sys.stderr.write(
+         "\nERROR: ANTHROPIC_API_KEY is not set.\n"
+@@ -492,6 +493,15 @@
+ except Exception as _e:                      # never let a missing/broken adapter stop the server
+     maillard_adapter = None
+     sys.stderr.write("[maillard] adapter unavailable: %s\n" % str(_e)[:200])
++
++# Opt-in user-research storage is isolated from the scientific knowledge layer.
++# Missing research modules never prevent Oracle or existing app routes starting.
++try:
++    import research_http
++    import user_research
++except ImportError:
++    research_http = None
++    user_research = None
+ 
+ # Papers browser logic (flag `papers_browser`) — pure stdlib; handed pg_rows at call time.
+ try:
+@@ -966,6 +976,8 @@
+         self.send_response(code)
+         self.send_header("Content-Type", "application/json")
+         self.send_header("Content-Length", str(len(body)))
++        if urlparse(self.path).path.startswith("/api/research/"):
++            self.send_header("Cache-Control", "no-store")
+         self.end_headers()
+         try:
+             self.wfile.write(body)
+@@ -984,6 +996,26 @@
+     def list_directory(self, path):
+         self.send_error(404, "Not found")
+         return None
++
++    def _private_research_path(self, path):
++        """Private CLI exports must never be downloadable through the shared site gate."""
++        try:
++            root = os.path.abspath(os.path.join(SERVE_DIR, "data", "user_research"))
++            translated = os.path.abspath(self.translate_path(path))
++            # Check both lexical and resolved boundaries: encoded/traversal paths and
++            # public symlink aliases cannot expose exports; private symlinks stay private.
++            pairs = ((root, translated), (os.path.realpath(root), os.path.realpath(translated)))
++            return any(os.path.commonpath((boundary, target)) == boundary
++                       for boundary, target in pairs)
++        except (OSError, ValueError):
++            return True
++
++    def send_head(self):
++        # Inherited HEAD serving bypasses do_GET; block export metadata there too.
++        if self._private_research_path(self.path):
++            self.send_error(404, "Not found")
++            return None
++        return super().send_head()
+ 
+     # ─── GET: /api/* handled here; everything else = static files ───
+     def do_GET(self):
+@@ -1026,10 +1058,18 @@
+         # any other path; the file already lives under app/dev/ and is served today.
+         if path in ("/analytics", "/analytics/"):
+             self.path = "/app/dev/analytics_workspace.html"
++        if self._private_research_path(self.path):
++            self.send_error(404, "Not found")
++            return
+         return super().do_GET()
+ 
+     def _handle_api_get(self, path):
+         qs = parse_qs(urlparse(self.path).query)
++        if path.startswith("/api/research/"):
++            if research_http is None:
++                return self._send_json({"error": "Research service unavailable."}, 503)
++            return research_http.handle(self, "GET", path, user_research, DATABASE_URL,
++                                        APP_ENV, os.environ, _flag_on("user_testing"))
+         if path == "/api/health":
+             # Superset shape: `db`/`ok` kept for back-compat; `db_ok`/`has_anthropic_key`
+             # are what app/templates/meatcode-api.js reads for its status chip.
+@@ -1038,6 +1078,7 @@
+                 "db": bool(DATABASE_URL),
+                 "db_ok": bool(DATABASE_URL),
+                 "has_anthropic_key": bool(API_KEY),
++                "checks": {"database": "configuration_only", "anthropic": "configuration_only"},
+                 "model": MODEL,
+             })
+         if path == "/api/flags":
+@@ -1084,6 +1125,34 @@
+                                "retryable": False}}, 404)
+             body, code = view
+             return self._send_json(body, code)
++        if path == "/api/release/status":
++            # Compare saved flags with the public live build.
++            # Same local-only gate as release controls. Fixed public URL, no credentials
++            # forwarded and no caller-controlled URL (not an authenticated HTTP proxy).
++            if not self._local_admin_ok():
++                return self._send_json({"error": "not found"}, 404)
++            target = "https://meatcode-oracle.onrender.com/api/version"
++            checked_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
++            try:
++                request = Request(target, headers={"Accept": "application/json"})
++                with urlopen(request, timeout=8) as response:
++                    raw = response.read(65537)
++                if len(raw) > 65536:
++                    raise ValueError("version response too large")
++                live = json.loads(raw)
++                if not isinstance(live, dict) or live.get("env") != "prod":
++                    raise ValueError("unexpected production version response")
++                allowed = ("service", "env", "commit", "commit_full", "branch", "server_started_utc", "model")
++                version = {key: live[key] for key in allowed if key in live}
++                published = live.get("feature_flags")
++                if isinstance(published, dict):
++                    version["feature_flags"] = {key: value for key, value in published.items()
++                                                 if isinstance(value, bool)}
++                return self._send_json({"ok": True, "url": target, "checked_at": checked_at,
++                                        "production": version})
++            except Exception:
++                return self._send_json({"ok": False, "url": target, "checked_at": checked_at,
++                                        "error": "Live production could not be checked. Saved switches are unchanged."}, 502)
+         if path == "/api/release/history":
+             # Promoted snapshots + which is live. READ-ONLY, so it's also visible on the
+             # hosted DEV site (powers app/dev/versions.html); production keeps the 404.
+@@ -1104,6 +1173,8 @@
+                 "server_started_utc": STARTED_AT,
+                 "model": MODEL,
+                 "password_gate": bool(SITE_PASSWORD),
++                "feature_flags": {key: bool(value.get(APP_ENV, False))
++                                  for key, value in load_flags().items()},
+                 "features": {
+                     "sse_status_event": True,        # "Digging the MeatCODE database" phase
+                     "vendor_neutral_errors": True,   # no model name in user-facing errors
+@@ -1820,12 +1891,15 @@
+              every row of real data, no DDL. Used only when `pg_dump` isn't installed; the
+              zip's README says so explicitly, same honesty convention as everywhere else in
+              this file (never silently pass off a partial artifact as the full thing).
++        Private user_research data is excluded from this shared scientific-data backup;
++        its authorized research export has a separate server-side CLI.
+         Never a 500 — DB/tooling failures degrade to a clear 503."""
+         stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d_%H%M")
+         if shutil.which("pg_dump"):
+             try:
+                 dump = subprocess.run(
+-                    ["pg_dump", DATABASE_URL, "--no-owner", "--no-privileges", "--format=plain"],
++                    ["pg_dump", DATABASE_URL, "--no-owner", "--no-privileges", "--format=plain",
++                     "--exclude-schema=user_research"],
+                     capture_output=True, timeout=120,
+                 )
+                 if dump.returncode != 0 or not dump.stdout:
+@@ -1852,7 +1926,7 @@
+                         "MeatCODE Neon data export — DATA ONLY.\n"
+                         "The pg_dump binary was not available on this host, so schema DDL, "
+                         "indexes, constraints, and sequences are NOT included here — only "
+-                        "every row of every table, one CSV per table.\n"
++                        "every row of every public table, one CSV per table; private user research is excluded.\n"
+                         "Taken (UTC): %s\nTables: %d\n" % (stamp, len(tables)))
+                     with conn.cursor() as cur:
+                         for t in tables:
+@@ -2223,6 +2297,12 @@
+             return self._handle_admin_post(path)
+         if not self._authorized():
+             return self._deny()
++        if path.startswith("/api/research/"):
++            if research_http is None:
++                self.close_connection = True
++                return self._send_json({"error": "Research service unavailable."}, 503)
++            return research_http.handle(self, "POST", path, user_research, DATABASE_URL,
++                                        APP_ENV, os.environ, _flag_on("user_testing"))
+         # ── Maillard simulator submit (flag-gated) — thin same-origin proxy so the browser
+         #    never talks to the separate simulator service directly (no CORS, no 2nd credential). ──
+         if path == "/api/simulate":
+--- /dev/null	
++++ b/server/research_http.py	
+@@ -0,0 +1,184 @@
++# Last updated: 2026-10-28 UTC · Full-Stack · bounded same-origin HTTP boundary for opt-in user research.
++"""HTTP glue only. The caller MUST apply its existing site-password gate first.
++
++Storage and consent validation live in user_research. No model client, database
++connection, credentials, IP tracking or application bootstrap is imported here.
++"""
++from collections import deque
++import json
++import re
++import socket
++import threading
++import time
++from urllib.parse import urlsplit
++
++MAX_BODY_BYTES = 16384
++CAPTURE_LIMIT = 120
++CAPTURE_WINDOW_SECONDS = 60
++READ_TIMEOUT_SECONDS = 5
++_captures = deque()
++_capture_lock = threading.Lock()
++_FALSE_VALUES = frozenset(("false", "0", "off", "no"))
++_POST_ROUTES = {
++    "/api/research/events": "write_events",
++    "/api/research/feedback": "write_feedback",
++    "/api/research/withdraw": "withdraw",
++}
++
++
++def effective_config(module, environ, app_env, flag_enabled, database_url):
++    """The Release Center flag opts in; the environment can always disable it."""
++    settings = dict(environ)
++    disabled = str(settings.get("USER_RESEARCH_ENABLED", "")).strip().lower() in _FALSE_VALUES
++    enabled = bool(flag_enabled and database_url and not disabled)
++    settings["USER_RESEARCH_ENABLED"] = "1" if enabled else "0"
++    raw = module.config(settings, app_env)
++    # Explicit allowlist: never return storage URLs, admin tokens or future private fields.
++    return {
++        "enabled": bool(enabled and raw.get("enabled")),
++        "environment": raw["environment"],
++        "clarity_project_id": raw["clarity_project_id"],
++        "consent_version": raw["consent_version"],
++        "retention_days": raw["retention_days"],
++    }
++
++
++def _reply(handler, body, status=200):
++    content = json.dumps(body, ensure_ascii=False).encode("utf-8")
++    handler.send_response(status)
++    handler.send_header("Content-Type", "application/json; charset=utf-8")
++    handler.send_header("Cache-Control", "no-store")
++    handler.send_header("Content-Length", str(len(content)))
++    if handler.close_connection:
++        handler.send_header("Connection", "close")
++    handler.end_headers()
++    try:
++        handler.wfile.write(content)
++    except (BrokenPipeError, ConnectionResetError):
++        pass
++
++
++def _error(handler, status, code, message, close=False):
++    if close:
++        handler.close_connection = True
++    return _reply(handler, {"ok": False, "error": {"code": code, "message": message}}, status)
++
++
++def _single_header(headers, name):
++    values = headers.get_all(name) if hasattr(headers, "get_all") else None
++    if values is not None:
++        return values[0] if len(values) == 1 else None
++    return headers.get(name)
++
++
++def _same_origin(headers):
++    origin = _single_header(headers, "Origin")
++    host = _single_header(headers, "Host")
++    site = _single_header(headers, "Sec-Fetch-Site")
++    if site is not None and site not in ("same-origin", "none"):
++        return False
++    if not origin or not host or any(not 33 <= ord(c) <= 126 for c in origin + host):
++        return False
++    if "?" in origin or "#" in origin:
++        return False
++    if hasattr(headers, "get_all") and len(headers.get_all("Sec-Fetch-Site", [])) > 1:
++        return False
++    try:
++        parsed = urlsplit(origin)
++        # Accessing port also validates its numeric range. Do not trust forwarded hosts.
++        parsed.port
++        return (parsed.scheme in ("http", "https") and bool(parsed.hostname)
++                and parsed.username is None and parsed.password is None
++                and not parsed.path and not parsed.query and not parsed.fragment
++                and parsed.netloc.lower() == host.lower())
++    except ValueError:
++        return False
++
++
++def _capture_allowed():
++    now = time.monotonic()
++    with _capture_lock:
++        while _captures and now - _captures[0] >= CAPTURE_WINDOW_SECONDS:
++            _captures.popleft()
++        if len(_captures) >= CAPTURE_LIMIT:
++            return False
++        _captures.append(now)
++        return True
++
++
++def _read_payload(handler, withdrawal=False):
++    headers = handler.headers
++    if "Transfer-Encoding" in headers:
++        return None, (400, "invalid_framing", "Transfer encoding is not supported.")
++    length = _single_header(headers, "Content-Length")
++    if length is None:
++        return None, (411, "length_required", "A single Content-Length is required.")
++    if not re.fullmatch(r"[0-9]{1,10}", length):
++        return None, (400, "invalid_length", "Content-Length must be a positive integer.")
++    length = int(length)
++    if length <= 0:
++        return None, (400, "invalid_length", "Content-Length must be a positive integer.")
++    if length > MAX_BODY_BYTES:
++        return None, (413, "body_too_large", "Research request exceeds the size limit.")
++    content_type = _single_header(headers, "Content-Type") or ""
++    if content_type.split(";", 1)[0].strip().lower() != "application/json":
++        return None, (415, "json_required", "Research requests must use application/json.")
++    if _single_header(headers, "X-MeatCODE-Research") != "1" or not _same_origin(headers):
++        return None, (403, "same_origin_required", "Research requests must come from this platform.")
++    if not withdrawal and not _capture_allowed():
++        return None, (429, "research_rate_limited", "Research requests are temporarily limited. Please retry later.")
++    connection = getattr(handler, "connection", None)
++    previous_timeout = None
++    try:
++        if connection is not None:
++            previous_timeout = connection.gettimeout()
++            connection.settimeout(READ_TIMEOUT_SECONDS)
++        raw = handler.rfile.read(length)
++        if len(raw) != length:
++            return None, (400, "invalid_json", "Research request is not valid JSON.")
++        payload = json.loads(raw.decode("utf-8"))
++        if not isinstance(payload, dict):
++            return None, (400, "invalid_json", "Research request must be a JSON object.")
++        return payload, None
++    except (ValueError, RecursionError, OSError, socket.timeout):
++        return None, (400, "invalid_json", "Research request is not valid JSON.")
++    finally:
++        if connection is not None:
++            try:
++                connection.settimeout(previous_timeout)
++            except OSError:
++                pass
++
++
++def handle(handler, method, path, module, database_url, app_env, environ, flag_enabled):
++    """Serve only the public config and three bounded write routes after site auth."""
++    if method == "GET" and path == "/api/research/config":
++        if module is None:
++            return _error(handler, 503, "research_unavailable", "Research settings are temporarily unavailable.")
++        try:
++            return _reply(handler, effective_config(module, environ, app_env, flag_enabled, database_url))
++        except Exception:
++            return _error(handler, 503, "research_unavailable", "Research settings are temporarily unavailable.")
++    if method != "POST" or path not in _POST_ROUTES:
++        return _error(handler, 404, "not_found", "Research endpoint not found.", close=method == "POST")
++    if module is None:
++        return _error(handler, 503, "research_unavailable", "Research storage is temporarily unavailable.", close=True)
++    try:
++        enabled = effective_config(module, environ, app_env, flag_enabled, database_url)["enabled"]
++    except Exception:
++        return _error(handler, 503, "research_unavailable", "Research settings are temporarily unavailable.", close=True)
++    if path != "/api/research/withdraw" and not enabled:
++        return _error(handler, 404, "research_disabled", "Research capture is disabled.", close=True)
++    payload, error = _read_payload(handler, withdrawal=path == "/api/research/withdraw")
++    if error:
++        return _error(handler, *error, close=True)
++    try:
++        result = getattr(module, _POST_ROUTES[path])(database_url, app_env, payload)
++        return _reply(handler, result)
++    except module.InputError:
++        return _error(handler, 400, "invalid_research_input", "Research input is invalid.")
++    except module.WithdrawnError:
++        return _error(handler, 410, "research_session_withdrawn", "This research session was withdrawn.")
++    except Exception:
++        # Includes StorageError and unexpected failures. Never disclose SQL, user text or secrets.
++        return _error(handler, 503, "research_storage_unavailable", "Research storage is temporarily unavailable.")
+--- /dev/null	
++++ b/server/user_research.py	
+@@ -0,0 +1,221 @@
++# Last updated: 2026-10-28 15:51 UTC · Data/Backend · consent-gated typed research events, feedback and withdrawal.
++"""Private server-side storage; callers own HTTP auth, Origin checks and feature gating.
++
++No prompts, answers, URLs, emails, IP addresses, user agents or arbitrary properties
++are accepted. UUIDv4 session IDs are bearer capabilities: do not expose/list them.
++"""
++from contextlib import contextmanager
++import json
++import re
++import uuid
++
++CONSENT_VERSION = '2026-10-28'
++RETENTION_DAYS = 90
++EVENT_NAMES = frozenset(('session.started','scene.viewed','oracle.submitted','oracle.completed',
++                         'oracle.failed','feedback.submitted'))
++SCENES = frozenset(('oracle','research','science','ecosystem','simulate','analytics',
++                    'database','map','papers','dev','other'))
++ERROR_CODES = frozenset(('network','model_unavailable','session_expired','unknown'))
++
++
++class InputError(ValueError):
++    code = 'invalid_research_input'
++    status = 400
++
++
++class StorageError(Exception):
++    code = 'research_storage_unavailable'
++    status = 503
++
++    def __init__(self):
++        super().__init__('Research storage is temporarily unavailable.')
++
++
++class WithdrawnError(Exception):
++    code = 'research_session_withdrawn'
++    status = 410
++
++    def __init__(self):
++        super().__init__('This research session was withdrawn.')
++
++
++def _environment(value):
++    if value not in ('dev', 'prod'):
++        raise InputError('environment must be dev or prod')
++    return value
++
++
++def config(environ, app_env):
++    project = str(environ.get('CLARITY_PROJECT_ID', 'z4upnrbddu')).strip()
++    if not re.fullmatch(r'[a-zA-Z0-9]{1,32}', project):
++        project = ''
++    return {'enabled': str(environ.get('USER_RESEARCH_ENABLED', '')).strip().lower() in ('1','true','yes','on'),
++            'environment': _environment(app_env), 'clarity_project_id': project,
++            'consent_version': CONSENT_VERSION, 'retention_days': RETENTION_DAYS}
++
++
++def _object(value, allowed, required):
++    if not isinstance(value, dict) or set(value) - set(allowed) or set(required) - set(value):
++        raise InputError('Missing or unexpected research fields.')
++    try:
++        if len(json.dumps(value, ensure_ascii=False).encode('utf-8')) > 32768:
++            raise InputError('Research payload is too large.')
++    except (TypeError, ValueError, RecursionError) as exc:
++        if isinstance(exc, InputError):
++            raise
++        raise InputError('Research input must be plain JSON.') from None
++    return value
++
++
++def _uuid(value):
++    if not isinstance(value, str):
++        raise InputError('Research identifiers must be UUIDv4 strings.')
++    try:
++        parsed = uuid.UUID(value)
++    except (ValueError, AttributeError):
++        raise InputError('Research identifiers must be UUIDv4 strings.') from None
++    if parsed.version != 4 or str(parsed) != value.lower():
++        raise InputError('Research identifiers must be UUIDv4 strings.')
++    return str(parsed)
++
++
++def _consent(payload):
++    if payload.get('consent') is not True or payload.get('consent_version') != CONSENT_VERSION:
++        raise InputError('Current explicit research consent is required.')
++    return _uuid(payload.get('session_id'))
++
++
++def _choice(value, values):
++    if not isinstance(value, str) or value not in values:
++        raise InputError('Research selection is not supported.')
++    return value
++
++
++def validate_events(payload):
++    _object(payload, ('session_id','consent','consent_version','events'),
++            ('session_id','consent','consent_version','events'))
++    session_id = _consent(payload)
++    events = payload['events']
++    if not isinstance(events, list) or not 1 <= len(events) <= 20:
++        raise InputError('Send between one and twenty research events.')
++    result = []
++    for event in events:
++        _object(event, ('event_id','name','scene','properties'), ('event_id','name','scene'))
++        properties = _object(event.get('properties', {}), ('duration_ms','error_code','source_count'), ())
++        for key, maximum in (('duration_ms',3600000),('source_count',1000)):
++            if key in properties and (type(properties[key]) is not int or not 0 <= properties[key] <= maximum):
++                raise InputError('Research numeric property is outside the supported range.')
++        if 'error_code' in properties:
++            _choice(properties['error_code'], ERROR_CODES)
++        result.append({'event_id': _uuid(event['event_id']), 'name': _choice(event['name'], EVENT_NAMES),
++                       'scene': _choice(event['scene'], SCENES), **properties})
++    return session_id, result
++
++
++def validate_feedback(payload):
++    _object(payload, ('session_id','event_id','consent','consent_version','rating','category','comment'),
++            ('session_id','event_id','consent','consent_version','rating','category'))
++    session_id = _consent(payload)
++    comment = payload.get('comment', '')
++    if not isinstance(comment, str) or len(comment) > 2000 or any(ord(c) < 32 and c not in '\n\r\t' for c in comment):
++        raise InputError('Feedback comment must be text of at most 2000 characters.')
++    return session_id, {'event_id':_uuid(payload['event_id']),
++                        'rating':_choice(payload['rating'], ('helpful','neutral','unhelpful')),
++                        'category':_choice(payload['category'], ('answer','usability','bug','other')),
++                        'comment':comment}
++
++
++@contextmanager
++def transaction(db_url):
++    conn = None
++    try:
++        if not db_url:
++            raise StorageError()
++        import psycopg2
++        conn = psycopg2.connect(db_url, connect_timeout=5)
++        with conn.cursor() as cur:
++            cur.execute("SET LOCAL statement_timeout = '6s'")
++            cur.execute("SET LOCAL lock_timeout = '3s'")
++            yield cur
++        conn.commit()
++    except (InputError, WithdrawnError):
++        if conn is not None:
++            conn.rollback()
++        raise
++    except Exception:
++        if conn is not None:
++            conn.rollback()
++        raise StorageError() from None
++    finally:
++        if conn is not None:
++            conn.close()
++
++
++def _lock_session(cur, environment, session_id):
++    # Same transaction-scoped lock for every write AND withdrawal prevents late
++    # queued events from resurrecting deleted sessions. No process-local lock.
++    cur.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,0))',
++                ('user_research:'+environment+':'+session_id,))
++
++
++def _session(cur, environment, session_id):
++    _lock_session(cur, environment, session_id)
++    cur.execute('SELECT 1 FROM user_research.withdrawals WHERE session_id=%s AND environment=%s',
++                (session_id, environment))
++    if cur.fetchone():
++        raise WithdrawnError()
++    cur.execute('''INSERT INTO user_research.sessions(session_id,environment,consent_version)
++                   VALUES(%s,%s,%s) ON CONFLICT(session_id,environment)
++                   DO UPDATE SET last_seen_at=now()''', (session_id,environment,CONSENT_VERSION))
++
++
++def _write_events(cur, environment, session_id, events):
++    _session(cur, environment, session_id)
++    accepted = 0
++    for event in events:
++        cur.execute('''INSERT INTO user_research.events
++                       (event_id,environment,session_id,name,scene,duration_ms,error_code,source_count)
++                       VALUES(%s,%s,%s,%s,%s,%s,%s,%s)
++                       ON CONFLICT(event_id,environment) DO NOTHING''',
++                    (event['event_id'], environment, session_id, event['name'], event['scene'],
++                     event.get('duration_ms'),event.get('error_code'),event.get('source_count')))
++        accepted += cur.rowcount
++    return {'ok':True,'session_id':session_id,'accepted':accepted,'duplicate':len(events)-accepted}
++
++
++def write_events(db_url, app_env, payload):
++    environment = _environment(app_env)
++    session_id, events = validate_events(payload)
++    with transaction(db_url) as cur:
++        return _write_events(cur, environment, session_id, events)
++
++
++def _write_feedback(cur, environment, session_id, feedback):
++    _session(cur, environment, session_id)
++    cur.execute('''INSERT INTO user_research.feedback(event_id,environment,session_id,rating,category,comment)
++                   VALUES(%s,%s,%s,%s,%s,%s) ON CONFLICT(event_id,environment) DO NOTHING''',
++                (feedback['event_id'],environment,session_id,feedback['rating'],feedback['category'],feedback['comment']))
++    accepted = cur.rowcount
++    return {'ok':True,'session_id':session_id,'accepted':accepted,'duplicate':1-accepted}
++
++
++def write_feedback(db_url, app_env, payload):
++    environment = _environment(app_env)
++    session_id, feedback = validate_feedback(payload)
++    with transaction(db_url) as cur:
++        return _write_feedback(cur, environment, session_id, feedback)
++
++
++def _withdraw(cur, environment, session_id):
++    _lock_session(cur, environment, session_id)
++    cur.execute('''INSERT INTO user_research.withdrawals(session_id,environment) VALUES(%s,%s)
++                   ON CONFLICT(session_id,environment) DO NOTHING''',(session_id,environment))
++    cur.execute('DELETE FROM user_research.sessions WHERE session_id=%s AND environment=%s',(session_id,environment))
++    return {'ok':True,'withdrawn':True,'session_id':session_id}
++
++
++def withdraw(db_url, app_env, payload):
++    _object(payload, ('session_id',), ('session_id',))
++    session_id, environment = _uuid(payload['session_id']), _environment(app_env)
++    with transaction(db_url) as cur:
++        return _withdraw(cur, environment, session_id)
+--- /dev/null	
++++ b/tests/test_render_environment_precedence.py	
+@@ -0,0 +1,73 @@
++# Last updated: 2026-10-28 UTC · Full-Stack · isolate dotenv loading without bootstrapping server or model clients.
++import ast
++import os
++from pathlib import Path
++import tempfile
++import unittest
++from unittest.mock import patch
++
++
++class RenderEnvironmentTests(unittest.TestCase):
++    def load(self, source, environ, root_key="root-key", server_key="server-key", dev_key="dev-key"):
++        tree = ast.parse(source)
++        start = next(i for i, n in enumerate(tree.body) if isinstance(n, ast.FunctionDef) and n.name == "load_dotenv")
++        end = next(i for i, n in enumerate(tree.body) if isinstance(n, ast.Assign)
++                   and any(isinstance(t, ast.Name) and t.id == "_resolve_cache" for t in n.targets))
++        loader = ast.Module(body=tree.body[start:end], type_ignores=[])
++        with tempfile.TemporaryDirectory() as folder:
++            root = Path(folder)
++            (root / "server").mkdir()
++            for file, key, db in ((root / ".env", root_key, "root-db"),
++                                  (root / "server/.env", server_key, "server-db"),
++                                  (root / ".env.dev", dev_key, "dev-db")):
++                file.write_text("ANTHROPIC_API_KEY=" + key + "\nDATABASE_URL=" + db + "\n")
++            ns = {"os": os, "REPO_ROOT": str(root), "HERE": str(root / "server")}
++            with patch.dict(os.environ, environ, clear=True):
++                exec(compile(loader, "<isolated-dotenv>", "exec"), ns)
++                result = dict(os.environ)
++            return result, ns
++
++    def test_render_env_wins_over_every_dotenv_in_prod_and_dev(self):
++        source = Path("server/meatcode_server.py").read_text()
++        for environment in ("prod", "dev"):
++            result, ns = self.load(source, {"RENDER": "true", "APP_ENV": environment,
++                                          "ANTHROPIC_API_KEY": "dashboard-key", "DATABASE_URL": "dashboard-db"})
++            self.assertEqual(result["ANTHROPIC_API_KEY"], "dashboard-key")
++            self.assertEqual(result["DATABASE_URL"], "dashboard-db")
++            self.assertTrue(ns["IS_RENDER"])
++            self.assertEqual(ns["APP_ENV"], environment)
++
++    def test_render_missing_key_is_not_filled_from_stale_secret_file(self):
++        result, _ = self.load(Path("server/meatcode_server.py").read_text(), {"RENDER": "true"})
++        self.assertNotIn("ANTHROPIC_API_KEY", result)
++        self.assertNotIn("DATABASE_URL", result)
++
++    def test_local_prod_preserves_root_then_server_fallback(self):
++        result, ns = self.load(Path("server/meatcode_server.py").read_text(), {"ANTHROPIC_API_KEY": "stale-shell"})
++        self.assertEqual(result["ANTHROPIC_API_KEY"], "server-key")
++        self.assertEqual(result["DATABASE_URL"], "server-db")
++        self.assertEqual(ns["APP_ENV"], "prod")
++        self.assertFalse(ns["IS_RENDER"])
++
++    def test_local_dev_overlay_preserved_and_blank_key_does_not_erase(self):
++        source = Path("server/meatcode_server.py").read_text()
++        result, _ = self.load(source, {"APP_ENV": "dev"})
++        self.assertEqual(result["ANTHROPIC_API_KEY"], "dev-key")
++        self.assertEqual(result["DATABASE_URL"], "dev-db")
++        result, _ = self.load(source, {"APP_ENV": "dev"}, dev_key="")
++        self.assertEqual(result["ANTHROPIC_API_KEY"], "server-key")
++        self.assertEqual(result["DATABASE_URL"], "dev-db")
++
++    def test_api_key_outer_whitespace_trim_without_importing_client(self):
++        tree = ast.parse(Path("server/meatcode_server.py").read_text())
++        assignment = next(n for n in tree.body if isinstance(n, ast.Assign)
++                          and any(isinstance(t, ast.Name) and t.id == "API_KEY" for t in n.targets))
++        module = ast.Module(body=[assignment], type_ignores=[])
++        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "  dummy-key \n"}, clear=True):
++            ns = {"os": os}
++            exec(compile(module, "<isolated-key-normalization>", "exec"), ns)
++            self.assertEqual(ns["API_KEY"], "dummy-key")
++
++
++if __name__ == "__main__":
++    unittest.main()
+--- /dev/null	
++++ b/tests/test_research_http.py	
+@@ -0,0 +1,322 @@
++# Last updated: 2026-10-28 UTC · Full-Stack · request-boundary, consent-switch and safe-error regression checks.
++import ast
++import datetime
++from email.message import Message
++import gzip
++from http.server import SimpleHTTPRequestHandler
++import io
++import json
++import os
++from pathlib import Path
++import tempfile
++from types import SimpleNamespace
++import unittest
++from unittest.mock import patch
++from urllib.parse import urlparse
++
++from server import research_http
++
++
++class InputError(ValueError):
++    status, code = 400, "invalid_research_input"
++
++
++class WithdrawnError(Exception):
++    status, code = 410, "research_session_withdrawn"
++
++
++class StorageError(Exception):
++    status, code = 503, "research_storage_unavailable"
++
++
++class FakeResearch:
++    InputError, WithdrawnError, StorageError = InputError, WithdrawnError, StorageError
++
++    def __init__(self):
++        self.calls = []
++        self.error = None
++
++    def config(self, env, app_env):
++        return {"enabled": env.get("USER_RESEARCH_ENABLED") == "1", "environment": app_env,
++                "clarity_project_id": "z4upnrbddu", "consent_version": "2026-10-28",
++                "retention_days": 90, "private_token": "must-not-be-returned"}
++
++    def _write(self, name, db, env, payload):
++        self.calls.append((name, db, env, payload))
++        if self.error:
++            raise self.error
++        return {"ok": True}
++
++    def write_events(self, *args):
++        return self._write("events", *args)
++
++    def write_feedback(self, *args):
++        return self._write("feedback", *args)
++
++    def withdraw(self, *args):
++        return self._write("withdraw", *args)
++
++
++class ReadSpy(io.BytesIO):
++    reads = 0
++
++    def read(self, *args):
++        self.reads += 1
++        return super().read(*args)
++
++
++class Handler:
++    def __init__(self, path="/api/research/events", body=b"{}", headers=None):
++        self.path = path
++        self.headers = Message()
++        defaults = {"Host": "example.test", "Origin": "https://example.test",
++                    "Sec-Fetch-Site": "same-origin", "X-MeatCODE-Research": "1",
++                    "Content-Type": "application/json", "Content-Length": str(len(body))}
++        if headers:
++            defaults.update(headers)
++        for k, v in defaults.items():
++            if v is not None:
++                self.headers[k] = v
++        self.rfile, self.wfile = ReadSpy(body), io.BytesIO()
++        self.close_connection = False
++        self.response_headers = {}
++        self.status = None
++
++    def send_response(self, code):
++        self.status = code
++
++    def send_header(self, key, value):
++        self.response_headers[key] = value
++
++    def end_headers(self):
++        pass
++
++    def result(self):
++        return json.loads(self.wfile.getvalue())
++
++
++class ResearchHTTPTests(unittest.TestCase):
++    def setUp(self):
++        self.module = FakeResearch()
++        with research_http._capture_lock:
++            research_http._captures.clear()
++
++    def call(self, handler=None, method="POST", path=None, db="configured-db", env=None, flag=True, module=True):
++        h = handler or Handler()
++        research_http.handle(h, method, path or h.path, self.module if module else None,
++                             db, "prod", env or {}, flag)
++        return h
++
++    def test_config_has_public_fields_only_and_no_store(self):
++        h = self.call(Handler("/api/research/config"), method="GET", env={"CLARITY_EXPORT_TOKEN": "secret"})
++        self.assertEqual(h.status, 200)
++        self.assertEqual(set(h.result()), {"enabled", "environment", "clarity_project_id", "consent_version", "retention_days"})
++        self.assertTrue(h.result()["enabled"])
++        self.assertEqual(h.response_headers["Cache-Control"], "no-store")
++        self.assertEqual(h.rfile.reads, 0)
++
++    def test_effective_switch_and_database_required(self):
++        for env, flag, db, expected in [({}, True, "db", True), ({}, False, "db", False),
++                                        ({}, True, "", False), ({"USER_RESEARCH_ENABLED": "1"}, False, "db", False)]:
++            with self.subTest(env=env, flag=flag, db=db):
++                h = self.call(Handler("/api/research/config"), method="GET", env=env, flag=flag, db=db)
++                self.assertEqual(h.result()["enabled"], expected)
++        for value in ("false", "0", "off", "no", " FALSE "):
++            h = self.call(env={"USER_RESEARCH_ENABLED": value})
++            self.assertEqual(h.status, 404)
++            self.assertEqual(h.rfile.reads, 0)
++
++    def test_withdrawal_stays_available_when_capture_off(self):
++        h = self.call(Handler("/api/research/withdraw"), env={"USER_RESEARCH_ENABLED": "false"}, flag=False)
++        self.assertEqual(h.status, 200)
++        self.assertEqual(self.module.calls[0][0], "withdraw")
++
++    def test_event_and_feedback_dispatch(self):
++        for route, name in (("events", "events"), ("feedback", "feedback")):
++            h = self.call(Handler("/api/research/" + route))
++            self.assertEqual(h.status, 200)
++            self.assertEqual(self.module.calls[-1], (name, "configured-db", "prod", {}))
++            self.assertEqual(h.response_headers["Cache-Control"], "no-store")
++
++    def test_length_checks_precede_body_read(self):
++        for length, expected in ((None, 411), ("0", 400), ("-1", 400), ("+2", 400),
++                                 ("1.5", 400), ("2, 2", 400), ("16385", 413), ("9999999999", 413)):
++            with self.subTest(length=length):
++                h = self.call(Handler(headers={"Content-Length": length}))
++                self.assertEqual(h.status, expected)
++                self.assertEqual(h.rfile.reads, 0)
++                self.assertTrue(h.close_connection)
++                self.assertEqual(h.response_headers["Connection"], "close")
++
++    def test_duplicate_content_length_is_rejected_without_read(self):
++        h = Handler()
++        h.headers["Content-Length"] = "2"
++        self.call(h)
++        self.assertEqual(h.status, 411)
++        self.assertEqual(h.rfile.reads, 0)
++
++    def test_maximum_sized_body_is_accepted(self):
++        body = b'{"padding":"' + b"a" * (research_http.MAX_BODY_BYTES - 14) + b'"}'
++        self.assertEqual(len(body), research_http.MAX_BODY_BYTES)
++        self.assertEqual(self.call(Handler(body=body)).status, 200)
++
++    def test_transfer_encoding_is_always_rejected(self):
++        for encoding in ("chunked", "identity", ""):
++            h = self.call(Handler(headers={"Transfer-Encoding": encoding}))
++            self.assertEqual(h.status, 400)
++            self.assertEqual(h.rfile.reads, 0)
++
++    def test_content_type_and_required_custom_header(self):
++        for headers, expected in (({"Content-Type": "text/plain"}, 415),
++                                  ({"Content-Type": None}, 415),
++                                  ({"X-MeatCODE-Research": None}, 403),
++                                  ({"X-MeatCODE-Research": "true"}, 403)):
++            h = self.call(Handler(headers=headers))
++            self.assertEqual(h.status, expected)
++            self.assertEqual(h.rfile.reads, 0)
++        self.assertEqual(self.call(Handler(headers={"Content-Type": "application/json; charset=utf-8"})).status, 200)
++
++    def test_origin_and_fetch_metadata_are_strict(self):
++        invalid = (None, "null", "https://other.test", "https://example.test/", "https://example.test?",
++                   "https://example.test#", "https://user@example.test", "https://u:p@example.test",
++                   "ftp://example.test", "https://example.test:443", "https://example.test/path",
++                   "https://example.test?q=x", "https://example.test#x", "\x00https://example.test")
++        for origin in invalid:
++            with self.subTest(origin=origin):
++                h = self.call(Handler(headers={"Origin": origin}))
++                self.assertEqual(h.status, 403)
++                self.assertEqual(h.rfile.reads, 0)
++        for site in ("cross-site", "same-site", "unexpected"):
++            self.assertEqual(self.call(Handler(headers={"Sec-Fetch-Site": site})).status, 403)
++        for site in (None, "none", "same-origin"):
++            self.assertEqual(self.call(Handler(headers={"Sec-Fetch-Site": site})).status, 200)
++
++    def test_duplicate_origin_or_fetch_metadata_is_rejected(self):
++        for key, value in (("Origin", "https://example.test"), ("Sec-Fetch-Site", "same-origin")):
++            h = Handler()
++            h.headers[key] = value
++            self.assertEqual(self.call(h).status, 403)
++
++    def test_localhost_and_ipv6_origins(self):
++        for host, origin in (("localhost:8000", "http://localhost:8000"), ("[::1]:8000", "http://[::1]:8000")):
++            self.assertEqual(self.call(Handler(headers={"Host": host, "Origin": origin})).status, 200)
++
++    def test_malformed_truncated_and_non_object_json(self):
++        for body in (b"{", b"[]", b"null", b"\xff\xff", b'{"a":' + b"[" * 1100):
++            h = self.call(Handler(body=body))
++            self.assertEqual(h.status, 400)
++            self.assertTrue(h.close_connection)
++        self.assertEqual(self.call(Handler(body=b"{}", headers={"Content-Length": "3"})).status, 400)
++        self.assertFalse(self.module.calls)
++
++    def test_read_timeout_is_sanitized(self):
++        h = Handler()
++        h.rfile.read = lambda n: (_ for _ in ()).throw(TimeoutError("private detail"))
++        self.assertEqual(self.call(h).status, 400)
++        self.assertNotIn("private detail", h.wfile.getvalue().decode())
++
++    def test_process_limit_and_withdrawal_exemption(self):
++        with patch.object(research_http.time, "monotonic", return_value=100):
++            for _ in range(research_http.CAPTURE_LIMIT):
++                self.assertEqual(self.call().status, 200)
++            blocked = self.call()
++            self.assertEqual(blocked.status, 429)
++            self.assertEqual(blocked.rfile.reads, 0)
++            self.assertEqual(self.call(Handler("/api/research/withdraw")).status, 200)
++        with patch.object(research_http.time, "monotonic", return_value=160):
++            self.assertEqual(self.call().status, 200)
++
++    def test_safe_error_mapping(self):
++        for error, status in ((InputError("SQL secret body"), 400), (WithdrawnError("SQL secret body"), 410),
++                              (StorageError("SQL secret body"), 503), (RuntimeError("SQL secret body"), 503)):
++            self.module.error = error
++            h = self.call()
++            self.assertEqual(h.status, status)
++            self.assertNotIn("SQL secret body", h.wfile.getvalue().decode())
++
++    def test_unknown_routes_and_missing_module(self):
++        for method, path in (("GET", "/api/research/events"), ("POST", "/api/research/config"),
++                             ("GET", "/api/research/export"), ("POST", "/api/research/unknown")):
++            h = self.call(Handler(path), method=method)
++            self.assertEqual(h.status, 404)
++            self.assertEqual(h.rfile.reads, 0)
++        self.assertEqual(self.call(module=False).status, 503)
++        self.assertEqual(self.call(Handler("/api/research/config"), method="GET", module=False).status, 503)
++
++    def test_server_auth_precedes_research_routes(self):
++        source = Path("server/meatcode_server.py").read_text()
++        handler = next(n for n in ast.parse(source).body if isinstance(n, ast.ClassDef) and n.name == "Handler")
++        selected = [n for n in handler.body if isinstance(n, ast.FunctionDef) and n.name in ("do_GET", "do_POST")]
++        module = ast.Module(body=[ast.ClassDef(name="RouteGate", bases=[], keywords=[], body=selected, decorator_list=[])], type_ignores=[])
++        ns = {"urlparse": urlparse}
++        exec(compile(ast.fix_missing_locations(module), "<isolated-auth-gates>", "exec"), ns)
++        gate = ns["RouteGate"]()
++        gate.path = "/api/research/events"
++        gate._authorized = lambda: False
++        gate._deny = lambda: "denied"
++        self.assertEqual(gate.do_POST(), "denied")
++        self.assertEqual(gate.do_GET(), "denied")
++
++    def test_shared_scientific_backup_excludes_private_research_schema(self):
++        source = Path("server/meatcode_server.py").read_text()
++        handler = next(n for n in ast.parse(source).body if isinstance(n, ast.ClassDef) and n.name == "Handler")
++        backup = next(n for n in handler.body if isinstance(n, ast.FunctionDef) and n.name == "_handle_data_backup_download")
++        calls = []
++
++        def run(command, **kwargs):
++            calls.append(command)
++            return SimpleNamespace(returncode=0, stdout=b"scientific-backup", stderr=b"")
++
++        ns = {"datetime": datetime, "shutil": SimpleNamespace(which=lambda name: "/fake/pg_dump"),
++              "subprocess": SimpleNamespace(run=run), "DATABASE_URL": "fake-database", "gzip": gzip}
++        exec(compile(ast.Module(body=[backup], type_ignores=[]), "<isolated-backup>", "exec"), ns)
++        h = SimpleNamespace(_send_binary=lambda data, mime, filename: data)
++        result = ns["_handle_data_backup_download"](h)
++        self.assertEqual(gzip.decompress(result), b"scientific-backup")
++        self.assertIn("--exclude-schema=user_research", calls[0])
++
++    def test_private_research_exports_cannot_be_served_as_static_files(self):
++        tree = ast.parse(Path("server/meatcode_server.py").read_text())
++        handler = next(n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == "Handler")
++        selected = [n for n in handler.body if isinstance(n, ast.FunctionDef)
++                    and n.name in ("_private_research_path", "send_head", "do_GET")]
++
++        class StaticBase:
++            translate_path = SimpleHTTPRequestHandler.translate_path
++
++            def do_GET(self):
++                return "served"
++
++            def send_head(self):
++                return "headers"
++
++        module = ast.Module(body=[ast.ClassDef(name="StaticGate", bases=[ast.Name(id="StaticBase", ctx=ast.Load())],
++                                               keywords=[], body=selected, decorator_list=[])], type_ignores=[])
++        with tempfile.TemporaryDirectory() as directory:
++            root = Path(directory)
++            (root / "data/user_research").mkdir(parents=True)
++            (root / "data/user_research/export.jsonl").write_text("private")
++            (root / "public-alias").symlink_to(root / "data/user_research", target_is_directory=True)
++            ns = {"os": os, "SERVE_DIR": directory, "urlparse": urlparse, "APP_ENV": "prod", "StaticBase": StaticBase}
++            exec(compile(ast.fix_missing_locations(module), "<isolated-static-boundary>", "exec"), ns)
++            h = ns["StaticGate"]()
++            h.directory = directory
++            h._authorized = lambda: True
++            denied = []
++            h.send_error = lambda code, message: denied.append(code)
++            for path in ("/data/user_research/export.jsonl", "/data/%75ser_research/export.jsonl",
++                         "/app/%2e%2e/data/user_research/export.jsonl", "/public-alias/export.jsonl"):
++                with self.subTest(path=path):
++                    h.path = path
++                    self.assertIsNone(h.do_GET())
++                    self.assertEqual(denied[-1], 404)
++                    self.assertIsNone(h.send_head())
++                    self.assertEqual(denied[-1], 404)
++            for path in ("/app/meatcode_mockup.html", "/data/scientific.csv", "/data/user_research_public/export.jsonl"):
++                h.path = path
++                self.assertEqual(h.do_GET(), "served")
++                self.assertEqual(h.send_head(), "headers")
++
++
++if __name__ == "__main__":
++    unittest.main()
+--- /dev/null	
++++ b/tests/test_user_research.py	
+@@ -0,0 +1,125 @@
++# Last updated: 2026-10-28 15:51 UTC · Data/Backend · strict validation, privacy filtering and rollback-only database behavior.
++import datetime
++import importlib.util
++import json
++import os
++from pathlib import Path
++import sys
++import tempfile
++import unittest
++import uuid
++
++ROOT=Path(__file__).resolve().parents[1]
++sys.path.insert(0,str(ROOT/'server'))
++sys.path.insert(0,str(ROOT/'pipeline/user_research'))
++import user_research as research
++from clarity_import import sanitize_aggregates, _reserve
++from settings import settings
++
++
++def event_payload():
++    return {'session_id':str(uuid.uuid4()),'consent':True,'consent_version':research.CONSENT_VERSION,
++            'events':[{'event_id':str(uuid.uuid4()),'name':'oracle.completed','scene':'oracle',
++                       'properties':{'duration_ms':1200,'source_count':3}}]}
++
++
++class ValidationTests(unittest.TestCase):
++    def test_runtime_settings_and_render_dotenv_isolation(self):
++        with tempfile.TemporaryDirectory() as directory:
++            root=Path(directory)
++            (root/'.env').write_text('DATABASE_URL=file-production-placeholder\nCLARITY_EXPORT_TOKEN=file-token-placeholder\n')
++            (root/'.env.dev').write_text('DATABASE_URL=file-development-placeholder\nCLARITY_EXPORT_TOKEN=\n')
++            process={'RENDER':'true','DATABASE_URL':'runtime-db-placeholder','CLARITY_EXPORT_TOKEN':'runtime-token-placeholder'}
++            self.assertEqual(settings('prod',process,root)['DATABASE_URL'],'runtime-db-placeholder')
++            self.assertEqual(settings('dev',process,root)['CLARITY_EXPORT_TOKEN'],'runtime-token-placeholder')
++            self.assertEqual(settings('dev',{},root)['DATABASE_URL'],'file-development-placeholder')
++            self.assertEqual(settings('dev',{},root)['CLARITY_EXPORT_TOKEN'],'file-token-placeholder')
++            self.assertEqual(settings('prod',process,root/'absent')['CLARITY_EXPORT_TOKEN'],'runtime-token-placeholder')
++
++    def test_opt_in_defaults(self):
++        self.assertFalse(research.config({},'dev')['enabled'])
++        self.assertTrue(research.config({'USER_RESEARCH_ENABLED':'true'},'prod')['enabled'])
++        self.assertEqual(research.config({},'prod')['retention_days'],90)
++
++    def test_reject_raw_prompts_and_unconsented_input_before_db(self):
++        for changes in ({'consent':False},{'consent':1},{'consent_version':'old'},{'prompt':'secret'}):
++            payload=event_payload();payload.update(changes)
++            with self.assertRaises(research.InputError):research.write_events(None,'dev',payload)
++        payload=event_payload();payload['events'][0]['properties']['prompt']='never store'
++        with self.assertRaises(research.InputError):research.validate_events(payload)
++
++    def test_limits_and_explicit_types(self):
++        for value in (True,-1,3600001,'1200'):
++            payload=event_payload();payload['events'][0]['properties']['duration_ms']=value
++            with self.assertRaises(research.InputError):research.validate_events(payload)
++        payload=event_payload();payload['events']*=21
++        with self.assertRaises(research.InputError):research.validate_events(payload)
++        payload=event_payload();payload['session_id']=str(uuid.uuid1())
++        with self.assertRaises(research.InputError):research.validate_events(payload)
++
++    def test_feedback_boundary(self):
++        payload=event_payload();payload.pop('events');payload.update(event_id=str(uuid.uuid4()),rating='helpful',category='answer',comment='explicit feedback')
++        self.assertEqual(research.validate_feedback(payload)[1]['comment'],'explicit feedback')
++        for text in ('x'*2001,'bad\x00input'):
++            payload['comment']=text
++            with self.assertRaises(research.InputError):research.validate_feedback(payload)
++
++    def test_aggregate_privacy(self):
++        result=sanitize_aggregates([
++            {'metricName':'Traffic','information':[{'totalSessionCount':'7','OS':'Mac OS X','URL':'https://private.test/?prompt=secret',
++                                                   'prompt':'secret','Referrer URL':'secret','count':float('nan')}]},
++            {'metricName':'Popular Pages','information':[{'URL':'secret','totalSessionCount':'9'}]},
++            {'metricName':'Page Title','information':[{'title':'secret'}]}])
++        self.assertEqual(result,[{'metricName':'Traffic','information':[{'totalSessionCount':7,'OS':'Mac OS X'}]}])
++        self.assertNotIn('secret',json.dumps(result))
++
++
++@unittest.skipUnless(os.environ.get('USER_RESEARCH_TEST_DB_URL'),'Live DB rollback test is opt-in.')
++class RollbackDatabaseTests(unittest.TestCase):
++    def setUp(self):
++        import psycopg2
++        self.psycopg2=psycopg2
++        self.conn=psycopg2.connect(os.environ['USER_RESEARCH_TEST_DB_URL'],connect_timeout=5)
++        self.cur=self.conn.cursor()
++        self.cur.execute("SET LOCAL statement_timeout='6s'; SET LOCAL lock_timeout='3s'")
++        self.payload=event_payload();self.sid,self.events=research.validate_events(self.payload)
++
++    def tearDown(self):
++        self.conn.rollback();self.cur.close();self.conn.close()
++
++    def test_idempotency_environment_and_withdrawal(self):
++        self.assertEqual(research._write_events(self.cur,'dev',self.sid,self.events)['accepted'],1)
++        self.assertEqual(research._write_events(self.cur,'dev',self.sid,self.events)['duplicate'],1)
++        self.assertEqual(research._write_events(self.cur,'prod',self.sid,self.events)['accepted'],1)
++        feedback={'event_id':str(uuid.uuid4()),'rating':'helpful','category':'bug','comment':"fixture '; DROP TABLE scientific; --"}
++        self.assertEqual(research._write_feedback(self.cur,'dev',self.sid,feedback)['accepted'],1)
++        self.assertEqual(research._write_feedback(self.cur,'dev',self.sid,feedback)['duplicate'],1)
++        research._withdraw(self.cur,'dev',self.sid)
++        for table in ('sessions','events','feedback'):
++            self.cur.execute('SELECT count(*) FROM user_research.'+table+' WHERE session_id=%s AND environment=%s',(self.sid,'dev'))
++            self.assertEqual(self.cur.fetchone()[0],0)
++        with self.assertRaises(research.WithdrawnError):research._write_events(self.cur,'dev',self.sid,self.events)
++        self.cur.execute('SELECT count(*) FROM user_research.sessions WHERE session_id=%s AND environment=%s',(self.sid,'prod'))
++        self.assertEqual(self.cur.fetchone()[0],1)
++
++    def test_withdrawal_serializes_concurrent_writers(self):
++        research._withdraw(self.cur,'dev',self.sid)
++        other=self.psycopg2.connect(os.environ['USER_RESEARCH_TEST_DB_URL'],connect_timeout=5)
++        try:
++            with other.cursor() as cur:
++                cur.execute("SET LOCAL lock_timeout='200ms'; SET LOCAL statement_timeout='2s'")
++                with self.assertRaises(self.psycopg2.errors.LockNotAvailable):
++                    research._write_events(cur,'dev',self.sid,self.events)
++        finally:
++            other.rollback();other.close()
++
++    def test_export_daily_dedup_and_quota(self):
++        project='test'+uuid.uuid4().hex[:12];today=datetime.date.today()
++        first,state=_reserve(self.cur,'dev',project,today,1)
++        self.assertEqual(state,'reserved')
++        self.assertEqual(_reserve(self.cur,'dev',project,today,1),(None,'pending'))
++        self.cur.execute("UPDATE user_research.clarity_exports SET status='failed',attempts=10 WHERE export_id=%s",(first,))
++        self.assertEqual(_reserve(self.cur,'prod',project,today,2),(None,'daily_limit'))
++
++
++if __name__=='__main__':unittest.main()
+--- /dev/null	
++++ b/tests/test_user_research_client.cjs	
+@@ -0,0 +1,85 @@
++/* Last updated: 2026-10-28 · Codex UI/UX · browser fixture verifies consent, masking, payload minimization and Oracle terminal outcomes. */
++const {chromium} = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
++const assert = require('node:assert/strict');
++const fs = require('node:fs');
++const path = require('node:path');
++const SOURCE = process.env.RESEARCH_HTML || 'app/meatcode_mockup.html';
++const ROOT = path.resolve(__dirname,'..');
++const PRIVATE = 'PRIVATE_QUESTION_AND_ANSWER_9287';
++const COMMENT = 'EXPLICIT_FEEDBACK_COMMENT_2859';
++(async function(){
++ const browser = await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_EXECUTABLE ? {executablePath:process.env.PLAYWRIGHT_EXECUTABLE}: {})});
++ try {
++ async function fixture(options={}) {
++  const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();
++  const records=[],errors=[];let outcome='success',withdrawFails=false;
++  page.on('pageerror',e=>errors.push(e.message));
++  if(options.pending)await context.addInitScript(()=>sessionStorage.setItem('mc_research_withdraw_pending_v1','910fe0c3-1ef3-4d0b-8f13-39c55f2e4f76'));
++  await page.route('**/*',async route=>{
++   const req=route.request(),u=new URL(req.url());
++   if(u.hostname==='www.clarity.ms') {
++    records.push({kind:'sdk',url:u.href});
++    return route.fulfill({contentType:'text/javascript',body:'window.__maskAtSDK = document.body.getAttribute("data-clarity-mask"); window.__clarityCalls=(window.clarity.q||[]).map(function(x){return Array.from(x)}); window.clarity=function(){window.__clarityCalls.push(Array.from(arguments))};'});
++   }
++   if(u.hostname!=='127.0.0.1')return route.abort();
++   if(u.pathname==='/api/research/config')return route.fulfill({contentType:'application/json',body:JSON.stringify({enabled:options.enabled!==false,environment:'dev',clarity_project_id:'z4upnrbddu',consent_version:'2026-10-28',retention_days:90})});
++   if(u.pathname.startsWith('/api/research/')) {
++    records.push({kind:'post',path:u.pathname,body:req.postDataJSON(),headers:req.headers()});
++    return route.fulfill({status:u.pathname.endsWith('/withdraw') && withdrawFails ? 503 : 200,contentType:'application/json',body:'{"ok":true}'});
++   }
++   if(u.pathname==='/api/ask') {
++    if(outcome==='network')return route.abort('failed');
++    if(outcome==='http401')return route.fulfill({status:401,body:'session expired'});
++    const body=outcome==='sse-error' ? 'event: error\ndata: model unavailable '+PRIVATE+'\n\nevent: done\ndata: {}\n\n' : outcome==='missingdone' ? 'event: status\ndata: answering\n\n' : 'event: sources\ndata: [{"id":1,"title":"'+PRIVATE+'"}]\n\nevent: chunk\ndata: '+PRIVATE+'\n\nevent: done\ndata: {}\n\n';
++    return route.fulfill({contentType:'text/event-stream',body});
++   }
++   if(u.pathname==='/api/flags')return route.fulfill({contentType:'application/json',body:'{}'});
++   if(u.pathname.startsWith('/api/'))return route.fulfill({contentType:'application/json',body:'{"ok":true,"rows":[],"totals":{},"phase_topics":[]}'});
++   const file=u.pathname==='/'?path.resolve(ROOT,SOURCE):path.join(ROOT,decodeURIComponent(u.pathname));
++   if(fs.existsSync(file)&&fs.statSync(file).isFile())return route.fulfill({contentType:file.endsWith('.js')?'application/javascript':file.endsWith('.html')?'text/html':undefined,body:fs.readFileSync(file)});
++   return route.fulfill({status:404,body:''});
++  });
++  await page.goto('http://127.0.0.1:18774/'+(options.query || '')+'#oracle');
++  await page.waitForFunction(()=>!!window.MCResearch);
++  const events=()=>records.filter(r=>r.path==='/api/research/events').flatMap(r=>r.body.events);
++  const ask=async value=>{await page.locator('#oracleTextarea').fill(value);await page.locator('#oracleAskBtn').click();await page.waitForFunction(()=>!document.querySelector('#oracleAskBtn').disabled);await page.waitForTimeout(400);};
++  return {page,context,records,errors,events,ask,outcome:value=>{outcome=value;},withdrawFails:value=>{withdrawFails=value;}};
++ }
++ const f=await fixture();
++ await f.page.locator('#mcResearchPanel').waitFor();
++ assert.equal(f.records.length,0,'no SDK or research POST before opt-in');
++ assert.equal(await f.page.evaluate(()=>window.MCResearch.startOracle()),null);
++ await f.page.locator('[data-research-close]').click();
++ await f.ask(PRIVATE);
++ assert.equal(f.records.length,0,'unconsented Oracle request produces no research events');
++ await f.page.locator('#mcResearchButton').click();await f.page.locator('[data-research-accept]').click();
++ await f.page.waitForFunction(()=>window.__maskAtSDK==='true');
++ assert.equal(await f.page.locator('[data-clarity-unmask]').count(),0);
++ assert.equal(await f.page.locator('[name=rating]').inputValue(),'','rating requires explicit selection');
++ await f.page.locator('[data-research-close]').click();await f.ask(PRIVATE);
++ let completed=f.events().filter(e=>e.name==='oracle.completed');assert.equal(completed.length,1);assert.equal(completed[0].properties.source_count,1);
++ f.outcome('sse-error');await f.ask(PRIVATE);assert.equal(f.events().filter(e=>e.name==='oracle.completed').length,1,'SSE error followed by done cannot count success');
++ assert.equal(f.events().filter(e=>e.name==='oracle.failed').at(-1).properties.error_code,'model_unavailable');
++ f.outcome('http401');await f.ask(PRIVATE);assert.equal(f.events().filter(e=>e.name==='oracle.failed').at(-1).properties.error_code,'session_expired');
++ f.outcome('network');await f.ask(PRIVATE);assert.equal(f.events().filter(e=>e.name==='oracle.failed').at(-1).properties.error_code,'network');
++ f.outcome('missingdone');await f.ask(PRIVATE);assert.equal(f.events().filter(e=>e.name==='oracle.failed').at(-1).properties.error_code,'unknown');
++ await f.page.locator('#mcResearchButton').click();await f.page.locator('[name=rating]').selectOption('helpful');await f.page.locator('[name=comment]').fill(COMMENT);await f.page.locator('#mcResearchPanel [type=submit]').click();await f.page.waitForTimeout(400);
++ const feedback=f.records.find(r=>r.path==='/api/research/feedback');assert.equal(feedback.body.comment,COMMENT);assert.equal(feedback.body.consent,true);
++ assert(!JSON.stringify(f.events()).includes(PRIVATE));assert(!JSON.stringify(f.events()).includes(COMMENT));
++ const clarity=await f.page.evaluate(()=>window.__clarityCalls);assert(!JSON.stringify(clarity).includes(PRIVATE));assert(!JSON.stringify(clarity).includes(COMMENT));assert(clarity.some(x=>x[0]==='event'&&x[1]==='oracle.failed'));
++ const sid=feedback.body.session_id;assert(!JSON.stringify(clarity).includes(sid),'first-party deletion bearer ID must never go to Microsoft');
++ for(const r of f.records.filter(r=>r.kind==='post')){assert.equal(r.headers['x-meatcode-research'],'1');assert.equal(r.headers['content-type'],'application/json');assert(!JSON.stringify(r.body).includes(PRIVATE));if(r.body.events)assert(r.body.events.length<=20);}
++ f.withdrawFails(true);await f.page.locator('[data-research-stop]').click();await f.page.waitForTimeout(200);
++ assert.equal(await f.page.evaluate(()=>window.MCResearch.startOracle()),null);assert.equal(await f.page.evaluate(()=>sessionStorage.getItem('mc_research_session_v1')),null);
++ assert(await f.page.locator('[data-research-stop]').isVisible());
++ f.withdrawFails(false);await f.page.locator('[data-research-stop]').click();await f.page.waitForTimeout(500);
++ const lastWithdraw=f.records.map(r=>r.path).lastIndexOf('/api/research/withdraw');
++ assert.equal(f.records.slice(lastWithdraw+1).filter(r=>r.kind==='post'||r.kind==='sdk').length,0,'no SDK reload or future collection after withdrawal');
++ assert.equal(await f.page.evaluate(()=>sessionStorage.getItem('mc_research_withdraw_pending_v1')),null);
++ assert.deepEqual(f.errors,[]);await f.context.close();
++ const disabled=await fixture({enabled:false});await disabled.page.waitForTimeout(200);assert.equal(disabled.records.length,0);assert.equal(await disabled.page.locator('#mcResearchButton').count(),0);await disabled.context.close();
++ const unsafe=await fixture({query:'?question=PRIVATE_URL_VALUE'});await unsafe.page.locator('[data-research-accept]').click();await unsafe.page.waitForTimeout(300);assert.equal(unsafe.records.filter(r=>r.kind==='sdk').length,0);assert(unsafe.page.url().includes('PRIVATE_URL_VALUE'),'integration must not rewrite user URL');await unsafe.context.close();
++ const pending=await fixture({enabled:false,pending:true});await pending.page.locator('#mcResearchButton').click();assert(await pending.page.locator('[data-research-stop]').isVisible());assert(await pending.page.locator('[data-research-accept]').isDisabled());await pending.page.locator('[data-research-stop]').click();await pending.page.waitForTimeout(200);assert(pending.records.some(r=>r.path==='/api/research/withdraw'));await pending.context.close();
++ console.log(JSON.stringify({source:SOURCE,preConsentNoCollection:true,bodyMaskedBeforeSDK:true,oracleSuccessAndSSEFailures:true,feedbackOnlyFirstParty:true,explicitRating:true,withdrawStopsAndRetries:true,disabledNoCollection:true,unsafeURLSkipsSDK:true,pendingDeletionWhenDisabled:true,zeroPageErrors:true}));
++ } finally { await browser.close(); }
++})().catch(e=>{console.error(e);process.exit(1);});

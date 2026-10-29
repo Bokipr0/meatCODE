@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Last updated: 2026-10-27 11:44 UTC · Full-Stack · show saved versus observed production switches; clarify Analytics entry points. -->
+<!-- Last updated: 2026-10-29 10:49 UTC · Full-Stack · local-admin dashboard entry; saved versus observed production status preserved. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -65,6 +65,7 @@
   </header>
   <div class="sub">Choose the features for your next staging or production release.</div>
   <div class="banner" id="banner" style="display:none"></div>
+  <div class="note" id="researchDashboardLink" style="display:none"><a href="/research-dashboard" target="_blank" rel="noopener">Open private user-testing dashboard →</a><br>Live first-party events and submitted feedback. Hosted access requires a separate research administrator token.</div>
   <div class="note" id="note">Switches below are <b>saved settings for the next release</b>. Changes apply locally after refreshing the platform. Use <b>Deploy to staging</b>, test there, then <b>Promote to production</b>. A switch is live only after the Render deployment succeeds.</div>
   <div class="note" id="productionStatus" style="display:none">
     <div class="statusline"><h2>Observed production</h2><button class="btn dev" id="btnCheck" type="button">Check live site</button></div>
@@ -135,6 +136,7 @@ async function load(){
     $('#note').style.display='none';
   } else {
     $('#deploybar').style.display='flex';
+    $('#researchDashboardLink').style.display='block';
     $('#productionStatus').style.display='block';
     checkProduction();
   }

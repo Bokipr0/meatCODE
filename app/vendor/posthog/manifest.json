@@ -1,0 +1,57 @@
+{
+  "last_updated_utc": "2026-10-29T10:41:34.487509+00:00",
+  "package": "posthog-js",
+  "version": "1.442.0",
+  "license": "(Apache-2.0 AND MIT)",
+  "source_repository": "https://github.com/PostHog/posthog-js",
+  "npm_tarball": "https://registry.npmjs.org/posthog-js/-/posthog-js-1.442.0.tgz",
+  "npm_integrity": "sha512-RaZhFpqlPdoHU5VCkUCUR1c9oMQJAGZHvv0T1bl57smHxKEihTrfYP8ovny81XrrDmswNGkNYC35wTibY7P3OQ==",
+  "resolved_latest_via": "npm install posthog-js --ignore-scripts --no-audit --no-fund",
+  "install_scripts_executed": false,
+  "artifact": "Unmodified official dist/array.no-external.js, renamed posthog.js for same-origin plain-HTML loading",
+  "browser_global": "window.posthog",
+  "browser_api": [
+    "init",
+    "capture",
+    "opt_in_capturing",
+    "opt_out_capturing"
+  ],
+  "initialization": "Loading does not provide a project token or initialize capture. The application initializes only after explicit consent. Token and host come from server environment configuration, not this artifact.",
+  "configuration_defaults_snapshot": "2026-08-30",
+  "documentation": [
+    "https://posthog.com/docs/libraries/js",
+    "https://posthog.com/docs/libraries/js/config",
+    "https://posthog.com/docs/privacy/data-collection"
+  ],
+  "files": {
+    "posthog.js": {
+      "upstream_path": "dist/array.no-external.js",
+      "bytes": 384147,
+      "sha256": "efdce68d72209567183265b3bbc4decc025b10e36d7436c3d600cd8e97e3ef28"
+    },
+    "array.no-external.js.map": {
+      "upstream_path": "dist/array.no-external.js.map",
+      "bytes": 502851,
+      "sha256": "a7f888736d0959eb1c1b00af8002a5692e5a9f3a7115577dea08376b91726d6e"
+    },
+    "LICENSE": {
+      "upstream_path": "LICENSE",
+      "bytes": 21550,
+      "sha256": "d3fb92ac01f0bef4078f89aac9f20f76da3383ad45becf6204abdf5495f43f8f"
+    }
+  },
+  "verification": {
+    "node_syntax_check": "passed",
+    "isolated_browser_global_smoke": "passed",
+    "methods_present": [
+      "init",
+      "capture",
+      "opt_in_capturing",
+      "opt_out_capturing"
+    ],
+    "initialized_when_loaded_without_configuration": false,
+    "network_requests_in_smoke": 0,
+    "external_scripts_in_smoke": 0,
+    "real_provider_ingestion_test": false
+  }
+}

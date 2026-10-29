@@ -1,0 +1,195 @@
+{
+  "date": "2026-10-29",
+  "project_id": 325792,
+  "region": "EU",
+  "api_host": "https://eu.i.posthog.com",
+  "dashboard_url": "https://eu.posthog.com/project/325792/dashboard/1066277",
+  "dashboard_id": 1066277,
+  "private": true,
+  "insights": [
+    {
+      "id": 6941453,
+      "short_id": "2ifWJKDv",
+      "name": "Testing sessions started",
+      "query": {
+        "kind": "TrendsQuery",
+        "dateRange": {
+          "date_from": "-7d"
+        },
+        "interval": "day",
+        "series": [
+          {
+            "kind": "EventsNode",
+            "event": "session.started",
+            "math": "total"
+          }
+        ],
+        "trendsFilter": {
+          "display": "ActionsLineGraph",
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "id": 6941464,
+      "short_id": "0uRJR1zU",
+      "name": "Oracle outcomes",
+      "query": {
+        "kind": "TrendsQuery",
+        "dateRange": {
+          "date_from": "-7d"
+        },
+        "interval": "day",
+        "series": [
+          {
+            "kind": "EventsNode",
+            "event": "oracle.submitted",
+            "math": "total"
+          },
+          {
+            "kind": "EventsNode",
+            "event": "oracle.completed",
+            "math": "total"
+          },
+          {
+            "kind": "EventsNode",
+            "event": "oracle.failed",
+            "math": "total"
+          }
+        ],
+        "trendsFilter": {
+          "display": "ActionsLineGraph",
+          "showLegend": true
+        }
+      }
+    },
+    {
+      "id": 6941467,
+      "short_id": "XGFmMOFI",
+      "name": "Oracle response time",
+      "query": {
+        "kind": "TrendsQuery",
+        "dateRange": {
+          "date_from": "-7d"
+        },
+        "interval": "day",
+        "series": [
+          {
+            "kind": "EventsNode",
+            "event": "oracle.completed",
+            "math": "median",
+            "math_property": "duration_ms"
+          }
+        ],
+        "trendsFilter": {
+          "display": "ActionsLineGraph",
+          "showLegend": true,
+          "aggregationAxisFormat": "duration_ms"
+        }
+      }
+    },
+    {
+      "id": 6941472,
+      "short_id": "sPDWc8DQ",
+      "name": "Module usage",
+      "query": {
+        "kind": "TrendsQuery",
+        "dateRange": {
+          "date_from": "-7d"
+        },
+        "interval": "day",
+        "series": [
+          {
+            "kind": "EventsNode",
+            "event": "scene.viewed",
+            "math": "total"
+          }
+        ],
+        "trendsFilter": {
+          "display": "ActionsBarValue",
+          "showLegend": true
+        },
+        "breakdownFilter": {
+          "breakdowns": [
+            {
+              "property": "scene",
+              "type": "event"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 6941473,
+      "short_id": "hOPB8lSQ",
+      "name": "Oracle failure reasons",
+      "query": {
+        "kind": "TrendsQuery",
+        "dateRange": {
+          "date_from": "-7d"
+        },
+        "interval": "day",
+        "series": [
+          {
+            "kind": "EventsNode",
+            "event": "oracle.failed",
+            "math": "total"
+          }
+        ],
+        "trendsFilter": {
+          "display": "ActionsBarValue",
+          "showLegend": true
+        },
+        "breakdownFilter": {
+          "breakdowns": [
+            {
+              "property": "error_code",
+              "type": "event"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": 6941474,
+      "short_id": "Eg7yB17I",
+      "name": "Tester feedback",
+      "query": {
+        "kind": "TrendsQuery",
+        "dateRange": {
+          "date_from": "-7d"
+        },
+        "interval": "day",
+        "series": [
+          {
+            "kind": "EventsNode",
+            "event": "feedback.submitted",
+            "math": "total"
+          }
+        ],
+        "trendsFilter": {
+          "display": "ActionsBarValue",
+          "showLegend": true
+        },
+        "breakdownFilter": {
+          "breakdowns": [
+            {
+              "property": "rating",
+              "type": "event"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "query_validation": "all six native queries executed; no recorded product events at initial validation",
+  "render_settings_saved": [
+    "srv-d9ghriu1a83c73dr8lj0",
+    "srv-d96ftplaeets73da7vng"
+  ],
+  "code_published": false,
+  "provider_ingestion_http": "two consented local dev setup events HTTP200; initial saved query remains0",
+  "provider_delivery": "verified local dev SDK ingestion HTTP200 and saved session chart count1; hosted capture not verified",
+  "first_party_http_verification": "data/verification/research-dashboard-http-2026-10-29.json",
+  "provider_sdk_verification": "data/verification/posthog-live-sdk-2026-10-29.json"
+}

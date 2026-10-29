@@ -1,0 +1,16 @@
+{
+  "last_updated_utc": "2026-10-28T15:55:07.830587+00:00",
+  "scope": "Local HTTP to dev Neon; labelled automated fixtures removed; no model/Clarity request",
+  "checks": {
+    "local_config": true,
+    "event_accepted": true,
+    "http_deduplication": true,
+    "feedback_accepted": true,
+    "neon_persistence": true,
+    "raw_content_rejected": true,
+    "withdrawal_accepted": true,
+    "late_recreation_blocked": true,
+    "all_owned_fixtures_removed": true
+  },
+  "ok": true
+}

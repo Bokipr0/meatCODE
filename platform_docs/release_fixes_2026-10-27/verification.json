@@ -1,0 +1,30 @@
+{
+  "last_updated_utc": "2026-10-27",
+  "base_commit": "6394c039749ad0e6d7279dabd00a380dfb95ee87",
+  "scope": "Both narrow patches applied sequentially to read-only remote snapshots in a temporary directory; no Git, publication or deployment.",
+  "patch_checks": [
+    {
+      "patch": "release-controls-current-main.patch",
+      "passed": true,
+      "output": "patching file 'app/release-center.html'\npatching file 'Release Center/features.json'\npatching file 'server/meatcode_server.py'"
+    },
+    {
+      "patch": "simulate-analytics-current-main.patch",
+      "passed": true,
+      "output": "patching file 'app/meatcode_mockup.html'"
+    }
+  ],
+  "candidate_matches": true,
+  "python_ast": "passed",
+  "json": "passed",
+  "inline_js_syntax": {
+    "app/meatcode_mockup.html": 17,
+    "app/release-center.html": 1
+  },
+  "patched_file_sha256": {
+    "app/release-center.html": "377b925b204cd36f19bcc28bc7c9b5396dba1b4fa62fbd8b0d8bd1e5249747f4",
+    "Release Center/features.json": "4ff48569287dd4e347e7dcf45e80ce4f0b0c2c177fdc16426c9abcb9b2c5b0d9",
+    "server/meatcode_server.py": "c9e08ba4a673038ea037f7815183c790a3a8ea1609992aa7eec96b18a6938eb6",
+    "app/meatcode_mockup.html": "b4750f7cc5bba800f99fbd92433b5a81d5f65df2a36d0113709c59e244302e44"
+  }
+}

@@ -1,6 +1,30 @@
 # PROJECT_STATE — MeatCODE
 
-_Last updated: 2026-10-26 12:57 UTC · Codex / Advisory · separate Render service missing-key failure confirmed._
+## 2026-10-29 · LIVE release — Clarity/PostHog and private testing dashboard
+
+User explicitly authorized redeploy/update and separately approved enabling the private administrator dashboard. Published the reviewed changes from a clean checkout, preserving newer Science/Ecosystem/guided Oracle and original local work. Both dev and production now run20acea3e648e0e3feba40845cae3936951867b07; verified /api/version, user_testing+analytics flags, healthy startup and protected research routes401 without site login. Staging deploydep-dbhkm9h9q7ns73d280qg and productiondep-dbhkn5vb9u1s73a0nsv0 are live. Rollback tagprod-20261029-analytics-live-testing. No new production ERROR/Traceback logs found after deployment.
+
+Public PostHog settings, USER_RESEARCH_ENABLED=true and distinct RESEARCH_ADMIN_TOKEN values are configured on both Render services; admin values remain only in secure Render settings and ignored local .env/.env.dev, never chat/Git. Dashboard /research-dashboard requires normal site login plus the corresponding administrator value retrieved privately from Render Environment. Local Release Center administrators retain token-free local access. No site password or Anthropic key was changed.
+
+Fifty offline checks passed (five database-only skips); actual staging HTML browser privacy suite passed. Prior real local SDK delivery is queryable in PostHog; first-party HTTP→Neon capture/deletion checks passed and probes removed. Protected hosted-page checks require the user's signed-in browser: user initially did not see the privacy control before final production deployment; fresh production opt-in confirmation requested. Actual hosted Microsoft recordings and successful live Oracle model call remain unverified. Health labels key/database checks configuration-only. Do not claim a valid model credential from key presence.
+
+Correction: Render environment-update API operations themselves triggered redeploys of then-current source; prior notes saying no deploy was triggered were inaccurate. Missing Clarity source was resolved by publishing the new Git commit, not by those earlier old-source redeploys. Local original checkout remains intentionally untouched/stale; do not blanket-push it over the clean published release. Credential-free verification is under data/verification/research-deployment-2026-10-29.json and research-hosted-public-checks-2026-10-29.json.
+
+
+_Last updated: 2026-10-29 · Codex / Project Coordinator · PostHog setup, native dashboard and private live view._
+
+## 2026-10-29 · PostHog and live research dashboard — local code, configured accounts
+
+- **Native dashboard exists:** https://eu.posthog.com/project/325792/dashboard/1066277 (private MeatCODE Live Testing), six validated saved insights. EU project325792, latest official vendored posthog-js1.442.0, public runtime settings saved to original prod and dev Render services with merge-only updates. No app deployment was triggered.
+- **Local dashboard/API ready:** /research-dashboard, three-second refresh over real Neon; admin-only data beyond shared site password, local loopback cockpit exception, no analytics SDK on admin page, no-store/read-only/bounded SQL and hash session labels. Hosted RESEARCH_ADMIN_TOKEN has not been generated/configured; hosted private reads remain closed.
+- **Data migration live:** forward0017 applied DEV then PROD for fresh explicit2026-10-29 consent; historical consents remain unchanged. Five private research tables/scientific schema preserved. Backend45-test production suite passed; client privacy/dashboard fixtures passed. Independent actual local HTTP→dev Neon capture/feed/deletion/late-write410/cross-origin403/cleanup passed. Provider fixture tests are not delivery evidence.
+- **Clarity exact cause:** both hosted services still run6394c039749a; that source lacks wrapper, routes and research flag. October28 manual redeploy reused older source. Public tag200 is reachable only, not installed/recording. Publish reconciled source; waiting does not install code.
+- **Oracle status caution:** invalid-key logs were Oct28 at12:39 UTC; production manual deploy at16:36 UTC happened later. Latest model success remains unverified; do not present old401 as a fresh failure.
+- **Real SDK delivery QA:** one consented local dev session sent session.started + scene.viewed to EU ingestion; two HTTP200 responses, zero page errors, Clarity blocked, no model/private content or Neon fixture. QA-only automation-detection override; production SDK unchanged. Forced dashboard refresh now confirms one session.started event; hostedcapture remains unverified.
+- **Publication:** combined Oct29 package under platform_docs/user_research_2026-10-29 preserves newer remote Science/Ecosystem/guided Oracle and all previous research/UI guards; clean patch reapplication matches bytes. Local checkout is stale; avoid wholesale publish. ROLES/CLAUDE/team skill reserve Git and publication for Lior. Current guide: platform_docs/POSTHOG_LIVE_TESTING.md. No model call, private-key copy or code publication by agents.
+
+
+_Last updated: 2026-10-28 15:58 UTC · Codex / Coordinator · isolated user research schema live; Clarity code local; production credential rejected._
 
 > Living technical status: **what's built, what's live, what's broken.** Short on purpose.
 > Tasks and priorities → Asana (mirrored in `platform_docs/ASANA_SNAPSHOT.md`). History → `AGENT_UPDATE_LOG.md`.
@@ -19,9 +43,30 @@ Status key: ✅ **live on prod** · 🟡 **on dev only** (committed, not promote
 
 ---
 
-## 1. Production — what reviewers can actually use (verified 2026-10-11)
+## Current verification — 2026-10-28
 
-Production runs **`prod-20260921-1717`** (commit `c563d16`), started **2026-09-21**, model `claude-sonnet-4-6`, password gate on. `/api/health` → db ok, key present.
+- **Original production Oracle still rejects its configured key.** Fresh28 October12:39 UTC guided-decision/answer logs return 401 invalid x-api-key. Production/dev use the same 6394c039749a and model, with separate environment credentials. User confirmed changing dev only. A valid key must be saved/deployed on original MeatCODE srv-d96ftplaeets73da7vng and tested with a real signed-in answer. Presence in health is not model access. Source now makes Render environment authoritative over dotenv and labels health configuration-only; unpublished, no credential changed.
+- **Research storage is live:** additive migration0016 created isolated user_research schema on both Neon branches (five tables, 12 indexes, no PUBLIC grants), preserving scientific tables. Rollback tests and independent schema verification passed; all research/test rows are zero after cleanup.
+- **Clarity integration is local, not hosted:** supplied project z4upnrbddu; explicit opt-in, whole-body masking, advertising denied, metadata-only events, submitted first-party feedback and deletion controls. No prompts/answers/attachments/account identities in events. Existing scientific download excludes research data; static private exports blocked. Actual local HTTP→dev Neon persistence, deduplication, deletion and late-write rejection verified. Local server restarted.
+- **Operations and limits:** private JSONL export, manual90-day cleanup and server-token dashboard aggregate import provided. No scheduler or real Microsoft export/recording test; no token configured. Shared Clarity project aggregates cover both domains; they are not production-filtered records or raw replay copies. Feedback is separate from scientific evidence/model training.
+- **Publication package:** platform_docs/user_research_2026-10-28/README.md and USER_RESEARCH_CLARITY.md. Combined current-main patch preserves newer Science/Ecosystem/guided Oracle and prior Oct27 fixes. Reconcile stale checkout; Lior publishes through Release Center. No Git/commit/deploy or key mutation by agents.
+
+## Current verification — 2026-10-27
+
+**2026-10-28 clarification:** Lior confirmed the service updated was **dev-meatCODE** at meatcode.onrender.com. This resolves the service-identity question; it does not establish that original production received the key change. Render still returns original production's latest deploy as dep-dbg8rgd9fdbs73d4bnj0 (2026-10-27 11:41:48UTC), with no newer deploy as of this check. Direct repair to original **MeatCODE**, srv-d96ftplaeets73da7vng, at meatcode-oracle.onrender.com: set a valid ANTHROPIC_API_KEY through Render, save/deploy, then verify an authenticated Oracle answer. No key read/copied/changed or deployment triggered by agent.
+
+**Dev follow-up:** user-observed staging answer is supported by11:53UTC request/generated-answer follow-up logs; same commit/model as production. Credential/config difference is the current lead. User says already deployed; no newer original-production deployment returned after12:41Zurich, so service identity is being clarified.
+
+- **Production build is live; Oracle answers are broken.** Original MeatCODE `srv-d96ftplaeets73da7vng` at meatcode-oracle.onrender.com runs main/`6394c039749a`, model `claude-sonnet-4-6`. User's updated-key manual deployment `dep-dbg8rgd9fdbs73d4bnj0` went live11:41:48UTC. Signed-in test then failed; matching guided-decision/answer logs at11:43:09/13UTC show **401 authentication_error invalid x-api-key** on the new instance. Fresh valid key + deployed environment + successful actual request still needed. Health only checks configured strings, not model authentication or DB connectivity.
+- **Local changes ready, not published:** Simulate's three requested sidebar sections removed; Analytics nav follows the canonical Analytics zone switch (explicit OFF overrides legacy ON); Release Center distinguishes saved settings from observed production build/switch state. Local server restarted with the changes at localhost:8000. Analytics remains a labelled demo/illustrative workspace.
+- **Publication requires reconciliation:** remote main has newer Science/Ecosystem/guided Oracle code absent from this checkout. Main-safe narrow patches, visual proof and verification: `platform_docs/release_fixes_2026-10-27/README.md`. Both patches applied together and syntax checks passed against inspected remote snapshots. Do not publish the stale local checkout wholesale. Lior owns normal dev→staging→production publication.
+- **Separate Yochai resource:** `meatcode-oracle-0o99.onrender.com` remains a distinct missing-ANTHROPIC_API_KEY startup failure; do not confuse it with original production's rejected key. Local Oracle key also returned401; local retrieval itself returned sources.
+
+The following older deployment/feature tables are historical snapshots; they do not establish today's live commit, key validity or feature visibility. Asana remains authoritative for task priorities.
+
+## 1. Historical production baseline — verified 2026-10-11
+
+At that historical check, production ran **`prod-20260921-1717`** (commit `c563d16`), started **2026-09-21**, model `claude-sonnet-4-6`, password gate on. `/api/health` → db ok, key present.
 
 | Capability | Status | Note |
 |---|---|---|
@@ -36,7 +81,7 @@ Production runs **`prod-20260921-1717`** (commit `c563d16`), started **2026-09-2
 
 **Correction to every older doc:** "B1 — deploy the backlog" (the critical path through August) is **done**. Promotions on 2026-08-31 and 2026-09-21 shipped it. Entries in the archive marked "awaiting deploy-dev" up to 2026-09-21 are live.
 
-## 2. On dev only — waiting for `promote-to-prod.command` 🟡
+## 2. Historical dev-only snapshot — recheck before promotion 🟡
 
 | Commit | Date | What |
 |---|---|---|

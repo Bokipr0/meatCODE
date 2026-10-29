@@ -1,0 +1,42 @@
+{
+  "last_updated_utc": "2026-10-28T15:56:26.255222+00:00",
+  "scope": "Independent read-only schema/row verification; no schema or data mutation",
+  "branches": {
+    "dev": {
+      "tables": [
+        "clarity_exports",
+        "events",
+        "feedback",
+        "sessions",
+        "withdrawals"
+      ],
+      "indexes": 12,
+      "public_grants": 0,
+      "row_counts": {
+        "clarity_exports": 0,
+        "events": 0,
+        "feedback": 0,
+        "sessions": 0,
+        "withdrawals": 0
+      }
+    },
+    "prod": {
+      "tables": [
+        "clarity_exports",
+        "events",
+        "feedback",
+        "sessions",
+        "withdrawals"
+      ],
+      "indexes": 12,
+      "public_grants": 0,
+      "row_counts": {
+        "clarity_exports": 0,
+        "events": 0,
+        "feedback": 0,
+        "sessions": 0,
+        "withdrawals": 0
+      }
+    }
+  }
+}

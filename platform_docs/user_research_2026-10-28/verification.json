@@ -1,0 +1,65 @@
+{
+  "last_updated_utc": "2026-10-28",
+  "base_commit": "6394c039749ad0e6d7279dabd00a380dfb95ee87",
+  "scope": "Narrow combined patch assembled from inspected current-main snapshots, preserving Science/Ecosystem/guided Oracle and Oct27 UI/release work. No Git/publication.",
+  "checks": [
+    {
+      "patch": "release-controls-current-main.patch",
+      "passed": true
+    },
+    {
+      "patch": "simulate-analytics-current-main.patch",
+      "passed": true
+    },
+    {
+      "patch": "meatcode-user-research-backend.patch",
+      "passed": true
+    },
+    {
+      "patch": "2026-10-28_user_research_main.patch",
+      "passed": true
+    },
+    {
+      "inline_scripts": "app/meatcode_mockup.html",
+      "count": 17,
+      "passed": true
+    },
+    {
+      "inline_scripts": "app/release-center.html",
+      "count": 1,
+      "passed": true
+    },
+    {
+      "combined_candidate_python_tests": true,
+      "output": ".........................sss......\n----------------------------------------------------------------------\nRan 34 tests in 0.065s\n\nOK (skipped=3)"
+    }
+  ],
+  "delivery_patch_reapplies_exactly": true,
+  "files": {
+    ".env.example": "60b69a5762fd0c7495a31285a1596ffac6e94c701d16bc3480f03063251d0797",
+    ".telemetry/changelog.md": "c72d8ff948c9f093f3b171ae9bffe71dfe058556cbe7a9c7c7523034724f47e0",
+    ".telemetry/delta.md": "31525763f547ac34101153f80a67058384acb2e3340347a2a2263362d623f248",
+    ".telemetry/product.md": "5b722a0b4deb07e2d440868bd3a556c673c68e1c4db3b5e4bfdd3b5f2c7a915f",
+    ".telemetry/tracking-plan.yaml": "4f3bc264444adc24465f7db24584254874fe2ea865be42083418fe600850955e",
+    "Release Center/features.json": "0bc641ead7e74eee48085033e66e98d9acd2b536e6a95ae882d5dfdcd434c8b1",
+    "app/assets/user-research.js": "79ce0c8a17baf1ed697f79102bb07bc59fc4336147ea73126ddf1319bba24505",
+    "app/meatcode_mockup.html": "7c2fc0f2a7dc605d0013857d572af5bdefc59b3fbbb64dc2c74aecfeab6c3c0b",
+    "app/release-center.html": "377b925b204cd36f19bcc28bc7c9b5396dba1b4fa62fbd8b0d8bd1e5249747f4",
+    "db/migrations/0016_user_research.sql": "e44c510f2f4648074fa9b6f84dc6011a65b57fa27e2dad9766a3673fc3e8d608",
+    "pipeline/user_research/README.md": "cec5d428173f2fcb3509ea1eb9134da8e85b163533fbb8b856135f3f8d832bab",
+    "pipeline/user_research/clarity_import.py": "842b46ec07f95c7321649100b89c36816e1739105717db0db4495be27ebce047",
+    "pipeline/user_research/manage.py": "bc95d3fd507497ff86d82b9fd37edc58566147a87ec6bb5138e536adc30eb5d7",
+    "pipeline/user_research/migrate.py": "f80712ad317575fda73ee2988cc4b1df053122423fef768bc1809bab38bc0988",
+    "pipeline/user_research/settings.py": "549ea8941f39ae66a4e0dd121d6809c154f287eb8d552e175d34a9f52901256f",
+    "pipeline/user_research/verify.py": "b24c3243fedcca9fddadef87398baa288692c2fa39800a12434f46fc1dcdf8bb",
+    "platform_docs/USER_RESEARCH_CLARITY.md": "5b4b2dd2117f04c681af8a652434ab7f373102155f7452a0a498e0f01184c3dd",
+    "server/meatcode_server.py": "1cfad10bdad5db2d32fe26fbce92c41a31da237059743bdf344d02aa9c7ab9ce",
+    "server/research_http.py": "c7db5928a036a3bddaf7517202edc3029833df51d03872ac07fcb7acb15e0781",
+    "server/user_research.py": "674e59d4911e81fd8d404d964bbfed1ddf064cb2fbbf56ee403c1225832463f7",
+    "tests/test_render_environment_precedence.py": "88105adca69cb01a079587cd459d69a8319b7e2f753176118f077614c9a65110",
+    "tests/test_research_http.py": "b4b25c08e8d97deff8b4428b5875a6be5c7885fbb19e42cdad0da43ebdbb3521",
+    "tests/test_user_research.py": "074dddf91597f28b40965a6a988c180f8a347f41cb46f7d458c93593c9f6ca24",
+    "tests/test_user_research_client.cjs": "2e96ef90c0937f2bf0e183e1aa7c8940c154a8a5c453d924154beacc5639f6da"
+  },
+  "patch_sha256": "3968d16aababbff02819afd874158c401ae26f4e7a59a0721ce1e680e6ee84fe"
+}
