@@ -1,5 +1,16 @@
 # PROJECT_STATE — MeatCODE
 
+## 2026-10-29 · LIVE release — Clarity/PostHog and private testing dashboard
+
+User explicitly authorized redeploy/update and separately approved enabling the private administrator dashboard. Published the reviewed changes from a clean checkout, preserving newer Science/Ecosystem/guided Oracle and original local work. Both dev and production now run20acea3e648e0e3feba40845cae3936951867b07; verified /api/version, user_testing+analytics flags, healthy startup and protected research routes401 without site login. Staging deploydep-dbhkm9h9q7ns73d280qg and productiondep-dbhkn5vb9u1s73a0nsv0 are live. Rollback tagprod-20261029-analytics-live-testing. No new production ERROR/Traceback logs found after deployment.
+
+Public PostHog settings, USER_RESEARCH_ENABLED=true and distinct RESEARCH_ADMIN_TOKEN values are configured on both Render services; admin values remain only in secure Render settings and ignored local .env/.env.dev, never chat/Git. Dashboard /research-dashboard requires normal site login plus the corresponding administrator value retrieved privately from Render Environment. Local Release Center administrators retain token-free local access. No site password or Anthropic key was changed.
+
+Fifty offline checks passed (five database-only skips); actual staging HTML browser privacy suite passed. Prior real local SDK delivery is queryable in PostHog; first-party HTTP→Neon capture/deletion checks passed and probes removed. Protected hosted-page checks require the user's signed-in browser: user initially did not see the privacy control before final production deployment; fresh production opt-in confirmation requested. Actual hosted Microsoft recordings and successful live Oracle model call remain unverified. Health labels key/database checks configuration-only. Do not claim a valid model credential from key presence.
+
+Correction: Render environment-update API operations themselves triggered redeploys of then-current source; prior notes saying no deploy was triggered were inaccurate. Missing Clarity source was resolved by publishing the new Git commit, not by those earlier old-source redeploys. Local original checkout remains intentionally untouched/stale; do not blanket-push it over the clean published release. Credential-free verification is under data/verification/research-deployment-2026-10-29.json and research-hosted-public-checks-2026-10-29.json.
+
+
 ## 2026-10-29 · Authorized release — analytics and live testing
 
 Lior explicitly requested redeployment and update. Applied the reviewed analytics release to a clean checkout of current dev/main6394c039749a; preserved newer Science/Ecosystem/guided Oracle. Added consent-gated Clarity/PostHog, isolated research API/storage/consent0017, private live dashboard and prior sidebar/Analytics/Release Center fixes. Latest main/dev were identical before release. Offline50-test suite passed with5 live-only skips; previous rollback-only Neon tests and real local HTTP/provider checks passed. Local dev SDK test is queryable in PostHog. Public provider settings already saved on both Render services. Publishing staging first, then production only after verification; do not infer deployment success from this preparation entry. User authorization overrides standing agent-no-publication convention for this release. No secret value committed.

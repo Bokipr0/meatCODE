@@ -1,5 +1,16 @@
 # MeatCODE live testing — PostHog and private Neon dashboard
 
+## Deployment update — 29 October2026
+
+Lior explicitly authorized publishing this release and separately approved enabling the private dashboard. Clean-checkout release20acea3e648e was published to dev, verified live with user_testing enabled, then promoted to main with rollback tagprod-20261029-analytics-live-testing. Render deployment verification is recorded in data/verification/research-deployment-2026-10-29.json; final production status must come from that record, not the historical preparation text below.
+
+USER_RESEARCH_ENABLED=true and distinct RESEARCH_ADMIN_TOKEN credentials are saved on both Render services. The private dashboard at /research-dashboard requires the normal site login, then the corresponding research-admin value from that service's Render Environment settings. Do not paste it into chat or a URL. The dashboard keeps it in page memory. Local ignored .env/.env.dev retain the matching values. No site password, Anthropic key or provider API secret was changed.
+
+Environment API updates also triggered Render redeployments of their then-current source. Earlier wording that they did not trigger deployment is corrected here; those old-source redeployments did not install missing tracking code. The new Git source release does.
+
+Earlier preparation notes below are historical. Production capture and Microsoft recording delivery require a signed-in tester's fresh opt-in; they are not proved by public health or code publication.
+
+
 _Last updated: 2026-10-29 · Project Coordinator._
 
 ## Ready now
