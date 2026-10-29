@@ -1,7 +1,7 @@
 {
   "_schema": {
     "version": 2,
-    "updated": "2026-10-26",
+    "updated": "2026-10-28",
     "doc": "platform_docs/DEV_AREA.md",
     "about": "Registry of every flagged FEATURE and every dev SCREEN. Backward compatible: the server still reads flags.<key>.dev / .prod, and the app still turns each ON flag into a body class ff-<key>. Everything else here is descriptive metadata rendered by the Dev Area hub.",
     "fields": {
@@ -17,7 +17,8 @@
       "note": "optional caveat / known issue.",
       "dev": "boolean — ON in the dev environment.",
       "prod": "boolean — ON in production."
-    }
+    },
+    "last_updated": "2026-10-28 UTC · Full-Stack · add opt-in user testing flag; preserve every existing switch."
   },
   "flags": {
     "new_logo": {
@@ -158,16 +159,17 @@
     },
     "analytics": {
       "label": "Analytics zone",
-      "description": "Analytical-methods overview: GC-MS (data exists — Meaty Volatile Library), HPLC, Olfactory, H/C-NMR, Spectroscopy (planned).",
+      "description": "Show Analytics in the platform navigation and the analytical-methods overview. The workspace is a preview using illustrative data; GC-MS literature data is available in the Meaty Volatile Library.",
       "kind": "screen",
       "added": "2026-08-15",
       "status": "preview",
       "where": {
-        "screen": "Dev Area → Screens (also reachable from the product)",
-        "spot": "'Analytics Zone' card in the Dev Area; in the mockup it is the third Research tile ('Analytics', labelled preview).",
-        "file": "app/dev/analytics.html"
+        "screen": "Platform top navigation → Analytics; Dev Area → Screens",
+        "spot": "Analytics navigation opens the in-app workspace. The Dev Area card opens the methods overview.",
+        "file": "app/meatcode_mockup.html + app/dev/analytics.html + app/dev/analytics_workspace.html"
       },
-      "destination": "Research tile → Analytics (already linked from the mockup's Research screen, labelled preview).",
+      "destination": "Platform navigation → Analytics workspace (preview). This canonical switch takes precedence over the legacy analytics_module setting.",
+      "updated": "2026-10-27",
       "url": "/app/dev/analytics.html",
       "dev": true,
       "prod": true
@@ -224,7 +226,7 @@
     },
     "analytics_workspace": {
       "label": "Analytics workspace (bring-your-own data)",
-      "description": "Guided GC-MS / NMR upload -> align a scientist's own data to a MeatCODE reference profile and interpret the difference: chromatogram/spectrum overlay, analytical profile, sensory radar, peak alignment.",
+      "description": "List the guided GC-MS / NMR workspace preview in the Dev Area. This switch does not control the platform's Analytics navigation; use Analytics zone for that. Comparisons currently use illustrative data.",
       "kind": "screen",
       "added": "2026-08-31",
       "status": "preview",
@@ -233,7 +235,8 @@
         "spot": "'Analytics workspace' card; the page carries a PREVIEW banner - guided stepper on illustrative data, no real parsing.",
         "file": "app/dev/analytics_workspace.html"
       },
-      "destination": "Analytics zone -> GC-MS/NMR 'Compare your data' (MVP board A3). Lior's call once the fingerprint schema + reference-data source land.",
+      "destination": "Dev Area listing only. The platform Analytics entry is controlled by analytics. The legacy analytics_module switch is a fallback only when analytics is absent.",
+      "updated": "2026-10-27",
       "url": "/app/dev/analytics_workspace.html",
       "note": "Guided-stepper mockup (method -> upload -> confirm format -> reference -> compare). Figures are generated for demonstration; wiring to real /api/* + a reference-profile source (A1/A3) is the follow-up.",
       "dev": true,
@@ -257,19 +260,20 @@
       "prod": false
     },
     "analytics_module": {
-      "label": "Analytics module (top nav)",
-      "description": "Adds an 'Analytics' chip as the 3rd top-nav section (Oracle - Research - Analytics - Simulate); clicking it opens the guided Analytics workspace.",
+      "label": "Analytics module (legacy navigation switch)",
+      "description": "Compatibility fallback for installations without an Analytics zone setting. Ignored when Analytics zone exists; use Analytics zone to show or hide the navigation entry.",
       "kind": "screen",
       "added": "2026-08-31",
       "status": "preview",
       "where": {
         "screen": "Top nav (all topbars)",
-        "spot": "Top bar, 3rd chip before Simulate; a load-time pass inserts it only when body.ff-analytics_module is set.",
+        "spot": "Top bar, before Simulate; analytics controls visibility. analytics_module is read only if the canonical analytics key is absent.",
         "file": "app/meatcode_mockup.html + server/meatcode_server.py (/analytics route)"
       },
-      "destination": "LIVE INTEGRATION (2026-09-01): Top-nav 'Analytics' (3rd chip, additive) -> in-app #analytics scene that iframes the workspace (embed mode). /analytics pretty-URL kept as a secondary direct entry. dev ON / prod OFF.",
+      "destination": "Platform navigation → in-app Analytics workspace preview. /analytics remains a secondary direct entry.",
+      "updated": "2026-10-27",
       "url": "/analytics",
-      "note": "Additive nav chip (Oracle/Research/Simulate untouched). Server serves /analytics + /analytics/ as a clean alias for /app/dev/analytics_workspace.html. Distinct from the analytics_workspace flag (which lists the workspace under Dev Area screens).",
+      "note": "Legacy fallback only: an explicit analytics true or false takes precedence. analytics_workspace only controls its Dev Area listing. Saved local switches reach production after promotion and successful deployment.",
       "dev": true,
       "prod": false
     },
@@ -337,6 +341,22 @@
         "file": "app/meatcode_mockup.html"
       },
       "note": "Yochai, 26 Oct: \"Science module replaces Research (hide, don't delete)\". Requires science_module ON as well, so the nav can never lose both.",
+      "dev": true,
+      "prod": true
+    },
+    "user_testing": {
+      "label": "User testing and feedback",
+      "description": "Opt-in Microsoft Clarity session research and isolated anonymous feedback; no capture before consent.",
+      "kind": "feature",
+      "added": "2026-10-28",
+      "updated": "2026-10-28",
+      "status": "preview",
+      "where": {
+        "screen": "All product screens",
+        "spot": "Research consent and feedback controls; authenticated /api/research/* routes.",
+        "file": "app/assets/user-research.js + server/research_http.py + server/user_research.py"
+      },
+      "note": "Requires the isolated user_research database schema. USER_RESEARCH_ENABLED=false is an emergency capture switch; withdrawal stays available. Clarity loads only after explicit consent.",
       "dev": true,
       "prod": true
     }

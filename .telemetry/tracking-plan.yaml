@@ -1,0 +1,125 @@
+# Last updated: 2026-10-29 · Project Coordinator · PostHog destination and private live dashboard.
+{
+  "meta": {
+    "product": "MeatCODE",
+    "version": "1.1.0",
+    "created": "2026-10-28",
+    "updated": "2026-10-29",
+    "owner": "Lior / MeatCODE",
+    "implementation": "custom + posthog-js 1.442.0",
+    "destinations": [
+      "Microsoft Clarity",
+      "Neon user_research",
+      "PostHog EU project 325792"
+    ],
+    "pii_policy": "none",
+    "internal_user_policy": "none",
+    "pii_note": "No identity/event PII. Voluntary feedback comments stay first-party only; neither analytics provider receives comment/prompt/answer text.",
+    "last_updated": "2026-10-29"
+  },
+  "entities": {
+    "session": {
+      "id_property": "session_id",
+      "id_format": "UUIDv4 stored in sessionStorage",
+      "traits": []
+    }
+  },
+  "groups": [],
+  "events": [
+    {
+      "name": "session.started",
+      "category": "lifecycle",
+      "description": "Testing session begins after explicit opt-in. Reloads can generate another event for the same tab session; count distinct session IDs for session totals.",
+      "properties": [],
+      "expected_frequency": "low"
+    },
+    {
+      "name": "scene.viewed",
+      "category": "navigation",
+      "description": "An allowlisted module becomes active. No URL, query, keystroke, hover or scrolling event is stored first-party.",
+      "properties": [],
+      "expected_frequency": "low"
+    },
+    {
+      "name": "oracle.submitted",
+      "category": "core_value",
+      "description": "Tester submits an Oracle turn. No question text is included.",
+      "properties": [],
+      "expected_frequency": "medium"
+    },
+    {
+      "name": "oracle.completed",
+      "category": "core_value",
+      "description": "Oracle stream finishes successfully, never after an SSE error.",
+      "properties": [
+        {
+          "name": "duration_ms",
+          "type": "integer",
+          "required": false,
+          "minimum": 0,
+          "maximum": 3600000
+        },
+        {
+          "name": "source_count",
+          "type": "integer",
+          "required": false,
+          "minimum": 0,
+          "maximum": 1000
+        }
+      ],
+      "expected_frequency": "medium"
+    },
+    {
+      "name": "oracle.failed",
+      "category": "core_value",
+      "description": "Oracle turn fails, including model errors carried inside HTTP200 SSE.",
+      "properties": [
+        {
+          "name": "duration_ms",
+          "type": "integer",
+          "required": false,
+          "minimum": 0,
+          "maximum": 3600000
+        },
+        {
+          "name": "error_code",
+          "type": "string",
+          "required": false,
+          "enum": [
+            "network",
+            "model_unavailable",
+            "session_expired",
+            "unknown"
+          ]
+        }
+      ],
+      "expected_frequency": "low"
+    },
+    {
+      "name": "feedback.submitted",
+      "category": "core_value",
+      "description": "An explicit first-party rating and optional comment were accepted. Clarity receives the event name only.",
+      "properties": [],
+      "expected_frequency": "low"
+    }
+  ],
+  "snapshot_sync": {
+    "cadence": "manual",
+    "traits": []
+  },
+  "implementation_notes": [
+    "Every first-party event has a random event_id and server timestamp, session_id, environment and allowlisted scene.",
+    "Unknown fields and arbitrary properties are rejected by the server. No raw URLs, chat text, IPs or user agents are stored in this research schema. Existing host access logs have a separate lifecycle.",
+    "Consent version 2026-10-29; no SDK or events before opt-in. Withdrawal deletes first-party session/events/feedback and prevents late requests from recreating them.",
+    "Clarity events contain only approved names and categorical tags, not comments, identifiers or question text. Whole application body is masked before SDK load.",
+    "Feedback is session-level experience feedback, not a question-linked scientific quality score.",
+    "Event transport is best effort; client interruptions, blockers and disabled consent affect denominators. Do not infer unique users or complete operational availability.",
+    "Clarity dashboard export is aggregate-only. Manual import uses a server-side token and safe aggregate dimensions. Recordings remain managed in Clarity.",
+    "Retention policy is 90 days. Purge tooling is provided; no automatic schedule is created by this change.",
+    "PostHog receives explicit approved events only after renewed opt-in. Autocapture, pageview/pageleave, replay, surveys, feature flags and person profiles are disabled. URL/referrer/automatic properties are removed before_send; required public token and separate page-memory anonymous distinct_id are retained.",
+    "PostHog and Clarity do not receive first-party session UUIDs. PostHog identity is separate and ephemeral; its counts cannot identify people or link to first-party deletion capabilities.",
+    "Native dashboard 1066277 has six validated saved insights. Initial queries have no product data. Public SDK configuration saved for both Render services; publication and real hosted consented capture verification remain separate.",
+    "Private /research-dashboard polls first-party Neon every three seconds. Hosted data requires a separate RESEARCH_ADMIN_TOKEN beyond the site gate. Local Release Center administrators can view dev/prod privately.",
+    "Stop clears application queues and requests future provider opt-out; already-started provider requests may finish. First-party deletion does not delete already-uploaded provider copies."
+  ]
+}

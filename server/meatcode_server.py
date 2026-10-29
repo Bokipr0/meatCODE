@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Last updated: 2026-10-25 20:45 UTC · Yochai (PM) with Claude · NEW GET /api/ecosystem/people (flag
+# Last updated: 2026-10-29 10:49 UTC · Full-Stack · private user-research dashboard routing; existing research, backup and Render-environment guards preserved.
 #   `ecosystem_module`): the Ecosystem's people + papers LIVE from Neon via ecosystem.live_people(pg_rows)
 #   (SELECT-only, 10-min cache); no DATABASE_URL or a DB error -> 503 and the page uses its labelled offline copy.
 # Prev 2026-10-25 19:15 UTC · Yochai (PM) with Claude · Guided Oracle behind flag `oracle_guided`:
@@ -259,6 +259,7 @@ import os, sys, json, re, threading, base64, hmac, datetime, subprocess, glob, t
 import shutil, gzip, io, zipfile
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
+from urllib.request import Request, urlopen
 
 # ─── Config ──────────────────────────────────────────────────────────
 PORT       = int(os.environ.get("PORT", "8000"))  # cloud hosts (Render, etc.) inject $PORT; 8000 locally
@@ -293,28 +294,28 @@ TEMPLATES_DIR = os.path.join(REPO_ROOT, "app", "templates")  # Claude Design tem
 # ─── tiny .env loader (no python-dotenv needed) ──────────────────────
 def load_dotenv(path, skip_empty=False):
     if not path or not os.path.exists(path): return
-    for line in open(path, encoding="utf-8"):
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line: continue
-        k, v = line.split("=", 1)
-        k, v = k.strip(), v.strip().strip('"').strip("'")
-        # A blank value in an OVERLAY file (e.g. an empty ANTHROPIC_API_KEY= in
-        # .env.dev) must never wipe a real value already loaded from .env.
-        if skip_empty and v == "": continue
-        # .env is authoritative: overwrite any stale shell export (e.g. an old
-        # ANTHROPIC_API_KEY left over from `export`), which setdefault would keep.
-        os.environ[k] = v
+    with open(path, encoding="utf-8") as env_file:
+        for line in env_file:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line: continue
+            k, v = line.split("=", 1)
+            k, v = k.strip(), v.strip().strip('"').strip("'")
+            # A blank value in an OVERLAY file (e.g. an empty ANTHROPIC_API_KEY= in
+            # .env.dev) must never wipe a real value already loaded from .env.
+            if skip_empty and v == "": continue
+            # .env is authoritative: overwrite any stale shell export (e.g. an old
+            # ANTHROPIC_API_KEY left over from `export`), which setdefault would keep.
+            os.environ[k] = v
 
-# .env at repo root first (the convention), then next to this script as fallback
-load_dotenv(os.path.join(REPO_ROOT, ".env"))
-load_dotenv(os.path.join(HERE, ".env"))
-# Two-environment support. APP_ENV is set to "dev" by run-local.command and by the
-# meatcode-dev Render service; anything else (incl. unset) means production. When dev,
-# load .env.dev LAST so local dev runs use the DEV database + DEV key, never production.
-# On Render, .env.dev isn't in the repo (gitignored) — the service's own dashboard env
-# vars are used instead, so this line is a harmless no-op there.
+# Render dashboard/linked-group variables are authoritative on hosted services.
+# Local dotenv overlays remain useful on the Mac, but a stale Render Secret File
+# named .env must never replace a dashboard credential or database URL.
+IS_RENDER = os.environ.get("RENDER") == "true"
+if not IS_RENDER:
+    load_dotenv(os.path.join(REPO_ROOT, ".env"))
+    load_dotenv(os.path.join(HERE, ".env"))
 APP_ENV = os.environ.get("APP_ENV", "prod").strip().lower()
-if APP_ENV == "dev":
+if APP_ENV == "dev" and not IS_RENDER:
     load_dotenv(os.path.join(REPO_ROOT, ".env.dev"), skip_empty=True)
 
 # ─── Feature flags (Release Center) ──────────────────────────────────
@@ -368,7 +369,7 @@ def save_flags(flags):
 FLAG_TEXT_FIELDS = ("label", "description", "kind", "added", "updated", "status",
                     "destination", "url", "note")
 FLAG_WHERE_FIELDS = ("screen", "spot", "file")
-API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+API_KEY = (os.environ.get("ANTHROPIC_API_KEY") or "").strip()
 if not API_KEY:
     sys.stderr.write(
         "\nERROR: ANTHROPIC_API_KEY is not set.\n"
@@ -492,6 +493,20 @@ try:
 except Exception as _e:                      # never let a missing/broken adapter stop the server
     maillard_adapter = None
     sys.stderr.write("[maillard] adapter unavailable: %s\n" % str(_e)[:200])
+
+# Opt-in user-research storage is isolated from the scientific knowledge layer.
+# Missing research modules never prevent Oracle or existing app routes starting.
+try:
+    import research_http
+    import user_research
+except ImportError:
+    research_http = None
+    user_research = None
+
+try:
+    import research_dashboard
+except ImportError:
+    research_dashboard = None
 
 # Papers browser logic (flag `papers_browser`) — pure stdlib; handed pg_rows at call time.
 try:
@@ -966,6 +981,8 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
+        if urlparse(self.path).path.startswith("/api/research/"):
+            self.send_header("Cache-Control", "no-store")
         self.end_headers()
         try:
             self.wfile.write(body)
@@ -984,6 +1001,26 @@ class Handler(SimpleHTTPRequestHandler):
     def list_directory(self, path):
         self.send_error(404, "Not found")
         return None
+
+    def _private_research_path(self, path):
+        """Private CLI exports must never be downloadable through the shared site gate."""
+        try:
+            root = os.path.abspath(os.path.join(SERVE_DIR, "data", "user_research"))
+            translated = os.path.abspath(self.translate_path(path))
+            # Check both lexical and resolved boundaries: encoded/traversal paths and
+            # public symlink aliases cannot expose exports; private symlinks stay private.
+            pairs = ((root, translated), (os.path.realpath(root), os.path.realpath(translated)))
+            return any(os.path.commonpath((boundary, target)) == boundary
+                       for boundary, target in pairs)
+        except (OSError, ValueError):
+            return True
+
+    def send_head(self):
+        # Inherited HEAD serving bypasses do_GET; block export metadata there too.
+        if self._private_research_path(self.path):
+            self.send_error(404, "Not found")
+            return None
+        return super().send_head()
 
     # ─── GET: /api/* handled here; everything else = static files ───
     def do_GET(self):
@@ -1021,15 +1058,32 @@ class Handler(SimpleHTTPRequestHandler):
         # its microphone dictation works — browsers block the mic on file:// / sandboxed panels).
         if path in ("/command-center", "/command-center/"):
             self.path = "/app/agent_command_center.html"
+        # The shell contains no tracking SDK or private data; its read endpoint
+        # additionally requires local administration or a distinct research token.
+        if path in ("/research-dashboard", "/research-dashboard/"):
+            self.path = "/app/internal/research-dashboard.html"
         # Pretty URL for the guided Analytics workspace (the nav "Analytics" section links
         # here). Matches ONLY the bare /analytics(/) so it never shadows /analytics.html or
         # any other path; the file already lives under app/dev/ and is served today.
         if path in ("/analytics", "/analytics/"):
             self.path = "/app/dev/analytics_workspace.html"
+        if self._private_research_path(self.path):
+            self.send_error(404, "Not found")
+            return
         return super().do_GET()
 
     def _handle_api_get(self, path):
         qs = parse_qs(urlparse(self.path).query)
+        if path == "/api/research/dashboard":
+            if research_dashboard is None:
+                return self._send_json({"error": "Research dashboard unavailable."}, 503)
+            return research_dashboard.handle(self, DATABASE_URL, APP_ENV, os.environ,
+                                             self._local_admin_ok())
+        if path.startswith("/api/research/"):
+            if research_http is None:
+                return self._send_json({"error": "Research service unavailable."}, 503)
+            return research_http.handle(self, "GET", path, user_research, DATABASE_URL,
+                                        APP_ENV, os.environ, _flag_on("user_testing"))
         if path == "/api/health":
             # Superset shape: `db`/`ok` kept for back-compat; `db_ok`/`has_anthropic_key`
             # are what app/templates/meatcode-api.js reads for its status chip.
@@ -1038,6 +1092,7 @@ class Handler(SimpleHTTPRequestHandler):
                 "db": bool(DATABASE_URL),
                 "db_ok": bool(DATABASE_URL),
                 "has_anthropic_key": bool(API_KEY),
+                "checks": {"database": "configuration_only", "anthropic": "configuration_only"},
                 "model": MODEL,
             })
         if path == "/api/flags":
@@ -1084,6 +1139,34 @@ class Handler(SimpleHTTPRequestHandler):
                                "retryable": False}}, 404)
             body, code = view
             return self._send_json(body, code)
+        if path == "/api/release/status":
+            # Compare saved flags with the public live build.
+            # Same local-only gate as release controls. Fixed public URL, no credentials
+            # forwarded and no caller-controlled URL (not an authenticated HTTP proxy).
+            if not self._local_admin_ok():
+                return self._send_json({"error": "not found"}, 404)
+            target = "https://meatcode-oracle.onrender.com/api/version"
+            checked_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
+            try:
+                request = Request(target, headers={"Accept": "application/json"})
+                with urlopen(request, timeout=8) as response:
+                    raw = response.read(65537)
+                if len(raw) > 65536:
+                    raise ValueError("version response too large")
+                live = json.loads(raw)
+                if not isinstance(live, dict) or live.get("env") != "prod":
+                    raise ValueError("unexpected production version response")
+                allowed = ("service", "env", "commit", "commit_full", "branch", "server_started_utc", "model")
+                version = {key: live[key] for key in allowed if key in live}
+                published = live.get("feature_flags")
+                if isinstance(published, dict):
+                    version["feature_flags"] = {key: value for key, value in published.items()
+                                                 if isinstance(value, bool)}
+                return self._send_json({"ok": True, "url": target, "checked_at": checked_at,
+                                        "production": version})
+            except Exception:
+                return self._send_json({"ok": False, "url": target, "checked_at": checked_at,
+                                        "error": "Live production could not be checked. Saved switches are unchanged."}, 502)
         if path == "/api/release/history":
             # Promoted snapshots + which is live. READ-ONLY, so it's also visible on the
             # hosted DEV site (powers app/dev/versions.html); production keeps the 404.
@@ -1104,6 +1187,8 @@ class Handler(SimpleHTTPRequestHandler):
                 "server_started_utc": STARTED_AT,
                 "model": MODEL,
                 "password_gate": bool(SITE_PASSWORD),
+                "feature_flags": {key: bool(value.get(APP_ENV, False))
+                                  for key, value in load_flags().items()},
                 "features": {
                     "sse_status_event": True,        # "Digging the MeatCODE database" phase
                     "vendor_neutral_errors": True,   # no model name in user-facing errors
@@ -1820,12 +1905,15 @@ class Handler(SimpleHTTPRequestHandler):
              every row of real data, no DDL. Used only when `pg_dump` isn't installed; the
              zip's README says so explicitly, same honesty convention as everywhere else in
              this file (never silently pass off a partial artifact as the full thing).
+        Private user_research data is excluded from this shared scientific-data backup;
+        its authorized research export has a separate server-side CLI.
         Never a 500 — DB/tooling failures degrade to a clear 503."""
         stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d_%H%M")
         if shutil.which("pg_dump"):
             try:
                 dump = subprocess.run(
-                    ["pg_dump", DATABASE_URL, "--no-owner", "--no-privileges", "--format=plain"],
+                    ["pg_dump", DATABASE_URL, "--no-owner", "--no-privileges", "--format=plain",
+                     "--exclude-schema=user_research"],
                     capture_output=True, timeout=120,
                 )
                 if dump.returncode != 0 or not dump.stdout:
@@ -1852,7 +1940,7 @@ class Handler(SimpleHTTPRequestHandler):
                         "MeatCODE Neon data export — DATA ONLY.\n"
                         "The pg_dump binary was not available on this host, so schema DDL, "
                         "indexes, constraints, and sequences are NOT included here — only "
-                        "every row of every table, one CSV per table.\n"
+                        "every row of every public table, one CSV per table; private user research is excluded.\n"
                         "Taken (UTC): %s\nTables: %d\n" % (stamp, len(tables)))
                     with conn.cursor() as cur:
                         for t in tables:
@@ -2223,6 +2311,12 @@ class Handler(SimpleHTTPRequestHandler):
             return self._handle_admin_post(path)
         if not self._authorized():
             return self._deny()
+        if path.startswith("/api/research/"):
+            if research_http is None:
+                self.close_connection = True
+                return self._send_json({"error": "Research service unavailable."}, 503)
+            return research_http.handle(self, "POST", path, user_research, DATABASE_URL,
+                                        APP_ENV, os.environ, _flag_on("user_testing"))
         # ── Maillard simulator submit (flag-gated) — thin same-origin proxy so the browser
         #    never talks to the separate simulator service directly (no CORS, no 2nd credential). ──
         if path == "/api/simulate":
@@ -2366,3 +2460,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

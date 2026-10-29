@@ -1,0 +1,189 @@
+# Last updated: 2026-10-29 10:49 UTC · Full-Stack · public PostHog config allowlist; bounded same-origin capture and withdrawal preserved.
+"""HTTP glue only. The caller MUST apply its existing site-password gate first.
+
+Storage and consent validation live in user_research. No model client, database
+connection, credentials, IP tracking or application bootstrap is imported here.
+"""
+from collections import deque
+import json
+import re
+import socket
+import threading
+import time
+from urllib.parse import urlsplit
+
+MAX_BODY_BYTES = 16384
+CAPTURE_LIMIT = 120
+CAPTURE_WINDOW_SECONDS = 60
+READ_TIMEOUT_SECONDS = 5
+_captures = deque()
+_capture_lock = threading.Lock()
+_FALSE_VALUES = frozenset(("false", "0", "off", "no"))
+_POST_ROUTES = {
+    "/api/research/events": "write_events",
+    "/api/research/feedback": "write_feedback",
+    "/api/research/withdraw": "withdraw",
+}
+
+
+def effective_config(module, environ, app_env, flag_enabled, database_url):
+    """The Release Center flag opts in; the environment can always disable it."""
+    settings = dict(environ)
+    disabled = str(settings.get("USER_RESEARCH_ENABLED", "")).strip().lower() in _FALSE_VALUES
+    enabled = bool(flag_enabled and database_url and not disabled)
+    settings["USER_RESEARCH_ENABLED"] = "1" if enabled else "0"
+    raw = module.config(settings, app_env)
+    # Explicit allowlist: never return storage URLs, admin tokens or future private fields.
+    return {
+        "enabled": bool(enabled and raw.get("enabled")),
+        "environment": raw["environment"],
+        "clarity_project_id": raw["clarity_project_id"],
+        "consent_version": raw["consent_version"],
+        "retention_days": raw["retention_days"],
+        "posthog": {
+            "enabled": bool(enabled and raw.get("posthog", {}).get("enabled")),
+            "project_token": raw.get("posthog", {}).get("project_token", ""),
+            "api_host": raw.get("posthog", {}).get("api_host", ""),
+        },
+    }
+
+
+def _reply(handler, body, status=200):
+    content = json.dumps(body, ensure_ascii=False).encode("utf-8")
+    handler.send_response(status)
+    handler.send_header("Content-Type", "application/json; charset=utf-8")
+    handler.send_header("Cache-Control", "no-store")
+    handler.send_header("Content-Length", str(len(content)))
+    if handler.close_connection:
+        handler.send_header("Connection", "close")
+    handler.end_headers()
+    try:
+        handler.wfile.write(content)
+    except (BrokenPipeError, ConnectionResetError):
+        pass
+
+
+def _error(handler, status, code, message, close=False):
+    if close:
+        handler.close_connection = True
+    return _reply(handler, {"ok": False, "error": {"code": code, "message": message}}, status)
+
+
+def _single_header(headers, name):
+    values = headers.get_all(name) if hasattr(headers, "get_all") else None
+    if values is not None:
+        return values[0] if len(values) == 1 else None
+    return headers.get(name)
+
+
+def _same_origin(headers):
+    origin = _single_header(headers, "Origin")
+    host = _single_header(headers, "Host")
+    site = _single_header(headers, "Sec-Fetch-Site")
+    if site is not None and site not in ("same-origin", "none"):
+        return False
+    if not origin or not host or any(not 33 <= ord(c) <= 126 for c in origin + host):
+        return False
+    if "?" in origin or "#" in origin:
+        return False
+    if hasattr(headers, "get_all") and len(headers.get_all("Sec-Fetch-Site", [])) > 1:
+        return False
+    try:
+        parsed = urlsplit(origin)
+        # Accessing port also validates its numeric range. Do not trust forwarded hosts.
+        parsed.port
+        return (parsed.scheme in ("http", "https") and bool(parsed.hostname)
+                and parsed.username is None and parsed.password is None
+                and not parsed.path and not parsed.query and not parsed.fragment
+                and parsed.netloc.lower() == host.lower())
+    except ValueError:
+        return False
+
+
+def _capture_allowed():
+    now = time.monotonic()
+    with _capture_lock:
+        while _captures and now - _captures[0] >= CAPTURE_WINDOW_SECONDS:
+            _captures.popleft()
+        if len(_captures) >= CAPTURE_LIMIT:
+            return False
+        _captures.append(now)
+        return True
+
+
+def _read_payload(handler, withdrawal=False):
+    headers = handler.headers
+    if "Transfer-Encoding" in headers:
+        return None, (400, "invalid_framing", "Transfer encoding is not supported.")
+    length = _single_header(headers, "Content-Length")
+    if length is None:
+        return None, (411, "length_required", "A single Content-Length is required.")
+    if not re.fullmatch(r"[0-9]{1,10}", length):
+        return None, (400, "invalid_length", "Content-Length must be a positive integer.")
+    length = int(length)
+    if length <= 0:
+        return None, (400, "invalid_length", "Content-Length must be a positive integer.")
+    if length > MAX_BODY_BYTES:
+        return None, (413, "body_too_large", "Research request exceeds the size limit.")
+    content_type = _single_header(headers, "Content-Type") or ""
+    if content_type.split(";", 1)[0].strip().lower() != "application/json":
+        return None, (415, "json_required", "Research requests must use application/json.")
+    if _single_header(headers, "X-MeatCODE-Research") != "1" or not _same_origin(headers):
+        return None, (403, "same_origin_required", "Research requests must come from this platform.")
+    if not withdrawal and not _capture_allowed():
+        return None, (429, "research_rate_limited", "Research requests are temporarily limited. Please retry later.")
+    connection = getattr(handler, "connection", None)
+    previous_timeout = None
+    try:
+        if connection is not None:
+            previous_timeout = connection.gettimeout()
+            connection.settimeout(READ_TIMEOUT_SECONDS)
+        raw = handler.rfile.read(length)
+        if len(raw) != length:
+            return None, (400, "invalid_json", "Research request is not valid JSON.")
+        payload = json.loads(raw.decode("utf-8"))
+        if not isinstance(payload, dict):
+            return None, (400, "invalid_json", "Research request must be a JSON object.")
+        return payload, None
+    except (ValueError, RecursionError, OSError, socket.timeout):
+        return None, (400, "invalid_json", "Research request is not valid JSON.")
+    finally:
+        if connection is not None:
+            try:
+                connection.settimeout(previous_timeout)
+            except OSError:
+                pass
+
+
+def handle(handler, method, path, module, database_url, app_env, environ, flag_enabled):
+    """Serve only the public config and three bounded write routes after site auth."""
+    if method == "GET" and path == "/api/research/config":
+        if module is None:
+            return _error(handler, 503, "research_unavailable", "Research settings are temporarily unavailable.")
+        try:
+            return _reply(handler, effective_config(module, environ, app_env, flag_enabled, database_url))
+        except Exception:
+            return _error(handler, 503, "research_unavailable", "Research settings are temporarily unavailable.")
+    if method != "POST" or path not in _POST_ROUTES:
+        return _error(handler, 404, "not_found", "Research endpoint not found.", close=method == "POST")
+    if module is None:
+        return _error(handler, 503, "research_unavailable", "Research storage is temporarily unavailable.", close=True)
+    try:
+        enabled = effective_config(module, environ, app_env, flag_enabled, database_url)["enabled"]
+    except Exception:
+        return _error(handler, 503, "research_unavailable", "Research settings are temporarily unavailable.", close=True)
+    if path != "/api/research/withdraw" and not enabled:
+        return _error(handler, 404, "research_disabled", "Research capture is disabled.", close=True)
+    payload, error = _read_payload(handler, withdrawal=path == "/api/research/withdraw")
+    if error:
+        return _error(handler, *error, close=True)
+    try:
+        result = getattr(module, _POST_ROUTES[path])(database_url, app_env, payload)
+        return _reply(handler, result)
+    except module.InputError:
+        return _error(handler, 400, "invalid_research_input", "Research input is invalid.")
+    except module.WithdrawnError:
+        return _error(handler, 410, "research_session_withdrawn", "This research session was withdrawn.")
+    except Exception:
+        # Includes StorageError and unexpected failures. Never disclose SQL, user text or secrets.
+        return _error(handler, 503, "research_storage_unavailable", "Research storage is temporarily unavailable.")

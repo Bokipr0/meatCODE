@@ -1,5 +1,10 @@
 # PROJECT_STATE — MeatCODE
 
+## 2026-10-29 · Authorized release — analytics and live testing
+
+Lior explicitly requested redeployment and update. Applied the reviewed analytics release to a clean checkout of current dev/main6394c039749a; preserved newer Science/Ecosystem/guided Oracle. Added consent-gated Clarity/PostHog, isolated research API/storage/consent0017, private live dashboard and prior sidebar/Analytics/Release Center fixes. Latest main/dev were identical before release. Offline50-test suite passed with5 live-only skips; previous rollback-only Neon tests and real local HTTP/provider checks passed. Local dev SDK test is queryable in PostHog. Public provider settings already saved on both Render services. Publishing staging first, then production only after verification; do not infer deployment success from this preparation entry. User authorization overrides standing agent-no-publication convention for this release. No secret value committed.
+
+
 > Living technical status. **Every agent reads this after CLAUDE.md and updates it before pushing.**
 > Asana owns *tasks & priorities*; this file owns *technical reality* — what's built, what's broken,
 > what's in flight. Keep it short and current, not a changelog.
