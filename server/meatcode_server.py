@@ -329,6 +329,10 @@ def _resolve_repo_file(name):
     hit = _resolve_cache.get(name)
     if hit and os.path.exists(hit):
         return hit
+    cockpit = os.path.join(REPO_ROOT, "Release Center", name)
+    if name in ("features.json", "deploy-dev.command", "promote-to-prod.command", "rollback-prod.command") and os.path.isfile(cockpit):
+        _resolve_cache[name] = cockpit
+        return cockpit
     direct = os.path.join(REPO_ROOT, name)
     if os.path.exists(direct):
         _resolve_cache[name] = direct; return direct
@@ -505,6 +509,7 @@ except ImportError:
 
 try:
     import research_dashboard
+    import release_jobs
 except ImportError:
     research_dashboard = None
 
@@ -1046,6 +1051,8 @@ class Handler(SimpleHTTPRequestHandler):
         if low.endswith("release-center.html") and not (self._local_admin_ok() or APP_ENV == "dev"):
             self.send_error(404, "Not found")
             return
+        if path in ("/analytics","/analytics/","/app/dev/analytics.html","/app/dev/analytics_workspace.html") and not _flag_on("analytics"):
+            return self._send_json({"error":"not found"},404)
         # Pretty URL for the template gallery: /templates/... → app/templates/...
         # (bare /templates or /templates/ serves the gallery index). Keeps exported
         # templates portable — their relative meatcode-api.js and root-absolute
@@ -1139,13 +1146,20 @@ class Handler(SimpleHTTPRequestHandler):
                                "retryable": False}}, 404)
             body, code = view
             return self._send_json(body, code)
+        if path == "/api/release/job":
+            if not self._local_admin_ok():return self._send_json({"error":"not found"},404)
+            identifier=parse_qs(urlparse(self.path).query).get("id",[None])[0]
+            job=release_jobs.manager.get(identifier)
+            return self._send_json({"ok":True,"job":job})
         if path == "/api/release/status":
             # Compare saved flags with the public live build.
             # Same local-only gate as release controls. Fixed public URL, no credentials
             # forwarded and no caller-controlled URL (not an authenticated HTTP proxy).
             if not self._local_admin_ok():
                 return self._send_json({"error": "not found"}, 404)
-            target = "https://meatcode-oracle.onrender.com/api/version"
+            release_env=parse_qs(urlparse(self.path).query).get("env",["prod"])[0]
+            if release_env not in ("dev","prod"):return self._send_json({"error":"unknown environment"},400)
+            target = ("https://meatcode.onrender.com" if release_env=="dev" else "https://meatcode-oracle.onrender.com")+"/api/version"
             checked_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
             try:
                 request = Request(target, headers={"Accept": "application/json"})
@@ -1154,7 +1168,7 @@ class Handler(SimpleHTTPRequestHandler):
                 if len(raw) > 65536:
                     raise ValueError("version response too large")
                 live = json.loads(raw)
-                if not isinstance(live, dict) or live.get("env") != "prod":
+                if not isinstance(live, dict) or live.get("env") != release_env:
                     raise ValueError("unexpected production version response")
                 allowed = ("service", "env", "commit", "commit_full", "branch", "server_started_utc", "model")
                 version = {key: live[key] for key in allowed if key in live}
@@ -1163,7 +1177,7 @@ class Handler(SimpleHTTPRequestHandler):
                     version["feature_flags"] = {key: value for key, value in published.items()
                                                  if isinstance(value, bool)}
                 return self._send_json({"ok": True, "url": target, "checked_at": checked_at,
-                                        "production": version})
+                                        "production": version, "environment":release_env, "version":version})
             except Exception:
                 return self._send_json({"ok": False, "url": target, "checked_at": checked_at,
                                         "error": "Live production could not be checked. Saved switches are unchanged."}, 502)
@@ -2214,16 +2228,17 @@ class Handler(SimpleHTTPRequestHandler):
             return self._send_json({"ok": True, "created": is_new, "key": key,
                                     "entry": entry, "flags": flags})
         if path in ("/api/release/deploy-dev", "/api/release/promote"):
-            script = "deploy-dev.command" if path.endswith("deploy-dev") else "promote-to-prod.command"
-            target = _resolve_repo_file(script)
-            if not os.path.exists(target):
-                return self._send_json({"error": script + " not found"}, 404)
-            try:
-                # Open it in Terminal so YOUR "type yes" confirm still gates the deploy.
-                subprocess.Popen(["open", target])
-            except Exception as e:
-                return self._send_json({"error": str(e)}, 500)
-            return self._send_json({"ok": True, "launched": script})
+            if not release_jobs.authorized_request(self.headers):
+                return self._send_json({"error":"Use the local Release Center to authorize this action."},403)
+            body=self._read_json_body() or {}
+            if body.get("confirm") is not True:
+                return self._send_json({"error":"Explicit release confirmation is required."},400)
+            kind="deploy-dev" if path.endswith("deploy-dev") else "promote"
+            target=_resolve_repo_file("deploy-dev.command" if kind=="deploy-dev" else "promote-to-prod.command")
+            if not os.path.isfile(target):return self._send_json({"error":"Release script is missing."},404)
+            try:job=release_jobs.manager.start(REPO_ROOT,target,kind)
+            except RuntimeError as exc:return self._send_json({"error":str(exc)},409)
+            return self._send_json({"ok":True,"job":job},202)
         if path == "/api/release/rollback":
             body = self._read_json_body() or {}
             tag = str(body.get("tag", "")).strip()

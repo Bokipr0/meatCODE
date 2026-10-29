@@ -4700,7 +4700,8 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 
 <script>
 function setScene() {
-  var h = location.hash.replace('#', '') || 'oracle';   /* 2026-08-15 · Oracle is the landing again (Home off the nav) */
+  var h = location.hash.replace('#', '') || 'oracle';
+  if (document.body.classList.contains('mc-flags-ready') && ((h === 'simulate' && !document.body.classList.contains('ff-maillard_sim')) || (h === 'analytics' && !document.body.classList.contains('ff-analytics')))) { location.replace('#oracle'); h='oracle'; }   /* 2026-08-15 · Oracle is the landing again (Home off the nav) */
   document.querySelectorAll('section.scene').forEach(function(s){ s.classList.remove('active'); });
   var el = document.getElementById(h);
   if (el) el.classList.add('active');
@@ -9251,6 +9252,8 @@ function mcRenderOracleAsk(raw, turnRec) {
         Object.keys(flags||{}).forEach(function(k){
           if(flags[k]) document.body.classList.add('ff-'+k);
         });
+        document.body.classList.add('mc-flags-ready');
+        window.dispatchEvent(new Event('mc:flags-ready'));
       })
       .catch(function(){});
   }catch(e){}
@@ -10063,6 +10066,23 @@ document.addEventListener('keydown', function(e){
 })();
 </script>
 <script src="/app/assets/user-research.js" defer></script>
+<style>
+/* 2026-10-29: release switches govern navigation, starters and deep links. */
+body:not(.ff-maillard_sim) .domain[data-module-simulate],
+body:not(.ff-maillard_sim) a[href="#simulate"],
+body:not(.ff-maillard_sim) [data-demo="simulate"],
+body:not(.ff-analytics) a[href="#analytics"],
+body:not(.ff-analytics) a[href="/analytics"] {display:none!important}
+</style>
+<script>
+(function(){
+  function sync(){
+    document.querySelectorAll('.domains .domain').forEach(function(el){if(el.textContent.trim().toLowerCase()==='simulate')el.setAttribute('data-module-simulate','1');});
+    if(document.body.classList.contains('mc-flags-ready') && typeof setScene==='function')setScene();
+  }
+  window.addEventListener('mc:flags-ready',sync);sync();
+})();
+</script>
 </body>
 </html>
 

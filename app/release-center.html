@@ -81,6 +81,7 @@
   </div>
 </div>
 
+<section id="releaseProgress" hidden style="margin:18px auto 100px;max-width:940px;padding:18px;border:1px solid #ddd;border-radius:12px;background:white" aria-live="polite"><b id="releaseMessage"></b><pre id="releaseLog" style="white-space:pre-wrap;max-height:240px;overflow:auto;font-size:12px"></pre></section>
 <div class="deploybar" id="deploybar" style="display:none">
   <button class="btn dev" id="btnDeploy">Deploy to staging (dev)</button>
   <button class="btn prod" id="btnPromote">Promote to production</button>
@@ -205,16 +206,42 @@ async function onRollback(e){
   finally{ e.currentTarget.disabled=false; }
 }
 
-async function runRelease(kind, confirmMsg){
-  if(!confirm(confirmMsg)) return;
-  try{
-    const j = await (await fetch('/api/release/'+kind,{method:'POST',credentials:'same-origin'})).json();
-    if(j.ok) toast('A Terminal window opened — finish the confirmation there.');
-    else toast('Error: '+(j.error||'failed'));
-  }catch(_){ toast('Could not start — is the local server running?'); }
+let releaseBusy=false;
+function releaseMessage(message,log){
+  $('#releaseProgress').hidden=false;$('#releaseMessage').textContent=message;
+  $('#releaseLog').textContent=log||'';
 }
-$('#btnDeploy').addEventListener('click',()=>runRelease('deploy-dev','Deploy your current work to the PRIVATE staging site?'));
-$('#btnPromote').addEventListener('click',()=>runRelease('promote','Promote to the PUBLIC site? A Terminal will open where you type “yes” to confirm.'));
+const releaseDelay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+async function runRelease(kind, confirmMsg){
+  if(releaseBusy || !confirm(confirmMsg))return;
+  releaseBusy=true;$('#btnDeploy').disabled=true;$('#btnPromote').disabled=true;
+  releaseMessage('Publishing to GitHub…');
+  try{
+    const response=await fetch('/api/release/'+kind,{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-MeatCODE-Release':'1'},body:JSON.stringify({confirm:true})});
+    const started=await response.json();if(!response.ok||!started.ok)throw new Error(started.error||'Could not start publishing.');
+    let job=started.job;
+    for(let attempt=0;job.status==='running' && attempt<100;attempt++){
+      await releaseDelay(2000);
+      const status=await fetch('/api/release/job?id='+encodeURIComponent(job.id),{credentials:'same-origin',cache:'no-store'});
+      const body=await status.json();if(!status.ok||!body.job)throw new Error('Publishing status is unavailable. Check GitHub before retrying.');
+      job=body.job;releaseMessage(job.message,job.log);
+    }
+    if(job.status!=='succeeded')throw new Error(job.message||'Publishing has not completed. Check the Git output.');
+    releaseMessage('GitHub updated. Waiting for '+(job.environment==='prod'?'production':'staging')+' to deploy…',job.log);
+    let live=false;
+    for(let attempt=0;attempt<45;attempt++){
+      const status=await fetch('/api/release/status?env='+job.environment,{credentials:'same-origin',cache:'no-store'});
+      const body=await status.json();const version=body.version||body.production;
+      if(status.ok&&body.ok&&version&&version.commit_full===job.target_commit){live=true;break;}
+      await releaseDelay(6000);
+    }
+    if(live){releaseMessage((job.environment==='prod'?'Production':'Staging')+' is live on '+job.target_commit.slice(0,12)+'.',job.log);await checkProduction();loadHistory();}
+    else releaseMessage('GitHub is updated, but the hosted deployment is not yet verified. Check Render; do not assume this is live.',job.log);
+  }catch(error){releaseMessage(error.message,$('#releaseLog').textContent);}
+  finally{releaseBusy=false;$('#btnDeploy').disabled=false;$('#btnPromote').disabled=false;}
+}
+$('#btnDeploy').addEventListener('click',()=>runRelease('deploy-dev','Publish your current work to the PRIVATE staging site? Progress will appear here.'));
+$('#btnPromote').addEventListener('click',()=>runRelease('promote','Publish the tested dev version to the PUBLIC production site?'));
 $('#btnCheck').addEventListener('click',async()=>{ await checkProduction(); loadHistory(); });
 
 load();

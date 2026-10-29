@@ -7,13 +7,17 @@
 # the 'dev' branch; Render rebuilds the staging site (~1-2 min).
 # This does NOT touch the public site. That's what promote-to-prod is for.
 # ============================================================================
-set -o pipefail
+set -eo pipefail
+pause() { if [ "${RELEASE_CENTER_NONINTERACTIVE:-0}" != "1" ]; then read -r -p "Press Enter to close."; fi; }
 # Always work on the real repo, wherever this file is double-clicked from.
 # If you ever MOVE the meatCODE folder, update this one path.
 REPO="/Users/lior/Documents/Claude/Projects/Claude Database/meatCODE"
 [ -d "$REPO/.git" ] || REPO="$(dirname "$0")"
 cd "$REPO" || exit 1            # = meatCODE/ repo root
-[ -f .git/index.lock ] && { echo "Clearing a stale git lock…"; rm -f .git/index.lock; }
+if [ -f .git/index.lock ]; then
+  echo "❌ Another Git operation may be active (.git/index.lock exists). Close it or inspect the lock before retrying."
+  exit 1
+fi
 
 DEV="dev"
 CUR="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
@@ -21,19 +25,19 @@ if [ "$CUR" != "$DEV" ]; then
   echo "You're on '$CUR', not '$DEV'. Switching to '$DEV' (your files stay as they are)…"
   if ! git checkout "$DEV" 2>/dev/null; then
     echo "❌ Couldn't switch to '$DEV'. Run setup-dev-branch.command first, then retry."
-    read -p "Press Enter to close."; exit 1
+    pause; exit 1
   fi
 fi
 
 # Verify remote history before git add -A can save an outdated snapshot.
 if ! git fetch origin "$DEV"; then
   echo "❌ Could not refresh GitHub history. See the connection error above."
-  read -p "Press Enter to close."; exit 1
+  pause; exit 1
 fi
 if ! git merge-base --is-ancestor "origin/$DEV" "$DEV"; then
   echo "❌ Local dev is behind or diverged from GitHub. Reconcile before publishing."
   echo "Your files have not been staged or committed by this attempt. Do not force-push."
-  read -p "Press Enter to close."; exit 1
+  pause; exit 1
 fi
 
 MSG="${1:-dev $(date '+%Y-%m-%d %H:%M')}"
@@ -49,8 +53,8 @@ OUT="$(git push origin "$DEV" 2>&1)"; CODE=$?
 echo "$OUT"
 if [ "$CODE" -ne 0 ]; then
   echo ""
-  echo "❌  Push failed. If a GitHub sign-in appeared, finish it and run this again."
-  read -p "Press Enter to close."; exit 1
+  echo "❌ Push failed. The Git error above identifies whether this is history, connectivity or authentication."
+  pause; exit 1
 fi
 
 echo ""
@@ -58,4 +62,4 @@ echo "==================================================================="
 echo "  ✅  Staging is updating (~1-2 min). Open your meatcode-dev URL"
 echo "      (the password-protected one) and check it before promoting."
 echo "==================================================================="
-read -p "Press Enter to close."
+pause

@@ -1,7 +1,7 @@
 {
   "_schema": {
     "version": 2,
-    "updated": "2026-10-28",
+    "updated": "2026-10-29",
     "doc": "platform_docs/DEV_AREA.md",
     "about": "Registry of every flagged FEATURE and every dev SCREEN. Backward compatible: the server still reads flags.<key>.dev / .prod, and the app still turns each ON flag into a body class ff-<key>. Everything else here is descriptive metadata rendered by the Dev Area hub.",
     "fields": {
@@ -112,18 +112,19 @@
     },
     "maillard_sim": {
       "label": "Maillard simulator",
-      "description": "Call the Maillard chemistry simulator from MeatCODE: submit precursors + conditions, get ranked compounds with yields (ppb), confidence intervals and reaction-family attribution.",
+      "description": "Show the Simulate module and enable its simulator API. Off hides navigation, starter actions and direct scene links.",
       "kind": "feature",
       "added": "2026-08-16",
       "status": "preview",
       "where": {
         "screen": "API only — no UI wired yet",
-        "spot": "Backend routes POST /api/simulate, GET /api/simulate/{job_id}, GET /api/simulate/health. Flag OFF makes all three 404.",
+        "spot": "Platform navigation, simulator starter and /api/simulate routes",
         "file": "server/meatcode_server.py + server/maillard/adapter.py (contract: server/maillard/CONTRACT.md)"
       },
       "note": "Runs in MAILLARD_MODE=mock by default — deterministic SYNTHETIC output, every response marked \"mode\":\"mock\" and synthetic:true. The real simulator is a Docker prototype and a Render runtime:python service cannot spawn Docker, so production needs the separate runtime:docker service commented into render.yaml (then MAILLARD_MODE=http). Keep prod false until that service exists.",
-      "dev": true,
-      "prod": false
+      "dev": false,
+      "prod": false,
+      "updated": "2026-10-29"
     },
     "knowledge_graph": {
       "label": "Knowledge Graph explorer",
@@ -169,10 +170,10 @@
         "file": "app/meatcode_mockup.html + app/dev/analytics.html + app/dev/analytics_workspace.html"
       },
       "destination": "Platform navigation → Analytics workspace (preview). This canonical switch takes precedence over the legacy analytics_module setting.",
-      "updated": "2026-10-27",
+      "updated": "2026-10-29",
       "url": "/app/dev/analytics.html",
-      "dev": true,
-      "prod": true
+      "dev": false,
+      "prod": false
     },
     "compare": {
       "label": "Compare screen",
@@ -236,10 +237,10 @@
         "file": "app/dev/analytics_workspace.html"
       },
       "destination": "Dev Area listing only. The platform Analytics entry is controlled by analytics. The legacy analytics_module switch is a fallback only when analytics is absent.",
-      "updated": "2026-10-27",
+      "updated": "2026-10-29",
       "url": "/app/dev/analytics_workspace.html",
       "note": "Guided-stepper mockup (method -> upload -> confirm format -> reference -> compare). Figures are generated for demonstration; wiring to real /api/* + a reference-profile source (A1/A3) is the follow-up.",
-      "dev": true,
+      "dev": false,
       "prod": false
     },
     "research_reaction_network": {
@@ -271,10 +272,10 @@
         "file": "app/meatcode_mockup.html + server/meatcode_server.py (/analytics route)"
       },
       "destination": "Platform navigation → in-app Analytics workspace preview. /analytics remains a secondary direct entry.",
-      "updated": "2026-10-27",
+      "updated": "2026-10-29",
       "url": "/analytics",
       "note": "Legacy fallback only: an explicit analytics true or false takes precedence. analytics_workspace only controls its Dev Area listing. Saved local switches reach production after promotion and successful deployment.",
-      "dev": true,
+      "dev": false,
       "prod": false
     },
     "science_module": {

@@ -1,5 +1,12 @@
 # 📣 TEAM BROADCAST — MeatCODE
 
+## 2026-10-29 · Necmettin scientific database access — applied and verified
+
+User explicitly requested read/view-only database access based on Necmettin’s latest mail. Verified recipientnecmettin.karakaya@gmail.com from29 October14:22 UTC email (Gmail1a1880a20ff84799); he already has Neon project Viewer access. Applied numbered migration0018 DEV then production, using SQL-only rolecreation to avoid neon_superuser membership. Role necmettin_review_ro has SELECT on current public/moldedup and dev lightrag_demo relations;69 production and76 dev relations verified with actual restricted login. INSERT/UPDATE/DELETE fail42501 even with transaction read-only default disabled. Private user_research feedback denied; no CREATE/admin/membership/sequence-write/future-table grants. Scientific records unchanged. First verification query error caused rollback before any grant; corrected run applied and passed both branches.
+
+Direct connection credentials saved mode0600 outside repo/webroot in /private/tmp/meatcode-necmettin-readonly-20261029.env for Lior’s secure handoff; values never printed, committed or emailed. No outbound message sent. Necmettin’s receipt/login remains unverified. See platform_docs/NECMETTIN_READONLY_ACCESS.md and ignored credential-free verification data/verification/necmettin-readonly-2026-10-29.json. Research-storage branch setup remains a separate pending task; this change affects reviewer SQL privileges only.
+
+
 ## 2026-10-29 · Production capture confirmed; independent storage prepared; local publication repaired
 
 After Lior opted in, production Neon and PostHog agree:1 session.started,7 scene.viewed,1 oracle.submitted,1 oracle.completed and1 feedback.submitted. Server research routes and /api/ask return200. No prompt/answer/comment contents or session capabilities read. Hosted Oracle completion is now observed; actual Microsoft recordings still unverified.
