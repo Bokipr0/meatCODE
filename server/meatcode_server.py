@@ -1089,7 +1089,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def _handle_api_get(self, path):
         qs = parse_qs(urlparse(self.path).query)
-        if path == "/api/research/dashboard":
+        if path in ("/api/research/dashboard","/api/research/transcript"):
             if research_dashboard is None:
                 return self._send_json({"error": "Research dashboard unavailable."}, 503)
             return research_dashboard.handle(self, DATABASE_URL, APP_ENV, os.environ,

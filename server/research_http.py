@@ -21,6 +21,7 @@ _capture_lock = threading.Lock()
 _FALSE_VALUES = frozenset(("false", "0", "off", "no"))
 _POST_ROUTES = {
     "/api/research/events": "write_events",
+    "/api/research/chat": "write_chat",
     "/api/research/feedback": "write_feedback",
     "/api/research/withdraw": "withdraw",
 }
@@ -111,7 +112,7 @@ def _capture_allowed():
         return True
 
 
-def _read_payload(handler, withdrawal=False):
+def _read_payload(handler, withdrawal=False, max_bytes=MAX_BODY_BYTES):
     headers = handler.headers
     if "Transfer-Encoding" in headers:
         return None, (400, "invalid_framing", "Transfer encoding is not supported.")
@@ -123,7 +124,7 @@ def _read_payload(handler, withdrawal=False):
     length = int(length)
     if length <= 0:
         return None, (400, "invalid_length", "Content-Length must be a positive integer.")
-    if length > MAX_BODY_BYTES:
+    if length > max_bytes:
         return None, (413, "body_too_large", "Research request exceeds the size limit.")
     content_type = _single_header(headers, "Content-Type") or ""
     if content_type.split(";", 1)[0].strip().lower() != "application/json":
@@ -174,7 +175,7 @@ def handle(handler, method, path, module, database_url, app_env, environ, flag_e
         return _error(handler, 503, "research_unavailable", "Research settings are temporarily unavailable.", close=True)
     if path != "/api/research/withdraw" and not enabled:
         return _error(handler, 404, "research_disabled", "Research capture is disabled.", close=True)
-    payload, error = _read_payload(handler, withdrawal=path == "/api/research/withdraw")
+    payload, error = _read_payload(handler, withdrawal=path == "/api/research/withdraw", max_bytes=393216 if path=="/api/research/chat" else MAX_BODY_BYTES)
     if error:
         return _error(handler, *error, close=True)
     try:

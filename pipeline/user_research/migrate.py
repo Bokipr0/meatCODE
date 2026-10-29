@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from settings import ROOT, settings
 
 EXPECTED = {
+    'oracle_turns':{'turn_id','environment','session_id','conversation_id','turn_index','question','answer','status','revision','source_ids','error_code','truncated','consent_version','consent_at','created_at','updated_at'},
     'sessions': {'session_id','environment','consent_version','consent_at','created_at','last_seen_at'},
     'events': {'event_id','environment','session_id','name','scene','duration_ms','error_code','source_count','created_at'},
     'feedback': {'event_id','environment','session_id','rating','category','comment','created_at'},
@@ -17,7 +18,7 @@ EXPECTED = {
                         'attempts','status','aggregates','imported_at'},
 }
 INDEXES = {'sessions_pkey','events_pkey','feedback_pkey','withdrawals_pkey','clarity_exports_pkey',
-           'clarity_export_daily_unique','ur_sessions_last_seen','ur_events_session_time',
+           'clarity_export_daily_unique','oracle_turns_pkey','ur_oracle_session','ur_oracle_updated','ur_sessions_last_seen','ur_events_session_time',
            'ur_events_created','ur_feedback_created','ur_withdrawals_created','ur_exports_created'}
 
 
@@ -63,15 +64,16 @@ def run(environment, apply=False):
             before=cur.fetchone()[0]
             cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='user_research'")
             existing={row[0] for row in cur.fetchall()}
-            if existing and existing != set(EXPECTED):
+            if existing and not existing <= set(EXPECTED):
                 raise RuntimeError('Existing research schema differs; stop for review.')
             if not apply:
                 conn.rollback()
                 return {'environment':environment,'mode':'preflight','existing_tables':sorted(existing),'public_tables':before}
             cur.execute("SELECT pg_advisory_xact_lock(hashtextextended('meatcode:migration:0016',0))")
-            sql=(ROOT/'db/migrations/0016_user_research.sql').read_text()
-            body='\n'.join(line for line in sql.splitlines() if line.strip() not in ('BEGIN;','COMMIT;'))
-            cur.execute(body)
+            for migration in ('0016_user_research.sql','0017_user_research_consent_providers.sql','0019_oracle_chat_research.sql'):
+                sql=(ROOT/'db/migrations'/migration).read_text()
+                body='\n'.join(line for line in sql.splitlines() if line.strip() not in ('BEGIN;','COMMIT;'))
+                cur.execute(body)
             result=verify(cur)
             cur.execute("SELECT count(*) FROM information_schema.tables WHERE table_schema='public'")
             if cur.fetchone()[0]!=before:

@@ -9,7 +9,7 @@ import json
 import re
 import uuid
 
-CONSENT_VERSION = '2026-10-29'
+CONSENT_VERSION = '2026-10-29-chat-v1'
 RETENTION_DAYS = 90
 EVENT_NAMES = frozenset(('session.started','scene.viewed','oracle.submitted','oracle.completed',
                          'oracle.failed','feedback.submitted'))
@@ -63,11 +63,11 @@ def config(environ, app_env):
                         'project_token': token, 'api_host': host}}
 
 
-def _object(value, allowed, required):
+def _object(value, allowed, required, max_bytes=32768):
     if not isinstance(value, dict) or set(value) - set(allowed) or set(required) - set(value):
         raise InputError('Missing or unexpected research fields.')
     try:
-        if len(json.dumps(value, ensure_ascii=False).encode('utf-8')) > 32768:
+        if len(json.dumps(value, ensure_ascii=False).encode('utf-8')) > max_bytes:
             raise InputError('Research payload is too large.')
     except (TypeError, ValueError, RecursionError) as exc:
         if isinstance(exc, InputError):
@@ -230,3 +230,48 @@ def withdraw(db_url, app_env, payload):
     session_id, environment = _uuid(payload['session_id']), _environment(app_env)
     with transaction(db_url) as cur:
         return _withdraw(cur, environment, session_id)
+
+
+def validate_chat(payload):
+    fields=('session_id','consent','consent_version','full_chat_consent','turn_id','conversation_id','turn_index','question','answer','status','revision','source_ids','error_code','truncated')
+    _object(payload,fields,tuple(x for x in fields if x!='error_code'),max_bytes=393216)
+    sid=_consent(payload)
+    if payload['full_chat_consent'] is not True:raise InputError('Explicit full-chat consent is required.')
+    turn={k:payload[k] for k in fields if k not in ('session_id','consent','consent_version','full_chat_consent') and k in payload}
+    turn['turn_id']=_uuid(turn['turn_id']);turn['conversation_id']=_uuid(turn['conversation_id'])
+    for key,minimum in (('turn_index',1),('revision',0)):
+        if type(turn[key]) is not int or not minimum<=turn[key]<=1000000:raise InputError('Invalid turn order.')
+    for key,minimum,maximum in (('question',1,12000),('answer',0,64000)):
+        value=turn[key]
+        if not isinstance(value,str) or not minimum<=len(value)<=maximum or any(ord(c)<32 and c not in '\n\r\t' for c in value):raise InputError('Invalid transcript text.')
+    _choice(turn['status'],('submitted','complete','failed','clarification','interrupted'))
+    if 'error_code' in turn:_choice(turn['error_code'],ERROR_CODES)
+    if type(turn['truncated']) is not bool:raise InputError('Invalid truncation flag.')
+    if not isinstance(turn['source_ids'],list) or len(turn['source_ids'])>100 or any(type(x) is not int or not 1<=x<=9223372036854775807 for x in turn['source_ids']):raise InputError('Invalid citations.')
+    turn['source_ids']=list(dict.fromkeys(turn['source_ids']))
+    return sid,turn
+
+
+def _write_chat(cur,environment,sid,turn):
+    _session(cur,environment,sid) # same lock/tombstone boundary as capture and deletion
+    cur.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,0))',('research-chat:'+environment+':'+turn['conversation_id'],))
+    cur.execute('SELECT session_id FROM user_research.oracle_turns WHERE conversation_id=%s AND environment=%s LIMIT 1',(turn['conversation_id'],environment))
+    previous=cur.fetchone()
+    if previous and str(previous[0])!=sid:raise InputError('Conversation ownership differs.')
+    cur.execute('SELECT session_id,conversation_id,turn_index,question FROM user_research.oracle_turns WHERE turn_id=%s AND environment=%s',(turn['turn_id'],environment))
+    previous=cur.fetchone()
+    if previous and (str(previous[0]),str(previous[1]),previous[2],previous[3])!=(sid,turn['conversation_id'],turn['turn_index'],turn['question']):raise InputError('Turn identity differs.')
+    cur.execute("""INSERT INTO user_research.oracle_turns AS existing
+      (turn_id,environment,session_id,conversation_id,turn_index,question,answer,status,revision,source_ids,error_code,truncated,consent_version)
+      VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+      ON CONFLICT(turn_id,environment) DO UPDATE SET answer=EXCLUDED.answer,status=EXCLUDED.status,
+      revision=EXCLUDED.revision,source_ids=EXCLUDED.source_ids,error_code=EXCLUDED.error_code,
+      truncated=EXCLUDED.truncated,updated_at=now()
+      WHERE existing.status='submitted' AND EXCLUDED.revision>existing.revision""",
+      (turn['turn_id'],environment,sid,turn['conversation_id'],turn['turn_index'],turn['question'],turn['answer'],turn['status'],turn['revision'],turn['source_ids'],turn.get('error_code'),turn['truncated'],CONSENT_VERSION))
+    return {'ok':True,'accepted':cur.rowcount}
+
+
+def write_chat(db_url,app_env,payload):
+    sid,turn=validate_chat(payload)
+    with transaction(db_url) as cur:return _write_chat(cur,_environment(app_env),sid,turn)

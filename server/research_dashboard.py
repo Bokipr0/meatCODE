@@ -15,7 +15,7 @@ except ImportError:
     import research_http
 
 ROOT = Path(__file__).resolve().parents[1]
-WINDOWS = frozenset((15,60,1440))
+WINDOWS = frozenset((15,60,1440,10080,129600))
 
 
 def _admin_token_ok(headers, environ):
@@ -52,7 +52,7 @@ def parameters(path, app_env):
         raise user_research.InputError('Choose dev or prod.')
     window = query.get('minutes',['15'])[0]
     limit = query.get('limit',['50'])[0]
-    if window not in ('15','60','1440') or not 1<=len(limit)<=2 or not limit.isascii() or not limit.isdigit() or not 1<=int(limit)<=50:
+    if window not in ('15','60','1440','10080','129600') or not 1<=len(limit)<=2 or not limit.isascii() or not limit.isdigit() or not 1<=int(limit)<=50:
         raise user_research.InputError('Choose a supported window and limit.')
     return environment,int(window),int(limit)
 
@@ -189,9 +189,36 @@ def snapshot(cursor,environment,minutes=15,limit=50,now=None):
                'comment':str(comment or '')[:2000].replace(str(session),'[session]'),
                'session_label':_session_label(session,environment)}
               for created,rating,category,comment,session in cursor.fetchall()]
+    cursor.execute('SELECT conversation_id,count(*),max(updated_at),min(created_at)\n        FROM user_research.oracle_turns WHERE environment=%s\n        GROUP BY conversation_id HAVING max(updated_at)>=%s AND max(updated_at)<=%s\n        ORDER BY max(updated_at) DESC,conversation_id LIMIT 20',args)
+    conversations=[{'id':str(cid),'turns':int(count),'last_updated':_iso(updated),'started_at':_iso(started)}
+                   for cid,count,updated,started in cursor.fetchall()]
     return {'ok':True,'environment':environment,'checked_at':checked.isoformat(),'window_minutes':minutes,
             'source':'neon_first_party','totals':totals,'scenes':scenes,'activity':activity,
-            'feedback':feedback,'limits':{'activity_limit':limit}}
+            'feedback':feedback,'conversations':conversations,'limits':{'activity_limit':limit,'conversation_limit':20}}
+
+
+def transcript_parameters(path,app_env):
+    query=parse_qs(urlsplit(path).query,keep_blank_values=True)
+    if set(query)-{'environment','conversation','after','limit'} or any(len(v)!=1 for v in query.values()):raise user_research.InputError('Invalid transcript parameters.')
+    environment=query.get('environment',[app_env])[0]
+    if environment not in ('dev','prod'):raise user_research.InputError('Invalid environment.')
+    conversation=user_research._uuid(query.get('conversation',[''])[0])
+    after=query.get('after',['0'])[0];limit=query.get('limit',['20'])[0]
+    if not after.isascii() or not after.isdigit() or len(after)>7 or not 0<=int(after)<=1000000:raise user_research.InputError('Invalid cursor.')
+    if not limit.isascii() or not limit.isdigit() or len(limit)>3 or not 1<=int(limit)<=20:raise user_research.InputError('Invalid page size.')
+    return environment,conversation,int(after),int(limit)
+
+
+def transcript(cursor,environment,conversation,after=0,limit=20):
+    cursor.execute("""SELECT turn_index,question,answer,status,source_ids,error_code,truncated,created_at,updated_at
+        FROM user_research.oracle_turns WHERE environment=%s AND conversation_id=%s AND turn_index>%s
+        ORDER BY turn_index LIMIT %s""",(environment,conversation,after,limit+1))
+    rows=cursor.fetchall();more=len(rows)>limit;rows=rows[:limit]
+    turns=[{'index':index,'question':question,'answer':answer,'status':status,'source_ids':sources,
+            'error_code':error,'truncated':truncated,'created_at':_iso(created),'updated_at':_iso(updated)}
+           for index,question,answer,status,sources,error,truncated,created,updated in rows]
+    return {'ok':True,'environment':environment,'conversation':conversation,'turns':turns,
+            'has_more':more,'next_after':turns[-1]['index'] if turns else after,'provenance':'browser_observed_after_explicit_consent'}
 
 
 def handle(handler,database_url,app_env,environ,local_admin=False):
@@ -203,11 +230,13 @@ def handle(handler,database_url,app_env,environ,local_admin=False):
     if not local and not _admin_token_ok(handler.headers,environ):
         return research_http._error(handler,403,'research_admin_required','Research administrator access is required.')
     try:
-        environment,minutes,limit=parameters(handler.path,app_env)
+        is_transcript=urlsplit(handler.path).path=='/api/research/transcript'
+        if is_transcript:environment,conversation,after,limit=transcript_parameters(handler.path,app_env)
+        else:environment,minutes,limit=parameters(handler.path,app_env)
         target,settings=_database_settings(environment,app_env,environ,database_url,local)
         with readonly(target) as cursor:
-            result=snapshot(cursor,environment,minutes,limit)
-        result['providers']=providers(settings,environment)
+            result=transcript(cursor,environment,conversation,after,limit) if is_transcript else snapshot(cursor,environment,minutes,limit)
+        if not is_transcript:result['providers']=providers(settings,environment)
         return research_http._reply(handler,result)
     except user_research.InputError:
         return research_http._error(handler,400,'invalid_dashboard_parameters','Dashboard parameters are invalid for this server.')

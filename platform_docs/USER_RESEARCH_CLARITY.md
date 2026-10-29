@@ -1,5 +1,9 @@
 # MeatCODE user testing — Clarity and first-party research storage
 
+## Oracle transcript extension — 29 October 2026
+
+Current implementation: [private Oracle chat capture](ORACLE_CHAT_RESEARCH.md). Separate, unchecked full-chat opt-in supersedes the historical metadata-only scope below. Questions and answers stay in Neon and remain masked in Clarity. Publication and verification are recorded in the extension guide.
+
 ## Deployment update — 29 October2026
 
 Lior explicitly authorized publishing this release and separately approved enabling the private dashboard. Clean-checkout release20acea3e648e was published to dev, verified live with user_testing enabled, then promoted to main with rollback tagprod-20261029-analytics-live-testing. Render deployment verification is recorded in data/verification/research-deployment-2026-10-29.json; final production status must come from that record, not the historical preparation text below.

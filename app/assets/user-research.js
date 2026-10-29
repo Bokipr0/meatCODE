@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   if (window.MCResearch) return;
-  var VERSION = '2026-10-29', CONSENT_KEY = 'mc_research_consent_v1', SESSION_KEY = 'mc_research_session_v1';
+  var VERSION = '2026-10-29-chat-v1', CONSENT_KEY = 'mc_research_consent_v1', SESSION_KEY = 'mc_research_session_v1';
   var PENDING_KEY = 'mc_research_withdraw_pending_v1';
   var SCENES = ['oracle','research','science','ecosystem','simulate','analytics','database','map','papers','dev'];
   var ERRORS = ['network','model_unavailable','session_expired','unknown'];
@@ -10,6 +10,7 @@
   var generation = 0, loaded = false, needsReload = false, requests = new Set(), panel, status, consentSection, feedbackSection;
   var ph = null, phLoading = false, phInitialized = false, phQueue = [], phIdentity = null;
   var NAMES = ['session.started','scene.viewed','oracle.submitted','oracle.completed','oracle.failed','feedback.submitted'];
+  var chatConsent=false, conversations={}, CHAT_KEY='mc_research_chat_consent_v1', CHAT_MAP='mc_research_chat_map_v1';
   var nativeFetch = window.fetch.bind(window);
   document.body.setAttribute('data-clarity-mask', 'true');
   function read(key) { try { return sessionStorage.getItem(key); } catch (_) { return null; } }
@@ -125,18 +126,21 @@
     };
     document.head.appendChild(script);
   }
-  function start() {
+  function start(action) {
     if (!config || config.enabled !== true || active) return;
     if (needsReload || read(PENDING_KEY)) { speak('Finish deleting this session before joining another test.'); return; }
     var previous = read(CONSENT_KEY)===VERSION+':yes' ? read(SESSION_KEY) : null; session = validUUID(previous) ? previous : uuid();
     if (!session) { speak('Testing is unavailable in this browser. The platform still works normally.'); return; }
+    chatConsent=action ? !!panel.querySelector('[data-research-chat]').checked : read(CHAT_KEY)===VERSION+':yes';
+    save(CHAT_KEY,chatConsent?VERSION+':yes':null);
+    try{conversations=JSON.parse(read(CHAT_MAP)||'{}');}catch(_){conversations={};}
     active = true; generation++; save(SESSION_KEY, session); save(CONSENT_KEY, VERSION + ':yes');
     loadClarity(); loadPosthog(); event('session.started'); event('scene.viewed'); renderState();
     speak('Optional testing is on for this tab. You can stop at any time.');
   }
   function stop() {
     var sid = session || read(PENDING_KEY) || read(SESSION_KEY);
-    active = false; generation++; queue = []; phQueue = [];
+    active = false; chatConsent=false;conversations={};save(CHAT_KEY,null);save(CHAT_MAP,null);generation++; queue = []; phQueue = [];
     if(ph){try{ph.opt_out_capturing({clear_persistence:true});}catch(_){}}
     var phScript=document.getElementById('mc-posthog-sdk');if(phScript)phScript.remove();
     if (timer) clearTimeout(timer); timer = null;
@@ -161,22 +165,60 @@
       speak('Testing is off, but deletion could not finish. Use “Stop testing & delete session data” again to retry.');
     });
   }
-  function startOracle() {
+  function chatPrefix(text,limit){var value=text.slice(0,limit);return /[\uD800-\uDBFF]$/.test(value)?value.slice(0,-1):value;}
+  function putChat(turn,state,code) {
+    if(!current(turn) || !turn.chat || !chatConsent)return;
+    var body={session_id:session,consent:true,consent_version:VERSION,full_chat_consent:true,
+      turn_id:turn.id,conversation_id:turn.conversation,turn_index:turn.index,question:turn.question,
+      answer:turn.answer,status:state,revision:turn.revision++,source_ids:turn.source_ids,truncated:turn.truncated};
+    if(code)body.error_code=ERRORS.indexOf(code)>=0?code:'unknown';
+    var controller=new AbortController();requests.add(controller);
+    post('chat',body,controller.signal).catch(function(){if(permitted())speak('The Oracle still works, but a chat-research update could not be saved.');}).finally(function(){requests.delete(controller);});
+    turn.lastWrite=performance.now();
+  }
+  function startOracle(question,chatKey) {
     if (!permitted()) return null;
     event('oracle.submitted');
-    return {generation:generation, started:performance.now(), finished:false, source_count:0};
+    var turn={generation:generation, started:performance.now(), finished:false, source_count:0};
+    if(chatConsent && typeof question==='string' && question.length){
+      var key=String(chatKey||'active');var conversation=conversations[key];
+      if(!conversation || !validUUID(conversation.id))conversation=conversations[key]={id:uuid(),next:1};
+      if(validUUID(conversation.id)){
+        turn.chat=true;turn.id=uuid();turn.conversation=conversation.id;turn.index=conversation.next++;
+        turn.question=chatPrefix(question,12000);turn.answer='';turn.source_ids=[];turn.revision=0;turn.truncated=question.length>12000;
+        save(CHAT_MAP,JSON.stringify(conversations));putChat(turn,'submitted');
+      }
+    }
+    return turn;
   }
   function current(turn) { return turn && permitted() && turn.generation === generation && !turn.finished; }
-  function sourceCount(turn, count) { if (current(turn) && Number.isInteger(count)) turn.source_count = Math.max(0,Math.min(1000,count)); }
-  function finish(turn, code) {
+  function sourceCount(turn, count, ids) {
+    if(current(turn) && Number.isInteger(count))turn.source_count=Math.max(0,Math.min(1000,count));
+    if(current(turn) && turn.chat && Array.isArray(ids))turn.source_ids=ids.map(Number).filter(function(x){return Number.isSafeInteger(x)&&x>0;}).slice(0,100);
+  }
+  function appendOracle(turn,text){
+    if(!current(turn)||!turn.chat||typeof text!=='string')return;
+    if(turn.answer.length+text.length>64000)turn.truncated=true;
+    turn.answer=chatPrefix(turn.answer+text,64000);
+    if(performance.now()-turn.lastWrite>=2000)putChat(turn,'submitted');
+  }
+  function clarifyOracle(turn,raw){
+    if(!current(turn)||!turn.chat)return;
+    try{var d=JSON.parse(raw);if(typeof d.question!=='string')return;
+      turn.clarification=true;turn.answer=d.question+'\nOptions: '+(Array.isArray(d.options)?d.options.filter(function(x){return typeof x==='string';}).slice(0,4).join(' | '):'')+' | Not sure | Just answer';
+      if(turn.answer.length>64000){turn.answer=chatPrefix(turn.answer,64000);turn.truncated=true;}
+    }catch(_){}
+  }
+  function finish(turn, code, interrupted) {
     if (!current(turn)) return;
-    turn.finished = true;
+    putChat(turn,interrupted?'interrupted':code?'failed':turn.clarification?'clarification':'complete',code);
+    turn.finished = true;turn.question='';turn.answer='';
     var properties = {duration_ms:Math.max(0,Math.min(3600000,Math.round(performance.now()-turn.started)))};
     if (code) properties.error_code = ERRORS.indexOf(code) >= 0 ? code : 'unknown';
     else properties.source_count = turn.source_count;
     event(code ? 'oracle.failed' : 'oracle.completed', properties);
   }
-  window.MCResearch = Object.freeze({startOracle:startOracle, sourceCount:sourceCount, completeOracle:function(t){finish(t);}, failOracle:function(t,c){finish(t,c || 'unknown');}});
+  window.MCResearch = Object.freeze({startOracle:startOracle,sourceCount:sourceCount,appendOracle:appendOracle,clarifyOracle:clarifyOracle,completeOracle:function(t){finish(t);},failOracle:function(t,c){finish(t,c||'unknown');},interruptOracle:function(t){finish(t,'unknown',true);}});
   window.addEventListener('hashchange', function () {
     if (!permitted()) return;
     if (loaded && !safeURL()) { clarityCall('consentv2',{ad_Storage:'denied',analytics_Storage:'denied'}); clarityCall('stop'); needsReload = true; }
@@ -186,6 +228,7 @@
     if (!panel) return;
     consentSection.hidden = active;
     feedbackSection.hidden = !active;
+    var chatStatus=panel.querySelector('[data-chat-status]');if(chatStatus)chatStatus.textContent=chatConsent?'Full Oracle chat sharing is ON for new turns in this tab.':'Full Oracle chat sharing is OFF.';
     panel.querySelector('[data-research-stop]').hidden = !active && !read(PENDING_KEY) && !validUUID(read(SESSION_KEY));
     panel.querySelector('[data-research-accept]').disabled = !config || config.enabled !== true || needsReload || !!read(PENDING_KEY);
   }
@@ -196,7 +239,7 @@
     var button = document.createElement('button'); button.id = 'mcResearchButton'; button.type = 'button'; button.textContent = 'Testing privacy'; button.setAttribute('aria-haspopup','dialog');
     document.body.appendChild(button);
     panel = document.createElement('dialog'); panel.id = 'mcResearchPanel'; panel.setAttribute('aria-labelledby','mcResearchTitle'); panel.setAttribute('data-clarity-mask','true');
-    panel.innerHTML = '<h2 id="mcResearchTitle">Help improve MeatCODE</h2><section data-research-consent><p>Optional testing records navigation, response timing and success or failure in MeatCODE and, when configured, PostHog. PostHog receives explicit events with a temporary page identity; no recordings or account identity. Microsoft Clarity provides masked interactions and analytics cookies; advertising storage stays off. Questions, answers, attachments and profile text are masked.</p><p>MeatCODE has a 90-day testing-data retention policy. You can stop and request deletion of this tab’s testing data below. Microsoft recordings follow the project’s separate Clarity retention settings.</p><button type="button" data-research-accept>Allow optional testing</button><button type="button" data-research-decline>Continue without testing</button></section><section data-research-feedback hidden><form><label>How was this experience?<select name="rating" required><option value="" selected disabled>Choose one</option><option value="helpful">Helpful</option><option value="neutral">Neutral</option><option value="unhelpful">Unhelpful</option></select></label><label>About<select name="category"><option value="answer">Oracle answer</option><option value="usability">Using the platform</option><option value="bug">A problem or bug</option><option value="other">Other</option></select></label><label>Comment (optional)<textarea name="comment" maxlength="2000" placeholder="Please leave out names, contact details and confidential research."></textarea></label><p>Only the comment you submit goes to MeatCODE’s own database. It is never sent to Clarity or PostHog. Only the selected rating and category may be included in PostHog feedback events.</p><button type="submit">Send feedback</button></form></section><button type="button" data-research-stop hidden>Stop testing &amp; delete session data</button><p id="mcResearchStatus" role="status" aria-live="polite"></p><button type="button" data-research-close>Close</button>';
+    panel.innerHTML = '<h2 id="mcResearchTitle">Help improve MeatCODE</h2><section data-research-consent><p>Optional testing records navigation, response timing and success or failure in MeatCODE and, when configured, PostHog. PostHog receives explicit events with a temporary page identity; no recordings or account identity. Microsoft Clarity provides masked interactions and analytics cookies; advertising storage stays off. Questions, answers, attachments and profile text are masked.</p><p>MeatCODE has a 90-day testing-data retention policy. You can stop and request deletion of this tab’s testing data below. Microsoft recordings follow the project’s separate Clarity retention settings.</p><label><input type="checkbox" data-research-chat> Also share my submitted Oracle questions, answers, clarification choices and citations with MeatCODE researchers.</label><p>This optional full-chat history is stored privately in Neon under MeatCODE’s 90-day testing-data policy, not sent to Clarity or PostHog. Earlier chats, unsent text, attachment contents and account details are not imported. Avoid confidential or personal information. Stop testing deletes this tab’s first-party research data.</p><button type="button" data-research-accept>Allow optional testing</button><button type="button" data-research-decline>Continue without testing</button></section><section data-research-feedback hidden><p data-chat-status></p><form><label>How was this experience?<select name="rating" required><option value="" selected disabled>Choose one</option><option value="helpful">Helpful</option><option value="neutral">Neutral</option><option value="unhelpful">Unhelpful</option></select></label><label>About<select name="category"><option value="answer">Oracle answer</option><option value="usability">Using the platform</option><option value="bug">A problem or bug</option><option value="other">Other</option></select></label><label>Comment (optional)<textarea name="comment" maxlength="2000" placeholder="Please leave out names, contact details and confidential research."></textarea></label><p>Submitted feedback comments go to MeatCODE’s own database. Full chat text is included there only if you selected the separate chat-sharing option. It is never sent to Clarity or PostHog. Only the selected rating and category may be included in PostHog feedback events.</p><button type="submit">Send feedback</button></form></section><button type="button" data-research-stop hidden>Stop testing &amp; delete session data</button><p id="mcResearchStatus" role="status" aria-live="polite"></p><button type="button" data-research-close>Close</button>';
     document.body.appendChild(panel);
     consentSection = panel.querySelector('[data-research-consent]'); feedbackSection = panel.querySelector('[data-research-feedback]'); status = panel.querySelector('#mcResearchStatus');
     button.addEventListener('click',function(){renderState();panel.showModal();});

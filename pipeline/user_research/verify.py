@@ -25,7 +25,7 @@ def run(environment):
     try:
         with conn.cursor() as cur:
             counts={}
-            for table in ('sessions','events','feedback','withdrawals','clarity_exports'):
+            for table in ('sessions','events','feedback','withdrawals','clarity_exports','oracle_turns'):
                 cur.execute('SELECT count(*) FROM user_research.'+table)
                 counts[table]=cur.fetchone()[0]
         conn.rollback()

@@ -28,7 +28,7 @@ const COMMENT = 'EXPLICIT_FEEDBACK_COMMENT_2859';
     return route.fulfill({contentType:'text/javascript',body:'window.__maskAtSDK = document.body.getAttribute("data-clarity-mask"); window.__clarityCalls=(window.clarity.q||[]).map(function(x){return Array.from(x)}); window.clarity=function(){window.__clarityCalls.push(Array.from(arguments))};'});
    }
    if(u.hostname!=='127.0.0.1')return route.abort();
-   if(u.pathname==='/api/research/config')return route.fulfill({contentType:'application/json',body:JSON.stringify({enabled:options.enabled!==false,environment:'dev',clarity_project_id:options.noClarity?'':'z4upnrbddu',posthog:options.noPosthog?{enabled:false}:{enabled:true,project_token:'phc_fixture_public',api_host:'https://eu.i.posthog.com'},consent_version:'2026-10-29',retention_days:90})});
+   if(u.pathname==='/api/research/config')return route.fulfill({contentType:'application/json',body:JSON.stringify({enabled:options.enabled!==false,environment:'dev',clarity_project_id:options.noClarity?'':'z4upnrbddu',posthog:options.noPosthog?{enabled:false}:{enabled:true,project_token:'phc_fixture_public',api_host:'https://eu.i.posthog.com'},consent_version:'2026-10-29-chat-v1',retention_days:90})});
    if(u.pathname.startsWith('/api/research/')) {
     records.push({kind:'post',path:u.pathname,body:req.postDataJSON(),headers:req.headers()});
     return route.fulfill({status:u.pathname.endsWith('/withdraw') && withdrawFails ? 503 : 200,contentType:'application/json',body:'{"ok":true}'});

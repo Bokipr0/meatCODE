@@ -11,9 +11,9 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'server'))
 from user_research import transaction, RETENTION_DAYS
 from settings import ROOT, settings
 
-TABLES=('sessions','events','feedback','withdrawals','clarity_exports')
+TABLES=('sessions','events','feedback','withdrawals','clarity_exports','oracle_turns')
 TIMESTAMPS={'sessions':'last_seen_at','events':'created_at','feedback':'created_at',
-            'withdrawals':'withdrawn_at','clarity_exports':'imported_at'}
+            'withdrawals':'withdrawn_at','clarity_exports':'imported_at','oracle_turns':'updated_at'}
 
 
 def purge(environment,apply=False):
@@ -22,7 +22,7 @@ def purge(environment,apply=False):
     with transaction(settings(environment).get('DATABASE_URL')) as cur:
         # First-party consent/feedback/events and export copies all have a 90-day boundary.
         # Tombstones persist for the complete 90-day window, preventing late re-ingestion.
-        for table in ('events','feedback','sessions','withdrawals','clarity_exports'):
+        for table in ('oracle_turns','events','feedback','sessions','withdrawals','clarity_exports'):
             query=sql.SQL('{} FROM user_research.{} WHERE environment=%s AND {} < now() - (%s * interval \'1 day\')').format(
                 sql.SQL('DELETE' if apply else 'SELECT count(*)'),sql.Identifier(table),sql.Identifier(TIMESTAMPS[table]))
             cur.execute(query,(environment,RETENTION_DAYS))

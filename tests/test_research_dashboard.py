@@ -43,6 +43,7 @@ class Cursor:
         if self.empty:return []
         if self.stage==2:return [('oracle',4)]
         created=datetime.datetime(2026,10,29,tzinfo=datetime.timezone.utc)
+        if self.stage>=5:return []
         if self.stage==3:return [(uuid.uuid4(),'oracle.completed','oracle',created,1200,None,3,self.sid)]
         return [(created,'helpful','answer','session '+str(self.sid),self.sid)]
 
