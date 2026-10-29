@@ -1,5 +1,16 @@
 # PROJECT_STATE — MeatCODE
 
+## 2026-10-29 15:03 UTC · Governed datasets: backup complete, provisioning pending
+
+User requires explicit Lior approval of each child contribution revision before master publication;
+retain baseline vs later provenance and component/project/contributor tags. Accepted master changes
+may propagate asynchronously to other modules. New roles/project design documented in
+`platform_docs/DATASET_ROLES_ONE_PAGE.pdf` and `DATASET_PROVISIONING_PLAN.md`.
+Configured production/dev database snapshots saved privately in `data/backups/20261029T150102Z/`:
+58/65 tables, custom archives and hashes verified readable, full restore not yet tested.
+Neon control-plane plugin remains not installed/connected: no module projects, grants, migrations,
+runtime switches or sync workers provisioned. Mandatory-approval digest is undecided, not scheduled.
+
 ## 2026-10-29 · Release Center repaired and requested modules OFF — verified live
 
 User requested diagnosis/fix of toggles/publishing/deployment and disabling Analytics/Simulate. Git authentication verified by actual pushes; no key rotation. Earlier local divergence was reconciled, but changes had not been pushed. Old GUI only launched Terminal and never observed publishing exit status. New local-only tracked job API requires same-origin custom header and explicit confirmation, rejects concurrent releases, returns real sanitized errors, and GUI verifies the hosted target commit before claiming live. Direct scripts retain prompts; cockpit jobs use the existing GUI confirmation. Scripts fail on Git errors, preserve existing lock files, check ancestry before staging, and create deployable markers after skip-render commits. Canonical Release Center paths are preferred over archived copies. Launcher reuses a healthy local cockpit.

@@ -241,7 +241,7 @@
       "url": "/app/dev/analytics_workspace.html",
       "note": "Guided-stepper mockup (method -> upload -> confirm format -> reference -> compare). Figures are generated for demonstration; wiring to real /api/* + a reference-profile source (A1/A3) is the follow-up.",
       "dev": false,
-      "prod": false
+      "prod": true
     },
     "research_reaction_network": {
       "label": "Research - reaction network journey",
@@ -276,7 +276,7 @@
       "url": "/analytics",
       "note": "Legacy fallback only: an explicit analytics true or false takes precedence. analytics_workspace only controls its Dev Area listing. Saved local switches reach production after promotion and successful deployment.",
       "dev": false,
-      "prod": false
+      "prod": true
     },
     "science_module": {
       "label": "Science module (top nav)",
