@@ -1,6 +1,6 @@
 # Private Oracle chat research
 
-29 October 2026 · Implementation and database verification complete; deployment verification pending.
+29 October 2026 · Live on development and production. Verified hosted revision `e98349d3c87e19620f44062749df4083e76ea9d1`.
 
 ## Scope and opt-in
 
@@ -24,4 +24,4 @@ These are browser-observed transcripts, not a tamper-proof server audit. A turn 
 
 Migration `db/migrations/0019_oracle_chat_research.sql` was applied transactionally to development and production. Scientific table inventories were unchanged. The research migration runner, verification and private JSONL export/purge commands include `oracle_turns`. Old branch-copy material under `research_storage_2026-10-29` predates this table and must be refreshed and reviewed before use.
 
-Verification: 61 Python tests passed against each database using rollback-only synthetic fixtures. Dedicated browser checks cover separate consent, question/answer capture, conversation ordering, clarification/failure, provider text exclusion, private viewing, pagination and literal text rendering. Deployment state will be appended after hosted verification.
+Verification: 61 Python tests passed against each database using rollback-only synthetic fixtures. Dedicated browser checks cover separate consent, question/answer capture, conversation ordering, clarification/failure, provider text exclusion, private viewing, pagination and literal text rendering. Both Render deployments are live: development `dep-dbhmk8k9v7es73bib4sg`, production `dep-dbhml0a9lscs739vbnb0`. Both public version endpoints match the tested revision; unauthenticated transcript reads return 401. Hosted authenticated chat capture was not exercised because the site-login credential is not stored locally; the complete API lifecycle was verified locally against Neon using synthetic data and then erased. Current feature switches were preserved. Rollback tag: `prod-20261029-before-oracle-chat`. Production currently has no newly opted-in transcripts; refresh and opt in before expecting them. On the hosted production dashboard, select **Production** in the environment picker, then use the separate research-admin credential from that service’s Render settings.
