@@ -1,5 +1,16 @@
 # PROJECT_STATE — MeatCODE
 
+## 2026-10-29 · Private dashboard environment/access correction — live
+
+Screenshot showed Development selected on the production dashboard after unlocking. Corrected
+startup to use the server's own environment automatically; hosted environment picker becomes
+read-only, while local administrators retain cross-environment selection. Locked, empty and
+unavailable states now have separate wording; totals remain unknown until successful loading.
+Python suite and two browser dashboard suites passed. Runtime 2bbba3f verified live on both sites,
+with Render production deploy dep-dbhns1g473hc73csuuk0. No credential/database/schema changes.
+Shared conversations remain in private user_research.oracle_turns inside existing dev/prod
+Neon databases; no fully independent research database/branch was provisioned by this fix.
+
 ## 2026-10-29 · Dataset guide saved locally; publication remains manual
 
 One-page dataset PDF regenerated in platform_docs alongside Markdown and editable SVG.
