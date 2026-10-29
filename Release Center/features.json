@@ -62,7 +62,7 @@
         "spot": "Top bar Inventory button and saved-items drawer.",
         "file": "app/meatcode_mockup.html"
       },
-      "dev": true,
+      "dev": false,
       "prod": false
     },
     "highlight_inventory": {
