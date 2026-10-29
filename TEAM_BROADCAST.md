@@ -1,5 +1,32 @@
 # 📣 TEAM BROADCAST — MeatCODE
 
+## 2026-10-29 · Project Coordinator · Production-only log cache and internal/browser controls — live
+
+User narrowed scope to production input only and explicitly selected internal-browser exclusion
+plus recognized-bot blocking. One active cache: research_prod. Development capture disabled in
+Render and user_testing.dev; own research URL cleared, strict routing retained; newly created
+development writer changed to NOLOGIN. Empty research_dev database retained inactive, not deleted.
+Migration0022 enforces environment=prod on all six production research tables. No data deleted.
+
+Dashboard/journey/transcript/operations default to prod and reject dev before queries, including
+localadmin. Frontend has one disabled Production data only source and never requests dev. The
+owner-authorized dev-login access remains, reading production via the restricted reader role.
+Capture additionally requires actual APP_ENVprod, RENDERtrue, production hostname and HTTPSOrigin;
+local processes with defaultprod settings cannot collect. Normalproduction mode remainsautomatic
+post-login. Internal-testing switch persists host-onlySecurecookie/localstorage, stops all current
+tabs, withdraws own active sessions and reloads excluded; explicitoff resumes policy. Recognized
+bot/automation UAs and webdriver are suppressed. Unknown bot identification is heuristic; shared
+login cannot establish individual identity. Old unclassified records are retained, not guessed.
+
+All97 checks passed. Positive DB fixtures ran only on inactiveQA and rolledback; production's
+negative dev-row probe was rejected, storing nothing. Four browser suites plus dedicated switch,
+two-tab, misconfigured-dev and automation smokes passed. Actual localAPI configuration disabled,
+intake404, devdashboard400, prodread200. Production verifyCLI nowSELECT-only with0fixturewrites.
+Runtime d52c422 verified on both sites; dev dep-dbhoqkks728c73dffn90, prod dep-dbhore7avr4c73a75qpg.
+Production cache flag ON, dev OFF. User must enable Internaltesting in each own production browser.
+No scientific-data, model-key, existing-login-credential or parent permissions changed.
+Details: platform_docs/PRODUCTION_RESEARCH_ONLY.md; private verification under ignored data/verification.
+
 ## 2026-10-29 · Project Coordinator · PARALLEL journey storage and production monitoring — live
 
 Created Neon research-logs child br-lingering-morning-alh02jz5 from production in GFI database,

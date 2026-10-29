@@ -1,5 +1,7 @@
 # Demo testing mode
 
+> Current production-only rule: [one active production cache and internal-browser exclusion](PRODUCTION_RESEARCH_ONLY.md). Development/local collection and the development writer are disabled; the dashboard reads production only. Earlier two-active-database descriptions are historical.
+
 _Last updated: 2026-10-29 17:39 UTC · Codex · owner-requested automatic post-login collection_
 
 Lior requested automatic testing during demos until he decides otherwise. Activation was updated

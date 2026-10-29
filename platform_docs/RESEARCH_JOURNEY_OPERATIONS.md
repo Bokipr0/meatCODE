@@ -1,5 +1,7 @@
 # Development research dashboard and isolated journey storage
 
+> Current production-only rule: [one active production cache and internal-browser exclusion](PRODUCTION_RESEARCH_ONLY.md). Development/local collection and the development writer are disabled; the dashboard reads production only. Earlier two-active-database descriptions are historical.
+
 29 October 2026 · Live on both servers. Latest combined runtime `df3fa9cc2e52fed8dd672d23bf6237383ad1a190` verified after Lior’s Release Center promotion.
 
 ## Open it

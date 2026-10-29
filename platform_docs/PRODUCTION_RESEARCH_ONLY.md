@@ -1,6 +1,6 @@
 # One production-only research cache
 
-29 October 2026 · Implementation and verification underway.
+29 October 2026 · Live on development and production as runtime d52c4226243292da0f69d7ee4a1376f1294ac2a3.
 
 **Active intake:** research-logs branch / research_prod database only. Development/local/staging capture is disabled in code and development Render settings, with the development writer NOLOGIN. Its empty research_dev database is inactive; it was not deleted. No development records are selected or offered in the dashboard.
 
@@ -14,4 +14,6 @@ Recognized crawler/bot, HeadlessChrome/Playwright and command-line automation us
 
 The fixed dashboard source is **Production data only**. Snapshot, transcript, journey, activity and status commands reject environment=dev, even for local administrators. The existing development-site login access is preserved; production still uses its separate research-admin gate. No research writer is exposed to the development dashboard.
 
-Positive database fixtures run against the inactive QA database and roll back. Production is checked with a rejected development insert only; no synthetic event is successfully stored. Browser flows intercept all traffic and provider scripts. Existing production records are retained; unknown historical records are not retroactively classified as bots or staff.
+All97 checks passed. Positive database fixtures run against the inactive QA database and roll back. Production is checked with a rejected development insert only; no synthetic event is successfully stored. Browser flows intercept all traffic and provider scripts. Existing production records are retained; unknown historical records are not retroactively classified as bots or staff.
+
+Verified development deploy dep-dbhoqkks728c73dffn90 and production deploy dep-dbhore7avr4c73a75qpg live; public revisions match. Development capture flag is OFF, production ON. Actual local HTTP rejects collection404 and development queries400 while production reads remain available. The production verification CLI is now read-only metadata/count inspection and never runs positive synthetic fixtures. Current internal switch remains an explicit browser setting: enable it on the production browser before personal checks.

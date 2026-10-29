@@ -1,3 +1,5 @@
+> Current 29 October policy: only research_prod is active for input capture. Development/local capture is blocked. Use `verify.py --environment prod` for strictly read-only checks; never point positive synthetic fixtures at live production. See [production-only operations](../../platform_docs/PRODUCTION_RESEARCH_ONLY.md). Older dev migration/consent examples below are historical.
+
 _Last updated: 2026-10-28 15:51 UTC · Data/Backend · isolated research storage, private export and manual retention/import operations._
 
 # Product research storage

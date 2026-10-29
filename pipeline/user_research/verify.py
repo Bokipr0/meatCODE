@@ -1,44 +1,34 @@
-# Last updated: 2026-10-28 15:51 UTC · Data/Backend · live rollback-only verification; no test rows committed.
-import argparse
-import importlib.util
-import json
-import os
-from pathlib import Path
-import sys
-import unittest
-
-from settings import ROOT, settings, research_database_url
+# Last updated: 2026-10-29 · Codex · read-only production verification; never run synthetic fixtures on live intake.
+"""Inspect production research schema/counts only. Positive fixtures belong on isolated QA storage."""
+import argparse,json
+from settings import settings,research_database_url
+from migrate import verify as verify_schema
 
 
 def run(environment):
-    conf=settings(environment)
-    if not research_database_url(conf):
-        raise RuntimeError('Research database is not configured.')
-    os.environ['USER_RESEARCH_TEST_DB_URL']=research_database_url(conf)
-    spec=importlib.util.spec_from_file_location('test_user_research',ROOT/'tests/test_user_research.py')
-    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
-    suite=unittest.defaultTestLoader.loadTestsFromModule(module)
-    # Suppress full exception/SQL tracebacks so credentials/feedback never enter logs.
-    result=unittest.TestResult();suite.run(result)
+    if environment!='prod':raise RuntimeError('Only production research storage is active.')
+    target=research_database_url(settings(environment))
+    if not target:raise RuntimeError('Production research storage is not configured.')
     import psycopg2
-    conn=psycopg2.connect(research_database_url(conf),connect_timeout=5)
+    conn=psycopg2.connect(target,connect_timeout=5)
     try:
+        conn.set_session(readonly=True,isolation_level='REPEATABLE READ')
         with conn.cursor() as cur:
+            cur.execute("SET LOCAL statement_timeout='5s'")
+            schema=verify_schema(cur)
+            cur.execute("SELECT count(*) FROM pg_constraint WHERE conname='research_production_only'")
+            if cur.fetchone()[0]!=6:raise RuntimeError('Production-only constraints are missing.')
             counts={}
             for table in ('sessions','events','feedback','withdrawals','clarity_exports','oracle_turns'):
-                cur.execute('SELECT count(*) FROM user_research.'+table)
+                cur.execute('SELECT count(*) FROM user_research.'+table+' WHERE environment=%s',('prod',))
                 counts[table]=cur.fetchone()[0]
-        conn.rollback()
-    finally:conn.close()
-    return {'environment':environment,'tests':result.testsRun,'failures':len(result.failures),
-            'errors':len(result.errors),'skipped':len(result.skipped),'retained_rows':counts,
-            'ok':result.wasSuccessful()}
+        return {'ok':True,'environment':'prod','mode':'read_only','synthetic_writes':0,'retained_rows':counts,**schema}
+    finally:conn.rollback();conn.close()
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser();parser.add_argument('--environment',required=True,choices=('dev','prod'))
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--environment',required=True,choices=('prod',))
     args=parser.parse_args()
-    try:
-        report=run(args.environment);print(json.dumps(report));sys.exit(0 if report['ok'] else 1)
+    try:report=run(args.environment);print(json.dumps(report))
     except Exception as exc:
-        print(json.dumps({'ok':False,'error_type':type(exc).__name__,'error_code':'rollback_verification_stopped'}));sys.exit(1)
+        print(json.dumps({'ok':False,'error_type':type(exc).__name__,'error_code':'read_only_verification_stopped'}));raise SystemExit(1)
