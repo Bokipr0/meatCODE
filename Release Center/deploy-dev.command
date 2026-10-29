@@ -48,6 +48,12 @@ else
   git commit -q -m "$MSG" && echo "Saved: $MSG"
 fi
 
+# An explicit deployment must not silently reuse a commit marked to skip Render.
+if git log -1 --format=%B | grep -Eiq '\[(skip (render|deploy|cd)|((render|deploy|cd) skip))\]'; then
+  git commit --allow-empty -q -m "Release current dev build $(date '+%Y-%m-%d %H:%M')"
+  echo "Created a release marker so Render will build the requested version."
+fi
+
 echo "Pushing to staging ('$DEV')…"
 OUT="$(git push origin "$DEV" 2>&1)"; CODE=$?
 echo "$OUT"

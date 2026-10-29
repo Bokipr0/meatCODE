@@ -45,6 +45,12 @@ if ! git diff --cached --quiet; then
   git commit -q -m "dev $(date '+%Y-%m-%d %H:%M') (saved before promoting)"
   echo "Saved your latest dev changes first."
 fi
+# An explicit deployment must not silently reuse a commit marked to skip Render.
+if git log -1 --format=%B | grep -Eiq '\[(skip (render|deploy|cd)|((render|deploy|cd) skip))\]'; then
+  git commit --allow-empty -q -m "Release current dev build $(date '+%Y-%m-%d %H:%M')"
+  echo "Created a release marker so Render will build the requested version."
+fi
+
 echo "Making sure staging is up to date…"
 if ! git push origin "$DEV"; then
   echo "❌ Could not push dev. The actual GitHub error is shown above; production was not changed."
