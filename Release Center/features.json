@@ -390,6 +390,34 @@
       "note": "Controlled by this environment switch for navigation and dashboard routes. Development reuses its authenticated site login; production reads use a SELECT-only research role. No shell or deployment commands.",
       "dev": true,
       "prod": false
+    },
+    "demo_badge": {
+      "label": "Demo banner",
+      "description": "Small DEMO label beside MeatCODE; independent of collection.",
+      "kind": "feature",
+      "added": "2026-10-29",
+      "status": "live",
+      "where": {
+        "screen": "Oracle",
+        "spot": "Brand and welcome",
+        "file": "app/assets/oracle-appearance.js"
+      },
+      "dev": true,
+      "prod": true
+    },
+    "meatcode_avatar": {
+      "label": "MeatCODE avatar",
+      "description": "Meaty teal Oracle icon and browser-local image personalization.",
+      "kind": "feature",
+      "added": "2026-10-29",
+      "status": "live",
+      "where": {
+        "screen": "Oracle",
+        "spot": "Brand and welcome",
+        "file": "app/assets/oracle-appearance.js"
+      },
+      "dev": true,
+      "prod": true
     }
   }
 }

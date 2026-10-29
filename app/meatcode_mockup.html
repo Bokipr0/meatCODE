@@ -1819,14 +1819,16 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 #oracle .context-item .save-ico:hover { background: var(--wine-mist); }
 #oracle .context-item .save-ico:focus-visible { outline: 2px solid var(--wine); outline-offset: -2px; }
 
-/* Last updated: 2026-10-29 · Codex · high-contrast, always-visible cross delete control. */
+/* Last updated: 2026-10-29 · Codex · circular delete control reveals its cross on hover/focus; visible cross on touch. */
 #oracle .context-item .ctx-del {
   display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
   width:28px;height:28px;margin:0 0 0 -6px;padding:5px;
-  border:1px solid var(--line-strong);background:var(--wine-mist);
-  border-radius:6px;cursor:pointer;color:var(--ink);opacity:1;
+  border:1px solid var(--line);background:transparent;
+  border-radius:50%;cursor:pointer;color:var(--ink);opacity:1;
 }
-#oracle .context-item .ctx-del svg{width:16px;height:16px;}
+#oracle .context-item .ctx-del svg{width:16px;height:16px;opacity:0;}
+#oracle .context-item:hover .ctx-del svg,#oracle .context-item:focus-within .ctx-del svg{opacity:1;}
+@media(hover:none){#oracle .context-item .ctx-del svg{opacity:1;}}
 #oracle .context-item .dot{display:none;}
 #oracle .context-item.renaming .ctx-del{visibility:hidden;}
 #oracle .context-item .ctx-del:hover{background:var(--wine);border-color:var(--wine);color:var(--surface);}
@@ -2531,6 +2533,10 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 .proto-save-btn:hover { background: var(--wine-mist); border-color: var(--wine-tint); }
 .proto-save-btn.saved { background: var(--wine); border-color: var(--wine); color: #fff; }
 .proto-save-btn svg { width: 15px; height: 15px; }
+
+.oracle-welcome-points .pt{max-width:260px;text-align:center;}
+.oracle-welcome-points .pt span{white-space:nowrap;font-size:12px;}
+@media(max-height:720px){.oracle-welcome-points{display:flex;}}
 </style>
 <style id="mc-fullscreen-overrides">
   /* Full-scale: remove the bottom dock quick-nav (Open/Navigate/For You/Guide — all scenes)
@@ -3039,9 +3045,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
              H1 are GONE (the nav already says Oracle and they pushed the conversation
              down the page). The grounding line stays IN FULL — technical detail
              included — exactly as approved in app/dev/oracle_redesign.html. -->
-        <div class="oracle-heading">
-          <p>Every answer is grounded in the corpus (818 sources, keyword/FTS retrieval, <span class="mono">relevance_llm &ge; 60</span>) with sources you can open.</p>
-        </div>
+
 
         <!-- ===== THE CONVERSATION =====
              Multi-turn thread: every question becomes a user bubble and every answer an
@@ -3059,13 +3063,12 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
           <div class="oracle-answer empty oracle-empty-state">
             <div class="icon">M</div>
             <div class="title">Welcome to the MeatCODE Oracle</div>
-            <div class="hint">Ask anything about meaty flavour, aroma compounds or the chemistry behind them. Every answer is built from papers retrieved out of the MeatCODE database — and every citation links straight back to the source.</div>
             <div class="oracle-welcome-points">
-              <div class="pt"><b>Grounded, not guessed</b><span>Answers come from our own curated corpus, with the papers shown alongside.</span></div>
-              <div class="pt"><b>Follow the thread</b><span>Ask follow-ups — the conversation builds instead of starting over.</span></div>
-              <div class="pt"><b>Check the evidence</b><span>Open any cited paper, save a passage, or explore the related molecules.</span></div>
+              <div class="pt"><b>Curated</b><span>Focused scientific knowledge.</span></div>
+              <div class="pt"><b>Responsive</b><span>Ask, refine, and explore.</span></div>
+              <div class="pt"><b>Human Validated</b><span>Shaped by scientific review.</span></div>
             </div>
-            <div class="kick">Pick a starter below, or just type your question.</div>
+            
           </div>
         </div>
 
@@ -5807,13 +5810,11 @@ function setOracleEmpty() {
     '<div class="oracle-answer empty oracle-empty-state">' +
       '<div class="icon">M</div>' +
       '<div class="title">Welcome to the MeatCODE Oracle</div>' +
-      '<div class="hint">Ask anything about meaty flavour, aroma compounds or the chemistry behind them. Every answer is built from papers retrieved out of the MeatCODE database — and every citation links straight back to the source.</div>' +
       '<div class="oracle-welcome-points">' +
-        '<div class="pt"><b>Grounded, not guessed</b><span>Answers come from our own curated corpus, with the papers shown alongside.</span></div>' +
-        '<div class="pt"><b>Follow the thread</b><span>Ask follow-ups — the conversation builds instead of starting over.</span></div>' +
-        '<div class="pt"><b>Check the evidence</b><span>Open any cited paper, save a passage, or explore the related molecules.</span></div>' +
+        '<div class="pt"><b>Curated</b><span>Focused scientific knowledge.</span></div>' +
+        '<div class="pt"><b>Responsive</b><span>Ask, refine, and explore.</span></div>' +
+        '<div class="pt"><b>Human Validated</b><span>Shaped by scientific review.</span></div>' +
       '</div>' +
-      '<div class="kick">Pick a starter below, or just type your question.</div>' +
     '</div>';
   oracleSlot = null;
 }
@@ -10043,6 +10044,7 @@ body:not(.ff-analytics) a[href="/analytics"] {display:none!important}
 })();
 </script>
 <script src="/app/assets/environment-badge.js" defer></script>
+<script src="/app/assets/oracle-appearance.js" defer></script>
 </body>
 </html>
 

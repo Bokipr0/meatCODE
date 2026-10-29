@@ -272,7 +272,7 @@
     if (!panel) return;
     var excluded=config&&config.capture_excluded;var internal=panel.querySelector('[data-research-internal]');if(internal){internal.checked=internalBrowser()||excluded==='internal';internal.disabled=excluded==='nonproduction';}
     var exclusionStatus=panel.querySelector('[data-research-exclusion-status]');if(exclusionStatus)exclusionStatus.textContent=excluded==='nonproduction'?'Only the production platform is collected. This development/local site sends no testing events or recordings.':excluded==='internal'||internalBrowser()?'This browser is excluded from production research and Clarity/PostHog collection. Uncheck to resume normal testing settings.':'Use internal testing for your own checks. It excludes this browser without changing normal platform access.';
-    if(demoMode){var demoButton=document.getElementById('mcResearchButton');if(demoButton)demoButton.textContent=active?'Demo testing active · Details & feedback':'Demo testing · Details & feedback';}
+    if(demoMode){var demoButton=document.getElementById('mcResearchButton');if(demoButton){demoButton.textContent='Demo testing';demoButton.disabled=true;demoButton.removeAttribute('aria-haspopup');demoButton.style.cursor='default';}}
     var demoNotice=document.getElementById('mcDemoNotice');
     if(demoNotice){demoNotice.hidden=!!active;if(read(CONSENT_KEY)===VERSION+':no')demoNotice.textContent='Demo testing has stopped for this tab.';}
     consentSection.hidden = !demoMode && active;
@@ -292,7 +292,7 @@
     document.body.appendChild(panel);
     consentSection = panel.querySelector('[data-research-consent]'); feedbackSection = panel.querySelector('[data-research-feedback]'); status = panel.querySelector('#mcResearchStatus');
     if(demoMode){
-      button.textContent='Demo testing · Details & feedback';
+      button.textContent='Demo testing';button.disabled=true;button.style.cursor='default';button.removeAttribute('aria-haspopup');
       var notice=document.createElement('aside');notice.id='mcDemoNotice';notice.setAttribute('role','note');
       notice.style.cssText='position:fixed;left:16px;bottom:12px;max-width:min(560px,calc(100vw - 32px));z-index:2090;padding:8px 12px;border-radius:12px;background:var(--surface,#fff);color:var(--ink,#222);border:1px solid var(--line,#ddd);font:12px/1.4 var(--round,system-ui)';
       notice.textContent='Demo testing: after login, MeatCODE records usage and saves new Oracle questions and answers privately for review (90 days). Avoid confidential information.';
@@ -304,7 +304,13 @@
       consentSection.innerHTML='<p>Demo testing starts automatically after login. Usage and newly submitted Oracle questions, answers, clarification choices and citations are saved privately in MeatCODE for 90 days. Masked interactions may be recorded by Microsoft Clarity; PostHog receives usage events. Oracle text is not sent to either provider. Earlier chats, unsent text, attachment contents and account details are excluded.</p><p>Microsoft recordings follow the Clarity project’s separate retention settings. You can delete this tab’s first-party testing data below.</p>';
       var description=feedbackSection.querySelector('form p');description.textContent='Feedback and new Oracle conversations are stored privately in MeatCODE. Chat text is not sent to Clarity or PostHog.';
     }
-    button.addEventListener('click',function(){renderState();panel.showModal();});
+    button.addEventListener('click',function(){if(!demoMode){renderState();panel.showModal();}});
+    // Keep deletion and browser exclusion reachable separately from the passive demo label.
+    document.querySelectorAll('.context .user-card').forEach(function(card){
+      var settings=document.createElement('button');settings.type='button';settings.className='mc-testing-settings';settings.textContent='Testing settings';
+      settings.style.cssText='display:block;border:0;background:transparent;color:var(--ink-dim);font:11px var(--round,system-ui);text-decoration:underline;cursor:pointer;padding:4px 0';
+      settings.onclick=function(){renderState();panel.showModal();};card.parentNode.insertBefore(settings,card);
+    });
     panel.querySelector('[data-research-close]').addEventListener('click',function(){panel.close();});
     if(!demoMode)panel.querySelector('[data-research-decline]').addEventListener('click',function(){save(CONSENT_KEY,VERSION+':no');panel.close();});
     if(!demoMode)panel.querySelector('[data-research-accept]').addEventListener('click',start);
