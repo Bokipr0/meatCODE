@@ -236,7 +236,9 @@ def handle(handler,database_url,app_env,environ,local_admin=False):
         target,settings=_database_settings(environment,app_env,environ,database_url,local)
         with readonly(target) as cursor:
             result=transcript(cursor,environment,conversation,after,limit) if is_transcript else snapshot(cursor,environment,minutes,limit)
-        if not is_transcript:result['providers']=providers(settings,environment)
+        if not is_transcript:
+            result['providers']=providers(settings,environment)
+            result['can_select_environment']=local
         return research_http._reply(handler,result)
     except user_research.InputError:
         return research_http._error(handler,400,'invalid_dashboard_parameters','Dashboard parameters are invalid for this server.')

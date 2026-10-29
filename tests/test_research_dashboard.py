@@ -117,6 +117,8 @@ class DashboardTests(unittest.TestCase):
                 dashboard.handle(h,'fake-db','prod',environ,local)
             self.assertEqual(h.status,200);self.assertEqual(h.response_headers['Cache-Control'],'no-store')
             self.assertEqual(h.result()['providers']['posthog']['delivery'],'unverified')
+            self.assertEqual(h.result()['environment'],'prod')
+            self.assertEqual(h.result()['can_select_environment'],local)
 
     def test_errors_do_not_disclose_database_or_token_details(self):
         h=Handler()
