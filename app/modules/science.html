@@ -1,0 +1,921 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- Last updated: 2026-10-25 · Yochai (PM) with Claude · NEW product module: MeatCODE Science (Foundations tour +
+     Precursors), ported from the "MeatCODE Science Mockup" Chat artifact (v0.2, 18 Oct). Re-skinned onto the live
+     platform tokens (mc-brand.css: GFI seaweed teal #00736E instead of the mockup's #0B5962; Varela Round). The mock
+     Chat screen + presenter panel were removed: every "Ask" now hands off to the REAL Oracle via mc-bridge.js, and
+     "Experts" hands off to the Ecosystem module. Embedded in the platform as the #science scene (flag science_module). -->
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MeatCODE · Science</title>
+<link rel="stylesheet" href="/app/modules/mc-brand.css">
+<script src="/app/modules/mc-bridge.js"></script>
+<style>
+:root{
+  color-scheme: light;
+  --bg:#FAF6EF; --bg-2:#F7F0E0; --surface:#FFFFFF; --sand:#F2EBDA;
+  --ink:#1A1A1A; --ink-2:#4A4A4A; --ink-3:#333333;
+  --line:#E5DDD0; --line-2:#D2C8B5;
+  --green:var(--wine); --green-d:var(--wine-deep); --mist:#E0F0EE; --mist-2:#F1F8F7; --tint:#B5DDD8; --teal:#4FA59F;
+  --coral:#C77E5F; --coral-d:#8A4B30; --coral-s:#F2D7C8; --coral-xs:#FBEDE5;
+  --olive:#7A8C5F; --olive-d:#4A5737; --olive-s:#D6DCC4; --olive-xs:#EEF1E6;
+  --plum:#7C5A8F; --plum-d:#5E4170; --plum-s:#E9DEF0; --plum-xs:#F3EDF7;
+  --amber:#E0A458; --amber-s:#F6D58E; --amber-xs:#FFF7EA; --brown:#B57A3A; --brown-d:#7A5228;
+  --raw:#D98C7E; --raw-d:#B8665A; --fat:#FBF1E6; --fat-d:#E3C9AE;
+  --cooked:#A8693F; --cooked-d:#7A4526; --sear:#5E331C; --cooked-fat:#EFCB8F; --cooked-fat-d:#D9A866;
+  --tip:#1A1A1A; --on-dark:#FFFFFF;
+  --shadow:0 4px 16px rgba(0,67,64,.08); --shadow-lg:0 10px 32px rgba(0,67,64,.13);
+  --ease:cubic-bezier(.16,1,.3,1);
+  --font:var(--round);
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.5}
+h1,h2,h3{text-wrap:balance;margin:0}
+p{margin:0}
+a{color:var(--green)} a:hover{color:var(--green-d)}
+:focus-visible{outline:3px solid var(--coral);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(clamp(16px,3vw,36px),env(safe-area-inset-left,0px));padding-right:max(clamp(16px,3vw,36px),env(safe-area-inset-right,0px))}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.18em;color:var(--green)}
+
+/* shell */
+.top{background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in{display:flex;flex-wrap:wrap;align-items:center;gap:12px 28px;padding-block:12px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+.brand:hover{color:var(--ink)}
+.mark{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;background:var(--green);color:var(--on-dark);font-size:18px;font-weight:700}
+.brand-name{display:flex;flex-direction:column;line-height:1.15}
+.brand-name b{font-size:17px}
+.brand-name small{font-size:11px;color:var(--ink-2);letter-spacing:.12em}
+.nav{display:flex;flex-wrap:wrap;gap:4px}
+.nav a{display:inline-flex;align-items:center;min-height:40px;padding:8px 16px;border-radius:100px;color:var(--ink-2);text-decoration:none;font-size:14px}
+.nav a:hover{background:var(--mist);color:var(--green)}
+.nav a.on,.nav a.on:hover{background:var(--green);color:var(--on-dark)}
+.top-tools{flex:1 1 260px;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:10px}
+.search{flex:0 1 320px;display:flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border:1px solid var(--line);border-radius:100px;background:var(--bg);color:var(--ink-2)}
+.search input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;font-size:14px;color:var(--ink)}
+.crumbs{background:var(--bg-2);border-bottom:1px solid var(--line)}
+.crumbs-in{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding-block:10px}
+.crumbs nav{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px;color:var(--ink-2)}
+.foot{background:var(--surface);border-top:1px solid var(--line)}
+.foot-in{display:flex;flex-wrap:wrap;align-items:center;gap:8px 22px;padding-block:12px;font-size:12.5px;color:var(--ink-2)}
+.foot-in b{color:var(--ink)}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 20px;border-radius:12px;font:inherit;font-size:15px;font-weight:700;text-decoration:none;cursor:pointer;transition:background .15s,color .15s,box-shadow .15s,opacity .15s}
+.btn-solid{background:var(--green);color:var(--on-dark);border:1px solid var(--green)}
+.btn-solid:hover{background:var(--green-d);color:var(--on-dark)}
+.btn-line{background:var(--surface);color:var(--green);border:1px solid var(--green)}
+.btn-line:hover{background:var(--green);color:var(--on-dark)}
+.btn-quiet{background:transparent;color:var(--green);border:1px solid transparent}
+.btn-quiet:hover{background:var(--mist)}
+.btn:disabled,.btn:disabled:hover{opacity:.35;cursor:default;background:var(--surface);color:var(--green)}
+.btn-sm{display:inline-flex;align-items:center;min-height:36px;padding:6px 12px;border-radius:10px;border:1px solid var(--line-2);background:var(--surface);color:var(--green);font:inherit;font-size:13.5px;font-weight:700;text-decoration:none;cursor:pointer}
+.btn-sm:hover{border-color:var(--green);background:var(--mist)}
+.textbtn{border:0;background:transparent;font:inherit;font-size:13.5px;font-weight:700;color:var(--green);cursor:pointer;padding:8px 4px;min-height:36px}
+.textbtn:hover{color:var(--green-d);text-decoration:underline}
+
+.screen{padding-block:32px 52px}
+.screen-in{display:flex;flex-direction:column;gap:28px}
+.mascot{flex:none}
+.bob{animation:bob 3s ease-in-out infinite}
+.pop{animation:pop .45s var(--ease)}
+
+/* ---------- Foundations ---------- */
+.hero{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.hero h1{font-size:clamp(30px,4vw,42px);letter-spacing:-.01em;line-height:1.15}
+.hero p{max-width:640px;font-size:18px;color:var(--ink-2)}
+.stage{position:relative;width:100%;max-width:1100px;margin:0 auto;aspect-ratio:1100/460;background:var(--surface);border:1px solid var(--line);border-radius:24px}
+.stage .art{position:absolute;inset:0;width:100%;height:100%}
+.grp{transition:opacity .45s ease}
+.g-cooked{opacity:.1;transition:opacity .9s ease}
+.is-cooked .g-cooked{opacity:1}
+.ghost{transition:opacity .5s ease}
+.is-cooked .ghost{opacity:0}
+.puff{opacity:0;transform-box:fill-box;transform-origin:center}
+.is-cooked .puff{animation:rise 3.6s ease-out infinite}
+.is-cooked .d2{animation-delay:.4s}.is-cooked .d3{animation-delay:.8s}.is-cooked .d4{animation-delay:1.2s}.is-cooked .d5{animation-delay:1.6s}.is-cooked .d6{animation-delay:2s}.is-cooked .d7{animation-delay:2.4s}.is-cooked .d8{animation-delay:2.8s}.is-cooked .d9{animation-delay:3.2s}
+.pm{fill:var(--brown)}.pl{fill:var(--coral)}.ps{fill:var(--plum)}
+.flame{transform-box:fill-box;transform-origin:center bottom;opacity:.35;transition:opacity .5s}
+.is-cooked .flame{opacity:1;animation:flick 1.4s ease-in-out infinite}
+.wave{stroke-dasharray:6 8;opacity:.3}
+.is-cooked .wave{opacity:1;animation:dash 1.1s linear infinite}
+.flow{stroke-dasharray:12 10}
+.is-cooked .flow{animation:dash 1s linear infinite}
+.f-meat .g-proc{opacity:.2}
+.f-juice .g-fat,.f-juice .g-fibre,.f-fat .g-juice,.f-fat .g-fibre,.f-matrix .g-fat,.f-matrix .g-juice{opacity:.12}
+.f-juice .g-flesh,.f-fat .g-flesh{opacity:.55}
+.f-juice .g-proc,.f-fat .g-proc,.f-matrix .g-proc{opacity:.2}
+.f-proc .g-raw{opacity:.45}
+.f-out .g-raw,.f-out .g-proc{opacity:.3}
+.pin{position:absolute;display:flex;align-items:center;gap:8px;transform:translate(-16px,-16px);text-decoration:none;color:var(--ink);transition:opacity .45s ease;z-index:2}
+.pin:hover{color:var(--ink)}
+.pin .dot{width:32px;height:32px;border-radius:100px;background:var(--surface);border:3px solid var(--green);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.pin .dot::after{content:"";width:10px;height:10px;border-radius:100px;background:var(--green)}
+.pin .lbl{display:inline-flex;align-items:center;min-height:36px;padding:6px 14px;border-radius:100px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-lg);font-size:15px;font-weight:700;white-space:nowrap}
+.pin:hover .lbl,.pin:focus-visible .lbl{background:var(--green);color:var(--on-dark);border-color:var(--green)}
+.pin .tip{display:none;position:absolute;left:0;top:42px;width:260px;padding:12px 14px;border-radius:14px;background:var(--tip);color:var(--on-dark);font-size:13.5px;line-height:1.45;white-space:normal}
+.pin:hover .tip,.pin:focus-visible .tip{display:block}
+.pin-left{flex-direction:row-reverse;transform:translate(calc(-100% + 16px),-16px)}
+.pin-left .tip,.p-aroma .tip,.p-taste .tip{left:auto;right:0}
+.p-out{visibility:hidden;opacity:0}
+.is-cooked .p-out{visibility:visible;opacity:1}
+.f-meat .p-proc,.f-juice .pin:not(.p-juice),.f-fat .pin:not(.p-fat),.f-matrix .pin:not(.p-matrix),.f-proc .p-in,.f-out .p-in,.f-out .p-proc{opacity:.3}
+.f-meat .p-in .dot,.f-juice .p-juice .dot,.f-fat .p-fat .dot,.f-matrix .p-matrix .dot,.f-proc .p-proc .dot,.f-out .p-out .dot{animation:pulse 1.8s ease-out infinite}
+.cook{position:absolute;right:18px;top:18px;z-index:3}
+.legend{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px 22px;font-size:14px;color:var(--ink-2)}
+.legend b{color:var(--ink)}
+.sw{display:inline-flex;align-items:center;gap:8px}
+.sw i{width:14px;height:14px;border-radius:100px;display:inline-block}
+.parts{display:none;flex-wrap:wrap;gap:8px;justify-content:center}
+.guide{width:100%;max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:18px 26px;padding:22px 26px;background:var(--surface);border:2px solid var(--green);border-radius:24px;box-shadow:var(--shadow-lg)}
+.guide-body{flex:1 1 420px;min-width:0;display:flex;flex-direction:column;gap:6px}
+.guide-body h2{font-size:26px;line-height:1.2}
+.guide-body p{font-size:17px;line-height:1.55;color:var(--ink-3)}
+.guide-ctl{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.dots{display:flex;gap:2px}
+.tdot{width:30px;height:30px;border:0;background:transparent;padding:0;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.tdot::before{content:"";width:12px;height:12px;border-radius:100px;background:var(--line-2);transition:width .25s,background .25s}
+.tdot:hover::before{background:var(--teal)}
+.tdot[aria-current="step"]::before{width:26px;background:var(--green)}
+.paths{display:flex;flex-direction:column;gap:16px;padding-top:10px;scroll-margin-top:16px}
+.paths-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px}
+.paths-head h2{font-size:26px}
+.doors{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+.door{display:flex;flex-direction:column;gap:10px;padding:22px;background:var(--surface);border:2px solid var(--line);border-radius:22px;text-decoration:none;color:var(--ink);transition:transform .18s var(--ease),box-shadow .18s,border-color .18s}
+.door:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:var(--green);color:var(--ink)}
+.paths-on .door{border-color:var(--green);animation:glow 2s ease-out infinite}
+.door h3{font-size:22px}
+.door p{font-size:15px;color:var(--ink-2)}
+.door .lvl{font-size:11.5px;font-weight:700;letter-spacing:.14em;color:var(--green)}
+.door .go{font-size:14px;font-weight:700;color:var(--green)}
+.door.soon{border-style:dashed}
+.soon-tag{align-self:flex-start;font-size:12px;padding:3px 10px;border-radius:100px;background:var(--sand);color:var(--ink-2)}
+
+/* ---------- Precursors ---------- */
+.trail{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.tstep{display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:6px 14px 6px 6px;border-radius:100px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);text-decoration:none;font-size:14px}
+.tstep .n{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:100px;background:var(--sand);color:var(--ink-2);font-size:12px;font-weight:700}
+.tstep.done{color:var(--green)} .tstep.done .n{background:var(--tint);color:var(--green)}
+.tstep.now{background:var(--green);border-color:var(--green);color:var(--on-dark);font-weight:700} .tstep.now .n{background:var(--surface);color:var(--green)}
+.tline{width:22px;height:2px;background:var(--line-2)}
+.phead{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:18px}
+.phead h1{font-size:clamp(30px,4vw,40px);letter-spacing:-.01em;line-height:1.15}
+.phead .lead{font-size:18px;color:var(--ink-2)}
+.say{display:flex;align-items:center;gap:12px;max-width:440px}
+.bubble{padding:12px 16px;border-radius:4px 18px 18px 18px;background:var(--surface);border:2px solid var(--green);font-size:15px;line-height:1.5}
+.pcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+.pcard{display:flex;align-items:center;gap:16px;min-height:104px;padding:16px 20px;border:2px solid var(--line);border-radius:22px;background:var(--surface);font:inherit;color:var(--ink);text-align:left;cursor:pointer;transition:transform .18s var(--ease),box-shadow .18s,border-color .18s,background .18s}
+.pcard:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);border-color:var(--teal)}
+.pcard[aria-pressed="true"]{border-color:var(--green);background:var(--mist-2);box-shadow:var(--shadow-lg)}
+.pcard b{display:block;font-size:21px}
+.pcard small{font-size:14px;color:var(--ink-2)}
+.panels{display:flex;flex-wrap:wrap;gap:22px}
+.panel{flex:1 1 440px;min-width:0;display:flex;flex-direction:column;gap:16px;padding:24px;background:var(--surface);border:1px solid var(--line);border-radius:22px}
+.panel h2{font-size:24px}
+.cloud{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding-block:8px}
+.bub{display:inline-flex;align-items:center;border-radius:100px;transition:transform .2s;animation:pop .45s var(--ease) both}
+.bub:hover{transform:scale(1.04)}
+.bub-juice{min-height:48px;padding:10px 20px;background:var(--mist);border:2px solid var(--teal);color:var(--green);font-size:16px;font-weight:700}
+.bub-fat{min-height:48px;padding:10px 20px;background:var(--coral-xs);border:2px solid var(--coral);color:var(--coral-d);font-size:16px;font-weight:700}
+.bub-matrix{min-height:48px;padding:10px 20px;background:var(--olive-xs);border:2px solid var(--olive);color:var(--olive-d);font-size:16px;font-weight:700}
+.bub-off{min-height:36px;padding:6px 14px;border:2px dashed var(--line-2);color:var(--ink-2);font-size:13.5px}
+.key{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--ink-2)}
+.heat{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:6px}
+.heat svg,.flowrow svg{justify-self:center}
+.node{display:flex;flex-direction:column;gap:4px;align-self:stretch;min-width:0;min-height:92px;padding:14px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--line);animation:pop .5s var(--ease) both}
+.node small{font-size:11.5px;font-weight:700;letter-spacing:.14em;color:var(--ink-2)}
+.node b{font-size:16px;line-height:1.35}
+.node.n2{background:var(--amber-xs);border-color:var(--coral-s);animation-delay:.25s} .node.n2 small{color:var(--coral-d)}
+.node.n3{background:var(--mist-2);border-color:var(--tint);animation-delay:.5s} .node.n3 small{color:var(--green)}
+.arrow{stroke-dasharray:6 6;animation:dash 1s linear infinite}
+.measure{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding-top:10px;border-top:1px solid var(--line)}
+.measure .lab{font-size:14px;font-weight:700;color:var(--ink-2)}
+.measure .more{margin-left:auto;font-size:14px;font-weight:700;text-decoration:none}
+.bench{display:flex;flex-wrap:wrap;align-items:center;gap:18px 26px;padding:22px 26px;background:var(--olive-xs);border:1px solid var(--olive-s);border-radius:22px}
+.bench div{flex:1 1 360px;display:flex;flex-direction:column;gap:6px}
+.bench h2{font-size:20px}
+.bench p{font-size:15px;color:var(--ink-3)}
+.ex-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px}
+.ex-head h2{font-size:26px}
+.count{font-size:14px;color:var(--ink-2)}
+.filters{display:flex;flex-wrap:wrap;align-items:center;gap:12px 26px;padding:16px 20px;background:var(--surface);border:1px solid var(--line);border-radius:18px}
+.fgroup{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.fgroup .lab{font-size:14px;font-weight:700;color:var(--ink-2);margin-right:4px}
+.seg{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:8px 16px;border-radius:100px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink);font:inherit;font-size:14.5px;cursor:pointer}
+.seg.ico{padding-left:10px}
+.seg:hover{border-color:var(--green);background:var(--mist)}
+.seg[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:var(--on-dark)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.card{display:flex;flex-direction:column;gap:12px;min-height:220px;padding:20px;background:var(--surface);border:1px solid var(--line);border-radius:18px;transition:transform .18s var(--ease),box-shadow .18s;animation:pop .4s var(--ease) both}
+.card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.card h3{font-size:18px;line-height:1.35}
+.card p{font-size:14px;color:var(--ink-2)}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{display:inline-flex;align-items:center;gap:6px;min-height:26px;padding:3px 10px;border-radius:100px;font-size:12.5px;border:1px solid var(--line);background:var(--bg);color:var(--ink-2)}
+.st-ok{display:inline-flex;align-items:center;min-height:26px;padding:3px 10px;border-radius:100px;font-size:12.5px;background:var(--mist);color:var(--green);font-weight:700}
+.st-rev{display:inline-flex;align-items:center;min-height:26px;padding:3px 10px;border-radius:100px;font-size:12.5px;background:var(--sand);color:var(--ink-2);font-weight:700}
+.card-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-top:auto}
+.method{display:inline-flex;align-items:center;min-height:28px;padding:3px 10px;border-radius:8px;background:var(--sand);font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+.next2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.nextcard{display:flex;align-items:center;gap:16px;padding:22px 24px;border-radius:22px;text-decoration:none;transition:transform .18s var(--ease),box-shadow .18s}
+.nextcard:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.nextcard b{display:block;font-size:19px}
+.nextcard small{font-size:14px}
+.nextcard.dark{background:var(--green);color:var(--on-dark)} .nextcard.dark:hover{color:var(--on-dark)} .nextcard.dark small{color:var(--mist)}
+.nextcard.light{background:var(--surface);border:2px solid var(--line);color:var(--ink)} .nextcard.light:hover{color:var(--ink)} .nextcard.light small{color:var(--ink-2)}
+
+.row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+@keyframes rise{0%{transform:translateY(0) scale(.5);opacity:0}15%{opacity:.9}100%{transform:translateY(-115px) scale(1.25);opacity:0}}
+@keyframes flick{0%,100%{transform:scale(1,1)}50%{transform:scale(.93,1.1)}}
+@keyframes dash{to{stroke-dashoffset:-44}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,115,110,.5)}100%{box-shadow:0 0 0 16px rgba(0,115,110,0)}}
+@keyframes glow{0%{box-shadow:0 0 0 0 rgba(0,115,110,.35)}100%{box-shadow:0 0 0 14px rgba(0,115,110,0)}}
+@keyframes pop{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes blink{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-4px)}}
+
+@media (max-width:760px){
+  .pin{transform:translate(-11px,-11px)}
+  .pin-left{transform:translate(calc(-100% + 11px),-11px)}
+  .pin .dot{width:22px;height:22px;border-width:2px}
+  .pin .dot::after{width:7px;height:7px}
+  .pin .lbl,.pin .tip,.pin:hover .tip,.pin:focus-visible .tip{display:none}
+  .stage{overflow:hidden}
+  .heat,.flowrow{grid-template-columns:minmax(0,1fr)}
+  .heat svg,.flowrow svg{transform:rotate(90deg)}
+  .cook{right:8px;top:8px;min-height:36px;padding:6px 12px;font-size:13px}
+  .parts{display:flex}
+  .guide-ctl{align-items:flex-start}
+  .note{padding-left:0}
+  .rail{max-width:none}
+}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<symbol id="mascot" viewBox="0 0 56 56">
+<polygon points="28,4 49,16 49,40 28,52 7,40 7,16" style="fill:var(--mist);stroke:var(--green);stroke-width:3;stroke-linejoin:round"></polygon>
+<circle cx="21" cy="26" r="3" style="fill:var(--ink)"></circle>
+<circle cx="35" cy="26" r="3" style="fill:var(--ink)"></circle>
+<path d="M21 34 C25 38 31 38 35 34" style="fill:none;stroke:var(--ink);stroke-width:2.5;stroke-linecap:round"></path>
+<circle cx="49" cy="16" r="4.5" style="fill:var(--coral)"></circle>
+</symbol>
+<path id="blob" d="M90 250 C90 170 170 130 260 140 C350 150 400 190 395 255 C390 320 330 365 240 362 C150 360 90 330 90 250 Z"></path>
+<path id="cap" d="M95 236 C100 166 176 126 262 134 C346 142 399 184 400 242 L386 244 C383 196 338 158 260 152 C182 146 116 180 110 238 Z"></path>
+<path id="drop" d="M0 -12 C6 -4 10 2 10 8 A10 10 0 0 1 -10 8 C-10 2 -6 -4 0 -12 Z"></path>
+</defs>
+</svg>
+
+<!-- Standalone header only: inside the platform (?embed=1) the platform's own top bar is used instead. -->
+<header class="top" data-mc-standalone>
+<div class="wrap top-in">
+<a class="brand" href="#foundations">
+<span class="mark">M</span>
+<span class="brand-name"><b>MeatCODE</b><small>GFI ISRAEL</small></span>
+</a>
+<nav class="nav" aria-label="Main">
+<a href="#ask" data-nav="chat">Oracle</a>
+<a href="#foundations" data-nav="science">Science</a>
+<a href="#experts" data-nav="people">Ecosystem</a>
+</nav>
+<div class="top-tools">
+<a class="btn btn-line" href="/app/meatcode_mockup.html">Open MeatCODE</a>
+</div>
+</div>
+</header>
+
+<div class="crumbs" id="crumbs-band">
+<div class="wrap crumbs-in">
+<nav aria-label="Breadcrumb" id="crumbs"></nav>
+<div class="row">
+<a href="#experts" class="btn btn-quiet" id="experts-this">Experts on this</a>
+<a href="#ask" class="btn btn-line" id="ask-this">Ask the Oracle about this</a>
+</div>
+</div>
+</div>
+
+<!-- ================= FOUNDATIONS ================= -->
+<main id="s-foundations" class="screen" data-screen="foundations">
+<div class="wrap screen-in">
+
+<div class="hero">
+<span class="eyebrow">MEATCODE SCIENCE · FOUNDATIONS</span>
+<h1>Where does meaty flavor come from?</h1>
+<p>Follow one piece of meat from raw to cooked. Tap any label to dig deeper.</p>
+</div>
+
+<div class="stage f-meat" id="stage">
+<svg class="art" viewBox="0 0 1100 460" aria-hidden="true">
+<g class="grp g-raw">
+<g class="grp g-flesh"><use href="#blob" style="fill:var(--raw);stroke:var(--raw-d);stroke-width:3"></use></g>
+<g class="grp g-fibre" style="fill:none;stroke:var(--raw-d);stroke-width:2.5;stroke-linecap:round;opacity:.75">
+<path d="M150 218 C220 200 310 222 378 206"></path>
+<path d="M112 256 C200 236 300 262 388 234"></path>
+<path d="M116 290 C190 270 290 300 380 270"></path>
+<path d="M126 322 C200 305 290 330 362 302"></path>
+<path d="M168 345 C230 335 290 350 330 338"></path>
+</g>
+<g class="grp g-fat">
+<use href="#cap" style="fill:var(--fat);stroke:var(--fat-d);stroke-width:2"></use>
+<g style="fill:none;stroke:var(--fat);stroke-linecap:round">
+<path d="M150 268 C185 254 215 284 258 266" stroke-width="6"></path>
+<path d="M205 322 C240 306 282 332 328 312" stroke-width="6"></path>
+<path d="M282 220 C302 210 330 228 352 214" stroke-width="5"></path>
+</g>
+</g>
+<g class="grp g-juice" style="fill:var(--teal)">
+<use href="#drop" transform="translate(175 219)"></use>
+<circle cx="171" cy="227" r="2.5" style="fill:var(--surface)"></circle>
+<use href="#drop" transform="translate(318 277) scale(.8)"></use>
+<use href="#drop" transform="translate(262 307) scale(.8)"></use>
+<use href="#drop" transform="translate(238 383) scale(.8)"></use>
+<ellipse cx="238" cy="410" rx="26" ry="5" style="fill:var(--tint)"></ellipse>
+</g>
+<text x="242" y="446" text-anchor="middle" font-size="19" style="fill:var(--ink-2);font-family:var(--font)">Raw</text>
+</g>
+
+<g class="grp g-proc">
+<path class="flow" d="M418 250 L668 250" style="fill:none;stroke:var(--green);stroke-width:4;stroke-linecap:round"></path>
+<path d="M662 237 L684 250 L662 263" style="fill:none;stroke:var(--green);stroke-width:4;stroke-linecap:round;stroke-linejoin:round"></path>
+<text x="545" y="230" text-anchor="middle" font-size="17" style="fill:var(--ink);font-family:var(--font)">heat · time · method</text>
+<g style="fill:none;stroke:var(--amber);stroke-width:3;stroke-linecap:round">
+<path class="wave" d="M522 316 C514 306 530 296 522 286 C514 276 530 270 522 262"></path>
+<path class="wave" d="M545 316 C537 306 553 296 545 286 C537 276 553 270 545 262"></path>
+<path class="wave" d="M568 316 C560 306 576 296 568 286 C560 276 576 270 568 262"></path>
+</g>
+<g class="flame">
+<path d="M545 392 C515 392 505 368 515 348 C522 334 532 330 530 312 C548 322 556 338 552 352 C560 346 564 338 564 330 C580 348 584 372 572 384 C566 390 556 392 545 392 Z" style="fill:var(--amber)"></path>
+<path d="M545 392 C530 392 526 378 532 368 C537 360 542 356 542 346 C552 354 556 364 554 372 C560 370 562 366 562 362 C568 372 566 386 558 390 C554 391 550 392 545 392 Z" style="fill:var(--amber-s)"></path>
+</g>
+<rect x="495" y="396" width="100" height="8" rx="4" style="fill:var(--ink-2)"></rect>
+</g>
+
+<g class="ghost">
+<use href="#blob" transform="translate(620 0)" style="fill:none;stroke:var(--line-2);stroke-width:3;stroke-dasharray:10 10"></use>
+<text x="862" y="258" text-anchor="middle" font-size="22" style="fill:var(--ink-2);font-family:var(--font)">What happens?</text>
+</g>
+
+<g class="grp g-cooked">
+<g transform="translate(620 0)">
+<use href="#blob" style="fill:var(--cooked);stroke:var(--cooked-d);stroke-width:3"></use>
+<use href="#cap" style="fill:var(--cooked-fat);stroke:var(--cooked-fat-d);stroke-width:2"></use>
+<g style="stroke:var(--sear);stroke-width:10;stroke-linecap:round;opacity:.8">
+<path d="M170 200 L250 290"></path>
+<path d="M230 178 L330 285"></path>
+<path d="M140 255 L210 335"></path>
+<path d="M300 192 L368 266"></path>
+</g>
+</g>
+<g style="fill:none;stroke:var(--plum);stroke-width:3;stroke-linecap:round">
+<path d="M1028 228 L1056 212"></path>
+<path d="M1032 255 L1064 255"></path>
+<path d="M1028 282 L1056 298"></path>
+</g>
+<text x="862" y="446" text-anchor="middle" font-size="19" style="fill:var(--ink-2);font-family:var(--font)">Cooked</text>
+</g>
+
+<g>
+<circle class="puff pm" cx="770" cy="150" r="13"></circle>
+<circle class="puff pl d2" cx="820" cy="135" r="11"></circle>
+<circle class="puff ps d3" cx="870" cy="145" r="14"></circle>
+<circle class="puff pm d4" cx="920" cy="132" r="12"></circle>
+<circle class="puff pl d5" cx="965" cy="150" r="13"></circle>
+<circle class="puff ps d6" cx="800" cy="160" r="10"></circle>
+<circle class="puff pm d7" cx="900" cy="158" r="10"></circle>
+<circle class="puff pl d8" cx="850" cy="165" r="9"></circle>
+<circle class="puff ps d9" cx="945" cy="165" r="10"></circle>
+</g>
+</svg>
+
+<a href="#precursors" data-tab="fat" class="pin p-in p-fat" style="left:27.3%;top:31.5%"><span class="dot"></span><span class="lbl">Fat</span><span class="tip">Lipids that break down under heat. Much of each species' own smell starts here.</span></a>
+<a href="#precursors" data-tab="juice" class="pin p-in p-juice" style="left:15.9%;top:49%"><span class="dot"></span><span class="lbl">Juice</span><span class="tip">The water phase: sugars, amino acids, peptides, nucleotides and vitamins.</span></a>
+<a href="#precursors" data-tab="matrix" class="pin p-in p-matrix" style="left:22.7%;top:69%"><span class="dot"></span><span class="lbl">Meat matrix</span><span class="tip">Fibres, connective tissue and water. They shape heat, contact and release.</span></a>
+<a href="#paths" class="pin p-proc" style="left:54.5%;top:79%"><span class="dot"></span><span class="lbl">Processing</span><span class="tip">Time, temperature, moisture, pH and cooking method. Conditions vary; none are fixed.</span></a>
+<a href="#paths" class="pin p-out p-aroma" style="left:77%;top:21%"><span class="dot"></span><span class="lbl">Aroma · 3 families</span><span class="tip">Volatile molecules you smell: Maillard &amp; Strecker, lipid oxidation and sulfur chemistry.</span></a>
+<a href="#paths" class="pin p-out p-taste" style="left:72.7%;top:65%"><span class="dot"></span><span class="lbl">Taste</span><span class="tip">Non-volatiles on the tongue: umami, salt, sweet, bitter.</span></a>
+<a href="#paths" class="pin pin-left p-out p-release" style="left:96.5%;top:55.4%"><span class="dot"></span><span class="lbl">Release</span><span class="tip">How the matrix lets aroma and taste out as you chew.</span></a>
+
+<button type="button" class="btn btn-solid cook" data-act="cook">
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 14.5c-2.6 0-4.3-1.8-4.3-4.1 0-2.6 2.4-3.6 2.4-6.9 2 1 3.4 3 3.2 4.9.7-.4 1.2-1.1 1.3-2 1.2 1.3 1.7 2.7 1.7 4 0 2.3-1.7 4.1-4.3 4.1z"></path></svg>
+<span id="cook-label">Cook it</span>
+</button>
+</div>
+
+<div class="parts" aria-label="Parts of the map">
+<a class="btn-sm" href="#precursors" data-tab="juice">Juice</a>
+<a class="btn-sm" href="#precursors" data-tab="fat">Fat</a>
+<a class="btn-sm" href="#precursors" data-tab="matrix">Meat matrix</a>
+<a class="btn-sm" href="#paths">Processing</a>
+<a class="btn-sm" href="#paths">Aroma, taste, release</a>
+</div>
+
+<div class="legend">
+<b>Aroma families</b>
+<span class="sw"><i style="background:var(--brown)"></i>Maillard &amp; Strecker</span>
+<span class="sw"><i style="background:var(--coral)"></i>Lipid oxidation</span>
+<span class="sw"><i style="background:var(--plum)"></i>Sulfur chemistry</span>
+</div>
+
+<section class="guide" aria-label="Guided tour">
+<svg class="mascot bob" width="64" height="64" aria-hidden="true"><use href="#mascot"></use></svg>
+<div class="guide-body pop" id="g-body" aria-live="polite">
+<span class="eyebrow" id="g-no">STEP 1 OF 7</span>
+<h2 id="g-title">Meet a piece of meat – any meat</h2>
+<p id="g-text">We use a generic cut. Beef, pork and chicken share most of what follows.</p>
+</div>
+<div class="guide-ctl">
+<div class="dots" role="group" aria-label="Tour steps" id="g-dots"></div>
+<div class="row">
+<button type="button" class="btn btn-line" data-act="back" id="g-back">← Back</button>
+<button type="button" class="btn btn-solid" data-act="next" id="g-next">Next →</button>
+<a href="#paths" class="btn btn-solid" id="g-paths" hidden>Pick a path ↓</a>
+</div>
+<button type="button" class="textbtn" data-act="skip" id="g-skip">Skip the tour</button>
+</div>
+</section>
+
+<section class="paths" id="paths" aria-label="Pick a path">
+<div class="paths-head">
+<h2>Pick a path</h2>
+<span class="count">Start simple, go deeper when you want</span>
+</div>
+<div class="doors">
+<a href="#precursors" data-tab="fat" class="door">
+<svg width="120" height="72" viewBox="0 0 120 72" aria-hidden="true">
+<rect x="6" y="14" width="108" height="50" rx="22" style="fill:var(--coral-s)"></rect>
+<path d="M16 46 C40 38 70 50 104 40" style="fill:none;stroke:var(--raw-d);stroke-width:2.5;stroke-linecap:round"></path>
+<path d="M16 32 C40 24 70 36 104 26" style="fill:none;stroke:var(--raw-d);stroke-width:2.5;stroke-linecap:round"></path>
+<path d="M30 40 C40 34 52 44 64 38" style="fill:none;stroke:var(--surface);stroke-width:5;stroke-linecap:round"></path>
+<use href="#drop" transform="translate(84 16) scale(.65)" style="fill:var(--teal)"></use>
+</svg>
+<span class="lvl">LEVEL 2 · EXPLORE</span>
+<h3>Precursors</h3>
+<p>What meat is made of: juice, fat and the meat matrix.</p>
+<span class="go">Start here →</span>
+</a>
+<a href="#paths" class="door soon">
+<svg width="120" height="72" viewBox="0 0 120 72" aria-hidden="true">
+<circle cx="34" cy="26" r="10" style="fill:var(--brown)"></circle>
+<circle cx="60" cy="16" r="9" style="fill:var(--coral)"></circle>
+<circle cx="86" cy="26" r="10" style="fill:var(--plum)"></circle>
+<path d="M60 68 C44 68 38 56 44 46 C48 40 54 38 53 30 C63 35 67 44 64 52 C69 49 71 45 71 40 C80 49 81 60 74 65 C70 67 66 68 60 68 Z" style="fill:var(--amber)"></path>
+</svg>
+<span class="lvl">LEVEL 2 · EXPLORE</span>
+<h3>Process flavor</h3>
+<p>What cooking creates: aroma, taste and how it is released.</p>
+<span class="soon-tag">Coming soon</span>
+</a>
+<a href="#research" class="door">
+<svg width="120" height="72" viewBox="0 0 120 72" aria-hidden="true">
+<g style="fill:var(--mist);stroke:var(--green);stroke-width:2.5;stroke-linejoin:round">
+<polygon points="26,22 38,29 38,43 26,50 14,43 14,29"></polygon>
+<polygon points="66,10 78,17 78,31 66,38 54,31 54,17"></polygon>
+<polygon points="94,40 106,47 106,61 94,68 82,61 82,47"></polygon>
+</g>
+<path d="M38 34 L54 26 M78 31 L86 45" style="fill:none;stroke:var(--green);stroke-width:2.5;stroke-linecap:round"></path>
+</svg>
+<span class="lvl" style="color:var(--plum-d)">LEVEL 3 · FOR SCIENTISTS</span>
+<h3>Molecular map</h3>
+<p>The chemistry behind it: reactions, molecules and sources.</p>
+<span class="go">Open in Research →</span>
+</a>
+</div>
+</section>
+
+</div>
+</main>
+
+<!-- ================= PRECURSORS ================= -->
+<main id="s-precursors" class="screen" data-screen="precursors" hidden>
+<div class="wrap screen-in">
+
+<nav class="trail" aria-label="Your path">
+<a href="#foundations" class="tstep done"><span class="n">✓</span>Foundations</a>
+<span class="tline" aria-hidden="true"></span>
+<span class="tstep now" aria-current="step"><span class="n">2</span>Precursors</span>
+<span class="tline" aria-hidden="true"></span>
+<a href="#examples" class="tstep" id="trail-ex"><span class="n">3</span>Examples</a>
+<span class="tline" aria-hidden="true"></span>
+<a href="#ask" class="tstep"><span class="n">4</span>Ask the Oracle</a>
+<span class="tline" aria-hidden="true"></span>
+<a href="#experts" class="tstep"><span class="n">5</span>Meet the experts</a>
+</nav>
+
+<div class="phead">
+<div style="display:flex;flex-direction:column;gap:8px;max-width:700px">
+<span class="eyebrow">LEVEL 2 · PRECURSORS</span>
+<h1>What is meat made of?</h1>
+<p class="lead">Three ingredients turn into flavor when you cook. Pick one to look inside.</p>
+</div>
+<div class="say">
+<svg class="mascot bob" width="52" height="52" aria-hidden="true"><use href="#mascot"></use></svg>
+<p class="bubble pop" id="p-guide" aria-live="polite">Fat is open. Pick a species below to see real measurements.</p>
+</div>
+</div>
+
+<div class="pcards" role="group" aria-label="Precursors">
+<button type="button" class="pcard" data-act="tab" data-v="juice" aria-pressed="false">
+<svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true" style="flex:none">
+<circle cx="32" cy="32" r="30" style="fill:var(--mist)"></circle>
+<path d="M32 12 C40 23 45 31 45 38 A13 13 0 0 1 19 38 C19 31 24 23 32 12 Z" style="fill:var(--teal)"></path>
+<circle cx="27" cy="38" r="3.5" style="fill:var(--surface)"></circle>
+</svg>
+<span><b>Juice</b><small>The water phase</small></span>
+</button>
+<button type="button" class="pcard" data-act="tab" data-v="fat" aria-pressed="true">
+<svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true" style="flex:none">
+<circle cx="32" cy="32" r="30" style="fill:var(--coral-xs)"></circle>
+<circle cx="32" cy="32" r="17" style="fill:var(--fat);stroke:var(--coral);stroke-width:3"></circle>
+<circle cx="27" cy="28" r="5" style="fill:var(--coral-s)"></circle>
+<circle cx="37" cy="36" r="4" style="fill:var(--coral-s)"></circle>
+<circle cx="35" cy="25" r="2.5" style="fill:var(--coral-s)"></circle>
+</svg>
+<span><b>Fat</b><small>Lipids and how they are stored</small></span>
+</button>
+<button type="button" class="pcard" data-act="tab" data-v="matrix" aria-pressed="false">
+<svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true" style="flex:none">
+<circle cx="32" cy="32" r="30" style="fill:var(--olive-xs)"></circle>
+<g style="fill:none;stroke:var(--olive);stroke-width:5;stroke-linecap:round">
+<path d="M14 22 C26 18 38 26 50 20"></path>
+<path d="M14 32 C26 28 38 36 50 30"></path>
+<path d="M14 42 C26 38 38 46 50 40"></path>
+</g>
+<circle cx="40" cy="48" r="3" style="fill:var(--teal)"></circle>
+</svg>
+<span><b>Meat matrix</b><small>The structure that holds it all</small></span>
+</button>
+</div>
+
+<section class="panels" aria-label="Inside the selected precursor">
+<div class="panel">
+<h2>What's inside <span id="p-name">Fat</span></h2>
+<p id="p-blurb" style="font-size:16px;line-height:1.6;color:var(--ink-3)"></p>
+<div class="cloud" id="p-inside"></div>
+<div class="key"><span>Solid = key for flavor</span><span>Dashed = smaller role, to confirm</span></div>
+</div>
+<div class="panel">
+<h2>What heat does</h2>
+<div class="heat" id="p-heat">
+<div class="node"><small>START</small><b id="h0"></b></div>
+<svg width="40" height="24" viewBox="0 0 40 24" aria-hidden="true" style="flex:none"><path class="arrow" d="M2 12 H32" style="fill:none;stroke:var(--amber);stroke-width:3;stroke-linecap:round"></path><path d="M28 5 L36 12 L28 19" style="fill:none;stroke:var(--amber);stroke-width:3;stroke-linecap:round;stroke-linejoin:round"></path></svg>
+<div class="node n2"><small>UNDER HEAT</small><b id="h1"></b></div>
+<svg width="40" height="24" viewBox="0 0 40 24" aria-hidden="true" style="flex:none"><path class="arrow" d="M2 12 H32" style="fill:none;stroke:var(--amber);stroke-width:3;stroke-linecap:round"></path><path d="M28 5 L36 12 L28 19" style="fill:none;stroke:var(--amber);stroke-width:3;stroke-linecap:round;stroke-linejoin:round"></path></svg>
+<div class="node n3"><small>RESULT</small><b id="h2"></b></div>
+</div>
+<div class="measure">
+<span class="lab">How we measure it</span>
+<span id="p-methods" class="row"></span>
+<span class="more" style="font-weight:400;color:var(--ink-2)">Tap a method to ask how it's used</span>
+</div>
+</div>
+</section>
+
+<!-- The "Flavor benchmark platform" panel from the mockup is held back until Daniel's TVP selection
+     rationale is written (it still had a "[to be supplied]" placeholder). -->
+
+<section aria-label="Example studies" id="examples" style="display:flex;flex-direction:column;gap:16px">
+<div class="ex-head">
+<h2>Example studies</h2>
+<span class="count" id="p-count" aria-live="polite"></span>
+</div>
+<p class="count" style="margin-top:-8px">Illustrative examples of the kind of study behind each precursor. Ask the Oracle about any of them for the real, cited literature.</p>
+<div class="filters">
+<div class="fgroup" role="group" aria-label="Species">
+<span class="lab">Species</span>
+<button type="button" class="seg ico" data-act="species" data-v="all" aria-pressed="true"><svg width="26" height="26" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="10" r="4"></circle><circle cx="19" cy="10" r="4"></circle><circle cx="14" cy="19" r="4"></circle></svg>All</button>
+<button type="button" class="seg ico" data-act="species" data-v="Beef" aria-pressed="false"><svg width="26" height="26" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10c0-3 2.7-5 6-5s6 2 6 5v5c0 3-2.7 6-6 6s-6-3-6-6z"></path><path d="M8 9C5 9 3.5 7 3.5 4.5M20 9c3 0 4.5-2 4.5-4.5"></path><ellipse cx="14" cy="17" rx="3.2" ry="2.2"></ellipse></svg>Beef</button>
+<button type="button" class="seg ico" data-act="species" data-v="Pork" aria-pressed="false"><svg width="26" height="26" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14" cy="15" r="8.5"></circle><path d="M8 9L6 4l5 2.5M20 9l2-5-5 2.5"></path><ellipse cx="14" cy="17" rx="3.4" ry="2.4"></ellipse></svg>Pork</button>
+<button type="button" class="seg ico" data-act="species" data-v="Chicken" aria-pressed="false"><svg width="26" height="26" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="16" r="7"></circle><path d="M9 9.5c0-2 1.5-3.5 3-2.5.6-1.8 3-1.8 3.4 0 1.2-1 3 .2 2.4 2.3"></path><path d="M20 15l4.5 1.5L20 18"></path></svg>Chicken</button>
+</div>
+<div class="fgroup" role="group" aria-label="State">
+<span class="lab">State</span>
+<button type="button" class="seg" data-act="pstate" data-v="raw" aria-pressed="false">Raw</button>
+<button type="button" class="seg" data-act="pstate" data-v="cooked" aria-pressed="true">Cooked</button>
+</div>
+</div>
+<div class="cards" id="p-cards"></div>
+</section>
+
+<section class="next2" aria-label="Next step">
+<a href="#ask" class="nextcard dark">
+<svg width="44" height="44" aria-hidden="true" style="flex:none"><use href="#mascot"></use></svg>
+<span><b>Ask the Oracle about <span id="p-ask">Fat</span></b><small>Your question, answered with sources</small></span>
+</a>
+<a href="#experts" class="nextcard light">
+<svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true" style="flex:none"><circle cx="22" cy="22" r="21" style="fill:var(--mist)"></circle><circle cx="17" cy="18" r="5" style="fill:none;stroke:var(--green);stroke-width:2.4"></circle><circle cx="28" cy="20" r="4" style="fill:none;stroke:var(--green);stroke-width:2.4"></circle><path d="M9 32c1.5-5 4.5-7 8-7s6.5 2 8 7M24 31c1-3.5 3-5 5.5-5s4.5 1.5 5.5 5" style="fill:none;stroke:var(--green);stroke-width:2.4;stroke-linecap:round"></path></svg>
+<span><b>Experts on <span id="p-exp">Fat</span></b><small>Who works on this, in the Ecosystem</small></span>
+</a>
+<a href="#foundations" class="nextcard light">
+<svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true" style="flex:none"><circle cx="22" cy="22" r="21" style="fill:var(--sand)"></circle><path d="M25 14 L17 22 L25 30" style="fill:none;stroke:var(--green);stroke-width:3;stroke-linecap:round;stroke-linejoin:round"></path></svg>
+<span><b>Back to the map</b><small>See how it all fits together</small></span>
+</a>
+</section>
+
+</div>
+</main>
+
+<footer class="foot" id="foot">
+<div class="wrap foot-in">
+<span><b>Source category</b> <span id="ft-src">GFI Israel editorial</span></span>
+<span><b>Editorial status</b> <span id="ft-status">Draft</span></span>
+<span><b>Evidence type</b> <span id="ft-type">Schematic overview</span></span>
+<span><b>Version</b> 0.2</span>
+<button type="button" class="textbtn" data-act="cite" id="ft-cite">Copy citation</button>
+</div>
+</footer>
+
+<script>
+(function () {
+  var $ = function (s) { return document.querySelector(s); };
+  var $$ = function (s) { return Array.prototype.slice.call(document.querySelectorAll(s)); };
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var STEPS = [
+    { title: 'Meet a piece of meat – any meat', text: 'We use a generic cut. Beef, pork and chicken share most of what follows.', focus: 'f-meat' },
+    { title: 'Juice', text: 'The watery part. It carries sugars, amino acids and vitamins – the raw material of flavor.', focus: 'f-juice' },
+    { title: 'Fat', text: 'Fat breaks down under heat. Much of what makes pork smell different from beef starts here.', focus: 'f-fat' },
+    { title: 'Meat matrix', text: 'Fibres, connective tissue and water hold it all together. They decide how flavor forms and how it gets out.', focus: 'f-matrix' },
+    { title: 'Now we cook', text: 'Heat, time and method start the reactions. There is no single magic temperature – it depends on how you cook.', focus: 'f-proc' },
+    { title: 'Out comes flavor', text: 'Cooked meat gives off three families of aroma molecules, plus taste on the tongue and release as you chew.', focus: 'f-out' },
+    { title: 'Where to next?', text: 'Pick a path below. You can come back to this map any time.', focus: 'f-all' }
+  ];
+  var LAST = STEPS.length - 1;
+
+  var DATA = {
+    juice: {
+      name: 'Juice',
+      blurb: 'The watery part of meat. It carries the small molecules that react with each other when heated.',
+      inside: [['Amino acids', 1], ['Peptides', 1], ['Sugars', 1], ['Nucleotides', 1], ['Vitamins (e.g. thiamine)', 1], ['Other metabolites', 0]],
+      heat: ['Sugars + amino acids', 'Maillard & Strecker reactions', 'Roasted, savoury, meaty notes'],
+      methods: ['LC-MS', 'Metabolomics'],
+      examples: [
+        ['Free amino acids and sugars in beef juice', 'Beef', 'Literature', 'Reviewed', 'LC-MS'],
+        ['Nucleotides in chicken breast after cooking', 'Chicken', 'Literature', 'Reviewed', 'LC-MS'],
+        ['Metabolite profile of pork juice', 'Pork', 'GFI Israel Labs', 'In review', 'Metabolomics']
+      ]
+    },
+    fat: {
+      name: 'Fat',
+      blurb: 'Fat gives much of the aroma that tells one meat from another. Heat breaks its lipids into new aroma molecules.',
+      inside: [['Triglycerides', 1], ['Phospholipids', 1], ['Free fatty acids', 1], ['Cholesterol', 0], ['Fat-soluble vitamins', 0]],
+      heat: ['Lipids', 'Oxidation and breakdown', 'Aldehydes, ketones, alcohols'],
+      methods: ['Lipidomics', 'GC-MS'],
+      examples: [
+        ['Volatiles released from heated pork back fat', 'Pork', 'Literature', 'Reviewed', 'GC-MS'],
+        ['Fatty-acid profile: back fat vs. belly fat', 'Pork', 'GFI Israel Labs', 'In review', 'Lipidomics'],
+        ['Odour-active compounds in cooked beef fat', 'Beef', 'Literature', 'Reviewed', 'GC-O'],
+        ['Phospholipids vs. triglycerides as aroma sources', 'Beef', 'Literature', 'Reviewed', 'GC-MS'],
+        ['Chicken fat oxidation during roasting', 'Chicken', 'Literature', 'Reviewed', 'GC-MS'],
+        ['Swapping fat type in a plant-based patty', 'Any species', 'User', 'In review', 'Sensory panel']
+      ]
+    },
+    matrix: {
+      name: 'Meat matrix',
+      blurb: 'The structure that holds juice and fat: protein fibres, connective tissue and water. It shapes how heat moves and how flavor gets out.',
+      inside: [['Muscle proteins', 1], ['Connective tissue', 1], ['Water', 1], ['Pores and structure', 1]],
+      heat: ['Holds water and fat', 'Shapes heat and contact', 'Controls flavor release'],
+      methods: ['Water and oil holding', 'Texture analysis'],
+      examples: [
+        ['Water holding of TVP vs. muscle', 'Any species', 'GFI Israel Labs', 'In review', 'Water holding'],
+        ['Fat release from cooked beef patties', 'Beef', 'Literature', 'Reviewed', 'Texture analysis']
+      ]
+    }
+  };
+
+  var ICON = {
+    'Literature': '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h4.5A1.5 1.5 0 0 1 8 4.5V13a1.5 1.5 0 0 0-1.5-1.5H2zM14 3H9.5A1.5 1.5 0 0 0 8 4.5V13a1.5 1.5 0 0 1 1.5-1.5H14z"></path></svg>',
+    'GFI Israel Labs': '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h4M6.5 2v4.5L3 13a1 1 0 0 0 .9 1.5h8.2A1 1 0 0 0 13 13L9.5 6.5V2"></path></svg>',
+    'User': '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="5.5" r="2.8"></circle><path d="M2.5 14c.8-3 3-4.5 5.5-4.5s4.7 1.5 5.5 4.5"></path></svg>'
+  };
+
+  /* What each place in Science hands to the Oracle (ask) and to the Ecosystem (eco). */
+  var HANDOFF = {
+    foundations: {
+      ask: 'Where does meaty flavor come from when meat is cooked? Walk me through the roles of juice, fat, the meat matrix and processing.',
+      eco: 'meat flavor chemistry'
+    },
+    juice: {
+      ask: 'How do the water-soluble precursors in meat juice (sugars, amino acids, peptides, nucleotides, thiamine) turn into meaty flavor when meat is cooked?',
+      eco: 'Maillard reaction flavor precursors in meat'
+    },
+    fat: {
+      ask: 'How does fat contribute to meaty aroma during cooking, and why does it make one species smell different from another?',
+      eco: 'lipid oxidation and meat aroma'
+    },
+    matrix: {
+      ask: 'How does the meat matrix (muscle proteins, connective tissue, water) shape how flavor forms and is released during cooking?',
+      eco: 'meat matrix and flavor release'
+    }
+  };
+
+  var S = { screen: 'foundations', step: 0, tab: 'fat', species: 'all', pstate: 'cooked' };
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function replay(n) { if (!n) return; n.classList.remove('pop'); void n.offsetWidth; n.classList.add('pop'); }
+
+  /* ---------- handoffs to the rest of MeatCODE ---------- */
+  function focusNote() {
+    var bits = [];
+    if (S.species !== 'all') bits.push(S.species.toLowerCase());
+    bits.push(S.pstate);
+    return ' Focus on ' + bits.join(', ') + ' meat.';
+  }
+  function currentAsk() {
+    if (S.screen === 'precursors') return HANDOFF[S.tab].ask + focusNote();
+    return HANDOFF.foundations.ask;
+  }
+  function currentEco() {
+    return S.screen === 'precursors' ? HANDOFF[S.tab].eco : HANDOFF.foundations.eco;
+  }
+  function askOracle(question) { if (window.MC) MC.open('oracle', { ask: question, send: true }); }
+  function openExperts(query) { if (window.MC) MC.open('ecosystem', { q: query }); }
+
+  /* ---------- router ---------- */
+  var SCREENS = ['foundations', 'precursors'];
+  function hashScreen() {
+    var h = (location.hash || '').replace('#', '');
+    return SCREENS.indexOf(h) > -1 ? h : null;
+  }
+  function go(name, scroll) {
+    S.screen = name;
+    $$('main[data-screen]').forEach(function (m) { m.hidden = m.getAttribute('data-screen') !== name; });
+    $$('.nav a').forEach(function (a) {
+      var on = a.dataset.nav === 'science';
+      a.classList.toggle('on', on);
+      if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    renderCrumbs();
+    if (name === 'precursors') renderP();
+    if (scroll) window.scrollTo(0, 0);
+  }
+  function crumbLink(text, href) { var a = el('a', null, text); a.href = href; return a; }
+  function sep() { var s = el('span', null, '›'); s.setAttribute('aria-hidden', 'true'); return s; }
+  function here(text) { var s = el('span', null, text); s.setAttribute('aria-current', 'page'); return s; }
+  function renderCrumbs() {
+    var c = $('#crumbs'); c.textContent = '';
+    if (S.screen === 'foundations') { c.append(crumbLink('Science', '#foundations'), sep(), here('Foundations')); }
+    if (S.screen === 'precursors') { c.append(crumbLink('Science', '#foundations'), sep(), crumbLink('Precursors', '#precursors'), sep(), here(DATA[S.tab].name)); }
+    if (S.screen === 'foundations') { $('#ft-src').textContent = 'GFI Israel editorial'; $('#ft-status').textContent = 'Draft'; $('#ft-type').textContent = 'Schematic overview'; }
+    if (S.screen === 'precursors') { $('#ft-src').textContent = 'GFI Israel editorial'; $('#ft-status').textContent = 'Draft'; $('#ft-type').textContent = 'Overview with illustrative examples'; }
+  }
+
+  /* ---------- foundations ---------- */
+  var dots = $('#g-dots');
+  STEPS.forEach(function (s, i) {
+    var b = el('button', 'tdot');
+    b.type = 'button';
+    b.setAttribute('aria-label', 'Step ' + (i + 1) + ': ' + s.title);
+    b.dataset.act = 'dot';
+    b.dataset.i = String(i);
+    dots.appendChild(b);
+  });
+  function renderF() {
+    var g = STEPS[S.step];
+    var cooked = S.step >= 4;
+    $('#stage').className = 'stage ' + g.focus + (cooked ? ' is-cooked' : '');
+    $('#g-no').textContent = 'STEP ' + (S.step + 1) + ' OF ' + STEPS.length;
+    $('#g-title').textContent = g.title;
+    $('#g-text').textContent = g.text;
+    replay($('#g-body'));
+    $$('#g-dots .tdot').forEach(function (b, i) { b.setAttribute('aria-current', i === S.step ? 'step' : 'false'); });
+    $('#g-back').disabled = S.step === 0;
+    $('#g-next').hidden = S.step === LAST;
+    $('#g-next').textContent = S.step === 3 ? 'Cook it →' : 'Next →';
+    $('#g-paths').hidden = S.step !== LAST;
+    $('#g-skip').textContent = S.step < LAST ? 'Skip the tour' : 'Restart the tour';
+    $('#cook-label').textContent = cooked ? 'Show raw' : 'Cook it';
+    $('#paths').classList.toggle('paths-on', S.step === LAST);
+  }
+  function setStep(n) { S.step = Math.max(0, Math.min(LAST, n)); renderF(); }
+
+  /* ---------- precursors ---------- */
+  function renderP() {
+    var t = DATA[S.tab];
+    $$('.pcard').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.v === S.tab ? 'true' : 'false'); });
+    $('#p-name').textContent = t.name;
+    $('#p-ask').textContent = t.name;
+    $('#p-exp').textContent = t.name;
+    $('#p-blurb').textContent = t.blurb;
+    var cloud = $('#p-inside'); cloud.textContent = '';
+    t.inside.forEach(function (x, i) {
+      var b = el('span', 'bub ' + (x[1] ? 'bub-' + S.tab : 'bub-off'), x[0]);
+      b.style.animationDelay = (i * 0.06) + 's';
+      cloud.appendChild(b);
+    });
+    $('#h0').textContent = t.heat[0];
+    $('#h1').textContent = t.heat[1];
+    $('#h2').textContent = t.heat[2];
+    $$('#p-heat .node').forEach(function (n) { n.style.animation = 'none'; void n.offsetWidth; n.style.animation = ''; });
+    var m = $('#p-methods'); m.textContent = '';
+    t.methods.forEach(function (x) {
+      var b = el('button', 'btn-sm', x); b.type = 'button';
+      b.dataset.ask = 'How is ' + x + ' used to study ' + t.name.toLowerCase() + ' and its contribution to meat flavor?';
+      m.appendChild(b);
+    });
+
+    $$('[data-act="species"]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.v === S.species ? 'true' : 'false'); });
+    $$('[data-act="pstate"]').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.v === S.pstate ? 'true' : 'false'); });
+
+    var list = t.examples.filter(function (x) { return S.species === 'all' || x[1] === S.species || x[1] === 'Any species'; });
+    var grid = $('#p-cards'); grid.textContent = '';
+    list.forEach(function (x, i) {
+      var c = el('article', 'card'); c.style.animationDelay = (i * 0.05) + 's';
+      var tags = el('div', 'tags');
+      tags.appendChild(el('span', 'tag', x[1]));
+      tags.appendChild(el('span', 'tag', 'Illustrative'));
+      c.appendChild(tags);
+      c.appendChild(el('h3', null, x[0]));
+      var foot = el('div', 'card-foot');
+      foot.appendChild(el('span', 'method', x[4]));
+      var acts = el('div', 'row');
+      var a1 = el('button', 'btn-sm', 'Ask the Oracle'); a1.type = 'button';
+      a1.dataset.ask = 'What does the literature say about: ' + x[0].toLowerCase() + '? (' + x[4] + ')';
+      var a2 = el('button', 'btn-sm', 'Experts'); a2.type = 'button';
+      a2.dataset.eco = x[0];
+      acts.append(a1, a2); foot.appendChild(acts); c.appendChild(foot);
+      grid.appendChild(c);
+    });
+    var label = S.species === 'all' ? 'all species' : S.species;
+    $('#p-count').textContent = list.length + (list.length === 1 ? ' example' : ' examples') + ' · ' + label + ' · ' + S.pstate;
+    var guide = S.species === 'all'
+      ? t.name + ' is open. Pick a species below to narrow the examples.'
+      : 'Showing ' + S.species + ' examples. Ask me about any of them for the cited literature.';
+    var gp = $('#p-guide');
+    if (gp.textContent !== guide) { gp.textContent = guide; replay(gp); }
+    $('#trail-ex').classList.toggle('done', S.species !== 'all');
+    if (S.screen === 'precursors') renderCrumbs();
+  }
+
+  /* ---------- events ---------- */
+  document.addEventListener('click', function (e) {
+    var askBtn = e.target.closest('[data-ask]');
+    if (askBtn) { e.preventDefault(); askOracle(askBtn.dataset.ask); return; }
+    var ecoBtn = e.target.closest('[data-eco]');
+    if (ecoBtn) { e.preventDefault(); openExperts(ecoBtn.dataset.eco); return; }
+    var link = e.target.closest('a[href^="#"]');
+    if (link) {
+      e.preventDefault();
+      var target = link.getAttribute('href').slice(1);
+      if (link.dataset.tab) { S.tab = link.dataset.tab; }
+      if (target === 'ask') { askOracle(currentAsk()); return; }
+      if (target === 'experts') { openExperts(currentEco()); return; }
+      if (target === 'research') { if (window.MC) MC.open('research', {}); return; }
+      if (SCREENS.indexOf(target) > -1) {
+        go(target, true);
+        try { history.replaceState(null, '', '#' + target); } catch (err) { /* frame may refuse; navigation still works */ }
+      } else if (target) {
+        var dest = document.getElementById(target);
+        if (dest) dest.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+      }
+      return;
+    }
+    var b = e.target.closest('[data-act]');
+    if (!b) return;
+    var a = b.dataset.act;
+    if (a === 'next') setStep(S.step + 1);
+    else if (a === 'back') setStep(S.step - 1);
+    else if (a === 'skip') setStep(S.step < LAST ? LAST : 0);
+    else if (a === 'dot') setStep(Number(b.dataset.i));
+    else if (a === 'cook') setStep(S.step >= 4 ? 0 : 4);
+    else if (a === 'tab') { S.tab = b.dataset.v; renderP(); }
+    else if (a === 'species') { S.species = b.dataset.v; renderP(); }
+    else if (a === 'pstate') { S.pstate = b.dataset.v; renderP(); }
+    else if (a === 'cite') {
+      var txt = 'MeatCODE Science – ' + (S.screen === 'precursors' ? DATA[S.tab].name : 'Foundations') + ' (draft). GFI Israel.';
+      var btn = b;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(function () { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy citation'; }, 1500); })
+          .catch(function () { btn.textContent = txt; });
+      } else { btn.textContent = txt; }
+    }
+  });
+
+  window.addEventListener('hashchange', function () {
+    var n = hashScreen();
+    if (n) go(n, true);
+  });
+
+  renderF();
+  renderP();
+  go(hashScreen() || 'foundations', false);
+
+  /* Another module (or the Oracle) can open Science on a topic: {topic:'juice'|'fat'|'matrix'} or {screen:'foundations'}. */
+  if (window.MC) MC.init('science', function (p) {
+    if (p.topic && DATA[p.topic]) { S.tab = p.topic; go('precursors', true); }
+    else if (p.screen === 'foundations') { go('foundations', true); }
+  });
+})();
+</script>
+
+</body>
+</html>

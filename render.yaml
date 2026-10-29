@@ -23,6 +23,9 @@ services:
         value: meatcode         # not secret; change if you like
       - key: UNPAYWALL_EMAIL    # Papers browser (dev flag): contact email Unpaywall requires. Optional.
         sync: false            # paste in the Render dashboard (not in the repo); unset = PDF lookup "unavailable".
+      - key: ECOSYSTEM_CONTACT_EMAIL   # Ecosystem module (flag ecosystem_module): the GFI inbox that receives
+        sync: false                    # "Ask GFI for an introduction" + "Suggest a correction / remove me" emails.
+                                       # Unset = those buttons say requests aren't switched on yet. (added 2026-10-25)
       - key: PYTHON_VERSION
         value: 3.12.4
       - key: APP_ENV
