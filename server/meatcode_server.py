@@ -302,7 +302,7 @@ def load_dotenv(path, skip_empty=False):
             k, v = k.strip(), v.strip().strip('"').strip("'")
             # A blank value in an OVERLAY file (e.g. an empty ANTHROPIC_API_KEY= in
             # .env.dev) must never wipe a real value already loaded from .env.
-            if skip_empty and v == "": continue
+            if skip_empty and v == "" and k != "RESEARCH_DATABASE_URL": continue
             # .env is authoritative: overwrite any stale shell export (e.g. an old
             # ANTHROPIC_API_KEY left over from `export`), which setdefault would keep.
             os.environ[k] = v

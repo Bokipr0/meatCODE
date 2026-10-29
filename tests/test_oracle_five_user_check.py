@@ -24,7 +24,7 @@ class HarnessTests(unittest.TestCase):
                     counters['active']+=1;counters['peak']=max(counters['peak'],counters['active'])
                 time.sleep(.15)
                 self.send_response(200);self.send_header('Content-Type','text/event-stream');self.end_headers()
-                self.wfile.write(('event: sources\ndata: []\n\nevent: chunk\ndata: '+marker+' synthetic answer\n\n'+
+                self.wfile.write(('event: sources\ndata: []\n\nevent: chunk\ndata: '+marker+'\n\nevent: chunk\ndata:   synthetic answer\n\n'+
                                   ('event: done\ndata: \n\n' if done else '')).encode())
                 with lock: counters['active']-=1
         server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
@@ -37,6 +37,8 @@ class HarnessTests(unittest.TestCase):
         self.assertEqual(counters['peak'],5)
         self.assertEqual(report['completed'],5)
         self.assertEqual(report['marker_check'],'pass')
+        for result in report['results']:
+            self.assertEqual(result['answer'],result['marker']+'  synthetic answer')
     def test_incomplete_stream_is_not_success(self):
         report,_=self.exercise(False)
         self.assertEqual(report['completed'],0)

@@ -48,16 +48,16 @@ class JourneyDatabaseTests(unittest.TestCase):
   self.conn=psycopg2.connect(os.environ['USER_RESEARCH_TEST_DB_URL'],connect_timeout=5);self.cur=self.conn.cursor();self.cur.execute("SET LOCAL statement_timeout='5s'; SET LOCAL lock_timeout='3s'")
  def tearDown(self):self.conn.rollback();self.conn.close()
  def test_reference_immutability_join_and_erase(self):
-  p=chat_payload();sid,turn=research.validate_chat(p);research._write_chat(self.cur,'dev',sid,turn)
-  self.cur.execute('SELECT s.user_ref,s.clarity_ref,s.tester_label,t.elapsed_ms,t.consent_version FROM user_research.oracle_turns t JOIN user_research.sessions s USING(session_id,environment) WHERE t.turn_id=%s AND t.environment=%s',(p['turn_id'],'dev'))
+  p=chat_payload();sid,turn=research.validate_chat(p);research._write_chat(self.cur,'prod',sid,turn)
+  self.cur.execute('SELECT s.user_ref,s.clarity_ref,s.tester_label,t.elapsed_ms,t.consent_version FROM user_research.oracle_turns t JOIN user_research.sessions s USING(session_id,environment) WHERE t.turn_id=%s AND t.environment=%s',(p['turn_id'],'prod'))
   row=self.cur.fetchone();self.assertEqual(tuple(map(str,row[:2])),(p['user_ref'],p['clarity_ref']));self.assertEqual(row[2:],('Tester seven',4321,research.CONSENT_VERSION))
-  with self.assertRaises(research.InputError):research._session(self.cur,'dev',sid,{'user_ref':str(uuid.uuid4())})
-  research._withdraw(self.cur,'dev',sid);self.cur.execute('SELECT count(*) FROM user_research.oracle_turns WHERE session_id=%s AND environment=%s',(sid,'dev'));self.assertEqual(self.cur.fetchone()[0],0)
+  with self.assertRaises(research.InputError):research._session(self.cur,'prod',sid,{'user_ref':str(uuid.uuid4())})
+  research._withdraw(self.cur,'prod',sid);self.cur.execute('SELECT count(*) FROM user_research.oracle_turns WHERE session_id=%s AND environment=%s',(sid,'prod'));self.assertEqual(self.cur.fetchone()[0],0)
  def test_old_chat_consent_is_stored_as_old_and_time_unknown(self):
   p=chat_payload();p['consent_version']='2026-10-29-chat-v1'
   for field in ('user_ref','clarity_ref','tester_label','elapsed_ms'):p.pop(field)
-  sid,turn=research.validate_chat(p);research._write_chat(self.cur,'dev',sid,turn)
-  self.cur.execute('SELECT t.consent_version,s.consent_version,t.elapsed_ms,s.user_ref FROM user_research.oracle_turns t JOIN user_research.sessions s USING(session_id,environment) WHERE t.turn_id=%s AND t.environment=%s',(p['turn_id'],'dev'))
+  sid,turn=research.validate_chat(p);research._write_chat(self.cur,'prod',sid,turn)
+  self.cur.execute('SELECT t.consent_version,s.consent_version,t.elapsed_ms,s.user_ref FROM user_research.oracle_turns t JOIN user_research.sessions s USING(session_id,environment) WHERE t.turn_id=%s AND t.environment=%s',(p['turn_id'],'prod'))
   self.assertEqual(self.cur.fetchone(),('2026-10-29-chat-v1','2026-10-29-chat-v1',None,None))
 
 if __name__=='__main__':unittest.main()

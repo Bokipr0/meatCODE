@@ -1,5 +1,49 @@
 # MeatCODE — Agent Update Log
 
+## 2026-10-29 · Codex · More visible chat delete control — local
+
+Replaced the small trash glyph with a bold cross. Delete buttons now have full opacity,
+dark text, a persistent tinted background and visible border; hover becomes a solid teal
+button. Existing deletion/persistence and keyboard focus remain unchanged. Inline JavaScript
+syntax checked. No deployment performed.
+
+
+## 2026-10-29 · Demo verification · Live five-client report reviewed
+Confirmed five completed production Oracle requests in five-users-20261029T174811.json, each HTTP
+200, done event and six sources, no error event or foreign marker. Starts within 1.214 ms; first
+text mean 5.214 seconds, completion mean 23.314 seconds, slowest 26.78 seconds. One successful
+single-turn batch only; browser isolation, guided mode, ten-user and sustained load remain untested.
+Detected our harness stripped all leading spaces from SSE data fields; corrected to remove at most
+one protocol separator space. Added whitespace regression assertion; both local server tests pass.
+Original JSON preserved. No live rerun, deployment, Git or database changes performed.
+
+## 2026-10-29 17:47 UTC · Codex · DEV branding and discoverable Oracle deletion — local
+
+Added server-verified DEV badges beside MeatCODE on all18 application topbars and the Live
+Insights dashboard. Badge requires /api/version env=dev, independent of visibility flags;
+unknown/prod environments stay unlabelled. Dev Area has a small DEV badge beside its MeatCODE
+return link. Oracle delete is now an always-visible trash button (keyboard/touch accessible)
+in both history and pinned lists. Deleting the active chat resets its displayed conversation,
+clears its active reference, and persists removal in existing browser history storage.
+This is browser-history deletion, not deletion of separately collected research records.
+Browser fixtures exercise dev/prod badges, keyboard deletion, pinned deletion and reload persistence.
+No scientific/research data, API, environment settings or deployment changed. Publication required.
+
+
+## 2026-10-29 17:45 UTC · Codex · Dashboard navigation, dev login reuse and operations-first layout — local
+
+Dashboard replaces all18 topbar Inventory buttons and stays at the right after Dev Area/Backups,
+independently of inventory flags. Existing saved-item data remains. Production Operations is first
+content below the dashboard brand header, above the Live Insights hero and metrics.
+Dashboard/journey/transcript/read-only operations reuse verified Basic credentials on APP_ENV=dev
+when SITE_PASSWORD is configured. No additional research-admin token is needed there, including
+production monitoring via the existing explicit read-only connection. All holders of the dev-site
+password therefore have this access; the Dev Area visibility flag is not a separate role boundary.
+Production-site admin-token/origin protections and cross-environment connection restrictions remain.
+RESEARCH_DEV_LOGIN_ACCESS=false disables login reuse. No credentials or live settings changed.
+Backend authorization tests and dashboard/browser fixtures passed; no deployment performed.
+
+
 ## 2026-10-29 · Project Coordinator · PARALLEL journey storage and production monitoring — live
 
 Created Neon research-logs child br-lingering-morning-alh02jz5 from production in GFI database,

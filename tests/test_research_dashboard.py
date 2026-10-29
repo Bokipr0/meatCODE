@@ -1,5 +1,6 @@
-# Last updated: 2026-10-29 10:49 UTC · Data/Backend · dashboard auth, origin, SQL bounds and rollback-only aggregate verification.
+# Last updated: 2026-10-29 · Codex · authenticated dev-login dashboard access and production boundary tests.
 from contextlib import contextmanager
+import base64
 import datetime
 from email.message import Message
 import io
@@ -49,6 +50,35 @@ class Cursor:
 
 
 class DashboardTests(unittest.TestCase):
+    def test_dev_site_login_reused_but_never_for_production_or_cross_origin(self):
+        env={'SITE_PASSWORD':'fixture-dev-password','RENDER':'true'}
+        h=Handler();h.headers['Authorization']='Basic '+base64.b64encode(b'meatcode:fixture-dev-password').decode()
+        self.assertTrue(dashboard._dev_login_ok(h.headers,env,'dev'))
+        self.assertFalse(dashboard._dev_login_ok(h.headers,env,'prod'))
+        self.assertFalse(dashboard._dev_login_ok(h.headers,{},'dev'))
+        self.assertFalse(dashboard._dev_login_ok(h.headers,dict(env,RESEARCH_DEV_LOGIN_ACCESS='false'),'dev'))
+        with patch.object(dashboard,'_database_settings',side_effect=research.StorageError()):
+            dashboard.handle(h,'fake-db','dev',env)
+        self.assertEqual(h.status,503) # Passed authorization; storage intentionally unavailable.
+        h.headers['Sec-Fetch-Site']='cross-site'
+        dashboard.handle(h,'fake-db','dev',env)
+        self.assertEqual(h.status,403)
+        h=Handler();h.headers['Authorization']='Basic '+base64.b64encode(b'meatcode:wrong').decode()
+        self.assertFalse(dashboard._dev_login_ok(h.headers,env,'dev'))
+
+    def test_dev_site_login_reads_only_production_through_viewer_connection(self):
+        env={'SITE_PASSWORD':'fixture-dev-password','RENDER':'true',
+             'RESEARCH_PRODUCTION_DATABASE_URL':'production-readonly-research'}
+        @contextmanager
+        def readonly(target):
+            self.assertEqual(target,'production-readonly-research');yield Cursor(empty=True)
+        for path in ('/api/research/dashboard','/api/research/journey'):
+            h=Handler(path);h.headers['Authorization']='Basic '+base64.b64encode(b'meatcode:fixture-dev-password').decode()
+            with patch.object(dashboard,'readonly',readonly):dashboard.handle(h,'development-scientific-db','dev',env)
+            self.assertEqual(h.status,200);self.assertEqual(h.result()['environment'],'prod')
+            self.assertEqual(h.result()['access_mode'],'dev_site_login');self.assertFalse(h.result()['can_select_environment'])
+            self.assertNotIn('production-readonly-research',h.wfile.getvalue().decode())
+
     def test_shared_password_alone_and_missing_or_short_admin_tokens_are_denied(self):
         for env in ({},{'SITE_PASSWORD':'s'*48},{'RESEARCH_ADMIN_TOKEN':'short'},
                     {'RESEARCH_ADMIN_TOKEN':'s'*48,'SITE_PASSWORD':'s'*48}):
@@ -80,7 +110,8 @@ class DashboardTests(unittest.TestCase):
         for query in ('?minutes=1','?limit=51','?limit=0','?environment=all','?environment=dev&environment=prod',
                       '?minutes=15;DROP%20TABLE','?token=secret','?minutes=','?limit=１','?limit='+'9'*5000):
             with self.assertRaises(research.InputError):dashboard.parameters('/api/research/dashboard'+query,'prod')
-        self.assertEqual(dashboard.parameters('/api/research/dashboard?environment=dev&minutes=1440&limit=1','prod'),('dev',1440,1))
+        self.assertEqual(dashboard.parameters('/api/research/dashboard?minutes=1440&limit=1','dev'),('prod',1440,1))
+        with self.assertRaises(research.InputError):dashboard.parameters('/api/research/dashboard?environment=dev','dev')
 
     def test_hosted_token_cannot_cross_environments(self):
         h=Handler('/api/research/dashboard?environment=dev',token='t'*48)
@@ -103,7 +134,7 @@ class DashboardTests(unittest.TestCase):
             self.assertIsInstance(args,tuple)
 
     def test_empty_snapshot_is_zero_and_null(self):
-        result=dashboard.snapshot(Cursor(empty=True),'dev')
+        result=dashboard.snapshot(Cursor(empty=True),'prod')
         self.assertEqual(result['totals']['sessions'],0)
         self.assertIsNone(result['totals']['median_response_ms'])
         self.assertEqual(result['activity'],[]);self.assertEqual(result['feedback'],[])
@@ -119,7 +150,7 @@ class DashboardTests(unittest.TestCase):
             self.assertEqual(h.status,200);self.assertEqual(h.response_headers['Cache-Control'],'no-store')
             self.assertEqual(h.result()['providers']['posthog']['delivery'],'unverified')
             self.assertEqual(h.result()['environment'],'prod')
-            self.assertEqual(h.result()['can_select_environment'],local)
+            self.assertFalse(h.result()['can_select_environment'])
 
     def test_errors_do_not_disclose_database_or_token_details(self):
         h=Handler()
@@ -156,16 +187,15 @@ class DashboardDatabaseTests(unittest.TestCase):
         try:
             with connection.cursor() as cur:
                 cur.execute("SET LOCAL statement_timeout='5s'")
-                before=dashboard.snapshot(cur,'dev',15,50)
-                research._write_events(cur,'dev',sid,[{'event_id':event_id,'name':'oracle.completed','scene':'oracle',
+                before=dashboard.snapshot(cur,'prod',15,50)
+                research._write_events(cur,'prod',sid,[{'event_id':event_id,'name':'oracle.completed','scene':'oracle',
                                                      'duration_ms':1200,'source_count':3}])
-                research._write_feedback(cur,'dev',sid,{'event_id':str(uuid.uuid4()),'rating':'helpful','category':'answer','comment':'rollback fixture'})
-                after=dashboard.snapshot(cur,'dev',15,50)
+                research._write_feedback(cur,'prod',sid,{'event_id':str(uuid.uuid4()),'rating':'helpful','category':'answer','comment':'rollback fixture'})
+                after=dashboard.snapshot(cur,'prod',15,50)
                 self.assertEqual(after['totals']['oracle_completed'],before['totals']['oracle_completed']+1)
                 self.assertEqual(after['totals']['feedback'],before['totals']['feedback']+1)
                 self.assertNotIn(sid,json.dumps(after))
-                prod=dashboard.snapshot(cur,'prod',15,50)
-                self.assertNotIn(event_id,json.dumps(prod))
+                with self.assertRaises(research.InputError):dashboard.snapshot(cur,'dev',15,50)
         finally:
             connection.rollback();connection.close()
 

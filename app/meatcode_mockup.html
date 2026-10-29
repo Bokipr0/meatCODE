@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+<!-- Last updated: 2026-10-29 · Codex · DEV brand badge and visible Oracle chat deletion. -->
 <meta charset="utf-8" />
 <!-- Last updated: 2026-10-28 · Codex UI/UX · optional masked research integration and content-free Oracle lifecycle hooks; no question/answer payloads. -->
 <!-- Prior update: 2026-10-27 11:37 UTC · Codex UI/UX · removed Simulate sidebar recents, SLR families and presets; Analytics zone switch now exposes the Analytics nav chip (legacy alias supported). -->
@@ -63,6 +64,9 @@ body.ff-new_logo .brand-logo{ background:linear-gradient(135deg, var(--brass,#b5
 body.ff-new_logo .brand-name::after{ content:"new"; margin-left:6px; padding:1px 6px; font-size:9px; font-weight:700; letter-spacing:.04em; color:#fff; background:var(--brass,#b5651d); border-radius:999px; vertical-align:middle; text-transform:uppercase; }
 /* 2026-10-29: Inventory visibility is independent of its highlight; saved items remain intact. */
 body:not(.ff-inventory) .mc-toolbench-btn { display:none !important; }
+
+
+.mc-dashboard-btn{text-decoration:none;order:20;}
 /* ── Feature flag: highlight_inventory — draw attention to the Inventory button ── */
 body.ff-highlight_inventory .mc-toolbench-btn{ box-shadow:0 0 0 2px var(--brass,#b5651d); background:rgba(181,101,29,.12); }
 /* GFI co-brand: lift the logo before everything and make it the visual anchor */
@@ -177,6 +181,25 @@ section.scene.active { display: block; }
   background: var(--wine); color: #fff; border-radius: 100px;
   padding: 1px 7px; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
 }
+
+.mc-dashboard-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-left: auto;
+  padding: 8px 14px;
+  background: var(--bg-deep); border: 1px solid transparent;
+  border-radius: 10px;
+  font-family: inherit; font-size: 13px; font-weight: 700; color: var(--ink-dim);
+  cursor: pointer; transition: 0.13s;
+}
+.mc-dashboard-btn:hover { background: var(--wine-mist); color: var(--wine); border-color: var(--wine-tint); }
+.mc-dashboard-btn.on { background: var(--wine-mist); color: var(--wine); border-color: var(--wine-soft); }
+.mc-dashboard-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+.mc-dashboard-btn .mc-tb-count {
+  background: var(--wine); color: #fff; border-radius: 100px;
+  padding: 1px 7px; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+
+.topbar-right{width:auto;flex-shrink:0;}
 /* 2026-08-15 · Dev Area button (feature-flagged). Authored statically next to the
    Inventory button on every topbar, but CSS-hidden unless the /api/flags load pass
    adds body.ff-dev_area — so it stays invisible on production until the flag flips. */
@@ -1794,25 +1817,18 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 #oracle .context-item .save-ico:hover { background: var(--wine-mist); }
 #oracle .context-item .save-ico:focus-visible { outline: 2px solid var(--wine); outline-offset: -2px; }
 
-/* 2026-09-01 · hover-to-delete: on row hover the LEFT dot becomes a small ✕ (same spot).
-   Default (non-hover) shows the dot; the ✕ is a real button that removes + persists. */
+/* Last updated: 2026-10-29 · Codex · high-contrast, always-visible cross delete control. */
 #oracle .context-item .ctx-del {
-  display: none;
-  width: 16px; height: 16px; flex-shrink: 0;
-  margin: 0 -5px 0 -5px;                 /* re-centre the 16px hit area over the 6px dot slot */
-  padding: 0; border: 0; background: none;
-  -webkit-appearance: none; appearance: none;
-  align-items: center; justify-content: center;
-  border-radius: 5px; cursor: pointer;
-  color: var(--ink-faint); font-size: 12px; line-height: 1;
-  transition: background 0.15s ease, color 0.15s ease;
+  display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+  width:28px;height:28px;margin:0 0 0 -6px;padding:5px;
+  border:1px solid var(--line-strong);background:var(--wine-mist);
+  border-radius:6px;cursor:pointer;color:var(--ink);opacity:1;
 }
-#oracle .context-item:hover .dot { display: none; }
-#oracle .context-item:hover .ctx-del { display: inline-flex; }
-#oracle .context-item.renaming .ctx-del { display: none; }   /* never while editing the name */
-#oracle .context-item.renaming:hover .dot { display: inline-block; }
-#oracle .context-item .ctx-del:hover { background: var(--wine-mist); color: var(--wine); }
-#oracle .context-item .ctx-del:focus-visible { outline: 2px solid var(--wine); outline-offset: -2px; }
+#oracle .context-item .ctx-del svg{width:16px;height:16px;}
+#oracle .context-item .dot{display:none;}
+#oracle .context-item.renaming .ctx-del{visibility:hidden;}
+#oracle .context-item .ctx-del:hover{background:var(--wine);border-color:var(--wine);color:var(--surface);}
+#oracle .context-item .ctx-del:focus-visible{outline:2px solid var(--wine);outline-offset:1px;}
 #oracle .context-empty {
   font-size: 12px; line-height: 1.45; color: var(--ink-faint);
   padding: 4px 10px 6px;
@@ -2550,11 +2566,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
             <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
           </div>
         </div>
-        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          <span>Inventory</span>
-          <span class="mc-tb-count" hidden>0</span>
-        </button>
+        <a class="mc-dashboard-btn" href="/research-dashboard" title="Live insights dashboard" aria-label="Open live insights dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16v-3m5 3V8m5 8v-6"/></svg><span>Dashboard</span></a>
       </div>
     </header>
 
@@ -2662,11 +2674,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
             <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
           </div>
         </div>
-        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          <span>Inventory</span>
-          <span class="mc-tb-count" hidden>0</span>
-        </button>
+        <a class="mc-dashboard-btn" href="/research-dashboard" title="Live insights dashboard" aria-label="Open live insights dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16v-3m5 3V8m5 8v-6"/></svg><span>Dashboard</span></a>
       </div>
     </header>
 
@@ -2750,11 +2758,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
             <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
           </div>
         </div>
-        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          <span>Inventory</span>
-          <span class="mc-tb-count" hidden>0</span>
-        </button>
+        <a class="mc-dashboard-btn" href="/research-dashboard" title="Live insights dashboard" aria-label="Open live insights dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16v-3m5 3V8m5 8v-6"/></svg><span>Dashboard</span></a>
       </div>
     </header>
 
@@ -2843,11 +2847,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
             <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
           </div>
         </div>
-        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          <span>Inventory</span>
-          <span class="mc-tb-count" hidden>0</span>
-        </button>
+        <a class="mc-dashboard-btn" href="/research-dashboard" title="Live insights dashboard" aria-label="Open live insights dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16v-3m5 3V8m5 8v-6"/></svg><span>Dashboard</span></a>
       </div>
     </header>
 
@@ -2983,11 +2983,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
             <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
           </div>
         </div>
-        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          <span>Inventory</span>
-          <span class="mc-tb-count" hidden>0</span>
-        </button>
+        <a class="mc-dashboard-btn" href="/research-dashboard" title="Live insights dashboard" aria-label="Open live insights dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16v-3m5 3V8m5 8v-6"/></svg><span>Dashboard</span></a>
       </div>
     </header>
 
@@ -3163,11 +3159,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
             <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
           </div>
         </div>
-        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          <span>Inventory</span>
-          <span class="mc-tb-count" hidden>0</span>
-        </button>
+        <a class="mc-dashboard-btn" href="/research-dashboard" title="Live insights dashboard" aria-label="Open live insights dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16v-3m5 3V8m5 8v-6"/></svg><span>Dashboard</span></a>
       </div>
     </header>
 
@@ -3322,11 +3314,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
             <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
           </div>
         </div>
-        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          <span>Inventory</span>
-          <span class="mc-tb-count" hidden>0</span>
-        </button>
+        <a class="mc-dashboard-btn" href="/research-dashboard" title="Live insights dashboard" aria-label="Open live insights dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16v-3m5 3V8m5 8v-6"/></svg><span>Dashboard</span></a>
       </div>
     </header>
 
@@ -3433,11 +3421,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
             <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
           </div>
         </div>
-        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          <span>Inventory</span>
-          <span class="mc-tb-count" hidden>0</span>
-        </button>
+        <a class="mc-dashboard-btn" href="/research-dashboard" title="Live insights dashboard" aria-label="Open live insights dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16v-3m5 3V8m5 8v-6"/></svg><span>Dashboard</span></a>
       </div>
     </header>
 
@@ -3572,11 +3556,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
             <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
           </div>
         </div>
-        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          <span>Inventory</span>
-          <span class="mc-tb-count" hidden>0</span>
-        </button>
+        <a class="mc-dashboard-btn" href="/research-dashboard" title="Live insights dashboard" aria-label="Open live insights dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16v-3m5 3V8m5 8v-6"/></svg><span>Dashboard</span></a>
       </div>
     </header>
 
@@ -3659,11 +3639,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
             <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
           </div>
         </div>
-        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          <span>Inventory</span>
-          <span class="mc-tb-count" hidden>0</span>
-        </button>
+        <a class="mc-dashboard-btn" href="/research-dashboard" title="Live insights dashboard" aria-label="Open live insights dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16v-3m5 3V8m5 8v-6"/></svg><span>Dashboard</span></a>
       </div>
     </header>
 
@@ -3697,11 +3673,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
             <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
           </div>
         </div>
-        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          <span>Inventory</span>
-          <span class="mc-tb-count" hidden>0</span>
-        </button>
+        <a class="mc-dashboard-btn" href="/research-dashboard" title="Live insights dashboard" aria-label="Open live insights dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16v-3m5 3V8m5 8v-6"/></svg><span>Dashboard</span></a>
       </div>
     </header>
 
@@ -3737,11 +3709,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
             <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
           </div>
         </div>
-        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          <span>Inventory</span>
-          <span class="mc-tb-count" hidden>0</span>
-        </button>
+        <a class="mc-dashboard-btn" href="/research-dashboard" title="Live insights dashboard" aria-label="Open live insights dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16v-3m5 3V8m5 8v-6"/></svg><span>Dashboard</span></a>
       </div>
     </header>
 
@@ -3775,11 +3743,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
             <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
           </div>
         </div>
-        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          <span>Inventory</span>
-          <span class="mc-tb-count" hidden>0</span>
-        </button>
+        <a class="mc-dashboard-btn" href="/research-dashboard" title="Live insights dashboard" aria-label="Open live insights dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16v-3m5 3V8m5 8v-6"/></svg><span>Dashboard</span></a>
       </div>
     </header>
 
@@ -3991,11 +3955,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
             <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
           </div>
         </div>
-        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          <span>Inventory</span>
-          <span class="mc-tb-count" hidden>0</span>
-        </button>
+        <a class="mc-dashboard-btn" href="/research-dashboard" title="Live insights dashboard" aria-label="Open live insights dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16v-3m5 3V8m5 8v-6"/></svg><span>Dashboard</span></a>
       </div>
     </header>
 
@@ -4111,11 +4071,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
             <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
           </div>
         </div>
-        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          <span>Inventory</span>
-          <span class="mc-tb-count" hidden>0</span>
-        </button>
+        <a class="mc-dashboard-btn" href="/research-dashboard" title="Live insights dashboard" aria-label="Open live insights dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16v-3m5 3V8m5 8v-6"/></svg><span>Dashboard</span></a>
       </div>
     </header>
 
@@ -4380,11 +4336,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
             <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
           </div>
         </div>
-        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          <span>Inventory</span>
-          <span class="mc-tb-count" hidden>0</span>
-        </button>
+        <a class="mc-dashboard-btn" href="/research-dashboard" title="Live insights dashboard" aria-label="Open live insights dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16v-3m5 3V8m5 8v-6"/></svg><span>Dashboard</span></a>
       </div>
     </header>
 
@@ -4563,11 +4515,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
             <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
           </div>
         </div>
-        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          <span>Inventory</span>
-          <span class="mc-tb-count" hidden>0</span>
-        </button>
+        <a class="mc-dashboard-btn" href="/research-dashboard" title="Live insights dashboard" aria-label="Open live insights dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16v-3m5 3V8m5 8v-6"/></svg><span>Dashboard</span></a>
       </div>
     </header>
 
@@ -4620,11 +4568,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
             <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
           </div>
         </div>
-        <button type="button" class="mc-toolbench-btn" aria-haspopup="dialog" aria-expanded="false" aria-label="Inventory — your saved items" title="Inventory — your saved items">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          <span>Inventory</span>
-          <span class="mc-tb-count" hidden>0</span>
-        </button>
+        <a class="mc-dashboard-btn" href="/research-dashboard" title="Live insights dashboard" aria-label="Open live insights dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16v-3m5 3V8m5 8v-6"/></svg><span>Dashboard</span></a>
       </div>
     </header>
 
@@ -5527,10 +5471,10 @@ function mcOracleRowHTML(c) {
               ' data-chat-id="' + escapeHtml(c.id) + '" title="' + escapeHtml(c.q) + '">' +
            '<div class="dot"' + (c.pinned ? ' style="background:var(--wine)"' : '') + '></div>' +
            '<button type="button" class="ctx-del" data-del-id="' + escapeHtml(c.id) + '"' +
-                  ' aria-label="Delete this chat" title="Delete this chat">' +
+                  ' aria-label="Delete this chat" title="Delete from this browser’s history">' +
              '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" ' +
                   'stroke-linecap="round" aria-hidden="true">' +
-               '<path d="M4 4l8 8M12 4l-8 8"/>' +
+               '<path d="M4 4l8 8M12 4l-8 8" stroke-width="2.3"/>' +
              '</svg>' +
            '</button>' +
            '<span class="ctx-text">' + escapeHtml(label) + '</span>' +
@@ -5636,7 +5580,11 @@ function mcDeleteOracleChat(id) {
   var before = oracleChats.length;
   oracleChats = oracleChats.filter(function (c) { return c.id !== id; });
   if (oracleChats.length === before) return;   // nothing matched — no-op
-  if (oracleActiveId === id) oracleActiveId = null;
+  if (oracleActiveId === id) {
+    mcNewOracleChat();
+    if(oracleTextarea)oracleTextarea.value='';
+    window.mcOracleLastQuestion='';
+  }
   mcSaveOracleChats();
   renderOracleSidebar();
 }
@@ -10092,6 +10040,7 @@ body:not(.ff-analytics) a[href="/analytics"] {display:none!important}
   window.addEventListener('mc:flags-ready',sync);sync();
 })();
 </script>
+<script src="/app/assets/environment-badge.js" defer></script>
 </body>
 </html>
 

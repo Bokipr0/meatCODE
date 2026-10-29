@@ -61,7 +61,10 @@ def run_clients(base, user, password, timeout=180):
                     if size > 2_000_000: raise RuntimeError('Response exceeded safety limit')
                     line = raw.decode('utf-8').rstrip('\r\n')
                     if line.startswith('event:'): event = line[6:].strip()
-                    elif line.startswith('data:'): lines.append(line[5:].lstrip(' '))
+                    elif line.startswith('data:'):
+                        # SSE removes at most one separator space; remaining spaces are content.
+                        value = line[5:]
+                        lines.append(value[1:] if value.startswith(' ') else value)
                     elif not line:
                         data = '\n'.join(lines)
                         result['events'].append(event)

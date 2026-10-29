@@ -1,6 +1,7 @@
-# Last updated: 2026-10-29 · Data/Backend · scoped development-to-production monitoring, journey records and distinct navigation click totals.
+# Last updated: 2026-10-29 · Codex · production-only research monitoring; owner-authorized dev login preserved.
 """Called only after the site's existing authentication gate. No provider API calls."""
 from contextlib import contextmanager
+import base64
 import datetime
 import hashlib
 import hmac
@@ -31,6 +32,24 @@ def _admin_token_ok(headers, environ):
     return hmac.compare_digest(token.encode('utf-8'),provided.encode('utf-8'))
 
 
+def _dev_login_ok(headers, environ, app_env):
+    """Owner-authorized dev-site login reuse; never grants production-site access."""
+    if app_env != 'dev' or str(environ.get('RESEARCH_DEV_LOGIN_ACCESS','true')).lower() in ('0','false','no','off'):
+        return False
+    password=str(environ.get('SITE_PASSWORD',''))
+    if not password:
+        return False
+    authorization=research_http._single_header(headers,'Authorization')
+    if not isinstance(authorization,str) or not authorization.startswith('Basic ') or len(authorization)>4096:
+        return False
+    try:
+        user, separator, provided=base64.b64decode(authorization[6:],validate=True).decode('utf-8').partition(':')
+        return bool(separator and hmac.compare_digest(user.encode(),str(environ.get('SITE_USER','meatcode')).encode())
+                    and hmac.compare_digest(provided.encode(),password.encode()))
+    except (ValueError,UnicodeError):
+        return False
+
+
 def _browser_origin_ok(headers):
     # The local cockpit must not become readable by an unrelated web page when
     # the shared site-password gate is disabled on a developer machine.
@@ -48,9 +67,9 @@ def parameters(path, app_env):
     query = parse_qs(urlsplit(path).query, keep_blank_values=True)
     if set(query)-{'environment','minutes','limit'} or any(len(value)!=1 for value in query.values()):
         raise user_research.InputError('Dashboard parameters are invalid.')
-    environment = query.get('environment',[app_env])[0]
-    if environment not in ('dev','prod'):
-        raise user_research.InputError('Choose dev or prod.')
+    environment = query.get('environment',['prod'])[0]
+    if environment != 'prod':
+        raise user_research.InputError('Only production research data is available.')
     window = query.get('minutes',['15'])[0]
     limit = query.get('limit',['50'])[0]
     if window not in ('15','60','1440','10080','129600') or not 1<=len(limit)<=2 or not limit.isascii() or not limit.isdigit() or not 1<=int(limit)<=50:
@@ -73,35 +92,30 @@ def _local_settings(environment, environ):
 
 
 def _research_connection(settings, legacy=None):
-    chosen=research_storage.database_url(settings,legacy)
+    chosen=research_storage.database_url(dict(settings,RESEARCH_DATABASE_REQUIRED='true'))
     if not chosen:raise user_research.StorageError()
     return chosen
 
 
 def _database_settings(environment, app_env, environ, database_url, local_admin):
+    # Dashboard reads are deliberately narrower than app environments: there is
+    # exactly one production research dataset, even on the development server.
+    if environment != 'prod':
+        raise user_research.InputError('Only production research data is available.')
     hosted=str(environ.get('RENDER','')).strip().lower()=='true'
-    if not local_admin or hosted:
-        if environment!=app_env:
-            # This credential is a dedicated read-only research role, not the
-            # production application/admin credential or scientific connection.
-            if app_env=='dev' and environment=='prod' and environ.get('RESEARCH_PRODUCTION_DATABASE_URL'):
-                return environ['RESEARCH_PRODUCTION_DATABASE_URL'],dict(environ)
-            raise user_research.InputError('This environment is unavailable to this dashboard.')
-        chosen=_research_connection(environ,database_url)
+    if local_admin and not hosted:
+        selected=_local_settings('prod',environ)
+        return _research_connection(selected),selected
+    if app_env=='dev':
+        chosen=str(environ.get('RESEARCH_PRODUCTION_DATABASE_URL') or '').strip()
         if not chosen:raise user_research.StorageError()
         return chosen,dict(environ)
-    selected=_local_settings(environment,environ)
-    chosen=_research_connection(selected)
-    if environment=='dev':
-        production=_local_settings('prod',environ)
-        if chosen==research_storage.database_url(production):raise user_research.StorageError()
-    if not chosen:raise user_research.StorageError()
-    return chosen,selected
+    if app_env!='prod':raise user_research.InputError('Unknown application environment.')
+    return _research_connection(environ),dict(environ)
 
 
 def can_select_environment(app_env,environ,local_admin=False):
-    hosted=str(environ.get('RENDER','')).strip().lower()=='true'
-    return bool((local_admin and not hosted) or (app_env=='dev' and environ.get('RESEARCH_PRODUCTION_DATABASE_URL')))
+    return False
 
 
 def _provider_url(value):
@@ -163,7 +177,7 @@ def _iso(value):
 
 
 def snapshot(cursor,environment,minutes=15,limit=50,now=None):
-    if environment not in ('dev','prod') or minutes not in WINDOWS or type(limit) is not int or not 1<=limit<=50:
+    if environment != 'prod' or minutes not in WINDOWS or type(limit) is not int or not 1<=limit<=50:
         raise user_research.InputError('Dashboard parameters are invalid.')
     checked=now or datetime.datetime.now(datetime.timezone.utc)
     since=checked-datetime.timedelta(minutes=minutes)
@@ -221,7 +235,7 @@ def snapshot(cursor,environment,minutes=15,limit=50,now=None):
 
 
 def journey(cursor,environment,minutes=60,limit=50,now=None):
-    if environment not in ('dev','prod') or minutes not in WINDOWS or type(limit) is not int or not 1<=limit<=50:
+    if environment != 'prod' or minutes not in WINDOWS or type(limit) is not int or not 1<=limit<=50:
         raise user_research.InputError('Journey parameters are invalid.')
     checked=now or datetime.datetime.now(datetime.timezone.utc)
     since=checked-datetime.timedelta(minutes=minutes)
@@ -255,8 +269,8 @@ def journey(cursor,environment,minutes=60,limit=50,now=None):
 def transcript_parameters(path,app_env):
     query=parse_qs(urlsplit(path).query,keep_blank_values=True)
     if set(query)-{'environment','conversation','after','limit'} or any(len(v)!=1 for v in query.values()):raise user_research.InputError('Invalid transcript parameters.')
-    environment=query.get('environment',[app_env])[0]
-    if environment not in ('dev','prod'):raise user_research.InputError('Invalid environment.')
+    environment=query.get('environment',['prod'])[0]
+    if environment != 'prod':raise user_research.InputError('Only production research data is available.')
     conversation=user_research._uuid(query.get('conversation',[''])[0])
     after=query.get('after',['0'])[0];limit=query.get('limit',['20'])[0]
     if not after.isascii() or not after.isdigit() or len(after)>7 or not 0<=int(after)<=1000000:raise user_research.InputError('Invalid cursor.')
@@ -265,6 +279,7 @@ def transcript_parameters(path,app_env):
 
 
 def transcript(cursor,environment,conversation,after=0,limit=20):
+    if environment != 'prod':raise user_research.InputError('Only production research data is available.')
     cursor.execute("""SELECT turn_index,question,answer,status,source_ids,error_code,truncated,created_at,updated_at
         FROM user_research.oracle_turns WHERE environment=%s AND conversation_id=%s AND turn_index>%s
         ORDER BY turn_index LIMIT %s""",(environment,conversation,after,limit+1))
@@ -277,12 +292,12 @@ def transcript(cursor,environment,conversation,after=0,limit=20):
 
 
 def handle(handler,database_url,app_env,environ,local_admin=False):
-    """Private data route, after BasicAuth. Shared site credentials alone are insufficient."""
+    """Private data route, after BasicAuth. Development reuses verified site login; production requires admin authorization."""
     hosted=str(environ.get('RENDER','')).strip().lower()=='true'
     local=bool(local_admin and not hosted)
     if not _browser_origin_ok(handler.headers):
         return research_http._error(handler,403,'research_admin_required','Research administrator access is required.')
-    if not local and not _admin_token_ok(handler.headers,environ):
+    if not local and not _dev_login_ok(handler.headers,environ,app_env) and not _admin_token_ok(handler.headers,environ):
         return research_http._error(handler,403,'research_admin_required','Research administrator access is required.')
     try:
         route=urlsplit(handler.path).path
@@ -297,6 +312,7 @@ def handle(handler,database_url,app_env,environ,local_admin=False):
         if not is_transcript:
             result['providers']=providers(settings,environment)
             result['can_select_environment']=can_select_environment(app_env,environ,local)
+        result['access_mode']='dev_site_login' if _dev_login_ok(handler.headers,environ,app_env) else 'admin'
         return research_http._reply(handler,result)
     except user_research.InputError:
         return research_http._error(handler,400,'invalid_dashboard_parameters','Dashboard parameters are invalid for this server.')

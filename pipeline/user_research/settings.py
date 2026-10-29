@@ -24,7 +24,7 @@ def settings(environment, environ=None, root=None):
                 continue
             key, value = line.split('=', 1)
             value = value.strip().strip('\"\'')
-            if value:
+            if value or key.strip()=='RESEARCH_DATABASE_URL':
                 result[key.strip()] = value
     return result
 

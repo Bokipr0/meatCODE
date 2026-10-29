@@ -114,17 +114,17 @@ class RollbackDatabaseTests(unittest.TestCase):
         self.conn.rollback();self.cur.close();self.conn.close()
 
     def test_idempotency_environment_and_withdrawal(self):
-        self.assertEqual(research._write_events(self.cur,'dev',self.sid,self.events)['accepted'],1)
-        self.assertEqual(research._write_events(self.cur,'dev',self.sid,self.events)['duplicate'],1)
+        self.assertEqual(research._write_events(self.cur,'prod',self.sid,self.events)['accepted'],1)
+        self.assertEqual(research._write_events(self.cur,'prod',self.sid,self.events)['duplicate'],1)
         self.assertEqual(research._write_events(self.cur,'prod',self.sid,self.events)['accepted'],1)
         feedback={'event_id':str(uuid.uuid4()),'rating':'helpful','category':'bug','comment':"fixture '; DROP TABLE scientific; --"}
-        self.assertEqual(research._write_feedback(self.cur,'dev',self.sid,feedback)['accepted'],1)
-        self.assertEqual(research._write_feedback(self.cur,'dev',self.sid,feedback)['duplicate'],1)
-        research._withdraw(self.cur,'dev',self.sid)
+        self.assertEqual(research._write_feedback(self.cur,'prod',self.sid,feedback)['accepted'],1)
+        self.assertEqual(research._write_feedback(self.cur,'prod',self.sid,feedback)['duplicate'],1)
+        research._withdraw(self.cur,'prod',self.sid)
         for table in ('sessions','events','feedback'):
-            self.cur.execute('SELECT count(*) FROM user_research.'+table+' WHERE session_id=%s AND environment=%s',(self.sid,'dev'))
+            self.cur.execute('SELECT count(*) FROM user_research.'+table+' WHERE session_id=%s AND environment=%s',(self.sid,'prod'))
             self.assertEqual(self.cur.fetchone()[0],0)
-        with self.assertRaises(research.WithdrawnError):research._write_events(self.cur,'dev',self.sid,self.events)
+        with self.assertRaises(research.WithdrawnError):research._write_events(self.cur,'prod',self.sid,self.events)
         self.cur.execute('SELECT count(*) FROM user_research.sessions WHERE session_id=%s AND environment=%s',(self.sid,'prod'))
         self.assertEqual(self.cur.fetchone()[0],1)
 
@@ -132,29 +132,29 @@ class RollbackDatabaseTests(unittest.TestCase):
         untouched=str(uuid.uuid4())
         for session in (self.sid,untouched):
             self.cur.execute('INSERT INTO user_research.sessions(session_id,environment,consent_version) VALUES(%s,%s,%s)',
-                             (session,'dev','2026-10-28'))
-        research._write_events(self.cur,'dev',self.sid,self.events)
-        self.cur.execute('SELECT consent_version FROM user_research.sessions WHERE session_id=%s AND environment=%s',(self.sid,'dev'))
+                             (session,'prod','2026-10-28'))
+        research._write_events(self.cur,'prod',self.sid,self.events)
+        self.cur.execute('SELECT consent_version FROM user_research.sessions WHERE session_id=%s AND environment=%s',(self.sid,'prod'))
         self.assertEqual(self.cur.fetchone()[0],research.CONSENT_VERSION)
-        self.cur.execute('SELECT consent_version FROM user_research.sessions WHERE session_id=%s AND environment=%s',(untouched,'dev'))
+        self.cur.execute('SELECT consent_version FROM user_research.sessions WHERE session_id=%s AND environment=%s',(untouched,'prod'))
         self.assertEqual(self.cur.fetchone()[0],'2026-10-28')
 
     def test_withdrawal_serializes_concurrent_writers(self):
-        research._withdraw(self.cur,'dev',self.sid)
+        research._withdraw(self.cur,'prod',self.sid)
         other=self.psycopg2.connect(os.environ['USER_RESEARCH_TEST_DB_URL'],connect_timeout=5)
         try:
             with other.cursor() as cur:
                 cur.execute("SET LOCAL lock_timeout='200ms'; SET LOCAL statement_timeout='2s'")
                 with self.assertRaises(self.psycopg2.errors.LockNotAvailable):
-                    research._write_events(cur,'dev',self.sid,self.events)
+                    research._write_events(cur,'prod',self.sid,self.events)
         finally:
             other.rollback();other.close()
 
     def test_export_daily_dedup_and_quota(self):
         project='test'+uuid.uuid4().hex[:12];today=datetime.date.today()
-        first,state=_reserve(self.cur,'dev',project,today,1)
+        first,state=_reserve(self.cur,'prod',project,today,1)
         self.assertEqual(state,'reserved')
-        self.assertEqual(_reserve(self.cur,'dev',project,today,1),(None,'pending'))
+        self.assertEqual(_reserve(self.cur,'prod',project,today,1),(None,'pending'))
         self.cur.execute("UPDATE user_research.clarity_exports SET status='failed',attempts=10 WHERE export_id=%s",(first,))
         self.assertEqual(_reserve(self.cur,'prod',project,today,2),(None,'daily_limit'))
 

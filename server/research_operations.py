@@ -1,4 +1,4 @@
-# Last updated: 2026-10-29 · Full-Stack · private read-only production monitoring commands.
+# Last updated: 2026-10-29 · Codex · production-only monitoring commands; owner-authorized dev login preserved.
 """A bounded command vocabulary, never an operating-system shell or SQL console.
 
 The HTTP caller must apply the existing site authentication gate first. The
@@ -16,12 +16,12 @@ except ImportError:
     import research_http,user_research
 
 COMMANDS=frozenset(('status','errors','activity'))
-PUBLIC_SITES={'prod':'https://meatcode-oracle.onrender.com','dev':'https://meatcode.onrender.com'}
+PUBLIC_SITES={'prod':'https://meatcode-oracle.onrender.com'}
 
 
 def parameters(payload,app_env):
     user_research._object(payload,('command','environment','minutes'),('command',),max_bytes=4096)
-    command=payload['command'];environment=payload.get('environment',app_env);minutes=payload.get('minutes',60)
+    command=payload['command'];environment=payload.get('environment','prod');minutes=payload.get('minutes',60)
     if not isinstance(command,str) or command not in COMMANDS:raise user_research.InputError('Unknown monitoring command.')
     if not isinstance(environment,str) or environment not in PUBLIC_SITES or type(minutes) is not int or minutes not in dashboard.WINDOWS:
         raise user_research.InputError('Invalid monitoring selection.')
@@ -65,6 +65,8 @@ def status(environment):
 
 
 def activity(cursor,environment,minutes=60,errors_only=False,now=None):
+    if environment != 'prod' or type(minutes) is not int or minutes not in dashboard.WINDOWS:
+        raise user_research.InputError('Only supported production monitoring is available.')
     checked=now or datetime.datetime.now(datetime.timezone.utc);since=checked-datetime.timedelta(minutes=minutes)
     predicate=" AND name='oracle.failed'" if errors_only else ''
     cursor.execute('''SELECT event_id,name,scene,created_at,duration_ms,error_code,source_count,session_id,elapsed_ms
@@ -80,7 +82,7 @@ def activity(cursor,environment,minutes=60,errors_only=False,now=None):
 
 def handle(handler,database_url,app_env,environ,local_admin=False):
     hosted=str(environ.get('RENDER','')).strip().lower()=='true';local=bool(local_admin and not hosted)
-    if not dashboard._browser_origin_ok(handler.headers) or (not local and not dashboard._admin_token_ok(handler.headers,environ)):
+    if not dashboard._browser_origin_ok(handler.headers) or (not local and not dashboard._dev_login_ok(handler.headers,environ,app_env) and not dashboard._admin_token_ok(handler.headers,environ)):
         return research_http._error(handler,403,'research_admin_required','Research administrator access is required.',close=True)
     payload,error=research_http._read_payload(handler,max_bytes=4096)
     if error:return research_http._error(handler,*error,close=True)

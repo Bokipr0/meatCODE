@@ -53,6 +53,7 @@ def verify(cur):
 
 def run(environment, apply=False):
     import psycopg2
+    if environment!='prod':raise RuntimeError('Only production research storage is active.')
     conf=settings(environment);prod=settings('prod')
     if not research_database_url(conf) or (environment=='dev' and research_database_url(conf)==research_database_url(prod)):
         raise RuntimeError('Independent dev database configuration is required.')
@@ -76,6 +77,7 @@ def run(environment, apply=False):
             cur.execute("SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='user_research' AND table_name='sessions' AND column_name='user_ref')")
             if not cur.fetchone()[0]:migrations.append('0020_research_journey.sql')
             migrations.append('0021_research_demo_policy.sql')
+            migrations.append('0022_production_research_only.sql')
             for migration in migrations:
                 sql=(ROOT/'db/migrations'/migration).read_text()
                 body='\n'.join(line for line in sql.splitlines() if line.strip() not in ('BEGIN;','COMMIT;'))

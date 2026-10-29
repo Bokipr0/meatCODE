@@ -1,8 +1,8 @@
-# Last updated: 2026-10-29 · Backend · scoped monitoring commands and private journey safety.
+# Last updated: 2026-10-29 · Codex · authenticated dev-login dashboard access and production boundary tests.
 from contextlib import contextmanager
 from email.message import Message
 from pathlib import Path
-import datetime,io,json,sys,unittest,uuid
+import base64,datetime,io,json,sys,unittest,uuid
 from unittest.mock import patch
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'server'))
 import research_operations as operations
@@ -23,10 +23,21 @@ class Handler:
 
 
 class OperationsTests(unittest.TestCase):
+    def test_dev_login_can_run_readonly_operations_without_admin_token(self):
+        h=Handler({'command':'status','environment':'prod','minutes':60},token=None)
+        h.headers['Authorization']='Basic '+base64.b64encode(b'meatcode:dev-fixture').decode()
+        env={'SITE_PASSWORD':'dev-fixture','RENDER':'true'}
+        with patch.object(dashboard,'_database_settings',return_value=('fake-db',env)),patch.object(operations,'status',return_value={'mode':'read_only'}):
+            operations.handle(h,'fake-db','dev',env)
+        self.assertEqual(h.status,200)
+        h=Handler(token=None);h.headers['Authorization']='Basic '+base64.b64encode(b'meatcode:dev-fixture').decode()
+        operations.handle(h,'fake-db','prod',env)
+        self.assertEqual(h.status,403)
+
     def test_only_monitoring_vocabulary_is_accepted(self):
         for payload in ({'command':'ls'},{'command':'status; curl evil'},{'command':'SELECT * FROM sessions'},{'command':'status','sql':'DROP TABLE'},{'command':'status','url':'https://evil.test'},{'command':'status','environment':'all'},{'command':'status','environment':[]},{'command':'status','minutes':True},{'command':'status','minutes':12}):
             with self.assertRaises(research.InputError):operations.parameters(payload,'prod')
-        self.assertEqual(operations.parameters({'command':'errors'},'dev'),('errors','dev',60))
+        self.assertEqual(operations.parameters({'command':'errors'},'dev'),('errors','prod',60))
 
     def test_admin_and_same_origin_remain_mandatory(self):
         for token,origin in ((None,'https://example.test'),('wrong','https://example.test'),('t'*48,'https://other.test')):
@@ -35,7 +46,7 @@ class OperationsTests(unittest.TestCase):
                 operations.handle(h,'fake-db','dev',{'RENDER':'true','RESEARCH_ADMIN_TOKEN':'t'*48,'RESEARCH_PRODUCTION_DATABASE_URL':'readonly-db'})
             self.assertEqual(h.status,403);status.assert_not_called();self.assertEqual(h.rfile.tell(),0)
         h=Handler();del h.headers['X-MeatCODE-Research']
-        with patch.object(operations,'status') as status:operations.handle(h,'fake-db','prod',{'RESEARCH_ADMIN_TOKEN':'t'*48})
+        with patch.object(operations,'status') as status:operations.handle(h,'fake-db','prod',{'RESEARCH_ADMIN_TOKEN':'t'*48,'RESEARCH_DATABASE_URL':'research-db'})
         self.assertEqual(h.status,403);status.assert_not_called()
 
     def test_production_access_from_dev_needs_explicit_read_connection(self):
@@ -44,7 +55,7 @@ class OperationsTests(unittest.TestCase):
             if allowed:env['RESEARCH_PRODUCTION_DATABASE_URL']='private-readonly-db'
             with patch.object(operations,'status',return_value={'mode':'read_only'}) as status:
                 operations.handle(h,'dev-db','dev',env)
-            self.assertEqual(h.status,200 if allowed else 400)
+            self.assertEqual(h.status,200 if allowed else 503)
             self.assertNotIn('private-readonly-db',h.wfile.getvalue().decode())
             self.assertEqual(status.called,allowed)
 
@@ -67,7 +78,7 @@ class OperationsTests(unittest.TestCase):
     def test_errors_never_return_connection_or_exception_details(self):
         h=Handler({'command':'activity','environment':'prod'})
         with patch.object(dashboard,'readonly',side_effect=RuntimeError('postgresql://private-token')):
-            operations.handle(h,'fake-db','prod',{'RESEARCH_ADMIN_TOKEN':'t'*48})
+            operations.handle(h,'fake-db','prod',{'RESEARCH_ADMIN_TOKEN':'t'*48,'RESEARCH_DATABASE_URL':'research-db'})
         self.assertEqual(h.status,503);self.assertNotIn('postgresql',h.wfile.getvalue().decode())
 
 
@@ -86,8 +97,27 @@ class JourneyTests(unittest.TestCase):
         with self.assertRaises(research.StorageError):dashboard._database_settings('prod','prod',{'RENDER':'true','RESEARCH_DATABASE_REQUIRED':'true'},'scientific-db',False)
         chosen,_=dashboard._database_settings('prod','prod',{'RENDER':'true','RESEARCH_DATABASE_URL':'research-db'},'scientific-db',False);self.assertEqual(chosen,'research-db')
         with self.assertRaises(research.InputError):dashboard._database_settings('dev','prod',{'RENDER':'true','RESEARCH_PRODUCTION_DATABASE_URL':'wrong-direction'},'production-db',False)
-        with patch.object(dashboard,'_local_settings',side_effect=[{'RESEARCH_DATABASE_URL':'dev-research','RESEARCH_DATABASE_REQUIRED':'true'},{'RESEARCH_DATABASE_REQUIRED':'true'}]):
-            self.assertEqual(dashboard._database_settings('dev','dev',{},None,True)[0],'dev-research')
-        self.assertTrue(dashboard.can_select_environment('dev',{'RENDER':'true','RESEARCH_PRODUCTION_DATABASE_URL':'read-only'}));self.assertFalse(dashboard.can_select_environment('prod',{'RENDER':'true'}))
+        with patch.object(dashboard,'_local_settings',return_value={'RESEARCH_DATABASE_URL':'production-research'}) as settings:
+            self.assertEqual(dashboard._database_settings('prod','dev',{},None,True)[0],'production-research')
+            settings.assert_called_once_with('prod',{})
+        for app_env in ('prod','dev'):
+            self.assertFalse(dashboard.can_select_environment(app_env,{'RENDER':'true','RESEARCH_PRODUCTION_DATABASE_URL':'read-only'},True))
+
+    def test_development_is_rejected_before_any_database_work(self):
+        for path in ('/api/research/dashboard','/api/research/journey','/api/research/transcript'):
+            h=Handler(token=None);h.path=path+'?environment=dev&conversation='+str(uuid.uuid4())
+            with patch.object(dashboard,'readonly') as connection:
+                dashboard.handle(h,'fake-db','dev',{},True)
+            self.assertEqual(h.status,400);connection.assert_not_called()
+        for query in (lambda cur:dashboard.snapshot(cur,'dev'),lambda cur:dashboard.journey(cur,'dev'),
+                      lambda cur:dashboard.transcript(cur,'dev',str(uuid.uuid4())),lambda cur:operations.activity(cur,'dev')):
+            with self.assertRaises(research.InputError):query(None)
+        for local in (True,False):
+            h=Handler({'command':'status','environment':'dev'})
+            with patch.object(dashboard,'_database_settings') as settings,patch.object(operations,'status') as status:
+                operations.handle(h,'fake-db','dev',{'RESEARCH_ADMIN_TOKEN':'t'*48},local)
+            self.assertEqual(h.status,400);settings.assert_not_called();status.assert_not_called()
+        with self.assertRaises(research.InputError):operations.status('dev')
+
 
 if __name__=='__main__':unittest.main()

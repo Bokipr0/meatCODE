@@ -48,7 +48,7 @@
         "file": "app/meatcode_mockup.html"
       },
       "note": "2026-08-16: the #ffDevBanner element + its CSS were removed from app/meatcode_mockup.html at Lior's request, so this flag is now INERT (nothing renders even when ON). Retire this entry, or re-add the ribbon element if the staging-vs-prod visual signal is wanted back.",
-      "dev": false,
+      "dev": true,
       "prod": false
     },
     "inventory": {
@@ -372,7 +372,7 @@
         "file": "app/assets/user-research.js + server/research_http.py + server/user_research.py"
       },
       "note": "Requires the isolated user_research database schema. USER_RESEARCH_ENABLED=false is an emergency capture switch; withdrawal stays available. Clarity loads only after explicit consent.",
-      "dev": true,
+      "dev": false,
       "prod": true
     },
     "live_testing_dashboard": {

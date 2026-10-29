@@ -1,10 +1,11 @@
-# Last updated: 2026-10-29 10:49 UTC · Full-Stack · public PostHog config allowlist; bounded same-origin capture and withdrawal preserved.
+# Last updated: 2026-10-29 · Production intake · reject nonproduction and explicitly excluded/known automated traffic before storage.
 """HTTP glue only. The caller MUST apply its existing site-password gate first.
 
 Storage and consent validation live in user_research. No model client, database
 connection, credentials, IP tracking or application bootstrap is imported here.
 """
 from collections import deque
+from http.cookies import SimpleCookie, CookieError
 import json
 import re
 import socket
@@ -19,6 +20,33 @@ READ_TIMEOUT_SECONDS = 5
 _captures = deque()
 _capture_lock = threading.Lock()
 _FALSE_VALUES = frozenset(("false", "0", "off", "no"))
+_INTERNAL_COOKIE = "__Host-mc_research_internal"
+_AUTOMATED_UA = re.compile(r"googlebot|bingbot|duckduckbot|baiduspider|yandexbot|headlesschrome|playwright|puppeteer|python-requests|python-urllib|(?:^|[\s;(])curl(?:/|$)|(?:^|[\s;(])wget(?:/|$)", re.I)
+
+
+def _browser_exclusion(headers):
+    """Conservative exclusions only; never retain or return raw browser headers."""
+    if headers is None:
+        return ""
+    if _single_header(headers, "X-MeatCODE-Internal") == "1":
+        return "internal"
+    values = headers.get_all("Cookie", []) if hasattr(headers, "get_all") else [headers.get("Cookie", "")]
+    for raw in values:
+        cookies = SimpleCookie()
+        try:
+            cookies.load(raw or "")
+            value = cookies.get(_INTERNAL_COOKIE)
+            if value is not None and value.value == "1":
+                return "internal"
+        except (ValueError, TypeError, CookieError):
+            pass
+    agents = headers.get_all("User-Agent", []) if hasattr(headers, "get_all") else [headers.get("User-Agent", "")]
+    return "automation" if any(_AUTOMATED_UA.search(value or "") is not None for value in agents) else ""
+
+
+def _excluded_browser(headers):
+    return bool(_browser_exclusion(headers))
+
 _POST_ROUTES = {
     "/api/research/events": "write_events",
     "/api/research/chat": "write_chat",
@@ -27,25 +55,26 @@ _POST_ROUTES = {
 }
 
 
-def effective_config(module, environ, app_env, flag_enabled, database_url):
-    """The Release Center flag opts in; the environment can always disable it."""
+def effective_config(module, environ, app_env, flag_enabled, database_url, headers=None):
+    """Only real production intake may opt in; configuration cannot override scope."""
     settings = dict(environ)
     disabled = str(settings.get("USER_RESEARCH_ENABLED", "")).strip().lower() in _FALSE_VALUES
-    enabled = bool(flag_enabled and database_url and not disabled)
+    enabled = bool(app_env == "prod" and not _excluded_browser(headers) and flag_enabled and database_url and not disabled)
     settings["USER_RESEARCH_ENABLED"] = "1" if enabled else "0"
     raw = module.config(settings, app_env)
     # Explicit allowlist: never return storage URLs, admin tokens or future private fields.
     return {
         "enabled": bool(enabled and raw.get("enabled")),
         "environment": raw["environment"],
-        "demo_mode": raw.get("demo_mode") is True,
-        "clarity_project_id": raw["clarity_project_id"],
+        "capture_excluded": "nonproduction" if app_env != "prod" else _browser_exclusion(headers),
+        "demo_mode": bool(enabled and raw.get("demo_mode") is True),
+        "clarity_project_id": raw["clarity_project_id"] if enabled else "",
         "consent_version": raw["consent_version"],
         "retention_days": raw["retention_days"],
         "posthog": {
             "enabled": bool(enabled and raw.get("posthog", {}).get("enabled")),
-            "project_token": raw.get("posthog", {}).get("project_token", ""),
-            "api_host": raw.get("posthog", {}).get("api_host", ""),
+            "project_token": raw.get("posthog", {}).get("project_token", "") if enabled else "",
+            "api_host": raw.get("posthog", {}).get("api_host", "") if enabled else "",
         },
     }
 
@@ -158,20 +187,26 @@ def _read_payload(handler, withdrawal=False, max_bytes=MAX_BODY_BYTES):
 
 
 def handle(handler, method, path, module, database_url, app_env, environ, flag_enabled):
-    """Serve only the public config and three bounded write routes after site auth."""
+    """Production-only public config and bounded write routes, after site authentication."""
     if method == "GET" and path == "/api/research/config":
         if module is None:
             return _error(handler, 503, "research_unavailable", "Research settings are temporarily unavailable.")
         try:
-            return _reply(handler, effective_config(module, environ, app_env, flag_enabled, database_url))
+            return _reply(handler, effective_config(module, environ, app_env, flag_enabled, database_url, handler.headers))
         except Exception:
             return _error(handler, 503, "research_unavailable", "Research settings are temporarily unavailable.")
     if method != "POST" or path not in _POST_ROUTES:
         return _error(handler, 404, "not_found", "Research endpoint not found.", close=method == "POST")
+    if app_env != "prod":
+        return _error(handler, 404, "research_disabled", "Research capture is disabled on this server.", close=True)
+    # Exclusion precedes parsing, rate accounting and all storage. Withdrawal stays
+    # available on production so stopping capture never prevents session deletion.
+    if path != "/api/research/withdraw" and _excluded_browser(handler.headers):
+        return _error(handler, 404, "research_excluded", "This browser is excluded from research collection.", close=True)
     if module is None:
         return _error(handler, 503, "research_unavailable", "Research storage is temporarily unavailable.", close=True)
     try:
-        enabled = effective_config(module, environ, app_env, flag_enabled, database_url)["enabled"]
+        enabled = effective_config(module, environ, app_env, flag_enabled, database_url, handler.headers)["enabled"]
     except Exception:
         return _error(handler, 503, "research_unavailable", "Research settings are temporarily unavailable.", close=True)
     if path != "/api/research/withdraw" and not enabled:

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <!-- Last updated: 2026-10-29 · Codex UI/UX · private production research dashboard entry in the Dev Area; existing registry controls preserved. -->
+<!-- Last updated: 2026-10-29 · Codex · dashboard navigation, existing dev login and operations-first layout. -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -141,9 +142,8 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
 <body>
 
 <header class="dev-topbar">
-  <a class="back-link" href="/app/meatcode_mockup.html">&larr; MeatCODE</a>
+  <a class="back-link" href="/app/meatcode_mockup.html">&larr; MeatCODE <span class="dev-badge" style="margin-left:8px" title="Developer settings">DEV</span></a>
   <div class="brand-name">Dev Area</div>
-  <span class="dev-badge">DEV AREA</span>
   <span class="env-chip" id="envChip">internal workbench · not user-facing</span>
 </header>
 
@@ -155,7 +155,7 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
 
   <section class="section" id="research-operations">
     <div class="section-head"><h2>Research operations</h2><span class="hint">production activity, viewed privately from development</span></div>
-    <div class="grid"><a class="card" href="/research-dashboard?environment=prod"><h3>Live production testing</h3><p>Shared Oracle conversations, submitted inputs, journey timers and recorded failures. Open the private dashboard and unlock it with the development service’s research-admin credential.</p><span class="path">Live from Neon · read-only status / errors / activity</span></a></div>
+    <div class="grid"><a class="card" href="/research-dashboard?environment=prod"><h3>Live production testing</h3><p>Shared Oracle conversations, submitted inputs, journey timers and recorded failures. Open the private dashboard using your existing development-site login; no additional admin token is needed.</p><span class="path">Production data only · no development/local collection · read-only checks</span></a></div>
   </section>
 
   <!-- ─── 1 · Features (registry) ─── -->

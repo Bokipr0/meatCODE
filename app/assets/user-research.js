@@ -1,9 +1,10 @@
-/* Last updated: 2026-10-29 · Codex · automatic post-login demo testing with visible notice and private chat capture. */
+/* Last updated: 2026-10-29 · Production-only demo testing, internal-browser exclusion and known-automation suppression. */
 (function () {
   'use strict';
-  if (window.MCResearch) return;
+  // Known browser automation must not create research rows or provider sessions.
+  if (navigator.webdriver === true || window.MCResearch) return;
   var VERSION = '2026-10-29-journey-v1', CONSENT_KEY = 'mc_research_consent_v1', SESSION_KEY = 'mc_research_session_v1';
-  var demoMode = false;
+  var demoMode = false, internalStopping=false, INTERNAL_KEY='mc_research_internal';
   var PENDING_KEY = 'mc_research_withdraw_pending_v1';
   var SCENES = ['oracle','research','science','ecosystem','simulate','analytics','database','map','papers','dev','inventory'];
   var ERRORS = ['network','model_unavailable','session_expired','unknown'];
@@ -20,7 +21,8 @@
   function uuid() { return window.crypto && typeof window.crypto.randomUUID === 'function' ? window.crypto.randomUUID() : null; }
   function validUUID(value) { return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value || ''); }
   function scene() { var value = location.hash.replace(/^#/, ''); return SCENES.indexOf(value) >= 0 ? value : 'other'; }
-  function permitted() { return active && config && config.enabled === true && session; }
+  function internalBrowser(){try{return localStorage.getItem(INTERNAL_KEY)==='1';}catch(_){return false;}}
+  function permitted() { return !internalBrowser() && active && config && config.environment==='prod' && config.enabled === true && session; }
   function speak(text) { if (status) status.textContent = text; }
   function elapsed(){return journey?Math.max(0,Math.min(86400000,Math.round(journeyBaseline+performance.now()-journeyPerformance))):null;}
   function journeyFields(body){if(!journey)return body;body.user_ref=journey.user_ref;if(journey.clarity_ref)body.clarity_ref=journey.clarity_ref;if(journey.tester_label)body.tester_label=journey.tester_label;return body;}
@@ -135,7 +137,7 @@
     document.head.appendChild(script);
   }
   function start(action) {
-    if (!config || config.enabled !== true || active) return;
+    if (!config || config.environment!=='prod' || config.enabled !== true || internalBrowser() || active) return;
     if (needsReload || read(PENDING_KEY)) { speak('Finish deleting this session before joining another test.'); return; }
     var previous = read(CONSENT_KEY)===VERSION+':yes' ? read(SESSION_KEY) : null; session = validUUID(previous) ? previous : uuid();
     if (!session) { speak('Testing is unavailable in this browser. The platform still works normally.'); return; }
@@ -152,7 +154,7 @@
     loadClarity(); loadPosthog(); event('session.started'); event('scene.viewed'); renderState();
     speak(demoMode ? 'Demo testing is active. New Oracle conversations are saved privately for review.' : 'Optional testing is on for this tab. You can stop at any time.');
   }
-  function stop() {
+  function stop(options) {
     var sid = session || read(PENDING_KEY) || read(SESSION_KEY);
     active = false; chatConsent=false;conversations={};journey=null;save(JOURNEY_KEY,null);save(CHAT_KEY,null);save(CHAT_MAP,null);generation++; queue = []; phQueue = [];
     if(ph){try{ph.opt_out_capturing({clear_persistence:true});}catch(_){}}
@@ -166,6 +168,7 @@
       clarityCall('stop');
       var sdk = document.getElementById('mc-clarity-sdk'); if (sdk) sdk.remove();
     }
+    if(config&&config.environment!=='prod'){save(PENDING_KEY,null);renderState();speak('Collection is disabled on this site. Local testing preferences were cleared; older server data requires an administrator.');return Promise.resolve();}
     if (validUUID(sid)) save(PENDING_KEY, sid);
     renderState();
     if (!validUUID(sid)) { speak('Testing is off.'); return Promise.resolve(); }
@@ -174,10 +177,25 @@
       save(PENDING_KEY, null); renderState();
       speak('First-party testing data deleted. Microsoft recordings are managed separately in Clarity.');
       // ConsentV2 denied alone permits cookieless collection. A reload unloads the SDK completely.
-      if (needsReload) location.reload();
+      if (needsReload && (!options || options.reload!==false)) location.reload();
     }).catch(function () {
       speak('Testing is off, but deletion could not finish. Use “Stop testing & delete session data” again to retry.');
     });
+  }
+  function excludeCurrentTab(){if(internalStopping)return Promise.resolve();internalStopping=true;return stop({reload:false}).then(function(){location.reload();});}
+  window.addEventListener('storage',function(e){if(e.key===INTERNAL_KEY&&e.newValue==='1'&&config&&config.environment==='prod')excludeCurrentTab();});
+  function setInternal(excluded){
+    try{if(excluded)localStorage.setItem(INTERNAL_KEY,'1');else localStorage.removeItem(INTERNAL_KEY);}catch(_){}
+    document.cookie='__Host-mc_research_internal='+(excluded?'1':'')+'; Path=/; Secure; SameSite=Strict; Max-Age='+(excluded?'31536000':'0');
+    var control=panel&&panel.querySelector('[data-research-internal]');if(control)control.disabled=true;
+    if(excluded){
+      speak('This browser is now excluded. Stopping collection and removing this tab’s first-party testing data…');
+      return excludeCurrentTab();
+    }
+    // Unchecking is an explicit request to resume normal production testing.
+    // Optional-consent sites show their choice again; demo sites resume after reload.
+    if(read(CONSENT_KEY)===VERSION+':no')save(CONSENT_KEY,null);
+    speak('Browser exclusion removed. Reloading to apply this site’s testing settings…');location.reload();
   }
   function chatPrefix(text,limit){var value=text.slice(0,limit);return /[\uD800-\uDBFF]$/.test(value)?value.slice(0,-1):value;}
   function putChat(turn,state,code) {
@@ -252,6 +270,8 @@
   });
   function renderState() {
     if (!panel) return;
+    var excluded=config&&config.capture_excluded;var internal=panel.querySelector('[data-research-internal]');if(internal){internal.checked=internalBrowser()||excluded==='internal';internal.disabled=excluded==='nonproduction';}
+    var exclusionStatus=panel.querySelector('[data-research-exclusion-status]');if(exclusionStatus)exclusionStatus.textContent=excluded==='nonproduction'?'Only the production platform is collected. This development/local site sends no testing events or recordings.':excluded==='internal'||internalBrowser()?'This browser is excluded from production research and Clarity/PostHog collection. Uncheck to resume normal testing settings.':'Use internal testing for your own checks. It excludes this browser without changing normal platform access.';
     if(demoMode){var demoButton=document.getElementById('mcResearchButton');if(demoButton)demoButton.textContent=active?'Demo testing active · Details & feedback':'Demo testing · Details & feedback';}
     var demoNotice=document.getElementById('mcDemoNotice');
     if(demoNotice){demoNotice.hidden=!!active;if(read(CONSENT_KEY)===VERSION+':no')demoNotice.textContent='Demo testing has stopped for this tab.';}
@@ -268,7 +288,7 @@
     var button = document.createElement('button'); button.id = 'mcResearchButton'; button.type = 'button'; button.textContent = 'Testing privacy'; button.setAttribute('aria-haspopup','dialog');
     document.body.appendChild(button);
     panel = document.createElement('dialog'); panel.id = 'mcResearchPanel'; panel.setAttribute('aria-labelledby','mcResearchTitle'); panel.setAttribute('data-clarity-mask','true');
-    panel.innerHTML = '<h2 id="mcResearchTitle">Help improve MeatCODE</h2><section data-research-consent><p>Optional testing records navigation, response timing and success or failure in MeatCODE and, when configured, PostHog. PostHog receives explicit events with a temporary page identity; no recordings or account identity. Microsoft Clarity provides masked interactions and analytics cookies; advertising storage stays off. MeatCODE also records clicks on supported module links and time elapsed since joining testing, using a random tab pseudonym. Questions, answers, attachments and profile text are masked.</p><p>MeatCODE has a 90-day testing-data retention policy. You can stop and request deletion of this tab’s testing data below. Microsoft recordings follow the project’s separate Clarity retention settings.</p><label><input type="checkbox" data-research-chat> Also share my submitted Oracle questions, answers, clarification choices, citations and journey timing with MeatCODE researchers, linked to my masked Clarity session by a random research reference.</label><label>Tester nickname or code (optional; not your email)<input type="text" maxlength="80" data-research-label autocomplete="off" spellcheck="false"></label><p>The nickname stays in MeatCODE only. Only the random research reference is sent to Clarity; no question, answer, nickname or account details are sent. This optional full-chat history is stored privately in Neon under MeatCODE’s 90-day testing-data policy, not sent to Clarity or PostHog. Earlier chats, unsent text, attachment contents and account details are not imported. Avoid confidential or personal information. Stop testing deletes this tab’s first-party research data.</p><button type="button" data-research-accept>Allow optional testing</button><button type="button" data-research-decline>Continue without testing</button></section><section data-research-feedback hidden><p data-chat-status></p><form><label>How was this experience?<select name="rating" required><option value="" selected disabled>Choose one</option><option value="helpful">Helpful</option><option value="neutral">Neutral</option><option value="unhelpful">Unhelpful</option></select></label><label>About<select name="category"><option value="answer">Oracle answer</option><option value="usability">Using the platform</option><option value="bug">A problem or bug</option><option value="other">Other</option></select></label><label>Comment (optional)<textarea name="comment" maxlength="2000" placeholder="Please leave out names, contact details and confidential research."></textarea></label><p>Submitted feedback comments go to MeatCODE’s own database. Full chat text is included there only if you selected the separate chat-sharing option. It is never sent to Clarity or PostHog. Only the selected rating and category may be included in PostHog feedback events.</p><button type="submit">Send feedback</button></form></section><button type="button" data-research-stop hidden>Stop testing &amp; delete session data</button><p id="mcResearchStatus" role="status" aria-live="polite"></p><button type="button" data-research-close>Close</button>';
+    panel.innerHTML = '<h2 id="mcResearchTitle">Help improve MeatCODE</h2><section data-research-consent><p>Optional testing records navigation, response timing and success or failure in MeatCODE and, when configured, PostHog. PostHog receives explicit events with a temporary page identity; no recordings or account identity. Microsoft Clarity provides masked interactions and analytics cookies; advertising storage stays off. MeatCODE also records clicks on supported module links and time elapsed since joining testing, using a random tab pseudonym. Questions, answers, attachments and profile text are masked.</p><p>MeatCODE has a 90-day testing-data retention policy. You can stop and request deletion of this tab’s testing data below. Microsoft recordings follow the project’s separate Clarity retention settings.</p><label><input type="checkbox" data-research-chat> Also share my submitted Oracle questions, answers, clarification choices, citations and journey timing with MeatCODE researchers, linked to my masked Clarity session by a random research reference.</label><label>Tester nickname or code (optional; not your email)<input type="text" maxlength="80" data-research-label autocomplete="off" spellcheck="false"></label><p>The nickname stays in MeatCODE only. Only the random research reference is sent to Clarity; no question, answer, nickname or account details are sent. This optional full-chat history is stored privately in Neon under MeatCODE’s 90-day testing-data policy, not sent to Clarity or PostHog. Earlier chats, unsent text, attachment contents and account details are not imported. Avoid confidential or personal information. Stop testing deletes this tab’s first-party research data.</p><button type="button" data-research-accept>Allow optional testing</button><button type="button" data-research-decline>Continue without testing</button></section><section data-research-feedback hidden><p data-chat-status></p><form><label>How was this experience?<select name="rating" required><option value="" selected disabled>Choose one</option><option value="helpful">Helpful</option><option value="neutral">Neutral</option><option value="unhelpful">Unhelpful</option></select></label><label>About<select name="category"><option value="answer">Oracle answer</option><option value="usability">Using the platform</option><option value="bug">A problem or bug</option><option value="other">Other</option></select></label><label>Comment (optional)<textarea name="comment" maxlength="2000" placeholder="Please leave out names, contact details and confidential research."></textarea></label><p>Submitted feedback comments go to MeatCODE’s own database. Full chat text is included there only if you selected the separate chat-sharing option. It is never sent to Clarity or PostHog. Only the selected rating and category may be included in PostHog feedback events.</p><button type="submit">Send feedback</button></form></section><section data-research-exclusion><label><input type="checkbox" data-research-internal> Internal testing: exclude this browser</label><p data-research-exclusion-status></p></section><button type="button" data-research-stop hidden>Stop testing &amp; delete session data</button><p id="mcResearchStatus" role="status" aria-live="polite"></p><button type="button" data-research-close>Close</button>';
     document.body.appendChild(panel);
     consentSection = panel.querySelector('[data-research-consent]'); feedbackSection = panel.querySelector('[data-research-feedback]'); status = panel.querySelector('#mcResearchStatus');
     if(demoMode){
@@ -289,6 +309,7 @@
     if(!demoMode)panel.querySelector('[data-research-decline]').addEventListener('click',function(){save(CONSENT_KEY,VERSION+':no');panel.close();});
     if(!demoMode)panel.querySelector('[data-research-accept]').addEventListener('click',start);
     panel.querySelector('[data-research-stop]').addEventListener('click',stop);
+    panel.querySelector('[data-research-internal]').addEventListener('change',function(){setInternal(this.checked);});
     panel.querySelector('form').addEventListener('submit',function(e){
       e.preventDefault(); if(!permitted())return;
       var form=e.target, submit=form.querySelector('[type=submit]'), sid=session, current=generation, id=uuid(); if(!id)return;
@@ -304,11 +325,13 @@
   }
   nativeFetch('/api/research/config',{credentials:'same-origin',cache:'no-store',referrerPolicy:'no-referrer'}).then(function(res){if(!res.ok)throw new Error('disabled');return res.json();}).then(function(value){
     if(!value || ['2026-10-29-journey-v1','2026-10-29-demo-v1'].indexOf(value.consent_version)<0)return;
+    if(value.environment!=='prod'){value.enabled=false;value.demo_mode=false;value.capture_excluded='nonproduction';}
+    else if(internalBrowser()){value.enabled=false;value.demo_mode=false;value.capture_excluded='internal';}
     config=value;demoMode=value.demo_mode===true;VERSION=value.consent_version;
-    if(value.enabled!==true && !read(PENDING_KEY) && !validUUID(read(SESSION_KEY)))return;
+    if(value.enabled!==true && !value.capture_excluded && !read(PENDING_KEY) && !validUUID(read(SESSION_KEY)))return;
     ui();
     if(read(PENDING_KEY)){renderState();speak('A previous deletion needs to be retried. Testing remains off.');return;}
-    if(value.enabled!==true){speak('Testing is currently disabled. You can still delete this tab’s earlier testing data.');return;}
+    if(value.enabled!==true){speak(value.capture_excluded==='internal'?'Internal testing is on: this browser is not collected. Uncheck the internal-testing control to resume normal testing.':value.capture_excluded==='nonproduction'?'Testing collection is disabled outside the production platform.':'Testing is currently disabled. You can still delete this tab’s earlier testing data.');return;}
     // This same-origin config is behind the site's existing login gate.
     if(demoMode){if(read(CONSENT_KEY)!==VERSION+':no')start();}
     else if(read(CONSENT_KEY)===VERSION+':yes')start();
