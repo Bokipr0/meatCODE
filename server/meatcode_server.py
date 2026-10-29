@@ -256,7 +256,7 @@ ANTHROPIC_API_KEY=sk-ant-...  on its own line. The script reads it automatically
 """
 
 import os, sys, json, re, threading, base64, hmac, datetime, subprocess, glob, time, uuid
-import shutil, gzip, io, zipfile
+import shutil, gzip, io, zipfile, tempfile
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 from urllib.request import Request, urlopen
@@ -325,6 +325,7 @@ if APP_ENV == "dev" and not IS_RENDER:
 # moving features.json / the .command scripts into a folder like "Release Center" never
 # breaks anything. Cached; only re-globs if the remembered path disappears.
 _resolve_cache = {}
+_flags_write_lock = threading.RLock()
 def _resolve_repo_file(name):
     hit = _resolve_cache.get(name)
     if hit and os.path.exists(hit):
@@ -364,9 +365,16 @@ def save_flags(flags):
     except Exception:
         doc = {}
     doc["flags"] = flags
-    with open(path, "w", encoding="utf-8") as _f:
-        json.dump(doc, _f, indent=2, ensure_ascii=False)
-        _f.write("\n")
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w",encoding="utf-8",dir=os.path.dirname(path),prefix=".features-",suffix=".tmp",delete=False) as output:
+            temporary=output.name
+            json.dump(doc,output,indent=2,ensure_ascii=False)
+            output.write("\n");output.flush();os.fsync(output.fileno())
+        os.chmod(temporary,os.stat(path).st_mode & 0o777)
+        os.replace(temporary,path);temporary=None
+    finally:
+        if temporary and os.path.exists(temporary):os.unlink(temporary)
 
 # Registry fields an /api/flags/upsert call is allowed to write. `dev`/`prod` are coerced
 # to booleans; `where` is a {screen, spot, file} object; everything else is a plain string.
@@ -2178,12 +2186,20 @@ class Handler(SimpleHTTPRequestHandler):
                                     "versions": [], "note": "history unavailable on this host"})
 
     def _handle_admin_post(self, path):
+        """Serialize registry read-modify-write; unrelated release jobs stay asynchronous."""
+        if path in ("/api/flags/set","/api/flags/upsert"):
+            with _flags_write_lock:return self._handle_admin_post_locked(path)
+        return self._handle_admin_post_locked(path)
+
+    def _handle_admin_post_locked(self, path):
         """Release Center actions — reachable only after _local_admin_ok() passes."""
         if path == "/api/flags/set":
             body = self._read_json_body() or {}
             key = str(body.get("key", "")).strip()
             env = str(body.get("env", "")).strip().lower()
-            val = bool(body.get("value"))
+            if type(body.get("value")) is not bool:
+                return self._send_json({"error":"value must be true or false"},400)
+            val = body["value"]
             flags = load_flags()
             if key not in flags or env not in ("dev", "prod"):
                 return self._send_json({"error": "unknown flag or env"}, 400)
