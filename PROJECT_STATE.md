@@ -1,5 +1,41 @@
 # PROJECT_STATE — MeatCODE
 
+## 2026-10-29 · Project Coordinator · PARALLEL journey storage and production monitoring — live
+
+Created Neon research-logs child br-lingering-morning-alh02jz5 from production in GFI database,
+with new research_dev/research_prod databases containing only research tables. Ordinary writer
+roles have no admin/create privileges; development production-read uses research_prod_reader,
+verified unable to write even with read-only mode disabled. Scientific connection values,
+parent data and inherited neondb permissions remained unchanged. The normal branch's unused
+neondb snapshot remains; restricted research writers cannot SELECT scientific sources there.
+Only new research databases/roles were modified after automatic review rejected an unnecessary
+broader permission change. API-created management helper roles are unissued, not app credentials.
+
+### Journey capture
+Added module.clicked vs distinct scene views; bounded tab timer, optional tester code, separate
+pseudonym and opaque Clarity research_reference. No text/user_ref/session deletion capability to
+providers. Migrations0020/0021 applied to both destinations. Historical unknown fields stay NULL.
+Integrated Lior's newer MeatCODE-chat instruction: automatic post-login demo testing, distinct
+policy demo-v1, visible details/deletion; RESEARCH_DEMO_MODE=false restores optional mode.
+
+### Backend and UI
+Dev Area links to /research-dashboard?environment=prod. Dev admin can read production through
+restricted research connection; production cannot select dev. Live ledger shows date/user/input/
+elapsed and correlation reference, private transcript pagination, explicit module-click totals.
+Read-only status/errors/activity command panel rejects shell/SQL and forged origins; recorded
+consented events only, not complete Render diagnostic logs. Admin credentials stay page-memory.
+
+### Integration verification
+Copied prior research data only (prod1 session/49 events/1 feedback; dev0), preserved originals
+and withdrawals, reconciled late legacy records after rollout. Strict dedicated routing prohibits
+fallback to science.82 current Python checks passed per new database with rollback fixtures;
+four browser suites and actual local HTTP capture/click/join/withdraw/command checks passed.
+Source release619c368 plus Lior's subsequent Inventory/demo changes now live as df3fa9c on both
+servers: dev dep-dbhoabb23eus73efkn00, prod dep-dbhoabst50us73909ub0. Hosted public version
+identities verified. Clarity actual receipt remains unverified; filters/processing may delay it.
+No old clicks reconstructed or invented, no raw account/profile scraping, no new scheduled purge.
+Details: platform_docs/RESEARCH_JOURNEY_OPERATIONS.md. Private URLs stay ignored/in Render.
+
 ## 2026-10-29 17:39 UTC · Codex · Demo testing starts after login — local
 
 Supersedes the first-interaction trigger below. Successful enabled research configuration behind

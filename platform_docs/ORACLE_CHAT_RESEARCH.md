@@ -1,5 +1,7 @@
 # Private Oracle chat research
 
+> Current 29 October release: [isolated research branch and development production-monitoring dashboard](RESEARCH_JOURNEY_OPERATIONS.md). New demo sessions start automatically after login per Lior’s latest instruction; earlier optional-only and shared-schema descriptions below are historical.
+
 29 October 2026 · Live on development and production. Verified hosted revision `e98349d3c87e19620f44062749df4083e76ea9d1`.
 
 ## Scope and opt-in

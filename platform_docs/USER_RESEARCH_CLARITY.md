@@ -1,5 +1,7 @@
 # MeatCODE user testing — Clarity and first-party research storage
 
+> Current 29 October release: [isolated research branch and development production-monitoring dashboard](RESEARCH_JOURNEY_OPERATIONS.md). New demo sessions start automatically after login per Lior’s latest instruction; earlier optional-only and shared-schema descriptions below are historical.
+
 ## Oracle transcript extension — 29 October 2026
 
 Current implementation: [private Oracle chat capture](ORACLE_CHAT_RESEARCH.md). Separate, unchecked full-chat opt-in supersedes the historical metadata-only scope below. Questions and answers stay in Neon and remain masked in Clarity. Publication and verification are recorded in the extension guide.

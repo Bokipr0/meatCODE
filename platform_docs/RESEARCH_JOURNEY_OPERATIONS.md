@@ -1,6 +1,6 @@
 # Development research dashboard and isolated journey storage
 
-29 October 2026 · Implementation verified locally; hosted release verification pending.
+29 October 2026 · Live on both servers. Latest combined runtime `df3fa9cc2e52fed8dd672d23bf6237383ad1a190` verified after Lior’s Release Center promotion.
 
 ## Open it
 
@@ -20,7 +20,7 @@ Existing research records were copied in bounded, idempotent transactions, with 
 
 ## Consent and Clarity
 
-Lior’s later instruction in the MeatCODE chat supersedes optional activation during demos. Default demo policy **2026-10-29-demo-v1** starts tracking and new-chat capture on the first trusted interaction, with a visible notice and stop/delete controls. This is recorded as first-use activation, not checkbox consent. RESEARCH_DEMO_MODE=false restores the separate optional **2026-10-29-journey-v1** flow. Optional tester code is entered deliberately, not read from an account/profile. The timer and references survive reload within the same consented tab; historical missing values remain NULL. Stop testing deletes that session's private research records and blocks late retries. The existing 90-day purge/export tools include transcripts and new columns; retention remains manually operated.
+Lior’s later instruction in the MeatCODE chat supersedes optional activation during demos. Default demo policy **2026-10-29-demo-v1** starts tracking after authenticated configuration loads and captures new submitted chats automatically (Lior’s latest “start on login” instruction), with a visible notice and stop/delete controls. This is recorded as first-use activation, not checkbox consent. RESEARCH_DEMO_MODE=false restores the separate optional **2026-10-29-journey-v1** flow. Optional tester code is entered deliberately, not read from an account/profile. The timer and references survive reload within the same consented tab; historical missing values remain NULL. Stop testing deletes that session's private research records and blocks late retries. The existing 90-day purge/export tools include transcripts and new columns; retention remains manually operated.
 
 Only the independent opaque clarity_ref is sent to Microsoft as custom tag **research_reference**, after the applicable versioned testing policy activates. The session deletion capability, tester code, pseudonym and question/answer text never reach Clarity or PostHog. Clarity stays masked. Match the reference in the ledger with Clarity Filters → Custom tags → research_reference, then compare the server timestamp and elapsed timer with the recording timeline. Microsoft documents custom tags and their processing delay at https://learn.microsoft.com/en-us/clarity/filters/custom-tags . Recording delivery must be observed in the actual account; browser fixture emission does not prove receipt.
 
@@ -32,4 +32,4 @@ Commands are **status**, **errors**, **activity** only. They inspect fixed publi
 
 ## Verification
 
-Migrations0020 and0021 applied to both research databases with zero PUBLIC grants. 81 Python checks passed per destination with rollback-only fixtures. Four browser suites passed privacy, module clicks, Clarity reference, timer/reload persistence, transcript safety, dashboard controls and responsive layout. Actual local HTTP save/read/click/withdraw tests passed; production read-only activity/status/error commands worked and shell/cross-origin requests were rejected. Actual research reader writes and research-writer scientific SELECT were denied. Deployment verification is appended after rollout.
+Migrations0020 and0021 applied to both research databases with zero PUBLIC grants. 82 Python checks passed per destination with rollback-only fixtures. Four browser suites passed privacy, module clicks, Clarity reference, timer/reload persistence, transcript safety, dashboard controls and responsive layout. Actual local HTTP save/read/click/withdraw tests passed; production read-only activity/status/error commands worked and shell/cross-origin requests were rejected. Actual research reader writes and research-writer scientific SELECT were denied. Development deploy dep-dbhoabb23eus73efkn00 and production deploy dep-dbhoabst50us73909ub0 are live. Public version identities match the combined build, and the new development dashboard registry flag is enabled. Late legacy records were reconciled after deployment. Actual authenticated hosted tester delivery/Clarity receipt still requires a refreshed tester page; no live user content was inspected to prove it.
