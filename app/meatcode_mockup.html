@@ -67,6 +67,8 @@ body:not(.ff-inventory) .mc-toolbench-btn { display:none !important; }
 
 
 .mc-dashboard-btn{text-decoration:none;order:20;}
+/* Release Center is authoritative; hidden until its current-environment flag loads. */
+body:not(.ff-live_testing_dashboard) .mc-dashboard-btn{display:none!important;}
 /* ── Feature flag: highlight_inventory — draw attention to the Inventory button ── */
 body.ff-highlight_inventory .mc-toolbench-btn{ box-shadow:0 0 0 2px var(--brass,#b5651d); background:rgba(181,101,29,.12); }
 /* GFI co-brand: lift the logo before everything and make it the visual anchor */

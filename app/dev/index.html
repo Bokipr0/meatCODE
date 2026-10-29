@@ -153,7 +153,7 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
     <p>Feature flags, work-in-progress screens, key documents and user-flow maps. Everything here is internal &mdash; the product surface stays in the mockup.</p>
   </div>
 
-  <section class="section" id="research-operations">
+  <section class="section" id="research-operations" hidden>
     <div class="section-head"><h2>Research operations</h2><span class="hint">production activity, viewed privately from development</span></div>
     <div class="grid"><a class="card" href="/research-dashboard?environment=prod"><h3>Live production testing</h3><p>Shared Oracle conversations, submitted inputs, journey timers and recorded failures. Open the private dashboard using your existing development-site login; no additional admin token is needed.</p><span class="path">Production data only · no development/local collection · read-only checks</span></a></div>
   </section>
@@ -443,6 +443,8 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
         STATE.env = (data && data.env) || '';
         STATE.admin = !!(data && data.admin);
         STATE.flags = (data && data.flags) || {};
+        var dashboardEnabled=STATE.flags.live_testing_dashboard;
+        document.getElementById('research-operations').hidden=!(dashboardEnabled && dashboardEnabled[STATE.env]===true);
         if (STATE.env) {
           envChip.textContent = 'server env: ' + STATE.env + ' · ' + (STATE.admin ? 'admin (local cockpit)' : 'read-only');
         }

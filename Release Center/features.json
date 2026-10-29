@@ -387,7 +387,7 @@
         "spot": "Research operations",
         "file": "app/internal/research-dashboard.html"
       },
-      "note": "Requires separate research-admin credential. Production reads use a SELECT-only research database role; no shell or deployment commands.",
+      "note": "Controlled by this environment switch for navigation and dashboard routes. Development reuses its authenticated site login; production reads use a SELECT-only research role. No shell or deployment commands.",
       "dev": true,
       "prod": false
     }

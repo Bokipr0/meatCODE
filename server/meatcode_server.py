@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Last updated: 2026-10-29 10:49 UTC · Full-Stack · private user-research dashboard routing; existing research, backup and Render-environment guards preserved.
+# Last updated: 2026-10-29 · Codex · dashboard page and read APIs enforce the Release Center environment flag.
 #   `ecosystem_module`): the Ecosystem's people + papers LIVE from Neon via ecosystem.live_people(pg_rows)
 #   (SELECT-only, 10-min cache); no DATABASE_URL or a DB error -> 503 and the page uses its labelled offline copy.
 # Prev 2026-10-25 19:15 UTC · Yochai (PM) with Claude · Guided Oracle behind flag `oracle_guided`:
@@ -1033,6 +1033,9 @@ class Handler(SimpleHTTPRequestHandler):
             return True
 
     def send_head(self):
+        if urlparse(self.path).path.rstrip('/') in ('/research-dashboard','/app/internal/research-dashboard.html') and not _flag_on('live_testing_dashboard'):
+            self.send_error(404, 'Not found')
+            return None
         # Inherited HEAD serving bypasses do_GET; block export metadata there too.
         if self._private_research_path(self.path):
             self.send_error(404, "Not found")
@@ -1044,6 +1047,9 @@ class Handler(SimpleHTTPRequestHandler):
         path = urlparse(self.path).path
         if path not in ("/api/health", "/api/version") and not self._authorized():
             return self._deny()                # health + version stay open (uptime / deploy checks)
+        if path.rstrip('/') in ('/research-dashboard','/app/internal/research-dashboard.html',
+                                  '/api/research/dashboard','/api/research/transcript','/api/research/journey') and not _flag_on('live_testing_dashboard'):
+            return self._send_json({'error':'not found'},404)
         if path.startswith("/api/"):
             return self._handle_api_get(path)
         # Bare URL → the product mockup, so visitors land on MeatCODE (not a file list).
@@ -2347,6 +2353,9 @@ class Handler(SimpleHTTPRequestHandler):
         if not self._authorized():
             return self._deny()
         if path == "/api/research/operations":
+            if not _flag_on('live_testing_dashboard'):
+                self.close_connection = True
+                return self._send_json({'error':'not found'},404)
             if research_operations is None:
                 self.close_connection = True
                 return self._send_json({"error":"Research operations unavailable."},503)
