@@ -1,5 +1,50 @@
 # PROJECT_STATE — MeatCODE
 
+## 2026-10-29 · Dataset guide saved locally; publication remains manual
+
+One-page dataset PDF regenerated in platform_docs alongside Markdown and editable SVG.
+Local Git configuration points to Bokipr0/meatCODE; Release Center deploy-dev and promote-to-prod
+scripts remain present. No push/deployment performed for this document; remote sync not verified.
+
+## 2026-10-29 · Oracle transcript research live
+
+Added separately consented Oracle questions, answers, clarifications and citation capture into
+private Neon user_research.oracle_turns, with an administrator-only paginated transcript viewer.
+Consent renews to 2026-10-29-chat-v1; checkbox is unchecked and historical chats are not imported.
+Clarity remains masked; no chat text reaches Clarity or PostHog. Migration0019 applied to both
+existing databases; scientific inventories and Necmettin's private-data denial verified unchanged.
+61 Python tests passed per database in rollback-only fixtures; browser capture/dashboard privacy
+checks and synthetic local HTTP save/read/withdraw/late-write rejection passed. Runtime e98349d
+verified live on dev/main (Render dep-dbhmk8k9v7es73bib4sg / dep-dbhml0a9lscs739vbnb0).
+Hosted transcript routes deny unauthenticated access; authenticated hosted capture awaits fresh
+tester opt-in. Local private dashboard reads production successfully, with zero transcripts yet.
+This uses existing private schemas, not a newly provisioned independent Neon branch. Retention
+includes chat in the existing manual 90-day maintenance; no automatic purge was scheduled.
+Current feature switches preserved; unrelated in-progress documentation edits left untouched.
+Details: platform_docs/ORACLE_CHAT_RESEARCH.md. Rollback prod-20261029-before-oracle-chat.
+
+## 2026-10-29 · Dataset guide architecture illustration
+
+Replaced the safe-updates text section with a compact vector diagram in the same one-page PDF:
+master publishes to Oracle/Ecosystem/Simulation, each shows its data areas, proposed revisions
+return via Lior-only approval. Editable SVG saved in platform_docs/diagrams/meatcode-dataset-modules.svg.
+Permission table retained; final PDF visually checked, one page. No infrastructure changes.
+
+## 2026-10-29 · Dataset guide permission comparison added
+
+Updated `platform_docs/DATASET_ROLES_ONE_PAGE.md/.pdf` with owner, contributor, viewer and
+publisher comparison across read/edit/approval/publication/access-management permissions.
+Preserved Lior-only revision approval and distinction between proposed and existing grants.
+PDF verified visually and remains one page. Documentation only; no database/access changes.
+
+## 2026-10-29 15:17 UTC · Neon implementation access check
+
+Implementation explicitly requested. No Neon connector tools, CLI login, or configured
+NEON_API_KEY/NEON_API_TOKEN available; existing SQL connections are present but cannot create
+the planned independent Neon projects. In-app Neon console opens at sign-in; left ready for
+Lior. No database/project/permission changes made in this check. Existing backup and provisioning
+plan above remain the prepared handoff; account connection is required to continue.
+
 ## 2026-10-29 15:03 UTC · Governed datasets: backup complete, provisioning pending
 
 User requires explicit Lior approval of each child contribution revision before master publication;

@@ -1,5 +1,54 @@
 # MeatCODE — Agent Update Log
 
+## 2026-10-29 · Advisory · Save dataset guide and verify publishing paths
+Confirmed editable guide and SVG in platform_docs. PDF was absent on this check; regenerated from
+the existing source, verified one page and visually inspected. Read .git/config and Release Center
+scripts: origin is Bokipr0/meatCODE, deploy-dev commits/pushes local changes to dev after remote
+history checks, promote-to-prod publishes dev to main with confirmation. No Git commands or deploys
+run; live authentication/sync not tested. Local save is not automatic GitHub synchronization.
+
+## 2026-10-29 · Oracle transcript research live
+
+Added separately consented Oracle questions, answers, clarifications and citation capture into
+private Neon user_research.oracle_turns, with an administrator-only paginated transcript viewer.
+Consent renews to 2026-10-29-chat-v1; checkbox is unchecked and historical chats are not imported.
+Clarity remains masked; no chat text reaches Clarity or PostHog. Migration0019 applied to both
+existing databases; scientific inventories and Necmettin's private-data denial verified unchanged.
+61 Python tests passed per database in rollback-only fixtures; browser capture/dashboard privacy
+checks and synthetic local HTTP save/read/withdraw/late-write rejection passed. Runtime e98349d
+verified live on dev/main (Render dep-dbhmk8k9v7es73bib4sg / dep-dbhml0a9lscs739vbnb0).
+Hosted transcript routes deny unauthenticated access; authenticated hosted capture awaits fresh
+tester opt-in. Local private dashboard reads production successfully, with zero transcripts yet.
+This uses existing private schemas, not a newly provisioned independent Neon branch. Retention
+includes chat in the existing manual 90-day maintenance; no automatic purge was scheduled.
+Current feature switches preserved; unrelated in-progress documentation edits left untouched.
+Details: platform_docs/ORACLE_CHAT_RESEARCH.md. Rollback prod-20261029-before-oracle-chat.
+
+## 2026-10-29 · Advisory · Dataset module illustration
+Replaced requested safe-updates section in DATASET_ROLES_ONE_PAGE.md/.pdf with vector master/module/
+approval diagram. Shows module data areas, published distribution, proposed revisions and approved
+return path; private context exclusion and no sibling writes explicit. Added editable SVG and drawing
+helper in platform_docs/diagrams; brief renderer embeds the native vector drawing. Rendered final PDF
+and verified readable, non-overlapping, one-page layout. Existing permissions table retained. No
+database/account changes or publishing performed.
+
+## 2026-10-29 · Advisory · One-page permissions comparison
+At Lior's request updated DATASET_ROLES_ONE_PAGE.md and regenerated its PDF with a five-column
+role/permissions comparison. Kept collaborator assignments, mandatory Lior approval, existing
+Necmettin access and pending infrastructure explicit. Updated provisioning wording to acknowledge
+Neon installed/enabled but tools unavailable at last check. Added Markdown table rendering to
+platform_docs/diagrams/build_adaptive_review.py. PDF page count and rendered layout checked: one
+page, table wraps cleanly. No database, account, automation or Git changes; local files await publication.
+
+## 2026-10-29 15:17 UTC · Data · Implementation access check
+User explicitly requested implementation of the governed Neon scheme. Rechecked connector tools
+(none), Neon plugin installation (not installed), local Neon CLI/configuration (absent), and API
+key presence (absent; no secrets printed). Existing production/dev SQL credentials are available,
+but do not provide Neon project-management access. Browser fallback reached Neon sign-in; left
+the tab visible for user handoff. No projects, database changes, grants or scheduled jobs created.
+The previously prepared backup/one-pager/provisioning plan remain available. Requires connection
+or sign-in before independent projects can be provisioned and the complete workflow verified.
+
 ## 2026-10-29 15:03 UTC · Data/Advisory · Governance decision, private backups and provisioning blocker
 User authorized isolated module projects and backups, then mandated Lior approval for EVERY child revision before master admission. Prepared `platform_docs/DATASET_ROLES_ONE_PAGE.md/.pdf` (verified one page) and `DATASET_PROVISIONING_PLAN.md`: origin tags, immutable revisions, approval/hash check, asynchronous publication/outbox, simple roles, no automated approval. Yochai is Ecosystem collaborator; Pablo/Daniel suggested assignments remain ungranted. Preserved existing Necmettin access.
 Created reusable read-only `pipeline/backup_governed_datasets.py`. Initial sandbox DNS failure; authorized escalated retry succeeded. Consistent pg_dump custom archives for configured prod (58 tables,1,774,889 bytes) and dev (65 tables,36,936,865 bytes), private mode0600 in ignored `data/backups/20261029T150102Z/`. Manifest contains hashes, snapshot counts and role metadata (no passwords). pg_restore listing passed; full restore drill NOT performed; no claim of all other databases/account settings being covered.

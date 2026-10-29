@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg
+  PUBLIC '-//W3C//DTD SVG 1.0//EN'
+  'http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd'>
+<svg width="515" height="174" preserveAspectRatio="xMinYMin meet" viewBox="0 0 515 174" xmlns="http://www.w3.org/2000/svg" version="1.0" fill-rule="evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>...</title>
+	<desc>...</desc>
+	<clipPath id="clip">
+		<rect x="0" y="0" width="515" height="174"/>
+	</clipPath>
+	<g id="group" transform="scale(1,-1) translate(0,-174)" style="clip-path: url(#clip)">
+		<g transform="">
+			<rect x="154" y="141" width="207" height="30" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(86%,92%,91%); fill-rule: evenodd;"/>
+			<text x="216.001" y="159" style="font-family: Helvetica-Bold; font-size: 9px;fill: rgb(9%,23%,22%); stroke:none;" transform="translate(0,318) scale(1,-1)">MASTER DATASET</text>
+			<text x="185.1716" y="148" style="font-family: Helvetica; font-size: 7.3px;fill: rgb(9%,23%,22%); stroke:none;" transform="translate(0,296) scale(1,-1)">Baseline + approved, origin-tagged additions</text>
+			<polyline points="257.5 141, 257.5 125" style="stroke: rgb(0%,52%,50%); stroke-linecap: butt; stroke-width: 1.2; fill: None; fill-rule: evenodd;"/>
+			<polyline points="80 125, 426 125" style="stroke: rgb(0%,52%,50%); stroke-linecap: butt; stroke-width: 1.2; fill: None; fill-rule: evenodd;"/>
+			<text x="88.8475" y="131" style="font-family: Helvetica; font-size: 7px;fill: rgb(0%,52%,50%); stroke:none;" transform="translate(0,262) scale(1,-1)">Published data</text>
+			<rect x="8" y="61" width="144" height="51" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(94%,96%,95%); fill-rule: evenodd;"/>
+			<polyline points="80 125, 80 112" style="stroke: rgb(0%,52%,50%); stroke-linecap: butt; stroke-width: 1.2; fill: None; fill-rule: evenodd;"/>
+			<polygon points="80 112, 77.7 117, 82.3 117" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(0%,52%,50%); fill-rule: evenodd;"/>
+			<text x="62.0565" y="98" style="font-family: Helvetica-Bold; font-size: 8.5px;fill: rgb(9%,23%,22%); stroke:none;" transform="translate(0,196) scale(1,-1)">ORACLE</text>
+			<text x="35.0825" y="84" style="font-family: Helvetica; font-size: 7.5px;fill: rgb(9%,23%,22%); stroke:none;" transform="translate(0,168) scale(1,-1)">Evidence + search indexes</text>
+			<text x="45.402499999999996" y="72" style="font-family: Helvetica; font-size: 7.5px;fill: rgb(9%,23%,22%); stroke:none;" transform="translate(0,144) scale(1,-1)">Private user context*</text>
+			<polyline points="80 61, 80 46" style="stroke: rgb(71%,51%,8%); stroke-linecap: butt; stroke-width: 1.2; fill: None; fill-rule: evenodd;"/>
+			<rect x="181" y="61" width="144" height="51" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(94%,96%,95%); fill-rule: evenodd;"/>
+			<polyline points="253 125, 253 112" style="stroke: rgb(0%,52%,50%); stroke-linecap: butt; stroke-width: 1.2; fill: None; fill-rule: evenodd;"/>
+			<polygon points="253 112, 250.7 117, 255.3 117" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(0%,52%,50%); fill-rule: evenodd;"/>
+			<text x="226.31425000000002" y="98" style="font-family: Helvetica-Bold; font-size: 8.5px;fill: rgb(9%,23%,22%); stroke:none;" transform="translate(0,196) scale(1,-1)">ECOSYSTEM</text>
+			<text x="227.36125" y="84" style="font-family: Helvetica; font-size: 7.5px;fill: rgb(9%,23%,22%); stroke:none;" transform="translate(0,168) scale(1,-1)">Published base</text>
+			<text x="205.1725" y="72" style="font-family: Helvetica; font-size: 7.5px;fill: rgb(9%,23%,22%); stroke:none;" transform="translate(0,144) scale(1,-1)">Working records + proposals</text>
+			<polyline points="253 61, 253 46" style="stroke: rgb(71%,51%,8%); stroke-linecap: butt; stroke-width: 1.2; fill: None; fill-rule: evenodd;"/>
+			<rect x="354" y="61" width="144" height="51" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(94%,96%,95%); fill-rule: evenodd;"/>
+			<polyline points="426 125, 426 112" style="stroke: rgb(0%,52%,50%); stroke-linecap: butt; stroke-width: 1.2; fill: None; fill-rule: evenodd;"/>
+			<polygon points="426 112, 423.7 117, 428.3 117" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(0%,52%,50%); fill-rule: evenodd;"/>
+			<text x="399.5565" y="98" style="font-family: Helvetica-Bold; font-size: 8.5px;fill: rgb(9%,23%,22%); stroke:none;" transform="translate(0,196) scale(1,-1)">SIMULATION</text>
+			<text x="399.63375" y="84" style="font-family: Helvetica; font-size: 7.5px;fill: rgb(9%,23%,22%); stroke:none;" transform="translate(0,168) scale(1,-1)">Models + inputs</text>
+			<text x="384.52125" y="72" style="font-family: Helvetica; font-size: 7.5px;fill: rgb(9%,23%,22%); stroke:none;" transform="translate(0,144) scale(1,-1)">Run outputs / predictions</text>
+			<polyline points="426 61, 426 46" style="stroke: rgb(71%,51%,8%); stroke-linecap: butt; stroke-width: 1.2; fill: None; fill-rule: evenodd;"/>
+			<polyline points="80 46, 426 46" style="stroke: rgb(71%,51%,8%); stroke-linecap: butt; stroke-width: 1.2; fill: None; fill-rule: evenodd;"/>
+			<polyline points="257.5 46, 257.5 33" style="stroke: rgb(71%,51%,8%); stroke-linecap: butt; stroke-width: 1.2; fill: None; fill-rule: evenodd;"/>
+			<polygon points="257.5 33, 255.2 38, 259.8 38" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,51%,8%); fill-rule: evenodd;"/>
+			<text x="97.817" y="36" style="font-family: Helvetica; font-size: 7px;fill: rgb(71%,51%,8%); stroke:none;" transform="translate(0,72) scale(1,-1)">Proposed changes</text>
+			<rect x="177" y="9" width="161" height="24" rx="6" ry="6" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(100%,94%,83%); fill-rule: evenodd;"/>
+			<text x="220.988" y="24" style="font-family: Helvetica-Bold; font-size: 8px;fill: rgb(9%,23%,22%); stroke:none;" transform="translate(0,48) scale(1,-1)">LIOR'S APPROVAL</text>
+			<text x="228.324" y="14" style="font-family: Helvetica; font-size: 7px;fill: rgb(9%,23%,22%); stroke:none;" transform="translate(0,28) scale(1,-1)">Exact revision only</text>
+			<polyline points="338 21, 507 21, 507 156, 361 156" style="stroke: rgb(71%,51%,8%); stroke-linecap: butt; stroke-width: 1.2; fill: None; fill-rule: evenodd;"/>
+			<polygon points="361 156, 366 158.3, 366 153.7" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(71%,51%,8%); fill-rule: evenodd;"/>
+			<text x="391.317" y="12" style="font-family: Helvetica; font-size: 7px;fill: rgb(71%,51%,8%); stroke:none;" transform="translate(0,24) scale(1,-1)">Approved publication</text>
+			<text x="37.518" y="1" style="font-family: Helvetica; font-size: 6.5px;fill: rgb(9%,23%,22%); stroke:none;" transform="translate(0,2) scale(1,-1)">*Private context is not shared by default. No direct sibling writes.</text>
+		</g>
+	</g>
+</svg>
