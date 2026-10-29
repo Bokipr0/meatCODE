@@ -285,6 +285,14 @@
     var style = document.createElement('style');
     style.textContent = '#mcResearchButton{position:fixed;right:14px;bottom:12px;z-index:2100;padding:7px 11px;border:1px solid var(--line,#ddd);border-radius:100px;background:var(--surface,#fff);color:var(--ink-dim,#444);font:11px var(--round,system-ui);cursor:pointer}#mcResearchPanel{width:min(430px,calc(100vw - 32px));max-height:85vh;overflow:auto;padding:24px;border:1px solid var(--line,#ddd);border-radius:18px;background:var(--surface,#fff);color:var(--ink,#222);font:14px/1.5 var(--round,system-ui);box-shadow:var(--shadow-lg)}#mcResearchPanel::backdrop{background:rgba(0,30,28,.25)}#mcResearchPanel h2{margin:0 0 12px;font-size:20px}#mcResearchPanel p{font-size:13px}#mcResearchPanel label{display:block;margin:10px 0}#mcResearchPanel select,#mcResearchPanel textarea{display:block;width:100%;font:inherit;color:inherit;border:1px solid var(--line,#ddd);border-radius:8px;padding:9px;background:var(--surface,#fff)}#mcResearchPanel textarea{min-height:82px}#mcResearchPanel button{font:inherit;padding:8px 11px;margin:5px 5px 5px 0;border:1px solid var(--line,#ddd);border-radius:9px;background:var(--surface-2,#eee);color:inherit;cursor:pointer}#mcResearchPanel [data-research-accept],#mcResearchPanel [type=submit]{background:var(--wine,#00736e);color:white}#mcResearchPanel [hidden]{display:none!important}#mcResearchStatus{font-size:12px;color:var(--ink-dim,#555)}';
     document.head.appendChild(style);
+    // Owner-directed demo UI: a passive label, with no feedback/session settings controls.
+    // Existing internal-cookie exclusions and automatic capture are independent of this UI.
+    if(demoMode || (config && config.capture_excluded)){
+      var indicator=document.createElement('span');indicator.id='mcResearchButton';indicator.textContent='Demo testing';
+      indicator.setAttribute('role','status');indicator.style.cssText='cursor:default;pointer-events:none';
+      indicator.title=config&&config.capture_excluded?'Testing collection is excluded for this browser or environment.':'Demo testing starts automatically after login.';
+      document.body.appendChild(indicator);return;
+    }
     var button = document.createElement('button'); button.id = 'mcResearchButton'; button.type = 'button'; button.textContent = 'Testing privacy'; button.setAttribute('aria-haspopup','dialog');
     document.body.appendChild(button);
     panel = document.createElement('dialog'); panel.id = 'mcResearchPanel'; panel.setAttribute('aria-labelledby','mcResearchTitle'); panel.setAttribute('data-clarity-mask','true');
@@ -305,12 +313,6 @@
       var description=feedbackSection.querySelector('form p');description.textContent='Feedback and new Oracle conversations are stored privately in MeatCODE. Chat text is not sent to Clarity or PostHog.';
     }
     button.addEventListener('click',function(){if(!demoMode){renderState();panel.showModal();}});
-    // Keep deletion and browser exclusion reachable separately from the passive demo label.
-    document.querySelectorAll('.context .user-card').forEach(function(card){
-      var settings=document.createElement('button');settings.type='button';settings.className='mc-testing-settings';settings.textContent='Testing settings';
-      settings.style.cssText='display:block;border:0;background:transparent;color:var(--ink-dim);font:11px var(--round,system-ui);text-decoration:underline;cursor:pointer;padding:4px 0';
-      settings.onclick=function(){renderState();panel.showModal();};card.parentNode.insertBefore(settings,card);
-    });
     panel.querySelector('[data-research-close]').addEventListener('click',function(){panel.close();});
     if(!demoMode)panel.querySelector('[data-research-decline]').addEventListener('click',function(){save(CONSENT_KEY,VERSION+':no');panel.close();});
     if(!demoMode)panel.querySelector('[data-research-accept]').addEventListener('click',start);

@@ -2537,6 +2537,50 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 .oracle-welcome-points .pt{max-width:260px;text-align:center;}
 .oracle-welcome-points .pt span{white-space:nowrap;font-size:12px;}
 @media(max-height:720px){.oracle-welcome-points{display:flex;}}
+/* 2026-10-29 · V2 notes follow-up: welcome near composer and a compact, centered input. */
+#oracle .oracle-answer.empty { justify-content:flex-end; padding:24px 24px clamp(28px,7vh,64px); }
+#oracle .oracle-composer .oracle-starter-row { justify-content:center; align-items:center; }
+#oracle .oracle-input { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; column-gap:14px; padding:9px 13px 9px 20px; border-radius:30px; }
+#oracle .oracle-textarea { min-width:0; width:100%; min-height:27px; height:27px; line-height:27px; font-size:16px; padding:0; align-self:center; }
+#oracle .oracle-input-bottom { display:contents; }
+#oracle .oracle-actions { grid-column:2; grid-row:1; align-self:center; gap:8px; }
+#oracle .oracle-input .oracle-chips { grid-column:1/-1; grid-row:3; }
+#oracle .oracle-input .oracle-attach-row { grid-column:1/-1; grid-row:2; }
+#oracle .oracle-input .oracle-chips:empty { display:none; }
+#oracle .oracle-input #oracleMicStatus { grid-column:1/-1; grid-row:4; }
+#oracle .context-item .ctx-text { white-space:normal; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; line-height:1.3; overflow-wrap:anywhere; }
+@media(max-width:600px) {
+ #oracle .app { grid-template-columns:112px minmax(0,1fr); }
+ #oracle .context { padding:14px 8px; }
+ #oracle .context .user-card { padding:8px; }
+ #oracle .context .user-meta { display:none; }
+ #oracle .context-item { padding:8px 2px; gap:2px; }
+ #oracle .context-item .ctx-del { width:18px; height:18px; margin:0; padding:2px; }
+ #oracle .context-item .save-ico { width:22px; height:24px; }
+ #oracle .context-item .ctx-text { font-size:11px; }
+ #oracle .context-item .ctx-rename { display:none; }
+ #oracle .canvas { padding:12px 8px 32px; min-width:0; }
+ #oracle .topbar { padding:0 8px; gap:8px; overflow-x:auto; }
+ #oracle .brand { width:auto; flex-shrink:0; }
+ #oracle .brand-name { font-size:14px; }
+ #oracle .brand-logo,#oracle .gfi-logo,#oracle .brand .mc-demo-label { display:none; }
+ #oracle .oracle-answer.empty { padding:12px 0 24px; min-height:100%; flex-shrink:0; }
+ #oracle .oracle-answer.empty .title { font-size:20px; }
+ #oracle .oracle-welcome-points { display:flex; flex-direction:column; gap:6px; margin:10px 0; }
+ #oracle .oracle-welcome-points .pt { padding:8px; }
+ #oracle .oracle-welcome-points .pt span { white-space:normal; }
+ #oracle .oracle-input .oracle-textarea { grid-column:1/-1; }
+ #oracle .oracle-input .oracle-actions { grid-column:1/-1; grid-row:2; justify-content:flex-end; }
+ #oracle .oracle-input .oracle-attach-row { grid-row:3; }
+ #oracle .oracle-input .oracle-chips { grid-row:4; }
+ #oracle .oracle-input #oracleMicStatus { grid-row:5; }
+ #oracle .oracle-input { gap:8px; padding:8px 10px 8px 14px; border-radius:24px; }
+ #oracle .oracle-input .oracle-actions { gap:5px; }
+ #oracle .oracle-textarea { font-size:16px; }
+ #oracle .oracle-composer .oracle-starter-row { gap:6px; }
+}
+@media(max-height:720px) { #oracle .oracle-answer.empty { padding-bottom:24px; } }
+
 </style>
 <style id="mc-fullscreen-overrides">
   /* Full-scale: remove the bottom dock quick-nav (Open/Navigate/For You/Guide — all scenes)
@@ -5466,8 +5510,27 @@ function mcFindOracleChat(id) {
   }
   return null;
 }
+/* 2026-10-29 · Local topic labels only; never rewrite the question or a manual name. */
+function mcOracleTopicTitle(question) {
+  var text=String(question || '').trim(), lower=text.toLocaleLowerCase();
+  var phrases=['maillard reaction','strecker degradation','lipid oxidation','aroma compounds',
+    'meaty aroma','meat flavour','meat flavor','volatile compounds','amadori rearrangement',
+    'protein oxidation','reaction pathways','sulfur compounds','sulphur compounds'];
+  var found=null, position=Infinity;
+  phrases.forEach(function(phrase){var at=lower.indexOf(phrase);if(at>=0&&at<position){position=at;found=text.slice(at,at+phrase.length);}});
+  var words=(found || text).match(/[\p{L}\p{N}]+(?:[-’'][\p{L}\p{N}]+)*/gu)||[];
+  if(!found){
+    var stop=new Set(('a an the and or but for to of in on at by with from into through about ' +
+      'what where when why how which who is are was were do does did can could would should ' +
+      'please me my our your this that these those it its explain describe tell give show walk ' +
+      'help find compare between versus vs cite corpus question top main key common many much some any all list overview information ' +
+      'fit work works affect affects drive drives impact impacts happen happens cause causes make makes generate generates form forms').split(' '));
+    words=words.filter(function(word){return !stop.has(word.toLocaleLowerCase());});
+  }
+  return words.length?words.slice(0,2).map(function(word){return word.charAt(0).toLocaleUpperCase()+word.slice(1);}).join(' '):'New Chat';
+}
 function mcOracleLabel(c) {
-  return (c && typeof c.title === 'string' && c.title.trim()) ? c.title : (c ? c.q : '');
+  return (c && typeof c.title === 'string' && c.title.trim()) ? c.title : (c ? mcOracleTopicTitle(c.q) : '');
 }
 function mcOracleRowHTML(c) {
   var pinLabel = c.pinned ? 'Unpin this chat' : 'Pin this chat';
@@ -10025,7 +10088,7 @@ document.addEventListener('keydown', function(e){
   else onScene();
 })();
 </script>
-<script src="/app/assets/user-research.js" defer></script>
+<script src="/app/assets/user-research.js?v=20261029-v2-notes" defer></script>
 <style>
 /* 2026-10-29: release switches govern navigation, starters and deep links. */
 body:not(.ff-maillard_sim) .domain[data-module-simulate],
