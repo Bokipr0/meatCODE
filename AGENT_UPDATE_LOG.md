@@ -1,5 +1,14 @@
 # MeatCODE — Agent Update Log
 
+## 2026-10-29 · Production capture confirmed; independent storage prepared; local publication repaired
+
+After Lior opted in, production Neon and PostHog agree:1 session.started,7 scene.viewed,1 oracle.submitted,1 oracle.completed and1 feedback.submitted. Server research routes and /api/ask return200. No prompt/answer/comment contents or session capabilities read. Hosted Oracle completion is now observed; actual Microsoft recordings still unverified.
+
+Requested independent research storage is prepared in platform_docs/research_storage_2026-10-29: dedicated-connection routing, strict no-fallback mode, maintenance/import/dashboard consistency and bounded research-only copy preserving withdrawal protection.54 offline tests pass (5 live-only skips). Branch creation/copy/switch NOT performed: Neon account connection is missing. Suggested official Neon plugin; automatic control of com.openai.codex installation UI was denied by app safety. User must click Install/authorize; no secret requested in chat.
+
+The screenshot's push failure was divergent Git history (local2 ahead,11 behind), not demonstrated authentication failure. Saved backup branchcodex/local-before-reconcile-20261029-f6bd1ac, merged remote release without force/reset, preserved local-only history and published Science/Ecosystem/Oracle files. Local merge7b2b8d9;50 checks passed. Fixed launchers to fetch/check history BEFORE git add/commit and to show actual push errors. Bash syntax passes and git push --dry-run confirms a normal fast-forward is possible. No actual push of the newly reconciled local backlog was performed; production remains the verified20acea3 application release.
+
+
 ## 2026-10-29 · LIVE release — Clarity/PostHog and private testing dashboard
 
 User explicitly authorized redeploy/update and separately approved enabling the private administrator dashboard. Published the reviewed changes from a clean checkout, preserving newer Science/Ecosystem/guided Oracle and original local work. Both dev and production now run20acea3e648e0e3feba40845cae3936951867b07; verified /api/version, user_testing+analytics flags, healthy startup and protected research routes401 without site login. Staging deploydep-dbhkm9h9q7ns73d280qg and productiondep-dbhkn5vb9u1s73a0nsv0 are live. Rollback tagprod-20261029-analytics-live-testing. No new production ERROR/Traceback logs found after deployment.

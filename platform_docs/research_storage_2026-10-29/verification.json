@@ -1,0 +1,21 @@
+{
+  "prepared_files": [
+    ".env.example",
+    "pipeline/user_research/clarity_import.py",
+    "pipeline/user_research/copy_storage.py",
+    "pipeline/user_research/manage.py",
+    "pipeline/user_research/migrate.py",
+    "pipeline/user_research/settings.py",
+    "pipeline/user_research/verify.py",
+    "server/meatcode_server.py",
+    "server/research_dashboard.py",
+    "server/user_research.py",
+    "tests/test_research_storage_isolation.py"
+  ],
+  "offline_tests_run": 54,
+  "offline_failed": 0,
+  "database_only_skipped": 5,
+  "provisioned": false,
+  "deployed": false,
+  "blocker": "Neon account connection required; app disallows automated installation control"
+}

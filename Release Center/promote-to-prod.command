@@ -19,6 +19,22 @@ cd "$REPO" || exit 1            # = meatCODE/ repo root
 
 DEV="dev"; PROD="main"
 
+# Check history before staging or committing anything. A rejected fast-forward
+# is a sync problem, not automatically a GitHub sign-in problem.
+if [ "$(git branch --show-current)" != "$DEV" ]; then
+  echo "❌ Open deploy-dev.command first: promotion must run from the dev branch."
+  read -p "Press Enter to close."; exit 1
+fi
+if ! git fetch origin "$DEV" "$PROD"; then
+  echo "❌ Could not refresh GitHub history. See the connection error above."
+  read -p "Press Enter to close."; exit 1
+fi
+if ! git merge-base --is-ancestor "origin/$DEV" "$DEV"; then
+  echo "❌ Local dev is behind or diverged from GitHub. Reconcile the newer commits before publishing."
+  echo "Your files have not been staged or committed by this attempt. Do not force-push."
+  read -p "Press Enter to close."; exit 1
+fi
+
 # 1. make sure dev is fully saved and pushed
 git add -A
 if ! git diff --cached --quiet; then
@@ -26,8 +42,8 @@ if ! git diff --cached --quiet; then
   echo "Saved your latest dev changes first."
 fi
 echo "Making sure staging is up to date…"
-if ! git push origin "$DEV" --quiet 2>/dev/null; then
-  echo "❌ Couldn't push '$DEV' to GitHub. Finish any sign-in and retry."
+if ! git push origin "$DEV"; then
+  echo "❌ Could not push dev. The actual GitHub error is shown above; production was not changed."
   read -p "Press Enter to close."; exit 1
 fi
 git fetch origin "$PROD" --quiet 2>/dev/null

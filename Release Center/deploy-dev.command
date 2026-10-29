@@ -25,6 +25,17 @@ if [ "$CUR" != "$DEV" ]; then
   fi
 fi
 
+# Verify remote history before git add -A can save an outdated snapshot.
+if ! git fetch origin "$DEV"; then
+  echo "❌ Could not refresh GitHub history. See the connection error above."
+  read -p "Press Enter to close."; exit 1
+fi
+if ! git merge-base --is-ancestor "origin/$DEV" "$DEV"; then
+  echo "❌ Local dev is behind or diverged from GitHub. Reconcile before publishing."
+  echo "Your files have not been staged or committed by this attempt. Do not force-push."
+  read -p "Press Enter to close."; exit 1
+fi
+
 MSG="${1:-dev $(date '+%Y-%m-%d %H:%M')}"
 git add -A
 if git diff --cached --quiet; then

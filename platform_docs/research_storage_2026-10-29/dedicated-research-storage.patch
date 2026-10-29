@@ -1,0 +1,356 @@
+--- a/.env.example	
++++ b/.env.example	
+@@ -48,3 +48,10 @@
+ # Set privately in Render; enter only in the dashboard's memory-only access field.
+ # Empty on hosted servers denies research-data reads even with the site password.
+ RESEARCH_ADMIN_TOKEN=
++
++# --- Independent testing-log storage ---
++# Set privately to the dedicated Neon research database for this environment.
++# Leave DATABASE_URL pointing at scientific/Oracle data.
++RESEARCH_DATABASE_URL=
++# Set true after copy/verification to prohibit fallback to scientific storage.
++RESEARCH_DATABASE_REQUIRED=false
+--- a/pipeline/user_research/clarity_import.py	
++++ b/pipeline/user_research/clarity_import.py	
+@@ -17,7 +17,7 @@
+ 
+ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'server'))
+ from user_research import transaction, config, StorageError
+-from settings import settings
++from settings import settings, research_database_url
+ 
+ ENDPOINT='https://www.clarity.ms/export-data/api/v1/project-live-insights'
+ DIMENSIONS=('Browser','Device','OS')
+@@ -109,7 +109,7 @@
+     if not re.fullmatch(r'[A-Za-z0-9._\-]+',token):
+         raise ValueError('Invalid export token format.')
+     date=datetime.datetime.now(datetime.timezone.utc).date()
+-    with transaction(conf.get('DATABASE_URL')) as cur:
++    with transaction(research_database_url(conf)) as cur:
+         export_id,state=_reserve(cur,environment,project,date,days,retry_failed)
+     if export_id is None:
+         return {'mode':'skipped','reason':state,'environment':environment,'scope':'project'}
+@@ -121,12 +121,12 @@
+         if len(raw)>2*1024*1024:
+             raise ValueError('Aggregate response too large.')
+         aggregates=sanitize_aggregates(json.loads(raw))
+-        with transaction(conf.get('DATABASE_URL')) as cur:
++        with transaction(research_database_url(conf)) as cur:
+             cur.execute("UPDATE user_research.clarity_exports SET status='complete',aggregates=%s::jsonb,imported_at=now() WHERE export_id=%s",
+                         (json.dumps(aggregates),export_id))
+         return {'mode':'imported','environment':environment,'scope':'project','export_id':export_id,'metrics':len(aggregates)}
+     except Exception as exc:
+-        with transaction(conf.get('DATABASE_URL')) as cur:
++        with transaction(research_database_url(conf)) as cur:
+             cur.execute("UPDATE user_research.clarity_exports SET status='failed' WHERE export_id=%s",(export_id,))
+         return {'mode':'failed','environment':environment,'scope':'project','error_code':'clarity_http_'+str(exc.code) if isinstance(exc,HTTPError) else 'clarity_import_failed'}
+ 
+--- /dev/null	
++++ b/pipeline/user_research/copy_storage.py	
+@@ -0,0 +1,95 @@
++# Last updated: 2026-10-29 · Codex · bounded idempotent research-only database copy; source remains read-only.
++"""Preview first; repeat --apply after cutover to reconcile late source writes/withdrawals.
++
++Never exports feedback, identifiers or database URLs into a file or console.
++The destination must be a dedicated database containing only user_research tables.
++"""
++import argparse
++import json
++import sys
++from pathlib import Path
++from urllib.parse import urlsplit,unquote
++sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'server'))
++import user_research
++from settings import settings
++from migrate import verify
++
++TABLES=('sessions','events','feedback','withdrawals','clarity_exports')
++MAX_ROWS_PER_TABLE=10000
++
++
++def identity(url):
++    parsed=urlsplit(url)
++    if parsed.scheme not in ('postgres','postgresql') or not parsed.hostname or not parsed.path.strip('/'):
++        raise ValueError('A PostgreSQL database connection is required.')
++    return parsed.hostname.replace('-pooler.','.'),parsed.port or 5432,unquote(parsed.path)
++
++
++def targets(conf):
++    source=conf.get('DATABASE_URL');target=conf.get('RESEARCH_DATABASE_URL')
++    if not source or not target or identity(source)==identity(target):
++        raise ValueError('Distinct scientific source and dedicated research target are required.')
++    return source,target
++
++
++def copy(environment,apply=False,conf=None):
++    import psycopg2
++    from psycopg2 import sql
++    from psycopg2.extras import Json
++    if environment not in ('dev','prod'):raise ValueError('Unsupported environment.')
++    source_url,target_url=targets(settings(environment) if conf is None else conf)
++    source=psycopg2.connect(source_url,connect_timeout=5);target=None
++    try:
++        source.set_session(readonly=True,isolation_level='REPEATABLE READ')
++        rows={};columns={}
++        with source.cursor() as cur:
++            cur.execute("SET LOCAL statement_timeout='10s'")
++            for table in TABLES:
++                cur.execute(sql.SQL('SELECT * FROM user_research.{} WHERE environment=%s').format(sql.Identifier(table)),(environment,))
++                columns[table]=[c[0] for c in cur.description];rows[table]=cur.fetchmany(MAX_ROWS_PER_TABLE+1)
++                if len(rows[table])>MAX_ROWS_PER_TABLE:raise ValueError('Copy exceeds reviewed bounded batch size.')
++        target=psycopg2.connect(target_url,connect_timeout=5)
++        with target.cursor() as cur:
++            cur.execute("SET LOCAL statement_timeout='10s'; SET LOCAL lock_timeout='3s'")
++            verify(cur)
++            cur.execute("SELECT count(*) FROM information_schema.tables WHERE table_type='BASE TABLE' AND table_schema NOT IN ('pg_catalog','information_schema','user_research')")
++            if cur.fetchone()[0]:raise ValueError('Destination contains unrelated tables; refusing research cutover.')
++            counts={t:len(r) for t,r in rows.items()}
++            if not apply:return {'environment':environment,'mode':'preview','source_rows':counts,'source_readonly':True,'target_research_only':True}
++            # Serialize with live writes/deletions. Lock ordering is stable, and
++            # each subsequent READ COMMITTED statement sees committed tombstones.
++            session_ids=sorted({str(row[columns[t].index('session_id')]) for t in ('sessions','events','feedback','withdrawals') for row in rows[t]})
++            for sid in session_ids:user_research._lock_session(cur,environment,sid)
++            for row in rows['withdrawals']:
++                sid=str(row[columns['withdrawals'].index('session_id')]);user_research._withdraw(cur,environment,sid)
++                cur.execute('UPDATE user_research.withdrawals SET withdrawn_at=LEAST(withdrawn_at,%s) WHERE environment=%s AND session_id=%s',(row[columns['withdrawals'].index('withdrawn_at')],environment,sid))
++            for table in ('sessions','events','feedback','clarity_exports'):
++                names=columns[table]
++                source_rows=rows[table]
++                if table=='clarity_exports':
++                    index=names.index('export_id');names=[n for n in names if n!='export_id'];source_rows=[tuple(v for i,v in enumerate(row) if i!=index) for row in source_rows]
++                template='INSERT INTO user_research.{} ({}) '+''+'VALUES ({}) ON CONFLICT DO NOTHING'
++                query=sql.SQL(template).format(sql.Identifier(table),sql.SQL(',').join(map(sql.Identifier,names)),sql.SQL(',').join(sql.Placeholder() for _ in names))
++                for row in source_rows:
++                    if 'session_id' in names:
++                        sid=str(row[names.index('session_id')]);cur.execute('SELECT 1 FROM user_research.withdrawals WHERE environment=%s AND session_id=%s',(environment,sid))
++                        if cur.fetchone():continue
++                    values=[Json(v) if names[i]=='aggregates' and v is not None else v for i,v in enumerate(row)]
++                    cur.execute(query,values)
++                    # Confirm immutable records are present with all original
++                    # fields, not merely matching counts after a conflict.
++                    if table in ('events','feedback'):
++                        cur.execute(sql.SQL('SELECT {} FROM user_research.{} WHERE environment=%s AND event_id=%s').format(sql.SQL(',').join(map(sql.Identifier,names)),sql.Identifier(table)),(environment,row[names.index('event_id')]))
++                        if tuple(cur.fetchone() or ())!=tuple(row):raise ValueError('Destination record conflict; copy rolled back.')
++            target.commit()
++            return {'environment':environment,'mode':'copied','source_rows':counts,'source_readonly':True,'withdrawals_preserved':True,'originals_deleted':False}
++    finally:
++        source.rollback();source.close()
++        if target is not None:target.rollback();target.close()
++
++
++if __name__=='__main__':
++    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--environment',required=True,choices=('dev','prod'));parser.add_argument('--apply',action='store_true');args=parser.parse_args()
++    try:print(json.dumps(copy(args.environment,args.apply)))
++    except Exception as exc:
++        print(json.dumps({'ok':False,'error_type':type(exc).__name__,'error_code':'research_copy_stopped'}));sys.exit(1)
+--- a/pipeline/user_research/manage.py	
++++ b/pipeline/user_research/manage.py	
+@@ -9,7 +9,7 @@
+ 
+ sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'server'))
+ from user_research import transaction, RETENTION_DAYS
+-from settings import ROOT, settings
++from settings import ROOT, settings, research_database_url
+ 
+ TABLES=('sessions','events','feedback','withdrawals','clarity_exports')
+ TIMESTAMPS={'sessions':'last_seen_at','events':'created_at','feedback':'created_at',
+@@ -19,7 +19,7 @@
+ def purge(environment,apply=False):
+     from psycopg2 import sql
+     counts={}
+-    with transaction(settings(environment).get('DATABASE_URL')) as cur:
++    with transaction(research_database_url(settings(environment))) as cur:
+         # First-party consent/feedback/events and export copies all have a 90-day boundary.
+         # Tombstones persist for the complete 90-day window, preventing late re-ingestion.
+         for table in ('events','feedback','sessions','withdrawals','clarity_exports'):
+@@ -46,7 +46,7 @@
+     fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
+     rows=0
+     try:
+-        with os.fdopen(fd,'w',encoding='utf-8') as stream, transaction(settings(environment).get('DATABASE_URL')) as cur:
++        with os.fdopen(fd,'w',encoding='utf-8') as stream, transaction(research_database_url(settings(environment))) as cur:
+             cur.execute('SET TRANSACTION READ ONLY')
+             for table in TABLES:
+                 cur.execute(sql.SQL('SELECT * FROM user_research.{} WHERE environment=%s AND {} >= %s::date AND {} < (%s::date + 1)').format(
+--- a/pipeline/user_research/migrate.py	
++++ b/pipeline/user_research/migrate.py	
+@@ -6,7 +6,7 @@
+ from pathlib import Path
+ 
+ sys.path.insert(0, str(Path(__file__).resolve().parent))
+-from settings import ROOT, settings
++from settings import ROOT, settings, research_database_url
+ 
+ EXPECTED = {
+     'sessions': {'session_id','environment','consent_version','consent_at','created_at','last_seen_at'},
+@@ -53,9 +53,9 @@
+ def run(environment, apply=False):
+     import psycopg2
+     conf=settings(environment);prod=settings('prod')
+-    if not conf.get('DATABASE_URL') or (environment=='dev' and conf['DATABASE_URL']==prod.get('DATABASE_URL')):
++    if not research_database_url(conf) or (environment=='dev' and research_database_url(conf)==research_database_url(prod)):
+         raise RuntimeError('Independent dev database configuration is required.')
+-    conn=psycopg2.connect(conf['DATABASE_URL'],connect_timeout=5)
++    conn=psycopg2.connect(research_database_url(conf),connect_timeout=5)
+     try:
+         with conn.cursor() as cur:
+             cur.execute("SET LOCAL lock_timeout='3s'; SET LOCAL statement_timeout='15s'")
+@@ -69,9 +69,10 @@
+                 conn.rollback()
+                 return {'environment':environment,'mode':'preflight','existing_tables':sorted(existing),'public_tables':before}
+             cur.execute("SELECT pg_advisory_xact_lock(hashtextextended('meatcode:migration:0016',0))")
+-            sql=(ROOT/'db/migrations/0016_user_research.sql').read_text()
+-            body='\n'.join(line for line in sql.splitlines() if line.strip() not in ('BEGIN;','COMMIT;'))
+-            cur.execute(body)
++            for filename in ('0016_user_research.sql','0017_user_research_consent_providers.sql'):
++                sql=(ROOT/'db/migrations'/filename).read_text()
++                body='\n'.join(line for line in sql.splitlines() if line.strip() not in ('BEGIN;','COMMIT;'))
++                cur.execute(body)
+             result=verify(cur)
+             cur.execute("SELECT count(*) FROM information_schema.tables WHERE table_schema='public'")
+             if cur.fetchone()[0]!=before:
+--- a/pipeline/user_research/settings.py	
++++ b/pipeline/user_research/settings.py	
+@@ -27,3 +27,13 @@
+             if value:
+                 result[key.strip()] = value
+     return result
++
++
++def research_database_url(conf):
++    # The shared resolver keeps HTTP, dashboard and maintenance on one target.
++    import sys
++    server = str(ROOT / 'server')
++    if server not in sys.path:
++        sys.path.insert(0, server)
++    from user_research import storage_url
++    return storage_url(conf, conf.get('DATABASE_URL'))
+--- a/pipeline/user_research/verify.py	
++++ b/pipeline/user_research/verify.py	
+@@ -7,21 +7,21 @@
+ import sys
+ import unittest
+ 
+-from settings import ROOT, settings
++from settings import ROOT, settings, research_database_url
+ 
+ 
+ def run(environment):
+     conf=settings(environment)
+-    if not conf.get('DATABASE_URL'):
++    if not research_database_url(conf):
+         raise RuntimeError('Research database is not configured.')
+-    os.environ['USER_RESEARCH_TEST_DB_URL']=conf['DATABASE_URL']
++    os.environ['USER_RESEARCH_TEST_DB_URL']=research_database_url(conf)
+     spec=importlib.util.spec_from_file_location('test_user_research',ROOT/'tests/test_user_research.py')
+     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+     suite=unittest.defaultTestLoader.loadTestsFromModule(module)
+     # Suppress full exception/SQL tracebacks so credentials/feedback never enter logs.
+     result=unittest.TestResult();suite.run(result)
+     import psycopg2
+-    conn=psycopg2.connect(conf['DATABASE_URL'],connect_timeout=5)
++    conn=psycopg2.connect(research_database_url(conf),connect_timeout=5)
+     try:
+         with conn.cursor() as cur:
+             counts={}
+--- a/server/meatcode_server.py	
++++ b/server/meatcode_server.py	
+@@ -1077,12 +1077,12 @@
+         if path == "/api/research/dashboard":
+             if research_dashboard is None:
+                 return self._send_json({"error": "Research dashboard unavailable."}, 503)
+-            return research_dashboard.handle(self, DATABASE_URL, APP_ENV, os.environ,
++            return research_dashboard.handle(self, user_research.storage_url(os.environ, DATABASE_URL), APP_ENV, os.environ,
+                                              self._local_admin_ok())
+         if path.startswith("/api/research/"):
+             if research_http is None:
+                 return self._send_json({"error": "Research service unavailable."}, 503)
+-            return research_http.handle(self, "GET", path, user_research, DATABASE_URL,
++            return research_http.handle(self, "GET", path, user_research, user_research.storage_url(os.environ, DATABASE_URL),
+                                         APP_ENV, os.environ, _flag_on("user_testing"))
+         if path == "/api/health":
+             # Superset shape: `db`/`ok` kept for back-compat; `db_ok`/`has_anthropic_key`
+@@ -2315,7 +2315,7 @@
+             if research_http is None:
+                 self.close_connection = True
+                 return self._send_json({"error": "Research service unavailable."}, 503)
+-            return research_http.handle(self, "POST", path, user_research, DATABASE_URL,
++            return research_http.handle(self, "POST", path, user_research, user_research.storage_url(os.environ, DATABASE_URL),
+                                         APP_ENV, os.environ, _flag_on("user_testing"))
+         # ── Maillard simulator submit (flag-gated) — thin same-origin proxy so the browser
+         #    never talks to the separate simulator service directly (no CORS, no 2nd credential). ──
+--- a/server/research_dashboard.py	
++++ b/server/research_dashboard.py	
+@@ -81,9 +81,9 @@
+     # Do not label inherited production data as development if its overlay is absent.
+     if environment=='dev':
+         production=_local_settings('prod',environ)
+-        if selected.get('DATABASE_URL')==production.get('DATABASE_URL'):
++        if user_research.storage_url(selected)==user_research.storage_url(production):
+             raise user_research.StorageError()
+-    chosen=selected.get('DATABASE_URL')
++    chosen=user_research.storage_url(selected)
+     if not chosen:
+         raise user_research.StorageError()
+     return chosen,selected
+--- a/server/user_research.py	
++++ b/server/user_research.py	
+@@ -37,6 +37,17 @@
+ 
+     def __init__(self):
+         super().__init__('This research session was withdrawn.')
++
++
++def storage_url(environ, legacy_url=None):
++    """Dedicated telemetry connection; strict mode never falls back to science."""
++    dedicated = str(environ.get('RESEARCH_DATABASE_URL', '')).strip()
++    if dedicated:
++        return dedicated
++    required = str(environ.get('RESEARCH_DATABASE_REQUIRED', '')).strip().lower() in ('1','true','yes','on')
++    if required:
++        return None
++    return legacy_url or environ.get('DATABASE_URL') or None
+ 
+ 
+ def _environment(value):
+--- /dev/null	
++++ b/tests/test_research_storage_isolation.py	
+@@ -0,0 +1,37 @@
++# Last updated: 2026-10-29 · Codex · independent storage routing and wrong-target protection.
++import sys,unittest
++from pathlib import Path
++from unittest.mock import patch
++ROOT=Path(__file__).resolve().parents[1];sys.path[:0]=[str(ROOT/'server'),str(ROOT/'pipeline/user_research')]
++import user_research,research_dashboard
++from settings import research_database_url
++from copy_storage import targets
++
++class StorageIsolationTests(unittest.TestCase):
++    def test_strict_cutover_never_falls_back_to_scientific_database(self):
++        for env in ({'RESEARCH_DATABASE_URL':'research','DATABASE_URL':'science'},
++                    {'RESEARCH_DATABASE_URL':'research','DATABASE_URL':'science','RESEARCH_DATABASE_REQUIRED':'true'},
++                    {'DATABASE_URL':'science','RESEARCH_DATABASE_REQUIRED':'true'},
++                    {'DATABASE_URL':'science'}):
++            expected='research' if env.get('RESEARCH_DATABASE_URL') else None if env.get('RESEARCH_DATABASE_REQUIRED') else 'science'
++            self.assertEqual(user_research.storage_url(env),expected)
++            self.assertEqual(research_database_url(env),expected)
++
++    def test_local_dashboard_uses_research_targets_not_scientific_targets(self):
++        def selected(env,original):return {'DATABASE_URL':'science-'+env,'RESEARCH_DATABASE_URL':'research-'+env}
++        with patch.object(research_dashboard,'_local_settings',side_effect=selected):
++            target,_=research_dashboard._database_settings('dev','prod',{},'science',True)
++        self.assertEqual(target,'research-dev')
++
++    def test_copy_rejects_missing_target_and_same_database_even_different_role_or_pooler(self):
++        source='postgresql://source:fixture@ep-fixture.eu.neon.tech/science?sslmode=require'
++        for target in (None,source,'postgresql://other:fixture@ep-fixture-pooler.eu.neon.tech/science'):
++            with self.assertRaises(ValueError):targets({'DATABASE_URL':source,'RESEARCH_DATABASE_URL':target})
++        target='postgresql://research:fixture@ep-logs.eu.neon.tech/research_prod'
++        self.assertEqual(targets({'DATABASE_URL':source,'RESEARCH_DATABASE_URL':target}),(source,target))
++
++    def test_hosted_dashboard_uses_only_server_selected_connection(self):
++        with self.assertRaises(user_research.InputError):research_dashboard._database_settings('dev','prod',{'RENDER':'true'},'research-prod',False)
++        self.assertEqual(research_dashboard._database_settings('prod','prod',{'RENDER':'true'},'research-prod',False)[0],'research-prod')
++
++if __name__=='__main__':unittest.main()
