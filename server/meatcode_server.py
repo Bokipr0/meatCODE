@@ -404,6 +404,8 @@ client = anthropic.Anthropic(api_key=API_KEY)
 # (read from the same .env). If psycopg2 or the URL is missing, they 503 and the
 # mockup falls back to its demo data.
 DATABASE_URL = os.environ.get("DATABASE_URL")
+from research_storage import database_url as research_storage_url
+RESEARCH_DATABASE_URL = research_storage_url(os.environ, DATABASE_URL)
 
 def pg_rows(sql, params=()):
     import psycopg2
@@ -517,9 +519,11 @@ except ImportError:
 
 try:
     import research_dashboard
+    import research_operations
     import release_jobs
 except ImportError:
     research_dashboard = None
+    research_operations = None
 
 # Papers browser logic (flag `papers_browser`) — pure stdlib; handed pg_rows at call time.
 try:
@@ -1089,15 +1093,15 @@ class Handler(SimpleHTTPRequestHandler):
 
     def _handle_api_get(self, path):
         qs = parse_qs(urlparse(self.path).query)
-        if path in ("/api/research/dashboard","/api/research/transcript"):
+        if path in ("/api/research/dashboard","/api/research/transcript","/api/research/journey"):
             if research_dashboard is None:
                 return self._send_json({"error": "Research dashboard unavailable."}, 503)
-            return research_dashboard.handle(self, DATABASE_URL, APP_ENV, os.environ,
+            return research_dashboard.handle(self, RESEARCH_DATABASE_URL, APP_ENV, os.environ,
                                              self._local_admin_ok())
         if path.startswith("/api/research/"):
             if research_http is None:
                 return self._send_json({"error": "Research service unavailable."}, 503)
-            return research_http.handle(self, "GET", path, user_research, DATABASE_URL,
+            return research_http.handle(self, "GET", path, user_research, RESEARCH_DATABASE_URL,
                                         APP_ENV, os.environ, _flag_on("user_testing"))
         if path == "/api/health":
             # Superset shape: `db`/`ok` kept for back-compat; `db_ok`/`has_anthropic_key`
@@ -2342,11 +2346,16 @@ class Handler(SimpleHTTPRequestHandler):
             return self._handle_admin_post(path)
         if not self._authorized():
             return self._deny()
+        if path == "/api/research/operations":
+            if research_operations is None:
+                self.close_connection = True
+                return self._send_json({"error":"Research operations unavailable."},503)
+            return research_operations.handle(self, RESEARCH_DATABASE_URL, APP_ENV, os.environ, self._local_admin_ok())
         if path.startswith("/api/research/"):
             if research_http is None:
                 self.close_connection = True
                 return self._send_json({"error": "Research service unavailable."}, 503)
-            return research_http.handle(self, "POST", path, user_research, DATABASE_URL,
+            return research_http.handle(self, "POST", path, user_research, RESEARCH_DATABASE_URL,
                                         APP_ENV, os.environ, _flag_on("user_testing"))
         # ── Maillard simulator submit (flag-gated) — thin same-origin proxy so the browser
         #    never talks to the separate simulator service directly (no CORS, no 2nd credential). ──

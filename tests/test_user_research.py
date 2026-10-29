@@ -36,6 +36,17 @@ class ValidationTests(unittest.TestCase):
             self.assertEqual(settings('dev',{},root)['CLARITY_EXPORT_TOKEN'],'file-token-placeholder')
             self.assertEqual(settings('prod',process,root/'absent')['CLARITY_EXPORT_TOKEN'],'runtime-token-placeholder')
 
+    def test_demo_policy_is_versioned_and_optional_mode_can_be_restored(self):
+        demo=research.config({'USER_RESEARCH_ENABLED':'1'},'dev')
+        self.assertTrue(demo['demo_mode'])
+        self.assertEqual(demo['consent_version'],research.DEMO_VERSION)
+        optional=research.config({'USER_RESEARCH_ENABLED':'1','RESEARCH_DEMO_MODE':'false'},'prod')
+        self.assertFalse(optional['demo_mode'])
+        self.assertEqual(optional['consent_version'],research.CONSENT_VERSION)
+        payload=event_payload();payload['consent_version']=research.DEMO_VERSION
+        payload['user_ref']=str(uuid.uuid4());payload['events'][0]['elapsed_ms']=0
+        research.validate_events(payload)
+
     def test_opt_in_defaults(self):
         self.assertFalse(research.config({},'dev')['enabled'])
         self.assertTrue(research.config({'USER_RESEARCH_ENABLED':'true'},'prod')['enabled'])

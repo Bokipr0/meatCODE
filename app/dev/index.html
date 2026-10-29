@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Last updated: 2026-08-15 · Fullstack Engineer · Features + Screens are now ONE live REGISTRY rendered from /api/flags/all: every entry shows what it is, the date it was added, where it lives (screen · spot · file), a kind badge + status chip, and Dev/Prod toggles (screens also show their destination). Toggles POST /api/flags/set when the server reports admin:true (local cockpit) and render disabled with a read-only banner otherwise. Added an "Add a new entry" form that POSTs /api/flags/upsert so future features/screens are registered from the UI. Prev: added Screens cards for Oracle redesign + Compare, and a Versions section -->
+<!-- Last updated: 2026-10-29 · Codex UI/UX · private production research dashboard entry in the Dev Area; existing registry controls preserved. -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -152,6 +152,11 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
     <h1>Lior&rsquo;s internal workbench</h1>
     <p>Feature flags, work-in-progress screens, key documents and user-flow maps. Everything here is internal &mdash; the product surface stays in the mockup.</p>
   </div>
+
+  <section class="section" id="research-operations">
+    <div class="section-head"><h2>Research operations</h2><span class="hint">production activity, viewed privately from development</span></div>
+    <div class="grid"><a class="card" href="/research-dashboard?environment=prod"><h3>Live production testing</h3><p>Shared Oracle conversations, submitted inputs, journey timers and recorded failures. Open the private dashboard and unlock it with the development service’s research-admin credential.</p><span class="path">Live from Neon · read-only status / errors / activity</span></a></div>
+  </section>
 
   <!-- ─── 1 · Features (registry) ─── -->
   <section class="section" id="features">

@@ -7,21 +7,21 @@ from pathlib import Path
 import sys
 import unittest
 
-from settings import ROOT, settings
+from settings import ROOT, settings, research_database_url
 
 
 def run(environment):
     conf=settings(environment)
-    if not conf.get('DATABASE_URL'):
+    if not research_database_url(conf):
         raise RuntimeError('Research database is not configured.')
-    os.environ['USER_RESEARCH_TEST_DB_URL']=conf['DATABASE_URL']
+    os.environ['USER_RESEARCH_TEST_DB_URL']=research_database_url(conf)
     spec=importlib.util.spec_from_file_location('test_user_research',ROOT/'tests/test_user_research.py')
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
     suite=unittest.defaultTestLoader.loadTestsFromModule(module)
     # Suppress full exception/SQL tracebacks so credentials/feedback never enter logs.
     result=unittest.TestResult();suite.run(result)
     import psycopg2
-    conn=psycopg2.connect(conf['DATABASE_URL'],connect_timeout=5)
+    conn=psycopg2.connect(research_database_url(conf),connect_timeout=5)
     try:
         with conn.cursor() as cur:
             counts={}

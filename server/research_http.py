@@ -38,6 +38,7 @@ def effective_config(module, environ, app_env, flag_enabled, database_url):
     return {
         "enabled": bool(enabled and raw.get("enabled")),
         "environment": raw["environment"],
+        "demo_mode": raw.get("demo_mode") is True,
         "clarity_project_id": raw["clarity_project_id"],
         "consent_version": raw["consent_version"],
         "retention_days": raw["retention_days"],

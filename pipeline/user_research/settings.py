@@ -27,3 +27,11 @@ def settings(environment, environ=None, root=None):
             if value:
                 result[key.strip()] = value
     return result
+
+
+def research_database_url(conf):
+    import sys
+    server=str(ROOT/'server')
+    if server not in sys.path:sys.path.insert(0,server)
+    from research_storage import database_url
+    return database_url(conf,conf.get('DATABASE_URL'))

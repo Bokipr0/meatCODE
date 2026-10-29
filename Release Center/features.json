@@ -360,6 +360,22 @@
       "note": "Requires the isolated user_research database schema. USER_RESEARCH_ENABLED=false is an emergency capture switch; withdrawal stays available. Clarity loads only after explicit consent.",
       "dev": true,
       "prod": true
+    },
+    "live_testing_dashboard": {
+      "label": "Live testing dashboard",
+      "description": "Private production journey inputs, module clicks, consented chats and read-only troubleshooting from the development server.",
+      "kind": "screen",
+      "added": "2026-10-29",
+      "status": "live",
+      "url": "/research-dashboard?environment=prod",
+      "where": {
+        "screen": "Dev Area",
+        "spot": "Research operations",
+        "file": "app/internal/research-dashboard.html"
+      },
+      "note": "Requires separate research-admin credential. Production reads use a SELECT-only research database role; no shell or deployment commands.",
+      "dev": true,
+      "prod": false
     }
   }
 }

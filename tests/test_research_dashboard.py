@@ -37,14 +37,14 @@ class Cursor:
         self.calls.append((query,args));self.stage+=1
 
     def fetchone(self):
-        return (0,0,0,0,0,None) if self.empty else (1,2,1,1,1,1200)
+        return (0,0,0,0,0,None,0) if self.empty else (1,2,1,1,1,1200,2)
 
     def fetchall(self):
         if self.empty:return []
         if self.stage==2:return [('oracle',4)]
         created=datetime.datetime(2026,10,29,tzinfo=datetime.timezone.utc)
         if self.stage>=5:return []
-        if self.stage==3:return [(uuid.uuid4(),'oracle.completed','oracle',created,1200,None,3,self.sid)]
+        if self.stage==3:return [(uuid.uuid4(),'oracle.completed','oracle',created,1200,None,3,self.sid,4500)]
         return [(created,'helpful','answer','session '+str(self.sid),self.sid)]
 
 
@@ -91,6 +91,7 @@ class DashboardTests(unittest.TestCase):
         cur=Cursor();result=dashboard.snapshot(cur,'prod',60,7)
         self.assertEqual(result['source'],'neon_first_party')
         self.assertEqual(result['totals']['median_response_ms'],1200)
+        self.assertEqual(result['totals']['module_clicks'],2)
         self.assertEqual(result['limits']['activity_limit'],7)
         self.assertEqual(cur.calls[2][1][-1],7)
         self.assertNotIn(str(cur.sid),json.dumps(result))

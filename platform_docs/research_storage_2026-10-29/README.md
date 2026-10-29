@@ -1,3 +1,7 @@
+# Status update — 29 October 2026
+
+The earlier patch below is historical and must not be reapplied. The current implementation, branch and verification are documented in [research journey operations](../RESEARCH_JOURNEY_OPERATIONS.md). A normal child branch with dedicated empty research databases was created; schema-only branching was not used by the available management tool.
+
 # Independent research-log storage — prepared 29 October2026
 
 Status: application change prepared and54 offline tests pass (5 live-only skips). No Neon branch/database has been created and no storage connection has switched. Existing production logging continues to its current research schema.

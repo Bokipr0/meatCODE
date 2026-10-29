@@ -17,7 +17,7 @@ from urllib.request import Request, HTTPRedirectHandler, build_opener
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'server'))
 from user_research import transaction, config, StorageError
-from settings import settings
+from settings import settings, research_database_url
 
 ENDPOINT='https://www.clarity.ms/export-data/api/v1/project-live-insights'
 DIMENSIONS=('Browser','Device','OS')
@@ -109,7 +109,7 @@ def run(environment,days=1,apply=False,retry_failed=False):
     if not re.fullmatch(r'[A-Za-z0-9._\-]+',token):
         raise ValueError('Invalid export token format.')
     date=datetime.datetime.now(datetime.timezone.utc).date()
-    with transaction(conf.get('DATABASE_URL')) as cur:
+    with transaction(research_database_url(conf)) as cur:
         export_id,state=_reserve(cur,environment,project,date,days,retry_failed)
     if export_id is None:
         return {'mode':'skipped','reason':state,'environment':environment,'scope':'project'}
@@ -121,12 +121,12 @@ def run(environment,days=1,apply=False,retry_failed=False):
         if len(raw)>2*1024*1024:
             raise ValueError('Aggregate response too large.')
         aggregates=sanitize_aggregates(json.loads(raw))
-        with transaction(conf.get('DATABASE_URL')) as cur:
+        with transaction(research_database_url(conf)) as cur:
             cur.execute("UPDATE user_research.clarity_exports SET status='complete',aggregates=%s::jsonb,imported_at=now() WHERE export_id=%s",
                         (json.dumps(aggregates),export_id))
         return {'mode':'imported','environment':environment,'scope':'project','export_id':export_id,'metrics':len(aggregates)}
     except Exception as exc:
-        with transaction(conf.get('DATABASE_URL')) as cur:
+        with transaction(research_database_url(conf)) as cur:
             cur.execute("UPDATE user_research.clarity_exports SET status='failed' WHERE export_id=%s",(export_id,))
         return {'mode':'failed','environment':environment,'scope':'project','error_code':'clarity_http_'+str(exc.code) if isinstance(exc,HTTPError) else 'clarity_import_failed'}
 

@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'server'))
 from user_research import transaction, RETENTION_DAYS
-from settings import ROOT, settings
+from settings import ROOT, settings, research_database_url
 
 TABLES=('sessions','events','feedback','withdrawals','clarity_exports','oracle_turns')
 TIMESTAMPS={'sessions':'last_seen_at','events':'created_at','feedback':'created_at',
@@ -19,7 +19,7 @@ TIMESTAMPS={'sessions':'last_seen_at','events':'created_at','feedback':'created_
 def purge(environment,apply=False):
     from psycopg2 import sql
     counts={}
-    with transaction(settings(environment).get('DATABASE_URL')) as cur:
+    with transaction(research_database_url(settings(environment))) as cur:
         # First-party consent/feedback/events and export copies all have a 90-day boundary.
         # Tombstones persist for the complete 90-day window, preventing late re-ingestion.
         for table in ('oracle_turns','events','feedback','sessions','withdrawals','clarity_exports'):
@@ -46,7 +46,7 @@ def export_jsonl(environment,output=None,start=None,end=None):
     fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
     rows=0
     try:
-        with os.fdopen(fd,'w',encoding='utf-8') as stream, transaction(settings(environment).get('DATABASE_URL')) as cur:
+        with os.fdopen(fd,'w',encoding='utf-8') as stream, transaction(research_database_url(settings(environment))) as cur:
             cur.execute('SET TRANSACTION READ ONLY')
             for table in TABLES:
                 cur.execute(sql.SQL('SELECT * FROM user_research.{} WHERE environment=%s AND {} >= %s::date AND {} < (%s::date + 1)').format(

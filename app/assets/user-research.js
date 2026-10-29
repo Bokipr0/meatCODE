@@ -1,16 +1,18 @@
-/* Last updated: 2026-10-29 · Codex UI/UX · renewed provider consent, explicit PostHog events and private live-testing support. */
+/* Last updated: 2026-10-29 · Codex · automatic first-interaction demo testing with visible notice and private chat capture. */
 (function () {
   'use strict';
   if (window.MCResearch) return;
-  var VERSION = '2026-10-29-chat-v1', CONSENT_KEY = 'mc_research_consent_v1', SESSION_KEY = 'mc_research_session_v1';
+  var VERSION = '2026-10-29-journey-v1', CONSENT_KEY = 'mc_research_consent_v1', SESSION_KEY = 'mc_research_session_v1';
+  var demoMode = false, interacted = false;
   var PENDING_KEY = 'mc_research_withdraw_pending_v1';
-  var SCENES = ['oracle','research','science','ecosystem','simulate','analytics','database','map','papers','dev'];
+  var SCENES = ['oracle','research','science','ecosystem','simulate','analytics','database','map','papers','dev','inventory'];
   var ERRORS = ['network','model_unavailable','session_expired','unknown'];
   var config = null, active = false, session = null, queue = [], timer = null, sending = false;
   var generation = 0, loaded = false, needsReload = false, requests = new Set(), panel, status, consentSection, feedbackSection;
   var ph = null, phLoading = false, phInitialized = false, phQueue = [], phIdentity = null;
-  var NAMES = ['session.started','scene.viewed','oracle.submitted','oracle.completed','oracle.failed','feedback.submitted'];
+  var NAMES = ['session.started','scene.viewed','module.clicked','oracle.submitted','oracle.completed','oracle.failed','feedback.submitted'];
   var chatConsent=false, conversations={}, CHAT_KEY='mc_research_chat_consent_v1', CHAT_MAP='mc_research_chat_map_v1';
+  var journey=null, journeyBaseline=0, journeyPerformance=0, JOURNEY_KEY='mc_research_journey_v1';
   var nativeFetch = window.fetch.bind(window);
   document.body.setAttribute('data-clarity-mask', 'true');
   function read(key) { try { return sessionStorage.getItem(key); } catch (_) { return null; } }
@@ -20,28 +22,33 @@
   function scene() { var value = location.hash.replace(/^#/, ''); return SCENES.indexOf(value) >= 0 ? value : 'other'; }
   function permitted() { return active && config && config.enabled === true && session; }
   function speak(text) { if (status) status.textContent = text; }
+  function elapsed(){return journey?Math.max(0,Math.min(86400000,Math.round(journeyBaseline+performance.now()-journeyPerformance))):null;}
+  function journeyFields(body){if(!journey)return body;body.user_ref=journey.user_ref;if(journey.clarity_ref)body.clarity_ref=journey.clarity_ref;if(journey.tester_label)body.tester_label=journey.tester_label;return body;}
+  function clarityReference(){if(chatConsent&&journey&&validUUID(journey.clarity_ref))clarityCall('set','research_reference',journey.clarity_ref);}
   function post(path, body, signal) {
     return nativeFetch('/api/research/' + path, {method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json','X-MeatCODE-Research':'1'}, body:JSON.stringify(body), referrerPolicy:'no-referrer', signal:signal}).then(function (res) {
       if (!res.ok) throw new Error('RESEARCH_REQUEST_FAILED');
       return res;
     });
   }
-  function event(name, properties, providerProperties) {
+  function event(name, properties, providerProperties, targetScene) {
     if (!permitted()) return;
     var id = uuid(); if (!id) return;
     // Callers receive no generic logger: only these allow-listed lifecycle methods reach here.
-    queue.push({event_id:id, name:name, scene:scene(), properties:properties || {}});
-    if (loaded && safeURL()) { clarityCall('set','scene',scene()); clarityCall('event',name); }
-    posthogEvent(name, providerProperties || properties || {});
+    var target=SCENES.indexOf(targetScene)>=0?targetScene:scene();
+    queue.push({event_id:id, name:name, scene:target, elapsed_ms:elapsed(),properties:properties || {}});
+    if (loaded && safeURL()) { clarityCall('set','scene',target); clarityCall('event',name);if(name==='module.clicked')clarityCall('event','module.'+target+'.clicked'); }
+    posthogEvent(name, Object.assign({},providerProperties || properties || {},{scene:target}));
     if (queue.length > 100) queue.shift();
     if (!timer) timer = setTimeout(flush, 200);
+    if(name==='module.clicked'){if(timer)clearTimeout(timer);flush();}
   }
   function flush() {
     timer = null;
     if (!permitted() || sending || !queue.length) return;
     var batch = queue.splice(0,20), sid = session, current = generation, controller = new AbortController();
     sending = true;
-    var request = post('events', {session_id:sid, consent:true, consent_version:VERSION, events:batch}, controller.signal);
+    var request = post('events', journeyFields({session_id:sid, consent:true, consent_version:VERSION, events:batch}), controller.signal);
     requests.add(controller);
     request.catch(function () { /* testing never blocks the product; failed batches are not retained */ }).finally(function () {
       requests.delete(controller); sending = false;
@@ -64,9 +71,10 @@
     // Official Microsoft ConsentV2 API. Advertising remains denied.
     clarityCall('consentv2', {ad_Storage:'denied', analytics_Storage:'granted'});
     clarityCall('set','environment',['dev','prod','staging','local'].indexOf(config.environment)>=0 ? config.environment : 'other');
+    clarityReference();
     var sdk = document.createElement('script'); sdk.async = true; sdk.id = 'mc-clarity-sdk';
     sdk.src = 'https://www.clarity.ms/tag/z4upnrbddu'; sdk.referrerPolicy = 'no-referrer';
-    sdk.onload = function () { if (!active) { clarityCall('consentv2',{ad_Storage:'denied',analytics_Storage:'denied'}); clarityCall('stop'); } };
+    sdk.onload = function () { if(active)clarityReference(); if (!active) { clarityCall('consentv2',{ad_Storage:'denied',analytics_Storage:'denied'}); clarityCall('stop'); } };
     document.head.appendChild(sdk);
   }
   function posthogAllowed() {
@@ -131,16 +139,22 @@
     if (needsReload || read(PENDING_KEY)) { speak('Finish deleting this session before joining another test.'); return; }
     var previous = read(CONSENT_KEY)===VERSION+':yes' ? read(SESSION_KEY) : null; session = validUUID(previous) ? previous : uuid();
     if (!session) { speak('Testing is unavailable in this browser. The platform still works normally.'); return; }
-    chatConsent=action ? !!panel.querySelector('[data-research-chat]').checked : read(CHAT_KEY)===VERSION+':yes';
+    chatConsent=demoMode ? true : action ? !!panel.querySelector('[data-research-chat]').checked : read(CHAT_KEY)===VERSION+':yes';
     save(CHAT_KEY,chatConsent?VERSION+':yes':null);
     try{conversations=JSON.parse(read(CHAT_MAP)||'{}');}catch(_){conversations={};}
+    var stored=null;try{stored=JSON.parse(read(JOURNEY_KEY)||'null');}catch(_){}
+    if(previous&&stored&&stored.session===session&&validUUID(stored.user_ref)&&stored.user_ref!==session&&(!chatConsent||(validUUID(stored.clarity_ref)&&stored.clarity_ref!==session&&stored.clarity_ref!==stored.user_ref))){journey=stored;}
+    else{journey={session:session,user_ref:uuid(),clarity_ref:chatConsent?uuid():null,started_at:Date.now(),tester_label:chatConsent&&action&&!demoMode?panel.querySelector('[data-research-label]').value.trim().slice(0,80):null};}
+    if(!chatConsent){journey.clarity_ref=null;journey.tester_label=null;}
+    if(!validUUID(journey.user_ref)){journey=null;speak('Testing is unavailable in this browser.');return;}
+    var age=Date.now()-Number(journey.started_at);journeyBaseline=Number.isFinite(age)?Math.max(0,Math.min(86400000,age)):0;journeyPerformance=performance.now();save(JOURNEY_KEY,JSON.stringify(journey));
     active = true; generation++; save(SESSION_KEY, session); save(CONSENT_KEY, VERSION + ':yes');
     loadClarity(); loadPosthog(); event('session.started'); event('scene.viewed'); renderState();
-    speak('Optional testing is on for this tab. You can stop at any time.');
+    speak(demoMode ? 'Demo testing is active. New Oracle conversations are saved privately for review.' : 'Optional testing is on for this tab. You can stop at any time.');
   }
   function stop() {
     var sid = session || read(PENDING_KEY) || read(SESSION_KEY);
-    active = false; chatConsent=false;conversations={};save(CHAT_KEY,null);save(CHAT_MAP,null);generation++; queue = []; phQueue = [];
+    active = false; chatConsent=false;conversations={};journey=null;save(JOURNEY_KEY,null);save(CHAT_KEY,null);save(CHAT_MAP,null);generation++; queue = []; phQueue = [];
     if(ph){try{ph.opt_out_capturing({clear_persistence:true});}catch(_){}}
     var phScript=document.getElementById('mc-posthog-sdk');if(phScript)phScript.remove();
     if (timer) clearTimeout(timer); timer = null;
@@ -170,7 +184,8 @@
     if(!current(turn) || !turn.chat || !chatConsent)return;
     var body={session_id:session,consent:true,consent_version:VERSION,full_chat_consent:true,
       turn_id:turn.id,conversation_id:turn.conversation,turn_index:turn.index,question:turn.question,
-      answer:turn.answer,status:state,revision:turn.revision++,source_ids:turn.source_ids,truncated:turn.truncated};
+      answer:turn.answer,status:state,revision:turn.revision++,source_ids:turn.source_ids,truncated:turn.truncated,elapsed_ms:turn.elapsed_ms};
+    journeyFields(body);
     if(code)body.error_code=ERRORS.indexOf(code)>=0?code:'unknown';
     var controller=new AbortController();requests.add(controller);
     post('chat',body,controller.signal).catch(function(){if(permitted())speak('The Oracle still works, but a chat-research update could not be saved.');}).finally(function(){requests.delete(controller);});
@@ -184,7 +199,7 @@
       var key=String(chatKey||'active');var conversation=conversations[key];
       if(!conversation || !validUUID(conversation.id))conversation=conversations[key]={id:uuid(),next:1};
       if(validUUID(conversation.id)){
-        turn.chat=true;turn.id=uuid();turn.conversation=conversation.id;turn.index=conversation.next++;
+        turn.chat=true;turn.elapsed_ms=elapsed();turn.id=uuid();turn.conversation=conversation.id;turn.index=conversation.next++;
         turn.question=chatPrefix(question,12000);turn.answer='';turn.source_ids=[];turn.revision=0;turn.truncated=question.length>12000;
         save(CHAT_MAP,JSON.stringify(conversations));putChat(turn,'submitted');
       }
@@ -219,6 +234,25 @@
     event(code ? 'oracle.failed' : 'oracle.completed', properties);
   }
   window.MCResearch = Object.freeze({startOracle:startOracle,sourceCount:sourceCount,appendOracle:appendOracle,clarifyOracle:clarifyOracle,completeOracle:function(t){finish(t);},failOracle:function(t,c){finish(t,c||'unknown');},interruptOracle:function(t){finish(t,'unknown',true);}});
+  function firstInteraction(e) {
+    if (!e.isTrusted || (e.type==='keydown' && e.key!=='Enter')) return;
+    interacted=true;
+    if(demoMode && read(CONSENT_KEY)!==VERSION+':no')start();
+  }
+  document.addEventListener('click',firstInteraction,true);
+  document.addEventListener('submit',firstInteraction,true);
+  document.addEventListener('keydown',firstInteraction,true);
+  document.addEventListener('click',function(e){
+    if(!permitted()||!e.isTrusted||!e.target||!e.target.closest)return;
+    var control=e.target.closest('a[href^="#"],a[href="/app/dev/index.html"],.domains .domain,#invBtn,.mc-toolbench-btn'),target=null;
+    if(!control||control.hidden||control.getAttribute('aria-disabled')==='true'||control.getClientRects().length===0)return;
+    if(control.id==='invBtn'||control.classList.contains('mc-toolbench-btn'))target='inventory';
+    else if(control.hasAttribute('data-mod-chip'))target=control.getAttribute('data-mod-chip');
+    else if(control.hasAttribute('data-analytics-chip'))target='analytics';
+    else if(control.classList.contains('domain')){target={Oracle:'oracle',Science:'science',Ecosystem:'ecosystem',Research:'research',Simulate:'simulate',Analytics:'analytics',Database:'database',Map:'map',Papers:'papers'}[(control.textContent||'').trim()]||null;}
+    else{var href=control.getAttribute('href');if(href==='/app/dev/index.html')target='dev';else if(href&&/^#[a-z]+$/.test(href))target=href.slice(1);}
+    if(SCENES.indexOf(target)>=0)event('module.clicked',{}, {},target);
+  },true);
   window.addEventListener('hashchange', function () {
     if (!permitted()) return;
     if (loaded && !safeURL()) { clarityCall('consentv2',{ad_Storage:'denied',analytics_Storage:'denied'}); clarityCall('stop'); needsReload = true; }
@@ -226,11 +260,13 @@
   });
   function renderState() {
     if (!panel) return;
-    consentSection.hidden = active;
+    var demoNotice=document.getElementById('mcDemoNotice');
+    if(demoNotice){demoNotice.hidden=!!active;if(read(CONSENT_KEY)===VERSION+':no')demoNotice.textContent='Demo testing has stopped for this tab.';}
+    consentSection.hidden = !demoMode && active;
     feedbackSection.hidden = !active;
     var chatStatus=panel.querySelector('[data-chat-status]');if(chatStatus)chatStatus.textContent=chatConsent?'Full Oracle chat sharing is ON for new turns in this tab.':'Full Oracle chat sharing is OFF.';
     panel.querySelector('[data-research-stop]').hidden = !active && !read(PENDING_KEY) && !validUUID(read(SESSION_KEY));
-    panel.querySelector('[data-research-accept]').disabled = !config || config.enabled !== true || needsReload || !!read(PENDING_KEY);
+    if(!demoMode)panel.querySelector('[data-research-accept]').disabled = !config || config.enabled !== true || needsReload || !!read(PENDING_KEY);
   }
   function ui() {
     var style = document.createElement('style');
@@ -239,18 +275,31 @@
     var button = document.createElement('button'); button.id = 'mcResearchButton'; button.type = 'button'; button.textContent = 'Testing privacy'; button.setAttribute('aria-haspopup','dialog');
     document.body.appendChild(button);
     panel = document.createElement('dialog'); panel.id = 'mcResearchPanel'; panel.setAttribute('aria-labelledby','mcResearchTitle'); panel.setAttribute('data-clarity-mask','true');
-    panel.innerHTML = '<h2 id="mcResearchTitle">Help improve MeatCODE</h2><section data-research-consent><p>Optional testing records navigation, response timing and success or failure in MeatCODE and, when configured, PostHog. PostHog receives explicit events with a temporary page identity; no recordings or account identity. Microsoft Clarity provides masked interactions and analytics cookies; advertising storage stays off. Questions, answers, attachments and profile text are masked.</p><p>MeatCODE has a 90-day testing-data retention policy. You can stop and request deletion of this tab’s testing data below. Microsoft recordings follow the project’s separate Clarity retention settings.</p><label><input type="checkbox" data-research-chat> Also share my submitted Oracle questions, answers, clarification choices and citations with MeatCODE researchers.</label><p>This optional full-chat history is stored privately in Neon under MeatCODE’s 90-day testing-data policy, not sent to Clarity or PostHog. Earlier chats, unsent text, attachment contents and account details are not imported. Avoid confidential or personal information. Stop testing deletes this tab’s first-party research data.</p><button type="button" data-research-accept>Allow optional testing</button><button type="button" data-research-decline>Continue without testing</button></section><section data-research-feedback hidden><p data-chat-status></p><form><label>How was this experience?<select name="rating" required><option value="" selected disabled>Choose one</option><option value="helpful">Helpful</option><option value="neutral">Neutral</option><option value="unhelpful">Unhelpful</option></select></label><label>About<select name="category"><option value="answer">Oracle answer</option><option value="usability">Using the platform</option><option value="bug">A problem or bug</option><option value="other">Other</option></select></label><label>Comment (optional)<textarea name="comment" maxlength="2000" placeholder="Please leave out names, contact details and confidential research."></textarea></label><p>Submitted feedback comments go to MeatCODE’s own database. Full chat text is included there only if you selected the separate chat-sharing option. It is never sent to Clarity or PostHog. Only the selected rating and category may be included in PostHog feedback events.</p><button type="submit">Send feedback</button></form></section><button type="button" data-research-stop hidden>Stop testing &amp; delete session data</button><p id="mcResearchStatus" role="status" aria-live="polite"></p><button type="button" data-research-close>Close</button>';
+    panel.innerHTML = '<h2 id="mcResearchTitle">Help improve MeatCODE</h2><section data-research-consent><p>Optional testing records navigation, response timing and success or failure in MeatCODE and, when configured, PostHog. PostHog receives explicit events with a temporary page identity; no recordings or account identity. Microsoft Clarity provides masked interactions and analytics cookies; advertising storage stays off. MeatCODE also records clicks on supported module links and time elapsed since joining testing, using a random tab pseudonym. Questions, answers, attachments and profile text are masked.</p><p>MeatCODE has a 90-day testing-data retention policy. You can stop and request deletion of this tab’s testing data below. Microsoft recordings follow the project’s separate Clarity retention settings.</p><label><input type="checkbox" data-research-chat> Also share my submitted Oracle questions, answers, clarification choices, citations and journey timing with MeatCODE researchers, linked to my masked Clarity session by a random research reference.</label><label>Tester nickname or code (optional; not your email)<input type="text" maxlength="80" data-research-label autocomplete="off" spellcheck="false"></label><p>The nickname stays in MeatCODE only. Only the random research reference is sent to Clarity; no question, answer, nickname or account details are sent. This optional full-chat history is stored privately in Neon under MeatCODE’s 90-day testing-data policy, not sent to Clarity or PostHog. Earlier chats, unsent text, attachment contents and account details are not imported. Avoid confidential or personal information. Stop testing deletes this tab’s first-party research data.</p><button type="button" data-research-accept>Allow optional testing</button><button type="button" data-research-decline>Continue without testing</button></section><section data-research-feedback hidden><p data-chat-status></p><form><label>How was this experience?<select name="rating" required><option value="" selected disabled>Choose one</option><option value="helpful">Helpful</option><option value="neutral">Neutral</option><option value="unhelpful">Unhelpful</option></select></label><label>About<select name="category"><option value="answer">Oracle answer</option><option value="usability">Using the platform</option><option value="bug">A problem or bug</option><option value="other">Other</option></select></label><label>Comment (optional)<textarea name="comment" maxlength="2000" placeholder="Please leave out names, contact details and confidential research."></textarea></label><p>Submitted feedback comments go to MeatCODE’s own database. Full chat text is included there only if you selected the separate chat-sharing option. It is never sent to Clarity or PostHog. Only the selected rating and category may be included in PostHog feedback events.</p><button type="submit">Send feedback</button></form></section><button type="button" data-research-stop hidden>Stop testing &amp; delete session data</button><p id="mcResearchStatus" role="status" aria-live="polite"></p><button type="button" data-research-close>Close</button>';
     document.body.appendChild(panel);
     consentSection = panel.querySelector('[data-research-consent]'); feedbackSection = panel.querySelector('[data-research-feedback]'); status = panel.querySelector('#mcResearchStatus');
+    if(demoMode){
+      button.textContent='Demo testing · Details & feedback';
+      var notice=document.createElement('aside');notice.id='mcDemoNotice';notice.setAttribute('role','note');
+      notice.style.cssText='position:fixed;left:16px;bottom:12px;max-width:min(560px,calc(100vw - 32px));z-index:2090;padding:8px 12px;border-radius:12px;background:var(--surface,#fff);color:var(--ink,#222);border:1px solid var(--line,#ddd);font:12px/1.4 var(--round,system-ui)';
+      notice.textContent='Demo testing: using MeatCODE records usage and saves new Oracle questions and answers privately for review (90 days). Avoid confidential information.';
+      // Stack the details control above the notice without covering the input controls.
+      notice.style.position='relative';notice.style.left='auto';notice.style.bottom='auto';notice.style.maxWidth='560px';
+      var bar=document.createElement('div');bar.id='mcDemoTestingBar';bar.style.cssText='position:fixed;right:14px;bottom:12px;left:14px;z-index:2100;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;pointer-events:none';
+      notice.style.pointerEvents='auto';button.style.cssText='position:static;flex:none;pointer-events:auto';bar.appendChild(notice);bar.appendChild(button);document.body.appendChild(bar);
+      panel.querySelector('#mcResearchTitle').textContent='Demo testing & feedback';
+      consentSection.innerHTML='<p>Demo testing starts with your first interaction. Usage and newly submitted Oracle questions, answers, clarification choices and citations are saved privately in MeatCODE for 90 days. Masked interactions may be recorded by Microsoft Clarity; PostHog receives usage events. Oracle text is not sent to either provider. Earlier chats, unsent text, attachment contents and account details are excluded.</p><p>Microsoft recordings follow the Clarity project’s separate retention settings. You can delete this tab’s first-party testing data below.</p>';
+      var description=feedbackSection.querySelector('form p');description.textContent='Feedback and new Oracle conversations are stored privately in MeatCODE. Chat text is not sent to Clarity or PostHog.';
+    }
     button.addEventListener('click',function(){renderState();panel.showModal();});
     panel.querySelector('[data-research-close]').addEventListener('click',function(){panel.close();});
-    panel.querySelector('[data-research-decline]').addEventListener('click',function(){save(CONSENT_KEY,VERSION+':no');panel.close();});
-    panel.querySelector('[data-research-accept]').addEventListener('click',start);
+    if(!demoMode)panel.querySelector('[data-research-decline]').addEventListener('click',function(){save(CONSENT_KEY,VERSION+':no');panel.close();});
+    if(!demoMode)panel.querySelector('[data-research-accept]').addEventListener('click',start);
     panel.querySelector('[data-research-stop]').addEventListener('click',stop);
     panel.querySelector('form').addEventListener('submit',function(e){
       e.preventDefault(); if(!permitted())return;
       var form=e.target, submit=form.querySelector('[type=submit]'), sid=session, current=generation, id=uuid(); if(!id)return;
-      var payload={session_id:sid,event_id:id,consent:true,consent_version:VERSION,rating:form.elements.rating.value,category:form.elements.category.value,comment:form.elements.comment.value.slice(0,2000)};
+      var payload={session_id:sid,event_id:id,consent:true,consent_version:VERSION,rating:form.elements.rating.value,category:form.elements.category.value,comment:form.elements.comment.value.slice(0,2000),elapsed_ms:elapsed()};journeyFields(payload);
       submit.disabled=true;
       var controller=new AbortController();requests.add(controller);
       post('feedback',payload,controller.signal).then(function(){
@@ -261,13 +310,14 @@
     renderState();
   }
   nativeFetch('/api/research/config',{credentials:'same-origin',cache:'no-store',referrerPolicy:'no-referrer'}).then(function(res){if(!res.ok)throw new Error('disabled');return res.json();}).then(function(value){
-    if(!value || value.consent_version!==VERSION)return;
-    config=value;
+    if(!value || ['2026-10-29-journey-v1','2026-10-29-demo-v1'].indexOf(value.consent_version)<0)return;
+    config=value;demoMode=value.demo_mode===true;VERSION=value.consent_version;
     if(value.enabled!==true && !read(PENDING_KEY) && !validUUID(read(SESSION_KEY)))return;
     ui();
     if(read(PENDING_KEY)){renderState();speak('A previous deletion needs to be retried. Testing remains off.');return;}
     if(value.enabled!==true){speak('Testing is currently disabled. You can still delete this tab’s earlier testing data.');return;}
-    if(read(CONSENT_KEY)===VERSION+':yes')start();
+    if(demoMode){if(interacted && read(CONSENT_KEY)!==VERSION+':no')start();}
+    else if(read(CONSENT_KEY)===VERSION+':yes')start();
     else if(read(CONSENT_KEY)!==VERSION+':no')panel.showModal();
   }).catch(function(){
     // Keep first-party deletion reachable even if collection is disabled or config is unavailable.

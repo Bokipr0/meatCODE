@@ -6,18 +6,18 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from settings import ROOT, settings
+from settings import ROOT, settings, research_database_url
 
 EXPECTED = {
-    'oracle_turns':{'turn_id','environment','session_id','conversation_id','turn_index','question','answer','status','revision','source_ids','error_code','truncated','consent_version','consent_at','created_at','updated_at'},
-    'sessions': {'session_id','environment','consent_version','consent_at','created_at','last_seen_at'},
-    'events': {'event_id','environment','session_id','name','scene','duration_ms','error_code','source_count','created_at'},
-    'feedback': {'event_id','environment','session_id','rating','category','comment','created_at'},
+    'oracle_turns':{'elapsed_ms','turn_id','environment','session_id','conversation_id','turn_index','question','answer','status','revision','source_ids','error_code','truncated','consent_version','consent_at','created_at','updated_at'},
+    'sessions': {'user_ref','clarity_ref','tester_label','session_id','environment','consent_version','consent_at','created_at','last_seen_at'},
+    'events': {'elapsed_ms','event_id','environment','session_id','name','scene','duration_ms','error_code','source_count','created_at'},
+    'feedback': {'elapsed_ms','event_id','environment','session_id','rating','category','comment','created_at'},
     'withdrawals': {'session_id','environment','withdrawn_at'},
     'clarity_exports': {'export_id','environment','project_id','export_date','num_of_days','dimensions',
                         'attempts','status','aggregates','imported_at'},
 }
-INDEXES = {'sessions_pkey','events_pkey','feedback_pkey','withdrawals_pkey','clarity_exports_pkey',
+INDEXES = {'ur_sessions_clarity_ref','sessions_pkey','events_pkey','feedback_pkey','withdrawals_pkey','clarity_exports_pkey',
            'clarity_export_daily_unique','oracle_turns_pkey','ur_oracle_session','ur_oracle_updated','ur_sessions_last_seen','ur_events_session_time',
            'ur_events_created','ur_feedback_created','ur_withdrawals_created','ur_exports_created'}
 
@@ -54,9 +54,9 @@ def verify(cur):
 def run(environment, apply=False):
     import psycopg2
     conf=settings(environment);prod=settings('prod')
-    if not conf.get('DATABASE_URL') or (environment=='dev' and conf['DATABASE_URL']==prod.get('DATABASE_URL')):
+    if not research_database_url(conf) or (environment=='dev' and research_database_url(conf)==research_database_url(prod)):
         raise RuntimeError('Independent dev database configuration is required.')
-    conn=psycopg2.connect(conf['DATABASE_URL'],connect_timeout=5)
+    conn=psycopg2.connect(research_database_url(conf),connect_timeout=5)
     try:
         with conn.cursor() as cur:
             cur.execute("SET LOCAL lock_timeout='3s'; SET LOCAL statement_timeout='15s'")
@@ -70,7 +70,13 @@ def run(environment, apply=False):
                 conn.rollback()
                 return {'environment':environment,'mode':'preflight','existing_tables':sorted(existing),'public_tables':before}
             cur.execute("SELECT pg_advisory_xact_lock(hashtextextended('meatcode:migration:0016',0))")
-            for migration in ('0016_user_research.sql','0017_user_research_consent_providers.sql','0019_oracle_chat_research.sql'):
+            # Never reinstall older restrictive consent checks over newer rows.
+            migrations=['0016_user_research.sql']
+            if 'oracle_turns' not in existing:migrations.append('0019_oracle_chat_research.sql')
+            cur.execute("SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='user_research' AND table_name='sessions' AND column_name='user_ref')")
+            if not cur.fetchone()[0]:migrations.append('0020_research_journey.sql')
+            migrations.append('0021_research_demo_policy.sql')
+            for migration in migrations:
                 sql=(ROOT/'db/migrations'/migration).read_text()
                 body='\n'.join(line for line in sql.splitlines() if line.strip() not in ('BEGIN;','COMMIT;'))
                 cur.execute(body)

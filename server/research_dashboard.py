@@ -1,4 +1,4 @@
-# Last updated: 2026-10-29 10:49 UTC · Data/Backend · bounded read-only dashboard with distinct admin authorization and hashed session labels.
+# Last updated: 2026-10-29 · Data/Backend · scoped development-to-production monitoring, journey records and distinct navigation click totals.
 """Called only after the site's existing authentication gate. No provider API calls."""
 from contextlib import contextmanager
 import datetime
@@ -9,10 +9,11 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 try:
-    from . import user_research, research_http
+    from . import user_research, research_http, research_storage
 except ImportError:
     import user_research
     import research_http
+    import research_storage
 
 ROOT = Path(__file__).resolve().parents[1]
 WINDOWS = frozenset((15,60,1440,10080,129600))
@@ -71,22 +72,36 @@ def _local_settings(environment, environ):
     return settings
 
 
+def _research_connection(settings, legacy=None):
+    chosen=research_storage.database_url(settings,legacy)
+    if not chosen:raise user_research.StorageError()
+    return chosen
+
+
 def _database_settings(environment, app_env, environ, database_url, local_admin):
     hosted=str(environ.get('RENDER','')).strip().lower()=='true'
     if not local_admin or hosted:
         if environment!=app_env:
-            raise user_research.InputError('Hosted dashboard can read only this application environment.')
-        return database_url,dict(environ)
+            # This credential is a dedicated read-only research role, not the
+            # production application/admin credential or scientific connection.
+            if app_env=='dev' and environment=='prod' and environ.get('RESEARCH_PRODUCTION_DATABASE_URL'):
+                return environ['RESEARCH_PRODUCTION_DATABASE_URL'],dict(environ)
+            raise user_research.InputError('This environment is unavailable to this dashboard.')
+        chosen=_research_connection(environ,database_url)
+        if not chosen:raise user_research.StorageError()
+        return chosen,dict(environ)
     selected=_local_settings(environment,environ)
-    # Do not label inherited production data as development if its overlay is absent.
+    chosen=_research_connection(selected)
     if environment=='dev':
         production=_local_settings('prod',environ)
-        if selected.get('DATABASE_URL')==production.get('DATABASE_URL'):
-            raise user_research.StorageError()
-    chosen=selected.get('DATABASE_URL')
-    if not chosen:
-        raise user_research.StorageError()
+        if chosen==research_storage.database_url(production):raise user_research.StorageError()
+    if not chosen:raise user_research.StorageError()
     return chosen,selected
+
+
+def can_select_environment(app_env,environ,local_admin=False):
+    hosted=str(environ.get('RENDER','')).strip().lower()=='true'
+    return bool((local_admin and not hosted) or (app_env=='dev' and environ.get('RESEARCH_PRODUCTION_DATABASE_URL')))
 
 
 def _provider_url(value):
@@ -166,22 +181,24 @@ def snapshot(cursor,environment,minutes=15,limit=50,now=None):
         count(*) FILTER (WHERE name='oracle.failed'),
         (SELECT count(*) FROM recent_feedback),
         percentile_cont(0.5) WITHIN GROUP (ORDER BY duration_ms)
-            FILTER (WHERE name='oracle.completed' AND duration_ms IS NOT NULL)
+            FILTER (WHERE name='oracle.completed' AND duration_ms IS NOT NULL),
+        count(*) FILTER (WHERE name='module.clicked')
         FROM recent_events''',args+args)
     row=cursor.fetchone()
     totals=dict(zip(('sessions','oracle_submitted','oracle_completed','oracle_failed','feedback'),map(int,row[:5])))
     totals['median_response_ms']=float(row[5]) if row[5] is not None else None
+    totals['module_clicks']=int(row[6])
     cursor.execute('''SELECT scene,count(*) FROM user_research.events
         WHERE environment=%s AND created_at >= %s AND created_at <= %s
-        GROUP BY scene ORDER BY count(*) DESC,scene''',args)
+        AND name='scene.viewed' GROUP BY scene ORDER BY count(*) DESC,scene''',args)
     scenes=[{'scene':scene,'count':int(count)} for scene,count in cursor.fetchall()]
-    cursor.execute('''SELECT event_id,name,scene,created_at,duration_ms,error_code,source_count,session_id
+    cursor.execute('''SELECT event_id,name,scene,created_at,duration_ms,error_code,source_count,session_id,elapsed_ms
         FROM user_research.events WHERE environment=%s AND created_at >= %s AND created_at <= %s
         ORDER BY created_at DESC,event_id DESC LIMIT %s''',args+(limit,))
     activity=[{'id':str(event_id),'event':name,'scene':scene,'created_at':_iso(created),
                'duration_ms':duration,'error_code':error,'source_count':sources,
-               'session_label':_session_label(session,environment)}
-              for event_id,name,scene,created,duration,error,sources,session in cursor.fetchall()]
+               'session_label':_session_label(session,environment),'elapsed_ms':elapsed}
+              for event_id,name,scene,created,duration,error,sources,session,elapsed in cursor.fetchall()]
     cursor.execute('''SELECT created_at,rating,category,comment,session_id FROM user_research.feedback
         WHERE environment=%s AND created_at >= %s AND created_at <= %s
         ORDER BY created_at DESC,event_id DESC LIMIT 20''',args)
@@ -192,9 +209,47 @@ def snapshot(cursor,environment,minutes=15,limit=50,now=None):
     cursor.execute('SELECT conversation_id,count(*),max(updated_at),min(created_at)\n        FROM user_research.oracle_turns WHERE environment=%s\n        GROUP BY conversation_id HAVING max(updated_at)>=%s AND max(updated_at)<=%s\n        ORDER BY max(updated_at) DESC,conversation_id LIMIT 20',args)
     conversations=[{'id':str(cid),'turns':int(count),'last_updated':_iso(updated),'started_at':_iso(started)}
                    for cid,count,updated,started in cursor.fetchall()]
+    cursor.execute("""SELECT scene,count(*) FROM user_research.events
+        WHERE environment=%s AND created_at>=%s AND created_at<=%s AND name='module.clicked'
+        GROUP BY scene ORDER BY count(*) DESC,scene""",args)
+    module_clicks=[{'scene':scene,'count':int(count)} for scene,count in cursor.fetchall()]
+    inputs=journey(cursor,environment,minutes,limit,checked)['rows']
     return {'ok':True,'environment':environment,'checked_at':checked.isoformat(),'window_minutes':minutes,
             'source':'neon_first_party','totals':totals,'scenes':scenes,'activity':activity,
-            'feedback':feedback,'conversations':conversations,'limits':{'activity_limit':limit,'conversation_limit':20}}
+            'feedback':feedback,'conversations':conversations,'module_clicks':module_clicks,'journey':inputs,
+            'limits':{'activity_limit':limit,'conversation_limit':20,'journey_limit':limit}}
+
+
+def journey(cursor,environment,minutes=60,limit=50,now=None):
+    if environment not in ('dev','prod') or minutes not in WINDOWS or type(limit) is not int or not 1<=limit<=50:
+        raise user_research.InputError('Journey parameters are invalid.')
+    checked=now or datetime.datetime.now(datetime.timezone.utc)
+    since=checked-datetime.timedelta(minutes=minutes)
+    args=(environment,since,checked)
+    cursor.execute("""WITH inputs AS (
+      SELECT turn_id::text AS id,session_id,environment,'oracle.input'::text AS kind,
+        question AS input,elapsed_ms,created_at,status,conversation_id::text AS conversation_id
+      FROM user_research.oracle_turns WHERE environment=%s AND created_at>=%s AND created_at<=%s
+      UNION ALL
+      SELECT event_id::text,session_id,environment,'feedback.input',
+        coalesce(nullif(comment,''),'Rating: '||rating||'; category: '||category),
+        elapsed_ms,created_at,'submitted',NULL::text
+      FROM user_research.feedback WHERE environment=%s AND created_at>=%s AND created_at<=%s
+    ) SELECT i.id,i.kind,i.created_at,s.user_ref,s.tester_label,i.input,i.elapsed_ms,
+      s.clarity_ref,i.conversation_id,i.status,s.session_id
+    FROM inputs i JOIN user_research.sessions s
+      ON s.environment=i.environment AND s.session_id=i.session_id
+    ORDER BY i.created_at DESC,i.id DESC LIMIT %s""",args+args+(limit,))
+    rows=[]
+    for identifier,kind,created,user_ref,label,input_text,elapsed,clarity_ref,conversation,status,session in cursor.fetchall():
+        utc=created.astimezone(datetime.timezone.utc) if hasattr(created,'astimezone') else None
+        rows.append({'id':str(identifier),'kind':kind,'created_at':_iso(created),
+            'date':utc.date().isoformat() if utc else None,'user_ref':str(user_ref) if user_ref else _session_label(session,environment),
+            'tester_label':label,'input':input_text,'elapsed_ms':elapsed,'clarity_ref':str(clarity_ref) if clarity_ref else None,
+            'conversation_id':conversation,'status':status})
+    return {'ok':True,'source':'neon_first_party','environment':environment,'checked_at':checked.isoformat(),
+            'window_minutes':minutes,'rows':rows,'limit':limit,'timestamp_zone':'UTC',
+            'identity_scope':'consented_tab_pseudonym','timer_scope':'elapsed_since_testing_opt_in'}
 
 
 def transcript_parameters(path,app_env):
@@ -230,15 +285,18 @@ def handle(handler,database_url,app_env,environ,local_admin=False):
     if not local and not _admin_token_ok(handler.headers,environ):
         return research_http._error(handler,403,'research_admin_required','Research administrator access is required.')
     try:
-        is_transcript=urlsplit(handler.path).path=='/api/research/transcript'
+        route=urlsplit(handler.path).path
+        is_transcript=route=='/api/research/transcript'
+        is_journey=route=='/api/research/journey'
         if is_transcript:environment,conversation,after,limit=transcript_parameters(handler.path,app_env)
         else:environment,minutes,limit=parameters(handler.path,app_env)
         target,settings=_database_settings(environment,app_env,environ,database_url,local)
         with readonly(target) as cursor:
-            result=transcript(cursor,environment,conversation,after,limit) if is_transcript else snapshot(cursor,environment,minutes,limit)
+            result=(transcript(cursor,environment,conversation,after,limit) if is_transcript else
+                    journey(cursor,environment,minutes,limit) if is_journey else snapshot(cursor,environment,minutes,limit))
         if not is_transcript:
             result['providers']=providers(settings,environment)
-            result['can_select_environment']=local
+            result['can_select_environment']=can_select_environment(app_env,environ,local)
         return research_http._reply(handler,result)
     except user_research.InputError:
         return research_http._error(handler,400,'invalid_dashboard_parameters','Dashboard parameters are invalid for this server.')

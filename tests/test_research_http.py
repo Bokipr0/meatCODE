@@ -110,7 +110,7 @@ class ResearchHTTPTests(unittest.TestCase):
     def test_config_has_public_fields_only_and_no_store(self):
         h = self.call(Handler("/api/research/config"), method="GET", env={"CLARITY_EXPORT_TOKEN": "secret"})
         self.assertEqual(h.status, 200)
-        self.assertEqual(set(h.result()), {"enabled", "environment", "clarity_project_id", "consent_version", "retention_days", "posthog"})
+        self.assertEqual(set(h.result()), {"enabled", "environment", "clarity_project_id", "consent_version", "retention_days", "posthog", "demo_mode"})
         self.assertEqual(set(h.result()["posthog"]), {"enabled", "project_token", "api_host"})
         self.assertTrue(h.result()["enabled"])
         self.assertEqual(h.response_headers["Cache-Control"], "no-store")
