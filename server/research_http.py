@@ -55,18 +55,27 @@ _POST_ROUTES = {
 }
 
 
+def _production_request(app_env, environ, headers):
+    """Host is validated from the request, never forwarded/caller-controlled config."""
+    if app_env != "prod" or str(environ.get("RENDER", "")).strip().lower() != "true" or headers is None:
+        return False
+    host = _single_header(headers, "Host")
+    return isinstance(host, str) and host.lower() in ("meatcode-oracle.onrender.com", "meatcode-oracle.onrender.com:443")
+
+
 def effective_config(module, environ, app_env, flag_enabled, database_url, headers=None):
     """Only real production intake may opt in; configuration cannot override scope."""
     settings = dict(environ)
     disabled = str(settings.get("USER_RESEARCH_ENABLED", "")).strip().lower() in _FALSE_VALUES
-    enabled = bool(app_env == "prod" and not _excluded_browser(headers) and flag_enabled and database_url and not disabled)
+    production = _production_request(app_env, environ, headers)
+    enabled = bool(production and not _excluded_browser(headers) and flag_enabled and database_url and not disabled)
     settings["USER_RESEARCH_ENABLED"] = "1" if enabled else "0"
     raw = module.config(settings, app_env)
     # Explicit allowlist: never return storage URLs, admin tokens or future private fields.
     return {
         "enabled": bool(enabled and raw.get("enabled")),
         "environment": raw["environment"],
-        "capture_excluded": "nonproduction" if app_env != "prod" else _browser_exclusion(headers),
+        "capture_excluded": "nonproduction" if not production else _browser_exclusion(headers),
         "demo_mode": bool(enabled and raw.get("demo_mode") is True),
         "clarity_project_id": raw["clarity_project_id"] if enabled else "",
         "consent_version": raw["consent_version"],
@@ -197,8 +206,14 @@ def handle(handler, method, path, module, database_url, app_env, environ, flag_e
             return _error(handler, 503, "research_unavailable", "Research settings are temporarily unavailable.")
     if method != "POST" or path not in _POST_ROUTES:
         return _error(handler, 404, "not_found", "Research endpoint not found.", close=method == "POST")
-    if app_env != "prod":
+    if not _production_request(app_env, environ, handler.headers):
         return _error(handler, 404, "research_disabled", "Research capture is disabled on this server.", close=True)
+    try:
+        secure_origin = urlsplit(_single_header(handler.headers, "Origin") or "").scheme == "https"
+    except ValueError:
+        secure_origin = False
+    if not secure_origin:
+        return _error(handler, 403, "same_origin_required", "Research requests must come from this platform.", close=True)
     # Exclusion precedes parsing, rate accounting and all storage. Withdrawal stays
     # available on production so stopping capture never prevents session deletion.
     if path != "/api/research/withdraw" and _excluded_browser(handler.headers):

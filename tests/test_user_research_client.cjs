@@ -29,7 +29,7 @@ const COMMENT = 'EXPLICIT_FEEDBACK_COMMENT_2859';
    }
    if(u.hostname!=='127.0.0.1')return route.abort();
    if(u.pathname==='/api/research/config' && options.unauthorized)return route.fulfill({status:401,body:'Authentication required.'});
-   if(u.pathname==='/api/research/config')return route.fulfill({contentType:'application/json',body:JSON.stringify({enabled:options.enabled!==false,demo_mode:options.demo===true,environment:'prod',clarity_project_id:options.noClarity?'':'z4upnrbddu',posthog:options.noPosthog?{enabled:false}:{enabled:true,project_token:'phc_fixture_public',api_host:'https://eu.i.posthog.com'},consent_version:options.demo?'2026-10-29-demo-v1':'2026-10-29-journey-v1',retention_days:90})});
+   if(u.pathname==='/api/research/config')return route.fulfill({contentType:'application/json',body:JSON.stringify({enabled:options.enabled!==false,demo_mode:options.demo===true,environment:options.environment||'prod',clarity_project_id:options.noClarity?'':'z4upnrbddu',posthog:options.noPosthog?{enabled:false}:{enabled:true,project_token:'phc_fixture_public',api_host:'https://eu.i.posthog.com'},consent_version:options.demo?'2026-10-29-demo-v1':'2026-10-29-journey-v1',retention_days:90})});
    if(u.pathname.startsWith('/api/research/')) {
     records.push({kind:'post',path:u.pathname,body:req.postDataJSON(),headers:req.headers()});
     return route.fulfill({status:u.pathname.endsWith('/withdraw') && withdrawFails ? 503 : 200,contentType:'application/json',body:'{"ok":true}'});
@@ -54,6 +54,7 @@ const COMMENT = 'EXPLICIT_FEEDBACK_COMMENT_2859';
   const ask=async value=>{await page.locator('#oracleTextarea').fill(value);await page.locator('#oracleAskBtn').click();await page.waitForFunction(()=>!document.querySelector('#oracleAskBtn').disabled);await page.waitForTimeout(400);};
   return {page,context,records,errors,events,ask,outcome:value=>{outcome=value;},withdrawFails:value=>{withdrawFails=value;}};
  }
+ const development=await fixture({demo:true,environment:'dev'});await development.page.locator('#oracle .mc-dev-label').waitFor();await development.page.waitForTimeout(250);assert.equal(development.records.length,0,'development cannot collect research even if misconfigured');assert.deepEqual(development.errors,[]);await development.context.close();
  const demo=await fixture({demo:true,environment:'prod'});
  await demo.page.waitForFunction(()=>sessionStorage.getItem('mc_research_consent_v1')==='2026-10-29-demo-v1:yes');
  await demo.page.waitForTimeout(400);
@@ -65,8 +66,7 @@ const COMMENT = 'EXPLICIT_FEEDBACK_COMMENT_2859';
  assert.equal(await demo.page.locator('.topbar .mc-toolbench-btn').count(),0);
  assert.equal(await demo.page.locator('#oracle .mc-dashboard-btn').getAttribute('href'),'/research-dashboard');
  assert(await demo.page.locator('#oracle .mc-dashboard-btn').isVisible(),'Dashboard remains visible independently of inventory flag');
- await demo.page.locator('#oracle .mc-dev-label').waitFor();
- assert.equal(await demo.page.locator('#oracle .mc-dev-label').innerText(),'DEV');
+ assert.equal(await demo.page.locator('#oracle .mc-dev-label').count(),0,'production must not be labelled development');
  await demo.ask(PRIVATE);
  const demoChats=demo.records.filter(r=>r.path==='/api/research/chat');
  assert(demoChats.some(r=>r.body.question===PRIVATE&&r.body.status==='complete'),'first submitted question and answer captured');

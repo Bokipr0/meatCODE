@@ -69,7 +69,7 @@ class Handler:
     def __init__(self, path="/api/research/events", body=b"{}", headers=None):
         self.path = path
         self.headers = Message()
-        defaults = {"Host": "example.test", "Origin": "https://example.test",
+        defaults = {"Host": "meatcode-oracle.onrender.com", "Origin": "https://meatcode-oracle.onrender.com",
                     "Sec-Fetch-Site": "same-origin", "X-MeatCODE-Research": "1",
                     "Content-Type": "application/json", "Content-Length": str(len(body))}
         if headers:
@@ -104,7 +104,7 @@ class ResearchHTTPTests(unittest.TestCase):
     def call(self, handler=None, method="POST", path=None, db="configured-db", env=None, flag=True, module=True):
         h = handler or Handler()
         research_http.handle(h, method, path or h.path, self.module if module else None,
-                             db, "prod", env or {}, flag)
+                             db, "prod", dict({"RENDER":"true"},**(env or {})), flag)
         return h
 
     def test_config_has_public_fields_only_and_no_store(self):
@@ -119,14 +119,14 @@ class ResearchHTTPTests(unittest.TestCase):
     def test_posthog_config_contains_no_private_fields(self):
         from server import user_research
         token="phc_"+"publicfixture"*3
-        env={"POSTHOG_PROJECT_TOKEN":token,"POSTHOG_API_HOST":"https://eu.i.posthog.com",
+        env={"RENDER":"true","POSTHOG_PROJECT_TOKEN":token,"POSTHOG_API_HOST":"https://eu.i.posthog.com",
              "POSTHOG_PERSONAL_API_KEY":"private-fixture","RESEARCH_ADMIN_TOKEN":"private-admin-fixture",
              "CLARITY_EXPORT_TOKEN":"private-clarity-fixture"}
-        config=research_http.effective_config(user_research,env,"prod",True,"private-database-fixture")
+        config=research_http.effective_config(user_research,env,"prod",True,"private-database-fixture",{"Host":"meatcode-oracle.onrender.com"})
         self.assertTrue(config["posthog"]["enabled"])
         self.assertEqual(config["posthog"]["project_token"],token)
         self.assertNotIn("private-",json.dumps(config))
-        config=research_http.effective_config(user_research,env,"prod",False,"private-database-fixture")
+        config=research_http.effective_config(user_research,env,"prod",False,"private-database-fixture",{"Host":"meatcode-oracle.onrender.com"})
         self.assertFalse(config["posthog"]["enabled"])
 
     def test_effective_switch_and_database_required(self):
@@ -191,10 +191,10 @@ class ResearchHTTPTests(unittest.TestCase):
         self.assertEqual(self.call(Handler(headers={"Content-Type": "application/json; charset=utf-8"})).status, 200)
 
     def test_origin_and_fetch_metadata_are_strict(self):
-        invalid = (None, "null", "https://other.test", "https://example.test/", "https://example.test?",
-                   "https://example.test#", "https://user@example.test", "https://u:p@example.test",
-                   "ftp://example.test", "https://example.test:443", "https://example.test/path",
-                   "https://example.test?q=x", "https://example.test#x", "\x00https://example.test")
+        invalid = (None, "null", "https://other.test", "https://meatcode-oracle.onrender.com/", "https://meatcode-oracle.onrender.com?",
+                   "https://meatcode-oracle.onrender.com#", "https://user@meatcode-oracle.onrender.com", "https://u:p@meatcode-oracle.onrender.com",
+                   "ftp://meatcode-oracle.onrender.com", "https://meatcode-oracle.onrender.com:443", "https://meatcode-oracle.onrender.com/path",
+                   "https://meatcode-oracle.onrender.com?q=x", "https://meatcode-oracle.onrender.com#x", "\x00https://meatcode-oracle.onrender.com")
         for origin in invalid:
             with self.subTest(origin=origin):
                 h = self.call(Handler(headers={"Origin": origin}))
@@ -206,14 +206,15 @@ class ResearchHTTPTests(unittest.TestCase):
             self.assertEqual(self.call(Handler(headers={"Sec-Fetch-Site": site})).status, 200)
 
     def test_duplicate_origin_or_fetch_metadata_is_rejected(self):
-        for key, value in (("Origin", "https://example.test"), ("Sec-Fetch-Site", "same-origin")):
+        for key, value in (("Origin", "https://meatcode-oracle.onrender.com"), ("Sec-Fetch-Site", "same-origin")):
             h = Handler()
             h.headers[key] = value
             self.assertEqual(self.call(h).status, 403)
 
-    def test_localhost_and_ipv6_origins(self):
+    def test_localhost_and_ipv6_intake_is_rejected(self):
         for host, origin in (("localhost:8000", "http://localhost:8000"), ("[::1]:8000", "http://[::1]:8000")):
-            self.assertEqual(self.call(Handler(headers={"Host": host, "Origin": origin})).status, 200)
+            self.assertEqual(self.call(Handler(headers={"Host": host, "Origin": origin})).status, 404)
+            self.assertFalse(self.module.calls)
 
     def test_malformed_truncated_and_non_object_json(self):
         for body in (b"{", b"[]", b"null", b"\xff\xff", b'{"a":' + b"[" * 1100):

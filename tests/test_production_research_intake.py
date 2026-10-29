@@ -26,7 +26,7 @@ class ReadSpy(io.BytesIO):
 class Handler:
  def __init__(self,path,extra=None):
   self.path=path;self.headers=Message();self.wfile=io.BytesIO();self.rfile=ReadSpy(b'{}');self.close_connection=False;self.status=None
-  for name,value in {'Host':'example.test','Origin':'https://example.test','Sec-Fetch-Site':'same-origin','Content-Type':'application/json','Content-Length':'2','X-MeatCODE-Research':'1',**(extra or {})}.items():self.headers[name]=value
+  for name,value in {'Host':'meatcode-oracle.onrender.com','Origin':'https://meatcode-oracle.onrender.com','Sec-Fetch-Site':'same-origin','Content-Type':'application/json','Content-Length':'2','X-MeatCODE-Research':'1',**(extra or {})}.items():self.headers[name]=value
  def send_response(self,status):self.status=status
  def send_header(self,*args):pass
  def end_headers(self):pass
@@ -37,9 +37,9 @@ class ProductionIntakeTests(unittest.TestCase):
  def setUp(self):
   self.module=Research()
   with http._capture_lock:http._captures.clear()
- def call(self,environment='prod',route='events',extra=None,config=False):
+ def call(self,environment='prod',route='events',extra=None,config=False,server_environment=None):
   h=Handler('/api/research/'+('config' if config else route),extra)
-  http.handle(h,'GET' if config else 'POST',h.path,self.module,'misconfigured-private-storage',environment,{'USER_RESEARCH_ENABLED':'true','USER_RESEARCH_DEMO_MODE':'true'},True)
+  http.handle(h,'GET' if config else 'POST',h.path,self.module,'misconfigured-private-storage',environment,{'USER_RESEARCH_ENABLED':'true','USER_RESEARCH_DEMO_MODE':'true',**({'RENDER':'true'} if server_environment is None else server_environment)},True)
   return h
  def test_nonproduction_never_writes_even_when_all_settings_enable_it(self):
   for env in ('dev','local','staging'):
@@ -47,12 +47,35 @@ class ProductionIntakeTests(unittest.TestCase):
     with self.subTest(environment=env,route=route):
      h=self.call(env,route);self.assertEqual(h.status,404);self.assertEqual(h.rfile.reads,0)
   self.assertEqual(self.module.writes,[]);self.assertEqual(self.module.config_calls,0)
+ def test_local_default_prod_and_wrong_render_hosts_are_excluded(self):
+  cases=[({'Host':'127.0.0.1:8000','Origin':'http://127.0.0.1:8000'},{}),
+         ({'Host':'localhost:8000','Origin':'http://localhost:8000'},{}),
+         ({'Host':'meatcode-oracle.onrender.com','Origin':'https://meatcode-oracle.onrender.com'},{}),
+         ({'Host':'meatcode.onrender.com','Origin':'https://meatcode.onrender.com'},{'RENDER':'true'}),
+         ({'Host':'other.test','Origin':'https://other.test'},{'RENDER':'true'}),
+         ({'Host':'meatcode-oracle.onrender.com.evil.test','Origin':'https://meatcode-oracle.onrender.com.evil.test'},{'RENDER':'true'}),
+         ({'Host':'meatcode-oracle.onrender.com:8000','Origin':'https://meatcode-oracle.onrender.com:8000'},{'RENDER':'true'})]
+  for headers,environ in cases:
+   for route in ('events','chat','feedback','withdraw'):
+    with self.subTest(headers=headers,environment=environ,route=route):
+     h=self.call(extra=headers,route=route,server_environment=environ);self.assertEqual(h.status,404);self.assertEqual(h.rfile.reads,0)
+   d=self.call(extra=headers,config=True,server_environment=environ).result();self.assertFalse(d['enabled']);self.assertEqual(d['capture_excluded'],'nonproduction')
+  self.assertEqual(self.module.writes,[])
+ def test_production_host_requires_one_host_header(self):
+  for host in ('meatcode-oracle.onrender.com','MEATCODE-ORACLE.ONRENDER.COM:443'):
+   headers=Message();headers['Host']=host;self.assertTrue(http._production_request('prod',{'RENDER':'true'},headers))
+  headers['Host']='meatcode-oracle.onrender.com';self.assertFalse(http._production_request('prod',{'RENDER':'true'},headers))
+  self.assertFalse(http._production_request('prod',{'RENDER':'true'},None))
  def test_development_public_config_disables_providers_and_demo(self):
   h=self.call('dev',config=True);d=h.result();self.assertEqual(h.status,200);self.assertFalse(d['enabled']);self.assertFalse(d['demo_mode']);self.assertEqual(d['capture_excluded'],'nonproduction');self.assertFalse(d['posthog']['enabled']);self.assertEqual(d['posthog']['project_token'],'');self.assertEqual(d['clarity_project_id'],'');self.assertEqual(self.module.writes,[])
  def test_ordinary_production_browser_can_capture(self):
   h=self.call(extra={'User-Agent':'Mozilla/5.0 (Macintosh) AppleWebKit/605.1.15 Version/18.0 Safari/605.1.15'})
   self.assertEqual(h.status,200);self.assertEqual(self.module.writes[0][0],'events')
   d=self.call(config=True).result();self.assertTrue(d['enabled']);self.assertEqual(d['capture_excluded'],'')
+ def test_production_writes_require_a_secure_browser_origin(self):
+  for route in ('events','chat','feedback','withdraw'):
+   h=self.call(route=route,extra={'Origin':'http://meatcode-oracle.onrender.com'});self.assertEqual(h.status,403);self.assertEqual(h.rfile.reads,0)
+  self.assertEqual(self.module.writes,[])
  def test_internal_cookie_and_header_block_before_parsing_or_storage(self):
   for extra in ({'Cookie':'ordinary=value; __Host-mc_research_internal=1'},{'X-MeatCODE-Internal':'1'}):
    for route in ('events','chat','feedback'):

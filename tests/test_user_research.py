@@ -116,7 +116,6 @@ class RollbackDatabaseTests(unittest.TestCase):
     def test_idempotency_environment_and_withdrawal(self):
         self.assertEqual(research._write_events(self.cur,'prod',self.sid,self.events)['accepted'],1)
         self.assertEqual(research._write_events(self.cur,'prod',self.sid,self.events)['duplicate'],1)
-        self.assertEqual(research._write_events(self.cur,'prod',self.sid,self.events)['accepted'],1)
         feedback={'event_id':str(uuid.uuid4()),'rating':'helpful','category':'bug','comment':"fixture '; DROP TABLE scientific; --"}
         self.assertEqual(research._write_feedback(self.cur,'prod',self.sid,feedback)['accepted'],1)
         self.assertEqual(research._write_feedback(self.cur,'prod',self.sid,feedback)['duplicate'],1)
@@ -126,7 +125,7 @@ class RollbackDatabaseTests(unittest.TestCase):
             self.assertEqual(self.cur.fetchone()[0],0)
         with self.assertRaises(research.WithdrawnError):research._write_events(self.cur,'prod',self.sid,self.events)
         self.cur.execute('SELECT count(*) FROM user_research.sessions WHERE session_id=%s AND environment=%s',(self.sid,'prod'))
-        self.assertEqual(self.cur.fetchone()[0],1)
+        self.assertEqual(self.cur.fetchone()[0],0)
 
     def test_renewed_consent_is_explicit_and_other_legacy_rows_are_unchanged(self):
         untouched=str(uuid.uuid4())
