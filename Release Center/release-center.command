@@ -16,6 +16,21 @@ if [ ! -f .env.dev ]; then
   printf '# LOCAL DEV ONLY — never commit.\n# Uncomment + fill to point local dev at your DEV database:\n# DATABASE_URL=postgresql://...your-dev-branch...\n' > .env.dev
 fi
 
+# Reuse a healthy existing local cockpit instead of starting a second server.
+if python3 - <<'CHECK_COCKPIT'
+import json,urllib.request
+try:
+    with urllib.request.urlopen('http://127.0.0.1:8000/api/flags/all',timeout=2) as response:
+        assert json.load(response).get('admin') is True
+except Exception:
+    raise SystemExit(1)
+CHECK_COCKPIT
+then
+  echo "The local Release Center is already running. Opening its controls…"
+  open "http://localhost:8000/app/release-center.html"
+  exit 0
+fi
+
 echo "Opening the MeatCODE Release Center…"
 echo "  http://localhost:8000/app/release-center.html"
 echo "  (Admin cockpit — local only. You can also press H inside the app. Ctrl+C to stop.)"

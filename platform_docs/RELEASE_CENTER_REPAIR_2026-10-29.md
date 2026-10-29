@@ -10,4 +10,10 @@ Both launchers check branch ancestry before committing, show real errors, stop o
 
 Analytics and simulation switches are saved OFF in dev and production. Simulate navigation/starter/deep links now follow maillard_sim, alongside its existing API gate. Analytics navigation/deep links and direct workspace routes follow analytics. Neither scientific tables nor research-log collection is disabled by these module switches.
 
-Verification:54 offline tests pass (5 previously verified live-only tests skipped), shell and inline JavaScript syntax pass. Isolated browser confirms hidden Analytics/Simulate, hidden simulator starter, disabled deep links returning to Oracle and zero page errors. Release-job tests verify actual script failure reporting, origin protection, concurrency and remote-ref success verification. Hosted deployment checks are recorded after publication in data/verification.
+Verification:55 offline tests pass (5 previously verified live-only tests skipped), shell and inline JavaScript syntax pass. Isolated browser confirms hidden Analytics/Simulate, hidden simulator starter, disabled deep links returning to Oracle and zero page errors. Release-job tests verify actual script failure reporting, origin protection, concurrency and remote-ref success verification. Hosted deployment checks are recorded after publication in data/verification.
+
+Flag updates now serialize the entire read-modify-write operation and atomically replace the JSON file; a concurrent30-toggle probe preserved every change and registry metadata. Explicit deployments create a normal release marker after skipped-render documentation commits, preventing silent no-deploy outcomes.
+
+## Verified deployment
+
+Both sites now run41872cbe0bb7cfea01ed76409a515ec361f2bc27, with Analytics and Simulate switches off and healthy startup. Productiondep-dbhlth4s728c73da8n40; stagingdep-dbhlsp29lscs739ttusg. Rollback tagprod-20261029-1557. Research collection remains enabled. Refresh the local Release Center to load the new job-progress interface. The launcher reuses an existing healthy local cockpit.

@@ -103,7 +103,7 @@ git tag "$TAG" "$DEV" 2>/dev/null && git push origin "$TAG" --quiet 2>/dev/null
 
 echo ""
 echo "==================================================================="
-echo "  ✅  LIVE. Render is rebuilding the public site (~1-2 min)."
+echo "  ✅  Published to GitHub. Render is rebuilding production (~1-2 min)."
 echo "      Snapshot tagged:  $TAG"
 echo "      To undo: double-click rollback-prod.command."
 echo "==================================================================="
