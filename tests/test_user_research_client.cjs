@@ -1,4 +1,4 @@
-/* Last updated: 2026-10-29 · Codex · automatic demo start plus optional-mode privacy regressions. */
+/* Last updated: 2026-10-29 · Codex · automatic post-login demo start plus optional-mode privacy regressions. */
 const {chromium} = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -28,6 +28,7 @@ const COMMENT = 'EXPLICIT_FEEDBACK_COMMENT_2859';
     return route.fulfill({contentType:'text/javascript',body:'window.__maskAtSDK = document.body.getAttribute("data-clarity-mask"); window.__clarityCalls=(window.clarity.q||[]).map(function(x){return Array.from(x)}); window.clarity=function(){window.__clarityCalls.push(Array.from(arguments))};'});
    }
    if(u.hostname!=='127.0.0.1')return route.abort();
+   if(u.pathname==='/api/research/config' && options.unauthorized)return route.fulfill({status:401,body:'Authentication required.'});
    if(u.pathname==='/api/research/config')return route.fulfill({contentType:'application/json',body:JSON.stringify({enabled:options.enabled!==false,demo_mode:options.demo===true,environment:'dev',clarity_project_id:options.noClarity?'':'z4upnrbddu',posthog:options.noPosthog?{enabled:false}:{enabled:true,project_token:'phc_fixture_public',api_host:'https://eu.i.posthog.com'},consent_version:options.demo?'2026-10-29-demo-v1':'2026-10-29-journey-v1',retention_days:90})});
    if(u.pathname.startsWith('/api/research/')) {
     records.push({kind:'post',path:u.pathname,body:req.postDataJSON(),headers:req.headers()});
@@ -52,11 +53,13 @@ const COMMENT = 'EXPLICIT_FEEDBACK_COMMENT_2859';
   return {page,context,records,errors,events,ask,outcome:value=>{outcome=value;},withdrawFails:value=>{withdrawFails=value;}};
  }
  const demo=await fixture({demo:true});
- await demo.page.locator('#mcDemoNotice').waitFor();
+ await demo.page.waitForFunction(()=>sessionStorage.getItem('mc_research_consent_v1')==='2026-10-29-demo-v1:yes');
+ await demo.page.waitForTimeout(400);
  assert.equal(await demo.page.locator('#mcResearchPanel').isVisible(),false,'demo never opens a blocking modal');
  assert.equal(await demo.page.locator('[data-research-accept]').count(),0);
  assert.equal(await demo.page.locator('[data-research-decline]').count(),0);
- assert.equal(demo.records.length,0,'demo starts with interaction, not page load');
+ assert(demo.events().some(e=>e.name==='session.started'),'testing starts after authenticated config without a click');
+ assert.equal(demo.records.filter(r=>r.path==='/api/research/chat').length,0,'login alone must not fabricate a chat');
  await demo.ask(PRIVATE);
  const demoChats=demo.records.filter(r=>r.path==='/api/research/chat');
  assert(demoChats.some(r=>r.body.question===PRIVATE&&r.body.status==='complete'),'first submitted question and answer captured');
@@ -70,6 +73,7 @@ const COMMENT = 'EXPLICIT_FEEDBACK_COMMENT_2859';
  assert(!demo.records.some(r=>r.path==='/api/research/chat'&&r.body.question==='AFTER_WITHDRAWAL'));
  assert.deepEqual(demo.errors,[]);await demo.context.close();
  const demoOff=await fixture({demo:true,enabled:false});await demoOff.ask(PRIVATE);assert.equal(demoOff.records.length,0);await demoOff.context.close();
+ const signedOut=await fixture({demo:true,unauthorized:true});await signedOut.ask(PRIVATE);assert.equal(signedOut.records.length,0,'failed login cannot activate testing');await signedOut.context.close();
  const f=await fixture();
  await f.page.locator('#mcResearchPanel').waitFor();
  assert.equal(f.records.length,0,'no SDK or research POST before opt-in');

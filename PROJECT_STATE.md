@@ -1,5 +1,36 @@
 # PROJECT_STATE — MeatCODE
 
+## 2026-10-29 17:39 UTC · Codex · Demo testing starts after login — local
+
+Supersedes the first-interaction trigger below. Successful enabled research configuration behind
+the existing shared-password gate now starts testing immediately; no click is required. Failed
+auth/config, disabled research and previous withdrawal still prevent activation. Browser regression
+covers automatic session start before interaction, first chat capture, and rejected authentication.
+No auth implementation, policy version, schema, provider settings or deployment changed.
+
+
+## 2026-10-29 17:32 UTC · Codex · First-interaction demo testing — local
+
+Lior explicitly replaced optional demo opt-in with automatic activation on first use.
+`app/assets/user-research.js` now shows a nonblocking notice, opens details/feedback only
+on request, and starts usage plus new Oracle transcript capture on the first trusted click,
+Enter or submit. Masking, bounded provider events and deletion remain. Backend config defaults
+RESEARCH_DEMO_MODE to true when research is enabled; false restores optional mode.
+New demo policy version distinguishes automatic activation from explicit checkbox opt-ins.
+No database/schema, provider configuration or deployment changed. Publication required.
+See `platform_docs/DEMO_TESTING_MODE.md` for validation and deployment details.
+
+
+## 2026-10-29 · Inventory visibility and five-client demo check prepared locally
+
+Added inventory flag with independent dev/prod switches, both ON; hides all Inventory buttons,
+blocks drawer opening and closes it when disabled without clearing saved items. Separate highlight
+flag retained. Added Release Center/test-five-users.command and pipeline/oracle_five_user_check.py:
+five simultaneous single-turn HTTP/SSE Oracle requests, hidden password prompt, private JSON answers/
+timings report. Two offline synthetic-server tests passed including five-way overlap and interrupted
+stream failure detection; inline JS syntax checked. No hosted load test or deployment performed.
+See platform_docs/FIVE_USER_DEMO_CHECK.md. UI toggle does not restrict export endpoint permissions.
+
 ## 2026-10-29 · Private dashboard environment/access correction — live
 
 Screenshot showed Development selected on the production dashboard after unlocking. Corrected

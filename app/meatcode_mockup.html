@@ -61,6 +61,8 @@
    dropped in, this visibly restyles the wordmark so the switch is testable. */
 body.ff-new_logo .brand-logo{ background:linear-gradient(135deg, var(--brass,#b5651d), var(--wine,#6d2a3a)); color:#fff; }
 body.ff-new_logo .brand-name::after{ content:"new"; margin-left:6px; padding:1px 6px; font-size:9px; font-weight:700; letter-spacing:.04em; color:#fff; background:var(--brass,#b5651d); border-radius:999px; vertical-align:middle; text-transform:uppercase; }
+/* 2026-10-29: Inventory visibility is independent of its highlight; saved items remain intact. */
+body:not(.ff-inventory) .mc-toolbench-btn { display:none !important; }
 /* ── Feature flag: highlight_inventory — draw attention to the Inventory button ── */
 body.ff-highlight_inventory .mc-toolbench-btn{ box-shadow:0 0 0 2px var(--brass,#b5651d); background:rgba(181,101,29,.12); }
 /* GFI co-brand: lift the logo before everything and make it the visual anchor */
@@ -8343,6 +8345,7 @@ window.rebuildExpertList = function () {};
   window.mcToolbenchRefresh = refresh;
 
   function openPanel() {
+    if (!document.body.classList.contains('ff-inventory')) return;
     ensurePanel();
     renderBody();
     panelEl.classList.add('on');
@@ -8382,6 +8385,10 @@ window.rebuildExpertList = function () {};
     if (btn) { ev.preventDefault(); togglePanel(); }
   });
   document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') closePanel(); });
+
+  new MutationObserver(function () {
+    if (!document.body.classList.contains('ff-inventory')) closePanel();
+  }).observe(document.body, {attributes:true, attributeFilter:['class']});
 
   updateCounts();
 })();

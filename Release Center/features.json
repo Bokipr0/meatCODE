@@ -51,6 +51,20 @@
       "dev": false,
       "prod": false
     },
+    "inventory": {
+      "label": "Inventory button",
+      "description": "Show the Inventory saved-items button and allow its drawer to open. Hiding it preserves saved items; this is a UI control, not an authorization boundary.",
+      "kind": "feature",
+      "added": "2026-10-29",
+      "status": "live",
+      "where": {
+        "screen": "All screens",
+        "spot": "Top bar Inventory button and saved-items drawer.",
+        "file": "app/meatcode_mockup.html"
+      },
+      "dev": true,
+      "prod": false
+    },
     "highlight_inventory": {
       "label": "Highlight Inventory",
       "description": "Give the Inventory button a colored glow to draw attention to it.",

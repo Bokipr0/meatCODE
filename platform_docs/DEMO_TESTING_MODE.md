@@ -1,14 +1,16 @@
 # Demo testing mode
 
-_Last updated: 2026-10-29 17:32 UTC · Codex · owner-requested automatic first-use collection_
+_Last updated: 2026-10-29 17:39 UTC · Codex · owner-requested automatic post-login collection_
 
-Lior requested automatic testing during demos until he decides otherwise. A brief notice replaces
-the blocking optional-consent dialog. Usage and newly submitted Oracle conversations start on the
-first trusted click, Enter or form submission after research configuration is available. If first
-interaction precedes configuration, activation follows when enabled configuration arrives; already
-submitted turns are not retrospectively imported. Details/feedback remain manually accessible.
+Lior requested automatic testing during demos until he decides otherwise. Activation was updated
+at 17:39 UTC to start immediately after login: the page retrieves enabled configuration from the
+existing authenticated `/api/research/config` endpoint and starts capture without waiting for a
+click or submission. No collection starts on a failed configuration/authentication request.
+The app uses shared-password Basic authentication; there is no separate per-account login event.
+With the password gate disabled (for example locally), successful enabled page configuration is
+also sufficient. Details/feedback remain manually accessible through an active-testing indicator.
 
-New policy `2026-10-29-demo-v1` records automatic first-use activation. It must not be interpreted
+New policy `2026-10-29-demo-v1` records automatic demo activation. It must not be interpreted
 as explicit checkbox consent. Existing `consent` and `full_chat_consent` wire fields are retained
 for compatibility; the version distinguishes demo activation from the previous optional policy.
 The new policy requires migration0021_research_demo_policy.sql to expand the allowed policy versions; it was applied to both dedicated research databases by the integrated release. Existing sessions are not rewritten.
@@ -24,7 +26,7 @@ must be enabled; the mode does not override the global off switch. `RESEARCH_DEM
 to true. Set it to false and restart/redeploy to restore the optional consent dialog.
 
 Validation: backend research unittest suite; local Chromium fixture with synthetic endpoints tests
-no modal, no accept/decline controls, no pre-interaction collection, first-request transcript capture,
+no modal, no accept/decline controls, automatic activation before interaction, no activation on failed authentication, first-request transcript capture,
 stop/deletion, globally disabled mode, and existing optional-mode provider/privacy regressions.
 No live provider delivery or hosted deployment was performed. Repository protocol reserves
 publication for Lior through Release Center (CLAUDE.md, Agent operating protocol).

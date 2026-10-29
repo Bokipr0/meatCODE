@@ -1,5 +1,33 @@
 # MeatCODE — Agent Update Log
 
+## 2026-10-29 17:39 UTC · Codex · Start testing at login
+
+Lior requested moving demo activation from first interaction to login. Updated user-research.js
+to start after successful enabled authenticated config, removed the first-interaction listeners,
+updated the active indicator, docs and browser fixture. Failed auth/config, disabled collection
+and withdrawal remain respected. No schema/auth/provider/configuration or deployment changes.
+Validation: client syntax, browser regression fixture and research backend unittest suite.
+
+
+## 2026-10-29 17:32 UTC · Codex · Automatic demo testing, owner-directed policy change
+**Request:** Remove the optional testing prompt and activate collection on first use during demos until Lior changes the policy.
+**Changed:** app/assets/user-research.js, server/user_research.py, browser/backend regression fixtures, PROJECT_STATE.md and platform_docs/DEMO_TESTING_MODE.md. First trusted click/Enter/submit activates metadata and new Oracle transcript capture; nonblocking notice replaces auto-opened dialog; details and feedback are manually opened. Existing private storage, provider text masking, enablement gates and withdrawal remain.
+**Policy:** new 2026-10-29-demo-v1 version denotes owner-directed first-use activation rather than explicit checkbox opt-in. RESEARCH_DEMO_MODE=false restores the optional journey policy. Legacy consent/full_chat_consent wire field names are retained for compatibility; the policy version distinguishes the activation basis.
+**Validation:** backend unittest research discovery and browser fixture cover new default mode, first-question capture, withdrawal, disabled collection, and previous optional-mode/provider safeguards. Browser uses intercepted synthetic APIs; this is not proof of hosted delivery. No live-user capture, DB mutation, provider-setting change, Git or deployment.
+**Next:** publish changed asset and backend together through the established release workflow; verify hosted demo start.
+
+
+## 2026-10-29 · Demo preparation · Inventory toggle and five-client test command
+User requested independent Inventory visibility in both environments and a five-user question test,
+accepting a command to run themselves. Added inventory registry entry (dev/prod true), CSS visibility,
+drawer guard and close-on-disable observer; highlight flag and browser saved data preserved. Added
+bounded stdlib HTTP/SSE harness, executable Release Center launcher and usage/limitations guide.
+Password prompted privately, no credentials in reports; five distinct question markers, completion/
+error detection, source counts and timings, private ignored JSON output. No automatic push/deploy.
+Two meaningful offline tests passed after permitting a temporary loopback test server; observed five
+overlapping requests and incomplete-stream rejection. JS syntax/registry and shell syntax checked.
+Hosted capacity, guided path, browser separation and broader demo authorization remain unverified.
+
 ## 2026-10-29 · Private dashboard environment/access correction — live
 
 Screenshot showed Development selected on the production dashboard after unlocking. Corrected

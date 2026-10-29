@@ -1,9 +1,9 @@
-/* Last updated: 2026-10-29 · Codex · automatic first-interaction demo testing with visible notice and private chat capture. */
+/* Last updated: 2026-10-29 · Codex · automatic post-login demo testing with visible notice and private chat capture. */
 (function () {
   'use strict';
   if (window.MCResearch) return;
   var VERSION = '2026-10-29-journey-v1', CONSENT_KEY = 'mc_research_consent_v1', SESSION_KEY = 'mc_research_session_v1';
-  var demoMode = false, interacted = false;
+  var demoMode = false;
   var PENDING_KEY = 'mc_research_withdraw_pending_v1';
   var SCENES = ['oracle','research','science','ecosystem','simulate','analytics','database','map','papers','dev','inventory'];
   var ERRORS = ['network','model_unavailable','session_expired','unknown'];
@@ -234,14 +234,6 @@
     event(code ? 'oracle.failed' : 'oracle.completed', properties);
   }
   window.MCResearch = Object.freeze({startOracle:startOracle,sourceCount:sourceCount,appendOracle:appendOracle,clarifyOracle:clarifyOracle,completeOracle:function(t){finish(t);},failOracle:function(t,c){finish(t,c||'unknown');},interruptOracle:function(t){finish(t,'unknown',true);}});
-  function firstInteraction(e) {
-    if (!e.isTrusted || (e.type==='keydown' && e.key!=='Enter')) return;
-    interacted=true;
-    if(demoMode && read(CONSENT_KEY)!==VERSION+':no')start();
-  }
-  document.addEventListener('click',firstInteraction,true);
-  document.addEventListener('submit',firstInteraction,true);
-  document.addEventListener('keydown',firstInteraction,true);
   document.addEventListener('click',function(e){
     if(!permitted()||!e.isTrusted||!e.target||!e.target.closest)return;
     var control=e.target.closest('a[href^="#"],a[href="/app/dev/index.html"],.domains .domain,#invBtn,.mc-toolbench-btn'),target=null;
@@ -260,6 +252,7 @@
   });
   function renderState() {
     if (!panel) return;
+    if(demoMode){var demoButton=document.getElementById('mcResearchButton');if(demoButton)demoButton.textContent=active?'Demo testing active · Details & feedback':'Demo testing · Details & feedback';}
     var demoNotice=document.getElementById('mcDemoNotice');
     if(demoNotice){demoNotice.hidden=!!active;if(read(CONSENT_KEY)===VERSION+':no')demoNotice.textContent='Demo testing has stopped for this tab.';}
     consentSection.hidden = !demoMode && active;
@@ -282,13 +275,13 @@
       button.textContent='Demo testing · Details & feedback';
       var notice=document.createElement('aside');notice.id='mcDemoNotice';notice.setAttribute('role','note');
       notice.style.cssText='position:fixed;left:16px;bottom:12px;max-width:min(560px,calc(100vw - 32px));z-index:2090;padding:8px 12px;border-radius:12px;background:var(--surface,#fff);color:var(--ink,#222);border:1px solid var(--line,#ddd);font:12px/1.4 var(--round,system-ui)';
-      notice.textContent='Demo testing: using MeatCODE records usage and saves new Oracle questions and answers privately for review (90 days). Avoid confidential information.';
+      notice.textContent='Demo testing: after login, MeatCODE records usage and saves new Oracle questions and answers privately for review (90 days). Avoid confidential information.';
       // Stack the details control above the notice without covering the input controls.
       notice.style.position='relative';notice.style.left='auto';notice.style.bottom='auto';notice.style.maxWidth='560px';
       var bar=document.createElement('div');bar.id='mcDemoTestingBar';bar.style.cssText='position:fixed;right:14px;bottom:12px;left:14px;z-index:2100;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px;pointer-events:none';
       notice.style.pointerEvents='auto';button.style.cssText='position:static;flex:none;pointer-events:auto';bar.appendChild(notice);bar.appendChild(button);document.body.appendChild(bar);
       panel.querySelector('#mcResearchTitle').textContent='Demo testing & feedback';
-      consentSection.innerHTML='<p>Demo testing starts with your first interaction. Usage and newly submitted Oracle questions, answers, clarification choices and citations are saved privately in MeatCODE for 90 days. Masked interactions may be recorded by Microsoft Clarity; PostHog receives usage events. Oracle text is not sent to either provider. Earlier chats, unsent text, attachment contents and account details are excluded.</p><p>Microsoft recordings follow the Clarity project’s separate retention settings. You can delete this tab’s first-party testing data below.</p>';
+      consentSection.innerHTML='<p>Demo testing starts automatically after login. Usage and newly submitted Oracle questions, answers, clarification choices and citations are saved privately in MeatCODE for 90 days. Masked interactions may be recorded by Microsoft Clarity; PostHog receives usage events. Oracle text is not sent to either provider. Earlier chats, unsent text, attachment contents and account details are excluded.</p><p>Microsoft recordings follow the Clarity project’s separate retention settings. You can delete this tab’s first-party testing data below.</p>';
       var description=feedbackSection.querySelector('form p');description.textContent='Feedback and new Oracle conversations are stored privately in MeatCODE. Chat text is not sent to Clarity or PostHog.';
     }
     button.addEventListener('click',function(){renderState();panel.showModal();});
@@ -316,7 +309,8 @@
     ui();
     if(read(PENDING_KEY)){renderState();speak('A previous deletion needs to be retried. Testing remains off.');return;}
     if(value.enabled!==true){speak('Testing is currently disabled. You can still delete this tab’s earlier testing data.');return;}
-    if(demoMode){if(interacted && read(CONSENT_KEY)!==VERSION+':no')start();}
+    // This same-origin config is behind the site's existing login gate.
+    if(demoMode){if(read(CONSENT_KEY)!==VERSION+':no')start();}
     else if(read(CONSENT_KEY)===VERSION+':yes')start();
     else if(read(CONSENT_KEY)!==VERSION+':no')panel.showModal();
   }).catch(function(){
