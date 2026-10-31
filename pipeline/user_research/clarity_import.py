@@ -70,6 +70,8 @@ class NoRedirect(HTTPRedirectHandler):
 
 
 def _reserve(cur,environment,project,date,days,retry_failed=False):
+    cur.execute("SELECT to_regclass('user_research.clarity_exports')")
+    if cur.fetchone()[0] is None:return None,'archive_not_configured'
     cur.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,0))',
                 ('user_research:clarity:'+project+':'+date.isoformat(),))
     cur.execute('''SELECT export_id,status,attempts FROM user_research.clarity_exports

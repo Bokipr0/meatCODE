@@ -4,7 +4,7 @@ _Last updated: 2026-10-28 15:51 UTC · Data/Backend · isolated research storage
 
 # Product research storage
 
-`user_research` is a separate PostgreSQL schema. Scientific evidence tables and Oracle retrieval never read it. The five tables are `sessions`, `events`, `feedback`, `withdrawals` and `clarity_exports`; scientific tables have no foreign keys into this schema. PUBLIC has no schema/table/sequence grants. The server uses its existing private database role; this does not create a new database account.
+`user_research` is a separate PostgreSQL schema. Scientific evidence tables and Oracle retrieval never read it. The four active tables are `sessions`, `events`, `oracle_turns` and `feedback` (including Denver notes). Session deletion erases all child rows and replaces the named session with an anonymous deletion marker in `sessions`. Neither `withdrawals` nor `clarity_exports` is required. Current migrations never create either archive. Existing archives are preserved for retention; the legacy cutover copier is closed.  PUBLIC has no schema/table/sequence grants. The server uses its existing private database role; this does not create a new database account.
 
 Explicit consent is required for typed first-party events and feedback. Events accept only the fixed names/scenes and `duration_ms`, `source_count`, `error_code`. Raw prompts, answers, URLs, user agents, IPs, emails and arbitrary JSON properties are rejected. The optional comment is deliberately submitted first-party feedback, never a Clarity property. No public listing/read endpoint exists.
 
@@ -14,15 +14,15 @@ Sessions and event IDs are UUIDv4. Possession of the session ID authorizes withd
 
 `server/user_research.py` exports `config(environ, app_env)`, `write_events(db_url, app_env, payload)`, `write_feedback(...)`, `withdraw(...)`. The HTTP glue supplies auth, same-Origin checks, payload-byte limit and effective enablement; module default `USER_RESEARCH_ENABLED` is false. `InputError`, `WithdrawnError`, `StorageError` expose safe `.code` and `.status` values of 400, 410, 503.
 
-Environment is `dev` or `prod`. CLI settings start with the process environment. Locally, `.env` then non-empty `.env.dev` values overlay it for development. On Render (`RENDER=true`), private runtime variables are authoritative and no dotenv files are loaded. Credentials are never printed. The live migration script refuses a development target that equals production.
+Live research intake uses `research_prod`. Run migration preflight, apply, then verify using the dedicated database configuration:
 
 ```sh
-python3 pipeline/user_research/migrate.py --environment dev
-python3 pipeline/user_research/migrate.py --environment dev --apply
-python3 pipeline/user_research/verify.py --environment dev
+python3 pipeline/user_research/migrate.py --environment prod
+python3 pipeline/user_research/migrate.py --environment prod --apply
+python3 pipeline/user_research/verify.py --environment prod
 ```
 
-Run production only after development passes. Migration `0016` contains no drops or scientific changes. The script strips its transaction wrapper, executes and verifies all tables/indexes/privileges in one transaction, then commits. Verification tests use rolled-back transactions, including withdrawal contention, environment separation, idempotency and quotas. They retain no test feedback/events.
+New installations use the four-table baseline; current installations keep their records. Verification is read-only. Run positive fixtures against isolated PostgreSQL only. Stored names and notes never go to Clarity.
 
 ## Review retained research privately
 

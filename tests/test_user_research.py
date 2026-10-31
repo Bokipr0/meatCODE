@@ -120,11 +120,28 @@ class RollbackDatabaseTests(unittest.TestCase):
         self.assertEqual(research._write_feedback(self.cur,'prod',self.sid,feedback)['accepted'],1)
         self.assertEqual(research._write_feedback(self.cur,'prod',self.sid,feedback)['duplicate'],1)
         research._withdraw(self.cur,'prod',self.sid)
-        for table in ('sessions','events','feedback'):
+        for table in ('events','feedback','oracle_turns'):
             self.cur.execute('SELECT count(*) FROM user_research.'+table+' WHERE session_id=%s AND environment=%s',(self.sid,'prod'))
             self.assertEqual(self.cur.fetchone()[0],0)
         with self.assertRaises(research.WithdrawnError):research._write_events(self.cur,'prod',self.sid,self.events)
-        self.cur.execute('SELECT count(*) FROM user_research.sessions WHERE session_id=%s AND environment=%s',(self.sid,'prod'))
+        research._withdraw(self.cur,'prod',self.sid)
+        self.cur.execute('SELECT withdrawn_at IS NOT NULL, tester_label,user_ref,clarity_ref,consent_at,consent_version FROM user_research.sessions WHERE session_id=%s AND environment=%s',(self.sid,'prod'))
+        self.assertEqual(self.cur.fetchone(),(True,None,None,None,None,None))
+
+    def test_denver_note_keeps_name_and_event_until_withdrawn(self):
+        sid=self.sid
+        version=research.DEMO_VERSION
+        research._write_events(self.cur,'prod',sid,self.events,{'tester_label':'QA'},version)
+        payload=dict(session_id=sid,consent=True,consent_version=version,tester_label='QA',
+                     event_id=str(uuid.uuid4()),comment='fixture note',anchor_event_id=self.events[0]['event_id'])
+        _,note,identity=research.validate_note(payload)
+        def submit():return research._write_note(self.cur,'prod',sid,note,identity,version)
+        self.assertFalse(submit()['duplicate']);self.assertTrue(submit()['duplicate'])
+        self.cur.execute("SELECT tester_label,context->>'anchor_event_id',f.created_at IS NOT NULL FROM user_research.feedback f JOIN user_research.sessions USING(session_id,environment) WHERE f.event_id=%s",(note['event_id'],))
+        self.assertEqual(self.cur.fetchone(),('QA',self.events[0]['event_id'],True))
+        research._withdraw(self.cur,'prod',sid)
+        with self.assertRaises(research.WithdrawnError):submit()
+        self.cur.execute('SELECT count(*) FROM user_research.feedback WHERE session_id=%s',(sid,))
         self.assertEqual(self.cur.fetchone()[0],0)
 
     def test_renewed_consent_is_explicit_and_other_legacy_rows_are_unchanged(self):
@@ -152,6 +169,7 @@ class RollbackDatabaseTests(unittest.TestCase):
     def test_export_daily_dedup_and_quota(self):
         project='test'+uuid.uuid4().hex[:12];today=datetime.date.today()
         first,state=_reserve(self.cur,'prod',project,today,1)
+        if state=='archive_not_configured':return self.assertIsNone(first)
         self.assertEqual(state,'reserved')
         self.assertEqual(_reserve(self.cur,'prod',project,today,1),(None,'pending'))
         self.cur.execute("UPDATE user_research.clarity_exports SET status='failed',attempts=10 WHERE export_id=%s",(first,))

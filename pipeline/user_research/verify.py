@@ -2,7 +2,7 @@
 """Inspect production research schema/counts only. Positive fixtures belong on isolated QA storage."""
 import argparse,json
 from settings import settings,research_database_url
-from migrate import verify as verify_schema
+from migrate import EXPECTED, verify as verify_schema
 
 
 def run(environment):
@@ -16,11 +16,11 @@ def run(environment):
         with conn.cursor() as cur:
             cur.execute("SET LOCAL statement_timeout='5s'")
             schema=verify_schema(cur)
-            cur.execute("SELECT count(DISTINCT conrelid) FROM pg_constraint WHERE connamespace='user_research'::regnamespace AND contype='c' AND pg_get_constraintdef(oid)='CHECK ((environment = ''prod''::text))'")
-            if cur.fetchone()[0]!=6:raise RuntimeError('Production-only constraints are missing.')
+            cur.execute("SELECT count(DISTINCT conrelid) FROM pg_constraint WHERE connamespace='user_research'::regnamespace AND conrelid IN (SELECT c.oid FROM pg_class c WHERE c.relnamespace='user_research'::regnamespace AND c.relname=ANY(%s)) AND contype='c' AND pg_get_constraintdef(oid)='CHECK ((environment = ''prod''::text))'",(list(EXPECTED),))
+            if cur.fetchone()[0]!=len(EXPECTED):raise RuntimeError('Production-only constraints are missing.')
             counts={}
-            for table in ('sessions','events','feedback','withdrawals','clarity_exports','oracle_turns'):
-                cur.execute('SELECT count(*) FROM user_research.'+table+' WHERE environment=%s',('prod',))
+            for table in EXPECTED:
+                cur.execute('SELECT count(*) FROM user_research.'+table+' WHERE environment=%s'+(' AND withdrawn_at IS NULL' if table=='sessions' else ''),('prod',))
                 counts[table]=cur.fetchone()[0]
         return {'ok':True,'environment':'prod','mode':'read_only','synthetic_writes':0,'retained_rows':counts,**schema}
     finally:conn.rollback();conn.close()

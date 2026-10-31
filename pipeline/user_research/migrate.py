@@ -10,16 +10,14 @@ from settings import ROOT, settings, research_database_url
 
 EXPECTED = {
     'oracle_turns':{'elapsed_ms','turn_id','environment','session_id','conversation_id','turn_index','question','answer','status','revision','source_ids','error_code','truncated','consent_version','consent_at','created_at','updated_at'},
-    'sessions': {'user_ref','clarity_ref','tester_label','session_id','environment','consent_version','consent_at','created_at','last_seen_at'},
+    'sessions': {'withdrawn_at','user_ref','clarity_ref','tester_label','session_id','environment','consent_version','consent_at','created_at','last_seen_at'},
     'events': {'elapsed_ms','event_id','environment','session_id','name','scene','duration_ms','error_code','source_count','created_at'},
     'feedback': {'source','context','elapsed_ms','event_id','environment','session_id','rating','category','comment','created_at'},
-    'withdrawals': {'session_id','environment','withdrawn_at'},
-    'clarity_exports': {'export_id','environment','project_id','export_date','num_of_days','dimensions',
-                        'attempts','status','aggregates','imported_at'},
+
 }
-INDEXES = {'ur_sessions_clarity_ref','sessions_pkey','events_pkey','feedback_pkey','withdrawals_pkey','clarity_exports_pkey',
-           'clarity_export_daily_unique','oracle_turns_pkey','ur_oracle_session','ur_oracle_updated','ur_sessions_last_seen','ur_events_session_time',
-           'ur_events_created','ur_feedback_created','ur_withdrawals_created','ur_exports_created'}
+INDEXES = {'ur_sessions_clarity_ref','sessions_pkey','events_pkey','feedback_pkey',
+           'oracle_turns_pkey','ur_oracle_session','ur_oracle_updated','ur_sessions_last_seen','ur_events_session_time',
+           'ur_events_created','ur_feedback_created'}
 
 
 def verify(cur):
@@ -27,7 +25,7 @@ def verify(cur):
     actual = {}
     for table, column in cur.fetchall():
         actual.setdefault(table,set()).add(column)
-    if actual != EXPECTED:
+    if {k:v for k,v in actual.items() if k not in ('withdrawals','clarity_exports')} != EXPECTED:
         raise RuntimeError('Unexpected user_research schema; migration rolled back.')
     cur.execute("SELECT indexname FROM pg_indexes WHERE schemaname='user_research'")
     indexes = {row[0] for row in cur.fetchall()}
@@ -65,22 +63,15 @@ def run(environment, apply=False):
             before=cur.fetchone()[0]
             cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='user_research'")
             existing={row[0] for row in cur.fetchall()}
-            if existing and not existing <= set(EXPECTED):
+            if existing and not set(EXPECTED) <= existing <= set(EXPECTED) | {'withdrawals','clarity_exports'}:
                 raise RuntimeError('Existing research schema differs; stop for review.')
             if not apply:
                 conn.rollback()
                 return {'environment':environment,'mode':'preflight','existing_tables':sorted(existing),'public_tables':before}
             cur.execute("SELECT pg_advisory_xact_lock(hashtextextended('meatcode:migration:0016',0))")
-            # Never reinstall older restrictive consent checks over newer rows.
-            migrations=['0016_user_research.sql']
-            if 'oracle_turns' not in existing:migrations.append('0019_oracle_chat_research.sql')
-            cur.execute("SELECT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='user_research' AND table_name='sessions' AND column_name='user_ref')")
-            if not cur.fetchone()[0]:migrations.append('0020_research_journey.sql')
-            migrations.append('0021_research_demo_policy.sql')
-            migrations.append('0022_production_research_only.sql')
-            migrations.append('0025_restore_research_dependencies.sql')
-            migrations.append('0026_denver_research_notes.sql')
-            migrations.append('0027_reassert_research_production_policy.sql')
+            # Fresh installs use the four-table baseline. Never replay archive-creating DDL.
+            migrations=[] if existing else ['research_core_baseline.sql']
+            migrations.append('0028_session_withdrawal.sql')
             for migration in migrations:
                 sql=(ROOT/'db/migrations'/migration).read_text()
                 body='\n'.join(line for line in sql.splitlines() if line.strip() not in ('BEGIN;','COMMIT;'))

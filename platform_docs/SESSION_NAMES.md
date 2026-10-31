@@ -15,10 +15,10 @@ Denver's supplied v1 front art is the welcome asset. The persistent edge compone
 
 Verification: server validation/immutability tests, dashboard session separation, isolated Chromium tests for acknowledgement, retry, refresh, duplicated tabs, identical names, Oracle linkage and mobile layout. No synthetic production research rows are created by these tests.
 
-## Live dependency repair
+## Historical dependency repair (0025)
 
-Preflight on 2026-10-31 found `feedback`, `withdrawals` and `clarity_exports` absent from `research-logs / research_prod`. The app calls withdrawals on every session write; the dashboard joins feedback. Migration `0025_restore_research_dependencies.sql` restores those established contracts and their scoped writer/reader grants. A transactional dry run was explicitly rolled back and absence rechecked before applying. Existing 3 sessions, 147 events and 4 Oracle turns were preserved; no synthetic production records were added. Missing historical feedback or withdrawal tombstones cannot be reconstructed by this schema repair.
+Preflight on 2026-10-31 found `feedback`, `withdrawals` and `clarity_exports` absent from `research-logs / research_prod`. At that time the app called withdrawals on every session write; the dashboard joins feedback. Migration `0025_restore_research_dependencies.sql` restores those established contracts and their scoped writer/reader grants. A transactional dry run was explicitly rolled back and absence rechecked before applying. Existing 3 sessions, 147 events and 4 Oracle turns were preserved; no synthetic production records were added. Missing historical feedback or withdrawal tombstones cannot be reconstructed by this schema repair.
 
 Applied only to the dedicated production research database. The previously documented inactive `research_dev` database no longer exists, as confirmed by Neon; development/local intake stays disabled. No scientific branch or data was modified. Writer name-column privileges and reader joins were checked using their actual roles.
 
-For a future repair, use the numbered migration in Neon's SQL Editor on the dedicated research database: inspect the missing objects, run the transaction, then check table presence and role grants. Do not rerun older restrictive migrations over newer session policies.
+Migration 0028 moves the deletion marker into the session row. Current name and note writes, dashboard reads and schema verification require only sessions, events, oracle_turns and feedback. Neither legacy archive is recreated on a fresh install.

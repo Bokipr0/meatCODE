@@ -11,7 +11,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'server'))
 from user_research import transaction, RETENTION_DAYS
 from settings import ROOT, settings, research_database_url
 
-TABLES=('sessions','events','feedback','withdrawals','clarity_exports','oracle_turns')
+TABLES=('sessions','events','feedback','oracle_turns')
 TIMESTAMPS={'sessions':'last_seen_at','events':'created_at','feedback':'created_at',
             'withdrawals':'withdrawn_at','clarity_exports':'imported_at','oracle_turns':'updated_at'}
 
@@ -23,6 +23,9 @@ def purge(environment,apply=False):
         # First-party consent/feedback/events and export copies all have a 90-day boundary.
         # Tombstones persist for the complete 90-day window, preventing late re-ingestion.
         for table in ('oracle_turns','events','feedback','sessions','withdrawals','clarity_exports'):
+            if table in ('withdrawals','clarity_exports'):
+                cur.execute('SELECT to_regclass(%s)',('user_research.'+table,))
+                if cur.fetchone()[0] is None:continue
             query=sql.SQL('{} FROM user_research.{} WHERE environment=%s AND {} < now() - (%s * interval \'1 day\')').format(
                 sql.SQL('DELETE' if apply else 'SELECT count(*)'),sql.Identifier(table),sql.Identifier(TIMESTAMPS[table]))
             cur.execute(query,(environment,RETENTION_DAYS))
@@ -49,8 +52,8 @@ def export_jsonl(environment,output=None,start=None,end=None):
         with os.fdopen(fd,'w',encoding='utf-8') as stream, transaction(research_database_url(settings(environment))) as cur:
             cur.execute('SET TRANSACTION READ ONLY')
             for table in TABLES:
-                cur.execute(sql.SQL('SELECT * FROM user_research.{} WHERE environment=%s AND {} >= %s::date AND {} < (%s::date + 1)').format(
-                    sql.Identifier(table),sql.Identifier(TIMESTAMPS[table]),sql.Identifier(TIMESTAMPS[table])),(environment,start,end))
+                cur.execute(sql.SQL('SELECT * FROM user_research.{} WHERE environment=%s AND {}{} >= %s::date AND {} < (%s::date + 1)').format(
+                    sql.Identifier(table),sql.SQL('withdrawn_at IS NULL AND ' if table=='sessions' else ''),sql.Identifier(TIMESTAMPS[table]),sql.Identifier(TIMESTAMPS[table])),(environment,start,end))
                 columns=[column[0] for column in cur.description]
                 while True:
                     batch=cur.fetchmany(500)

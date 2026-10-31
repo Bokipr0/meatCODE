@@ -51,6 +51,9 @@ def copy(environment,apply=False,conf=None):
         target=psycopg2.connect(target_url,connect_timeout=5)
         with target.cursor() as cur:
             cur.execute("SET LOCAL statement_timeout='10s'; SET LOCAL lock_timeout='3s'")
+            # The legacy cutover only understands separate withdrawal markers.
+            cur.execute("SELECT EXISTS (SELECT FROM information_schema.columns WHERE table_schema='user_research' AND table_name='sessions' AND column_name='withdrawn_at')")
+            if cur.fetchone()[0]:raise ValueError('Legacy cutover is closed for current production research storage.')
             verify(cur)
             cur.execute("SELECT count(*) FROM information_schema.tables WHERE table_type='BASE TABLE' AND table_schema NOT IN ('pg_catalog','information_schema','user_research')")
             if cur.fetchone()[0]:raise ValueError('Destination contains unrelated tables; refusing research cutover.')

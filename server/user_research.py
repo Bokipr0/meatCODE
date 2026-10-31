@@ -199,7 +199,7 @@ def _lock_session(cur, environment, session_id):
 
 def _session(cur, environment, session_id, journey=None, consent_version=CONSENT_VERSION):
     _lock_session(cur, environment, session_id)
-    cur.execute('SELECT 1 FROM user_research.withdrawals WHERE session_id=%s AND environment=%s',
+    cur.execute('SELECT 1 FROM user_research.sessions WHERE session_id=%s AND environment=%s AND withdrawn_at IS NOT NULL',
                 (session_id, environment))
     if cur.fetchone():
         raise WithdrawnError()
@@ -329,9 +329,13 @@ def write_note(db_url,app_env,payload):
 
 def _withdraw(cur, environment, session_id):
     _lock_session(cur, environment, session_id)
-    cur.execute('''INSERT INTO user_research.withdrawals(session_id,environment) VALUES(%s,%s)
-                   ON CONFLICT(session_id,environment) DO NOTHING''',(session_id,environment))
-    cur.execute('DELETE FROM user_research.sessions WHERE session_id=%s AND environment=%s',(session_id,environment))
+    # Cascades erase all research children; only the deletion capability and time survive.
+    cur.execute('DELETE FROM user_research.sessions WHERE session_id=%s AND environment=%s AND withdrawn_at IS NULL',
+                (session_id,environment))
+    cur.execute('''INSERT INTO user_research.sessions
+                   (session_id,environment,consent_at,withdrawn_at,created_at,last_seen_at)
+                   VALUES(%s,%s,NULL,now(),now(),now()) ON CONFLICT(session_id,environment) DO NOTHING''',
+                (session_id,environment))
     return {'ok':True,'withdrawn':True,'session_id':session_id}
 
 
