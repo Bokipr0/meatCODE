@@ -1,7 +1,7 @@
 <!-- Last updated: 2026-10-31 · Codex · Name-only Oracle introduction and session binding. -->
 # Oracle tester names
 
-In production demo mode, entering Oracle opens Soft's welcome dialog with one required name field and Continue. Testing still starts after login. The name is self-reported, not an authenticated account identity.
+In production demo mode, entering Oracle opens Denver's welcome dialog with one required name field and Continue. Testing still starts after login. The name is self-reported, not an authenticated account identity.
 
 `POST /api/research/name` attaches the trimmed name (1–80 characters) to the current `(environment, session_id)` row in `user_research.sessions.tester_label`. It uses existing production-only intake, site login, origin, exclusion and rate-limit checks. The session lock makes retries idempotent and prevents relabelling an already named session. The name uses an existing column; no additional data store is needed. The release also includes repair migration 0025 for missing legacy research tables discovered during verification.
 
@@ -11,7 +11,7 @@ The dashboard shows the name and the same stable `session_label` alongside journ
 
 A Web Lock prevents simultaneously open tabs from sharing an inherited sessionStorage identity. Duplicated tabs start a fresh session and ask for a name. Reloading a named tab preserves its session. Browsers without Web Locks conservatively start a new session on each load. To hand the device to a different tester, close the previous tester's tab and open a fresh tab.
 
-Soft's existing art is a temporary welcome asset. The designer's final motion kit and hover-to-note interface remain separate follow-up work. Existing feedback is session-linked; explicit feedback-to-turn/event anchors still need the note integration. Do not infer an exact referenced Oracle turn solely from timing.
+Denver's supplied v1 front art is the welcome asset. The complete kit was received and reviewed on 2026-10-31; its motion component and hover-to-note interface still require product integration. Existing feedback is session-linked; explicit feedback-to-turn/event anchors still need the note integration. Do not infer an exact referenced Oracle turn solely from timing.
 
 Verification: server validation/immutability tests, dashboard session separation, isolated Chromium tests for acknowledgement, retry, refresh, duplicated tabs, identical names, Oracle linkage and mobile layout. No synthetic production research rows are created by these tests.
 
