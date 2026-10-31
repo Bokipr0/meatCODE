@@ -12,7 +12,7 @@ EXPECTED = {
     'oracle_turns':{'elapsed_ms','turn_id','environment','session_id','conversation_id','turn_index','question','answer','status','revision','source_ids','error_code','truncated','consent_version','consent_at','created_at','updated_at'},
     'sessions': {'user_ref','clarity_ref','tester_label','session_id','environment','consent_version','consent_at','created_at','last_seen_at'},
     'events': {'elapsed_ms','event_id','environment','session_id','name','scene','duration_ms','error_code','source_count','created_at'},
-    'feedback': {'elapsed_ms','event_id','environment','session_id','rating','category','comment','created_at'},
+    'feedback': {'source','context','elapsed_ms','event_id','environment','session_id','rating','category','comment','created_at'},
     'withdrawals': {'session_id','environment','withdrawn_at'},
     'clarity_exports': {'export_id','environment','project_id','export_date','num_of_days','dimensions',
                         'attempts','status','aggregates','imported_at'},
@@ -78,6 +78,9 @@ def run(environment, apply=False):
             if not cur.fetchone()[0]:migrations.append('0020_research_journey.sql')
             migrations.append('0021_research_demo_policy.sql')
             migrations.append('0022_production_research_only.sql')
+            migrations.append('0025_restore_research_dependencies.sql')
+            migrations.append('0026_denver_research_notes.sql')
+            migrations.append('0027_reassert_research_production_policy.sql')
             for migration in migrations:
                 sql=(ROOT/'db/migrations'/migration).read_text()
                 body='\n'.join(line for line in sql.splitlines() if line.strip() not in ('BEGIN;','COMMIT;'))
@@ -106,3 +109,4 @@ if __name__=='__main__':
         # No connection string, SQL payload, row content or raw DB error in CLI output.
         print(json.dumps({'ok':False,'error_type':type(exc).__name__,'action':'Migration stopped; no unverified transaction committed.'}))
         sys.exit(1)
+

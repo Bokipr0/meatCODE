@@ -28,13 +28,16 @@ Other motions: `hello`, `wave`, `brave`, `note`, `oracle`, `listening`, `thinkin
 
 The sprite sheet contains 16 rows × 8 sampled poses (128 poses), not a full frame-by-frame animation. The JS sampler supplies continuous timing at roughly 20 fps. Note opening lifts the original eyes three logical pixels over 220 ms, opens the mouth over the next 220 ms, and then enables the note input. No input closes while the user is typing.
 
-## Product integration still required
+## Oracle integration
 
-1. Mount the companion at the actual Oracle viewport edge. The shipped component is a preview with an opaque background, rail, speech and motion-status badge. Remove that preview framing in the product adapter; only the character and open note should receive pointer input. Avoid a full-screen interactive overlay and do not obscure the Oracle composer.
-2. Respect reduced motion. Automatic product state changes must call `play(name, false)`; the default `play(name)` explicitly forces animation on. Provide click, touch and keyboard alternatives to hover. Preserve drafts across failures and intentional closing.
-3. `denver:note` carries `detail.text` only. Connect it to FIRST-PARTY RESEARCH submission and the already named session. The current kit saves nothing. Replace preview receipts with actual pending/success/error states and disable duplicate sends until the request settles. Never fabricate a helpful/neutral/unhelpful rating for this plain-text note.
-4. Capture the originating session, conversation, Oracle turn and event references when the note opens, plus submission time; preserve that context while the user types or navigates. A session join alone cannot prove which turn the note refers to. Null references must remain null when no turn/event exists. Validate ownership server-side and keep names/text out of external analytics.
-5. `denver:oracle-request` is a SEPARATE action carrying the draft to Oracle. It must not silently reinterpret a research note as an Oracle question. Use the real composer/handoff and its actual request lifecycle.
-6. `thinking`, `delighted` and `oops` must correspond to real pending, acknowledged success and failure. The preview's “ready for the Oracle” receipt is not proof of storage or an Oracle response.
+Denver is mounted persistently at the actual Oracle viewport edge, including for sessions that already completed the name welcome. His host is transparent and does not intercept page clicks outside the character/note. Hover, tap, Enter and Escape are supported; reduced motion remains respected. The supplied rig is reused without body scaling or replacement. Preview rails, speech and debug badges are hidden in the product.
 
-Current integration: Denver's supplied artwork/name in the name-only welcome; session-name persistence retained. The complete character kit has been received and reviewed. The edge widget, research-note API/context anchors and Oracle handoff are not yet connected by this naming correction.
+“Send note” posts to `/api/research/note`. It stores a plain-text Denver note in first-party feedback with source `denver`, a NULL rating (no invented satisfaction score), server submission time, the named session, opening/submission elapsed time, and available server-validated Oracle-turn/conversation/event anchors. Context is captured on opening and kept while drafting. Missing anchors are explicitly unavailable, not guessed. Cross-session anchors are rejected.
+
+The note stays open while typing, disables repeat sends while pending, and confirms success only after the server acknowledges storage. Failed saves retain the text and retry identifier. A changed draft gets a new identifier. Names/text do not enter analytics-provider events. Existing retention and session deletion include these records.
+
+“Use as an Oracle question” is separate: it puts the text in the actual Oracle composer and focuses it. It does not automatically send the question or overwrite an existing different draft. Actual Oracle request lifecycle drives thinking/success/error gestures; note save gestures reflect actual note state.
+
+The research dashboard shows Denver notes as unrated notes, includes name/session references, and displays available exact event/turn/conversation references in the journey view. Browser and server tests cover storage errors, idempotent retry, frozen context, ownership, keyboard/touch, mobile bounds, reduced motion and previously named sessions.
+
+The original kit remains unmodified under UI-UX Designer. Runtime adapters live under app/assets/denver. Migration 0026 extends the existing feedback schema; 0027 reasserts established production-only constraints after the legacy schema repair. Development/internal research capture remains disabled.

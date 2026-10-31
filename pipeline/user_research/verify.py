@@ -16,7 +16,7 @@ def run(environment):
         with conn.cursor() as cur:
             cur.execute("SET LOCAL statement_timeout='5s'")
             schema=verify_schema(cur)
-            cur.execute("SELECT count(*) FROM pg_constraint WHERE conname='research_production_only'")
+            cur.execute("SELECT count(DISTINCT conrelid) FROM pg_constraint WHERE connamespace='user_research'::regnamespace AND contype='c' AND pg_get_constraintdef(oid)='CHECK ((environment = ''prod''::text))'")
             if cur.fetchone()[0]!=6:raise RuntimeError('Production-only constraints are missing.')
             counts={}
             for table in ('sessions','events','feedback','withdrawals','clarity_exports','oracle_turns'):

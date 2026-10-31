@@ -43,7 +43,7 @@ class ProductionIntakeTests(unittest.TestCase):
   return h
  def test_nonproduction_never_writes_even_when_all_settings_enable_it(self):
   for env in ('dev','local','staging'):
-   for route in ('events','chat','feedback','withdraw'):
+   for route in ('events','chat','feedback','note','name','withdraw'):
     with self.subTest(environment=env,route=route):
      h=self.call(env,route);self.assertEqual(h.status,404);self.assertEqual(h.rfile.reads,0)
   self.assertEqual(self.module.writes,[]);self.assertEqual(self.module.config_calls,0)
@@ -56,7 +56,7 @@ class ProductionIntakeTests(unittest.TestCase):
          ({'Host':'meatcode-oracle.onrender.com.evil.test','Origin':'https://meatcode-oracle.onrender.com.evil.test'},{'RENDER':'true'}),
          ({'Host':'meatcode-oracle.onrender.com:8000','Origin':'https://meatcode-oracle.onrender.com:8000'},{'RENDER':'true'})]
   for headers,environ in cases:
-   for route in ('events','chat','feedback','withdraw'):
+   for route in ('events','chat','feedback','note','name','withdraw'):
     with self.subTest(headers=headers,environment=environ,route=route):
      h=self.call(extra=headers,route=route,server_environment=environ);self.assertEqual(h.status,404);self.assertEqual(h.rfile.reads,0)
    d=self.call(extra=headers,config=True,server_environment=environ).result();self.assertFalse(d['enabled']);self.assertEqual(d['capture_excluded'],'nonproduction')
@@ -73,7 +73,7 @@ class ProductionIntakeTests(unittest.TestCase):
   self.assertEqual(h.status,200);self.assertEqual(self.module.writes[0][0],'events')
   d=self.call(config=True).result();self.assertTrue(d['enabled']);self.assertEqual(d['capture_excluded'],'')
  def test_production_writes_require_a_secure_browser_origin(self):
-  for route in ('events','chat','feedback','withdraw'):
+  for route in ('events','chat','feedback','note','name','withdraw'):
    h=self.call(route=route,extra={'Origin':'http://meatcode-oracle.onrender.com'});self.assertEqual(h.status,403);self.assertEqual(h.rfile.reads,0)
   self.assertEqual(self.module.writes,[])
  def test_internal_cookie_and_header_block_before_parsing_or_storage(self):
@@ -101,3 +101,4 @@ class ProductionIntakeTests(unittest.TestCase):
   self.assertEqual(result.returncode,0,result.stderr)
 
 if __name__=='__main__':unittest.main()
+

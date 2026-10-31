@@ -87,7 +87,7 @@ class JourneyTests(unittest.TestCase):
         now=datetime.datetime(2026,10,29,12,0,tzinfo=datetime.timezone.utc);sid=uuid.uuid4();user=uuid.uuid4();clarity=uuid.uuid4()
         class Cursor:
             def execute(self,query,args):self.query,self.args=query,args
-            def fetchall(self):return [('turn','oracle.input',now,user,'Tester A','submitted question',12345,clarity,'conversation','complete',sid),('old','feedback.input',now,None,None,'helpful',None,None,None,'submitted',sid)]
+            def fetchall(self):return [('turn','oracle.input',now,user,'Tester A','submitted question',12345,clarity,'conversation','complete',sid,{}),('old','feedback.input',now,None,None,'helpful',None,None,None,'submitted',sid,{})]
         cur=Cursor();result=dashboard.journey(cur,'prod',60,2,now)
         row=result['rows'][0];self.assertEqual((row['date'],row['user_ref'],row['input'],row['elapsed_ms']),('2026-10-29',str(user),'submitted question',12345))
         self.assertEqual(row['clarity_ref'],str(clarity));self.assertNotIn(str(sid),json.dumps(result));self.assertIsNone(result['rows'][1]['elapsed_ms']);self.assertTrue(result['rows'][1]['user_ref'].startswith('s_'))
@@ -121,3 +121,4 @@ class JourneyTests(unittest.TestCase):
 
 
 if __name__=='__main__':unittest.main()
+

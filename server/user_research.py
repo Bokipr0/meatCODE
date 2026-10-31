@@ -270,6 +270,63 @@ def write_feedback(db_url, app_env, payload):
         return _write_feedback(cur, environment, session_id, feedback, _journey(payload,session_id), payload['consent_version'])
 
 
+def validate_note(payload):
+    fields=('session_id','event_id','consent','consent_version','comment','elapsed_ms',
+            'opened_elapsed_ms','turn_id','conversation_id','anchor_event_id')+JOURNEY_FIELDS
+    _object(payload,fields,('session_id','event_id','consent','consent_version','comment'))
+    sid=_consent(payload)
+    identity=_journey(payload,sid)
+    comment=payload['comment']
+    if not isinstance(comment,str) or not 1<=len(comment.strip())<=2000 or any(ord(c)<32 and c not in '\n\r\t' for c in comment):
+        raise InputError('A note must contain 1–2000 characters.')
+    note={'event_id':_uuid(payload['event_id']),'comment':comment.strip(),
+          'elapsed_ms':_elapsed(payload.get('elapsed_ms')),'opened_elapsed_ms':_elapsed(payload.get('opened_elapsed_ms'))}
+    if note['opened_elapsed_ms'] is not None and note['elapsed_ms'] is not None and note['opened_elapsed_ms']>note['elapsed_ms']:
+        raise InputError('Note timing is invalid.')
+    for key in ('turn_id','conversation_id','anchor_event_id'):
+        note[key]=_uuid(payload[key]) if payload.get(key) is not None else None
+    if bool(note['turn_id'])!=bool(note['conversation_id']):raise InputError('Incomplete Oracle context.')
+    return sid,note,identity
+
+
+def _write_note(cur,environment,sid,note,identity,version):
+    _session(cur,environment,sid,identity,version)
+    cur.execute('SELECT tester_label FROM user_research.sessions WHERE session_id=%s AND environment=%s',(sid,environment))
+    if not cur.fetchone()[0]:raise InputError('Name this session first.')
+    cur.execute('SELECT session_id,comment,source FROM user_research.feedback WHERE event_id=%s AND environment=%s',(note['event_id'],environment))
+    previous=cur.fetchone()
+    if previous:
+        if (str(previous[0]),previous[1],previous[2])!=(sid,note['comment'],'denver'):raise InputError('Note identity differs.')
+        return {'ok':True,'duplicate':True}
+    context={'opened_elapsed_ms':note['opened_elapsed_ms'],'scene':'oracle',
+             'turn_status':'none','event_status':'none'}
+    if note['turn_id']:
+        cur.execute('SELECT session_id,conversation_id,turn_index FROM user_research.oracle_turns WHERE turn_id=%s AND environment=%s',(note['turn_id'],environment))
+        turn=cur.fetchone()
+        if turn:
+            if (str(turn[0]),str(turn[1]))!=(sid,note['conversation_id']):raise InputError('Turn ownership differs.')
+            context.update(turn_id=note['turn_id'],conversation_id=note['conversation_id'],turn_index=turn[2],turn_status='linked')
+        else:context['turn_status']='unavailable'
+    if note['anchor_event_id']:
+        cur.execute('SELECT session_id,name FROM user_research.events WHERE event_id=%s AND environment=%s',(note['anchor_event_id'],environment))
+        anchor=cur.fetchone()
+        if anchor:
+            if str(anchor[0])!=sid:raise InputError('Event ownership differs.')
+            context.update(anchor_event_id=note['anchor_event_id'],anchor_event_name=anchor[1],event_status='linked')
+        else:context['event_status']='unavailable'
+    cur.execute('''INSERT INTO user_research.feedback
+      (event_id,environment,session_id,rating,category,comment,elapsed_ms,source,context)
+      VALUES(%s,%s,%s,NULL,'other',%s,%s,'denver',%s::jsonb)''',
+      (note['event_id'],environment,sid,note['comment'],note['elapsed_ms'],json.dumps(context)))
+    return {'ok':True,'duplicate':False}
+
+
+def write_note(db_url,app_env,payload):
+    sid,note,identity=validate_note(payload)
+    with transaction(db_url) as cur:
+        return _write_note(cur,_environment(app_env),sid,note,identity,payload['consent_version'])
+
+
 def _withdraw(cur, environment, session_id):
     _lock_session(cur, environment, session_id)
     cur.execute('''INSERT INTO user_research.withdrawals(session_id,environment) VALUES(%s,%s)
@@ -329,3 +386,4 @@ def _write_chat(cur,environment,sid,turn):
 def write_chat(db_url,app_env,payload):
     sid,turn=validate_chat(payload)
     with transaction(db_url) as cur:return _write_chat(cur,_environment(app_env),sid,turn)
+

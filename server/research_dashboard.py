@@ -244,25 +244,25 @@ def journey(cursor,environment,minutes=60,limit=50,now=None):
     args=(environment,since,checked)
     cursor.execute("""WITH inputs AS (
       SELECT turn_id::text AS id,session_id,environment,'oracle.input'::text AS kind,
-        question AS input,elapsed_ms,created_at,status,conversation_id::text AS conversation_id
+        question AS input,elapsed_ms,created_at,status,conversation_id::text AS conversation_id,'{}'::jsonb AS context
       FROM user_research.oracle_turns WHERE environment=%s AND created_at>=%s AND created_at<=%s
       UNION ALL
-      SELECT event_id::text,session_id,environment,'feedback.input',
+      SELECT event_id::text,session_id,environment,CASE WHEN source='denver' THEN 'note.input' ELSE 'feedback.input' END,
         coalesce(nullif(comment,''),'Rating: '||rating||'; category: '||category),
-        elapsed_ms,created_at,'submitted',NULL::text
+        elapsed_ms,created_at,'submitted',context->>'conversation_id',context
       FROM user_research.feedback WHERE environment=%s AND created_at>=%s AND created_at<=%s
     ) SELECT i.id,i.kind,i.created_at,s.user_ref,s.tester_label,i.input,i.elapsed_ms,
-      s.clarity_ref,i.conversation_id,i.status,s.session_id
+      s.clarity_ref,i.conversation_id,i.status,s.session_id,i.context
     FROM inputs i JOIN user_research.sessions s
       ON s.environment=i.environment AND s.session_id=i.session_id
     ORDER BY i.created_at DESC,i.id DESC LIMIT %s""",args+args+(limit,))
     rows=[]
-    for identifier,kind,created,user_ref,label,input_text,elapsed,clarity_ref,conversation,status,session in cursor.fetchall():
+    for identifier,kind,created,user_ref,label,input_text,elapsed,clarity_ref,conversation,status,session,context in cursor.fetchall():
         utc=created.astimezone(datetime.timezone.utc) if hasattr(created,'astimezone') else None
         rows.append({'id':str(identifier),'kind':kind,'created_at':_iso(created),
             'date':utc.date().isoformat() if utc else None,'user_ref':str(user_ref) if user_ref else _session_label(session,environment),
             'tester_label':label,'session_label':_session_label(session,environment),'input':input_text,'elapsed_ms':elapsed,'clarity_ref':str(clarity_ref) if clarity_ref else None,
-            'conversation_id':conversation,'status':status})
+            'conversation_id':conversation,'status':status,'context':context or {}})
     return {'ok':True,'source':'neon_first_party','environment':environment,'checked_at':checked.isoformat(),
             'window_minutes':minutes,'rows':rows,'limit':limit,'timestamp_zone':'UTC',
             'identity_scope':'self_reported_name_per_session','timer_scope':'elapsed_since_testing_started'}
@@ -320,3 +320,4 @@ def handle(handler,database_url,app_env,environ,local_admin=False):
         return research_http._error(handler,400,'invalid_dashboard_parameters','Dashboard parameters are invalid for this server.')
     except Exception:
         return research_http._error(handler,503,'research_dashboard_unavailable','Research dashboard is temporarily unavailable.')
+

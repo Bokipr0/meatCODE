@@ -41,7 +41,7 @@ class NameTests(unittest.TestCase):
         class Cursor:
             def execute(self,*args):pass
             def fetchall(self):
-                return [(str(uuid.uuid4()),kind,now,browser,'Alex','Input',1200,None,None,'submitted',sid)
+                return [(str(uuid.uuid4()),kind,now,browser,'Alex','Input',1200,None,None,'submitted',sid,{})
                         for sid in (first,second) for kind in ('oracle.input','feedback.input')]
         rows=dashboard.journey(Cursor(),'prod')['rows']
         self.assertEqual(rows[0]['session_label'],rows[1]['session_label'])
@@ -50,3 +50,4 @@ class NameTests(unittest.TestCase):
         self.assertNotIn(first,str(rows)) # deletion capability remains private
 
 if __name__=='__main__':unittest.main()
+

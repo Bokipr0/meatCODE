@@ -48,6 +48,7 @@ def _excluded_browser(headers):
     return bool(_browser_exclusion(headers))
 
 _POST_ROUTES = {
+    "/api/research/note": "write_note",
     "/api/research/name": "name_session",
     "/api/research/events": "write_events",
     "/api/research/chat": "write_chat",
@@ -240,3 +241,4 @@ def handle(handler, method, path, module, database_url, app_env, environ, flag_e
     except Exception:
         # Includes StorageError and unexpected failures. Never disclose SQL, user text or secrets.
         return _error(handler, 503, "research_storage_unavailable", "Research storage is temporarily unavailable.")
+

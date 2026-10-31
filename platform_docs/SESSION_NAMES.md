@@ -11,7 +11,7 @@ The dashboard shows the name and the same stable `session_label` alongside journ
 
 A Web Lock prevents simultaneously open tabs from sharing an inherited sessionStorage identity. Duplicated tabs start a fresh session and ask for a name. Reloading a named tab preserves its session. Browsers without Web Locks conservatively start a new session on each load. To hand the device to a different tester, close the previous tester's tab and open a fresh tab.
 
-Denver's supplied v1 front art is the welcome asset. The complete kit was received and reviewed on 2026-10-31; its motion component and hover-to-note interface still require product integration. Existing feedback is session-linked; explicit feedback-to-turn/event anchors still need the note integration. Do not infer an exact referenced Oracle turn solely from timing.
+Denver's supplied v1 front art is the welcome asset. The persistent edge component is now integrated with session-linked research notes and server-validated turn/event anchors; see DENVER_CHARACTER_KIT.md. Missing context stays explicitly unavailable.
 
 Verification: server validation/immutability tests, dashboard session separation, isolated Chromium tests for acknowledgement, retry, refresh, duplicated tabs, identical names, Oracle linkage and mobile layout. No synthetic production research rows are created by these tests.
 

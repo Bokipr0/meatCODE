@@ -14,7 +14,7 @@
   var NAMES = ['session.started','scene.viewed','module.clicked','oracle.submitted','oracle.completed','oracle.failed','feedback.submitted'];
   var chatConsent=false, conversations={}, CHAT_KEY='mc_research_chat_consent_v1', CHAT_MAP='mc_research_chat_map_v1';
   var journey=null, journeyBaseline=0, journeyPerformance=0, JOURNEY_KEY='mc_research_journey_v1';
-  var starting=false, welcome=null;
+  var starting=false, welcome=null, oraclePending=false;
   var nativeFetch = window.fetch.bind(window);
   document.body.setAttribute('data-clarity-mask', 'true');
   function read(key) { try { return sessionStorage.getItem(key); } catch (_) { return null; } }
@@ -34,11 +34,12 @@
       return res;
     });
   }
-  function event(name, properties, providerProperties, targetScene) {
+  function event(name, properties, providerProperties, targetScene, providedId) {
     if (!permitted()) return;
-    var id = uuid(); if (!id) return;
+    var id = validUUID(providedId)?providedId:uuid(); if (!id) return;
     // Callers receive no generic logger: only these allow-listed lifecycle methods reach here.
     var target=SCENES.indexOf(targetScene)>=0?targetScene:scene();
+    if(journey){journey.last_event_id=id;save(JOURNEY_KEY,JSON.stringify(journey));}
     queue.push({event_id:id, name:name, scene:target, elapsed_ms:elapsed(),properties:properties || {}});
     if (loaded && safeURL()) { clarityCall('set','scene',target); clarityCall('event',name);if(name==='module.clicked')clarityCall('event','module.'+target+'.clicked'); }
     posthogEvent(name, Object.assign({},providerProperties || properties || {},{scene:target}));
@@ -256,6 +257,7 @@
     turn.lastWrite=performance.now();
   }
   function startOracle(question,chatKey) {
+    oraclePending=true;window.dispatchEvent(new CustomEvent('mc:oracle-state',{detail:{state:'pending'}}));
     if (!permitted()) return null;
     event('oracle.submitted');
     var turn={generation:generation, started:performance.now(), finished:false, source_count:0};
@@ -264,6 +266,7 @@
       if(!conversation || !validUUID(conversation.id))conversation=conversations[key]={id:uuid(),next:1};
       if(validUUID(conversation.id)){
         turn.chat=true;turn.elapsed_ms=elapsed();turn.id=uuid();turn.conversation=conversation.id;turn.index=conversation.next++;
+        conversation.last_turn_id=turn.id;
         turn.question=chatPrefix(question,12000);turn.answer='';turn.source_ids=[];turn.revision=0;turn.truncated=question.length>12000;
         save(CHAT_MAP,JSON.stringify(conversations));putChat(turn,'submitted');
       }
@@ -289,6 +292,7 @@
     }catch(_){}
   }
   function finish(turn, code, interrupted) {
+    if(oraclePending && (!turn || !turn.finished)){oraclePending=false;window.dispatchEvent(new CustomEvent('mc:oracle-state',{detail:{state:code||interrupted?'error':'success'}}));}
     if (!current(turn)) return;
     putChat(turn,interrupted?'interrupted':code?'failed':turn.clarification?'clarification':'complete',code);
     turn.finished = true;turn.question='';turn.answer='';
@@ -297,7 +301,32 @@
     else properties.source_count = turn.source_count;
     event(code ? 'oracle.failed' : 'oracle.completed', properties);
   }
-  window.MCResearch = Object.freeze({startOracle:startOracle,sourceCount:sourceCount,appendOracle:appendOracle,clarifyOracle:clarifyOracle,completeOracle:function(t){finish(t);},failOracle:function(t,c){finish(t,c||'unknown');},interruptOracle:function(t){finish(t,'unknown',true);}});
+  function noteContext(chatKey){
+    if(!permitted() || !journey || !journey.tester_label)return null;
+    var conversation=conversations[String(chatKey||'active')];
+    return {id:uuid(),session:session,generation:generation,opened_elapsed_ms:elapsed(),
+      turn_id:conversation&&validUUID(conversation.last_turn_id)?conversation.last_turn_id:null,
+      conversation_id:conversation&&validUUID(conversation.last_turn_id)?conversation.id:null,
+      anchor_event_id:validUUID(journey.last_event_id)?journey.last_event_id:null};
+  }
+  function submitNote(text,context){
+    if(!permitted() || !journey || !journey.tester_label || !context || context.session!==session || context.generation!==generation)
+      return Promise.reject(new Error('Notes can be saved in an active, named production demo session.'));
+    text=String(text||'').trim();if(!text || text.length>2000)return Promise.reject(new Error('Write a note of up to 2,000 characters.'));
+    if(context.submittedText && context.submittedText!==text)context.id=uuid();
+    context.submittedText=text;
+    var payload=journeyFields({session_id:session,event_id:context.id,consent:true,consent_version:VERSION,
+      comment:text,elapsed_ms:elapsed(),opened_elapsed_ms:context.opened_elapsed_ms,
+      turn_id:context.turn_id,conversation_id:context.conversation_id,anchor_event_id:context.anchor_event_id});
+    var controller=new AbortController(),timeout=setTimeout(function(){controller.abort();},12000),current=generation;
+    requests.add(controller);
+    return post('note',payload,controller.signal).then(function(res){return res.json();}).then(function(result){
+      if(!result || result.ok!==true)throw new Error('Note was not acknowledged.');
+      if(current!==generation || !permitted())throw new Error('This testing session has ended.');
+      event('feedback.submitted',{}, {},'oracle',context.id);return result;
+    }).finally(function(){clearTimeout(timeout);requests.delete(controller);});
+  }
+  window.MCResearch = Object.freeze({noteContext:noteContext,submitNote:submitNote,startOracle:startOracle,sourceCount:sourceCount,appendOracle:appendOracle,clarifyOracle:clarifyOracle,completeOracle:function(t){finish(t);},failOracle:function(t,c){finish(t,c||'unknown');},interruptOracle:function(t){finish(t,'unknown',true);}});
   document.addEventListener('click',function(e){
     if(!permitted()||!e.isTrusted||!e.target||!e.target.closest)return;
     var control=e.target.closest('a[href^="#"],a[href="/app/dev/index.html"],.domains .domain,#invBtn,.mc-toolbench-btn'),target=null;
@@ -396,4 +425,5 @@
     if((read(PENDING_KEY) || validUUID(read(SESSION_KEY))) && !panel){config={enabled:false};ui();speak('Testing is off. Retry deleting the previous session below.');}
   });
 })();
+
 
