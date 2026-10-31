@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const SOURCE = process.env.RESEARCH_HTML || 'app/meatcode_mockup.html';
-const ROOT = path.resolve(__dirname,'..');
+const ROOT = process.env.RESEARCH_ROOT || path.resolve(__dirname,'..');
 const PRIVATE = 'PRIVATE_QUESTION_AND_ANSWER_9287';
 const COMMENT = 'EXPLICIT_FEEDBACK_COMMENT_2859';
 (async function(){
@@ -43,7 +43,7 @@ const COMMENT = 'EXPLICIT_FEEDBACK_COMMENT_2859';
    if(u.pathname==='/api/version')return route.fulfill({contentType:'application/json',body:JSON.stringify({env:options.environment||'prod'})});
    if(u.pathname==='/api/flags')return route.fulfill({contentType:'application/json',body:JSON.stringify({live_testing_dashboard:options.dashboard!==false})});
    if(u.pathname.startsWith('/api/'))return route.fulfill({contentType:'application/json',body:'{"ok":true,"rows":[],"totals":{},"phase_topics":[]}'});
-   const file=u.pathname==='/'?path.resolve(ROOT,SOURCE):path.join(ROOT,decodeURIComponent(u.pathname));
+   const file=u.pathname==='/app/assets/user-research.js'&&process.env.RESEARCH_CLIENT_JS?process.env.RESEARCH_CLIENT_JS:u.pathname==='/'?path.resolve(ROOT,SOURCE):path.join(ROOT,decodeURIComponent(u.pathname));
    if(fs.existsSync(file)&&fs.statSync(file).isFile())return route.fulfill({contentType:file.endsWith('.js')?'application/javascript':file.endsWith('.html')?'text/html':undefined,body:fs.readFileSync(file)});
    return route.fulfill({status:404,body:''});
   });
@@ -67,9 +67,12 @@ const COMMENT = 'EXPLICIT_FEEDBACK_COMMENT_2859';
  assert.equal(await demo.page.locator('#oracle .mc-dashboard-btn').getAttribute('href'),'/research-dashboard');
  assert(await demo.page.locator('#oracle .mc-dashboard-btn').isVisible(),'Dashboard remains visible independently of inventory flag');
  assert.equal(await demo.page.locator('#oracle .mc-dev-label').count(),0,'production must not be labelled development');
+ await demo.page.locator('#mcTesterWelcome').waitFor();
+ await demo.page.locator('[name=testerName]').fill('Alex');await demo.page.locator('#mcTesterWelcome button').click();await demo.page.locator('#mcTesterWelcome').waitFor({state:'hidden'});
  await demo.ask(PRIVATE);
  const demoChats=demo.records.filter(r=>r.path==='/api/research/chat');
  assert(demoChats.some(r=>r.body.question===PRIVATE&&r.body.status==='complete'),'first submitted question and answer captured');
+ assert(demoChats.every(r=>r.body.tester_label==='Alex'));
  assert(demoChats.every(r=>r.body.consent_version==='2026-10-29-demo-v1'&&r.body.full_chat_consent===true));
  assert(demo.events().some(e=>e.name==='session.started'));
  assert.equal(await demo.page.locator('#mcResearchPanel,.mc-testing-settings').count(),0);
@@ -143,3 +146,4 @@ const COMMENT = 'EXPLICIT_FEEDBACK_COMMENT_2859';
  console.log(JSON.stringify({source:SOURCE,preConsentNoCollection:true,bodyMaskedBeforeSDK:true,oracleSuccessAndSSEFailures:true,feedbackOnlyFirstParty:true,explicitRating:true,withdrawStopsAndRetries:true,disabledNoCollection:true,unsafeURLSkipsSDK:true,pendingDeletionWhenDisabled:true,freshProviderConsent:true,posthogStrictWhitelist:true,posthogMissingOrBlockedSafe:true,posthogOptoutRaceSafe:true,zeroPageErrors:true}));
  } finally { await browser.close(); }
 })().catch(e=>{console.error(e);process.exit(1);});
+

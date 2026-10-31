@@ -1,4 +1,4 @@
-# Last updated: 2026-10-29 · Codex · separately versioned demo-start policy and configurable optional mode.
+# Last updated: 2026-10-31 · Self-reported name linked immutably to one research session.
 """Private server-side storage; callers own HTTP auth, Origin checks and feature gating.
 
 Transcript capture requires a versioned research policy and enabled full-chat field.
@@ -238,6 +238,20 @@ def write_events(db_url, app_env, payload):
     session_id, events = validate_events(payload)
     with transaction(db_url) as cur:
         return _write_events(cur, environment, session_id, events, _journey(payload,session_id), payload['consent_version'])
+
+
+def name_session(db_url, app_env, payload):
+    """Attach a self-reported name to this session; retries cannot rename it."""
+    environment = _environment(app_env)
+    _object(payload, ('session_id','consent','consent_version')+JOURNEY_FIELDS,
+            ('session_id','consent','consent_version','tester_label'))
+    session_id = _consent(payload)
+    journey = _journey(payload, session_id)
+    if not journey.get('tester_label'):
+        raise InputError('A name is required.')
+    with transaction(db_url) as cur:
+        _session(cur, environment, session_id, journey, payload['consent_version'])
+    return {'ok': True}
 
 
 def _write_feedback(cur, environment, session_id, feedback, journey=None, consent_version=CONSENT_VERSION):

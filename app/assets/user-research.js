@@ -1,4 +1,4 @@
-/* Last updated: 2026-10-29 · Production-only demo testing, internal-browser exclusion and known-automation suppression. */
+/* Last updated: 2026-10-31 · Name-only Oracle welcome, durable session binding and tab isolation. */
 (function () {
   'use strict';
   // Known browser automation must not create research rows or provider sessions.
@@ -14,6 +14,7 @@
   var NAMES = ['session.started','scene.viewed','module.clicked','oracle.submitted','oracle.completed','oracle.failed','feedback.submitted'];
   var chatConsent=false, conversations={}, CHAT_KEY='mc_research_chat_consent_v1', CHAT_MAP='mc_research_chat_map_v1';
   var journey=null, journeyBaseline=0, journeyPerformance=0, JOURNEY_KEY='mc_research_journey_v1';
+  var starting=false, welcome=null;
   var nativeFetch = window.fetch.bind(window);
   document.body.setAttribute('data-clarity-mask', 'true');
   function read(key) { try { return sessionStorage.getItem(key); } catch (_) { return null; } }
@@ -137,6 +138,23 @@
     document.head.appendChild(script);
   }
   function start(action) {
+    if(starting || active)return;
+    starting=true;
+    // A duplicated tab may inherit sessionStorage. Claim the session exclusively
+    // before capture so its new owner can never inherit another tester's name.
+    var candidate=read(CONSENT_KEY)===VERSION+':yes'?read(SESSION_KEY):null;
+    if(!validUUID(candidate))candidate=uuid();
+    function fresh(){[SESSION_KEY,JOURNEY_KEY,CHAT_MAP,CHAT_KEY].forEach(function(key){save(key,null);});}
+    if(navigator.locks && candidate){
+      navigator.locks.request('mc-research-tab:'+candidate,{ifAvailable:true},function(lock){
+        if(!lock){fresh();starting=false;start(action);return;}
+        save(SESSION_KEY,candidate);save(CONSENT_KEY,VERSION+':yes');
+        begin(action);starting=false;
+        return new Promise(function(){}); // Browser releases this on document teardown.
+      }).catch(function(){fresh();starting=false;begin(action);});
+    }else{fresh();starting=false;begin(action);}
+  }
+  function begin(action) {
     if (!config || config.environment!=='prod' || config.enabled !== true || internalBrowser() || active) return;
     if (needsReload || read(PENDING_KEY)) { speak('Finish deleting this session before joining another test.'); return; }
     var previous = read(CONSENT_KEY)===VERSION+':yes' ? read(SESSION_KEY) : null; session = validUUID(previous) ? previous : uuid();
@@ -153,8 +171,36 @@
     active = true; generation++; save(SESSION_KEY, session); save(CONSENT_KEY, VERSION + ':yes');
     loadClarity(); loadPosthog(); event('session.started'); event('scene.viewed'); renderState();
     speak(demoMode ? 'Demo testing is active. New Oracle conversations are saved privately for review.' : 'Optional testing is on for this tab. You can stop at any time.');
+    welcomeTester();
+  }
+  function welcomeTester(){
+    if(!demoMode || !permitted() || !journey || journey.tester_label || (location.hash && scene()!=='oracle'))return;
+    if(welcome){if(!welcome.open)welcome.showModal();return;}
+    var css=document.createElement('style');
+    css.textContent='#mcTesterWelcome{box-sizing:border-box;width:min(400px,calc(100vw - 32px));padding:32px;border:1px solid #ded5c5;border-radius:24px;background:#fbf7ee;color:#223b38;font:16px/1.5 var(--round,system-ui);text-align:center;box-shadow:0 24px 80px #143e3826}#mcTesterWelcome::backdrop{background:#173b3840}#mcTesterWelcome img{width:176px;max-width:100%;height:auto;image-rendering:pixelated}#mcTesterWelcome h2{font-size:25px;margin:16px 0 24px}#mcTesterWelcome input{box-sizing:border-box;width:100%;padding:13px 15px;border:1px solid #b7c9c2;border-radius:12px;background:white;color:#223b38;font:inherit}#mcTesterWelcome input:focus-visible,#mcTesterWelcome button:focus-visible{outline:3px solid #65b9b2;outline-offset:3px}#mcTesterWelcome button{width:100%;margin-top:14px;padding:13px;border:0;border-radius:12px;background:#00736e;color:white;font:inherit;cursor:pointer}#mcTesterWelcome button:disabled{opacity:.65;cursor:wait}#mcTesterWelcome [role=status]{margin:12px 0 0;font-size:13px}';
+    document.head.appendChild(css);
+    welcome=document.createElement('dialog');welcome.id='mcTesterWelcome';welcome.setAttribute('aria-labelledby','mcTesterTitle');welcome.setAttribute('data-clarity-mask','true');
+    welcome.innerHTML='<img src="/app/assets/soft-welcome.png" alt="Soft, the MeatCODE character"><h2 id="mcTesterTitle">What’s your name?</h2><form><input name="testerName" aria-label="Your name" placeholder="Your name" autocomplete="off" maxlength="80" required><button type="submit">Continue</button><p role="status" aria-live="polite"></p></form>';
+    welcome.addEventListener('cancel',function(e){e.preventDefault();});
+    welcome.querySelector('form').addEventListener('submit',function(e){
+      e.preventDefault();if(!permitted()||!journey)return;
+      var form=e.target,input=form.elements.testerName,name=input.value.trim(),button=form.querySelector('button'),message=form.querySelector('[role=status]');
+      if(!name || /[\x00-\x1f]/.test(name)){message.textContent='Please enter your name.';input.focus();return;}
+      var sid=session,current=generation,controller=new AbortController(),timeout=setTimeout(function(){controller.abort();},10000);
+      var body=journeyFields({session_id:sid,consent:true,consent_version:VERSION});body.tester_label=name;
+      button.disabled=true;input.disabled=true;message.textContent='Saving…';requests.add(controller);
+      post('name',body,controller.signal).then(function(res){return res.json();}).then(function(result){
+        if(!result || result.ok!==true)throw new Error('NAME_NOT_SAVED');
+        if(current!==generation || session!==sid || !permitted())return;
+        journey.tester_label=name;save(JOURNEY_KEY,JSON.stringify(journey));welcome.close();
+      }).catch(function(){message.textContent='Your name could not be saved. Please try again.';}).finally(function(){
+        clearTimeout(timeout);requests.delete(controller);button.disabled=false;input.disabled=false;
+      });
+    });
+    document.body.appendChild(welcome);welcome.showModal();welcome.querySelector('input').focus();
   }
   function stop(options) {
+    if(welcome){welcome.close();welcome.remove();welcome=null;}
     var sid = session || read(PENDING_KEY) || read(SESSION_KEY);
     active = false; chatConsent=false;conversations={};journey=null;save(JOURNEY_KEY,null);save(CHAT_KEY,null);save(CHAT_MAP,null);generation++; queue = []; phQueue = [];
     if(ph){try{ph.opt_out_capturing({clear_persistence:true});}catch(_){}}
@@ -264,6 +310,7 @@
     if(SCENES.indexOf(target)>=0)event('module.clicked',{}, {},target);
   },true);
   window.addEventListener('hashchange', function () {
+    welcomeTester();
     if (!permitted()) return;
     if (loaded && !safeURL()) { clarityCall('consentv2',{ad_Storage:'denied',analytics_Storage:'denied'}); clarityCall('stop'); needsReload = true; }
     event('scene.viewed');
@@ -349,3 +396,4 @@
     if((read(PENDING_KEY) || validUUID(read(SESSION_KEY))) && !panel){config={enabled:false};ui();speak('Testing is off. Retry deleting the previous session below.');}
   });
 })();
+

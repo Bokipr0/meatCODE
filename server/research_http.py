@@ -1,4 +1,4 @@
-# Last updated: 2026-10-29 · Production intake · reject nonproduction and explicitly excluded/known automated traffic before storage.
+# Last updated: 2026-10-31 · Self-reported name linked immutably to one research session.
 """HTTP glue only. The caller MUST apply its existing site-password gate first.
 
 Storage and consent validation live in user_research. No model client, database
@@ -48,6 +48,7 @@ def _excluded_browser(headers):
     return bool(_browser_exclusion(headers))
 
 _POST_ROUTES = {
+    "/api/research/name": "name_session",
     "/api/research/events": "write_events",
     "/api/research/chat": "write_chat",
     "/api/research/feedback": "write_feedback",

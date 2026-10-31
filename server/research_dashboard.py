@@ -1,4 +1,4 @@
-# Last updated: 2026-10-29 · Codex · production-only research monitoring; owner-authorized dev login preserved.
+# Last updated: 2026-10-31 · Self-reported name linked immutably to one research session.
 """Called only after the site's existing authentication gate. No provider API calls."""
 from contextlib import contextmanager
 import base64
@@ -206,20 +206,22 @@ def snapshot(cursor,environment,minutes=15,limit=50,now=None):
         WHERE environment=%s AND created_at >= %s AND created_at <= %s
         AND name='scene.viewed' GROUP BY scene ORDER BY count(*) DESC,scene''',args)
     scenes=[{'scene':scene,'count':int(count)} for scene,count in cursor.fetchall()]
-    cursor.execute('''SELECT event_id,name,scene,created_at,duration_ms,error_code,source_count,session_id,elapsed_ms
-        FROM user_research.events WHERE environment=%s AND created_at >= %s AND created_at <= %s
-        ORDER BY created_at DESC,event_id DESC LIMIT %s''',args+(limit,))
+    cursor.execute('''SELECT e.event_id,e.name,e.scene,e.created_at,e.duration_ms,e.error_code,e.source_count,e.session_id,e.elapsed_ms,s.tester_label
+        FROM user_research.events e JOIN user_research.sessions s USING(session_id,environment)
+        WHERE e.environment=%s AND e.created_at >= %s AND e.created_at <= %s
+        ORDER BY e.created_at DESC,e.event_id DESC LIMIT %s''',args+(limit,))
     activity=[{'id':str(event_id),'event':name,'scene':scene,'created_at':_iso(created),
                'duration_ms':duration,'error_code':error,'source_count':sources,
-               'session_label':_session_label(session,environment),'elapsed_ms':elapsed}
-              for event_id,name,scene,created,duration,error,sources,session,elapsed in cursor.fetchall()]
-    cursor.execute('''SELECT created_at,rating,category,comment,session_id FROM user_research.feedback
-        WHERE environment=%s AND created_at >= %s AND created_at <= %s
-        ORDER BY created_at DESC,event_id DESC LIMIT 20''',args)
+               'session_label':_session_label(session,environment),'tester_label':label,'elapsed_ms':elapsed}
+              for event_id,name,scene,created,duration,error,sources,session,elapsed,label in cursor.fetchall()]
+    cursor.execute('''SELECT f.created_at,f.rating,f.category,f.comment,f.session_id,s.tester_label
+        FROM user_research.feedback f JOIN user_research.sessions s USING(session_id,environment)
+        WHERE f.environment=%s AND f.created_at >= %s AND f.created_at <= %s
+        ORDER BY f.created_at DESC,f.event_id DESC LIMIT 20''',args)
     feedback=[{'created_at':_iso(created),'rating':rating,'category':category,
                'comment':str(comment or '')[:2000].replace(str(session),'[session]'),
-               'session_label':_session_label(session,environment)}
-              for created,rating,category,comment,session in cursor.fetchall()]
+               'session_label':_session_label(session,environment),'tester_label':label}
+              for created,rating,category,comment,session,label in cursor.fetchall()]
     cursor.execute('SELECT conversation_id,count(*),max(updated_at),min(created_at)\n        FROM user_research.oracle_turns WHERE environment=%s\n        GROUP BY conversation_id HAVING max(updated_at)>=%s AND max(updated_at)<=%s\n        ORDER BY max(updated_at) DESC,conversation_id LIMIT 20',args)
     conversations=[{'id':str(cid),'turns':int(count),'last_updated':_iso(updated),'started_at':_iso(started)}
                    for cid,count,updated,started in cursor.fetchall()]
@@ -259,11 +261,11 @@ def journey(cursor,environment,minutes=60,limit=50,now=None):
         utc=created.astimezone(datetime.timezone.utc) if hasattr(created,'astimezone') else None
         rows.append({'id':str(identifier),'kind':kind,'created_at':_iso(created),
             'date':utc.date().isoformat() if utc else None,'user_ref':str(user_ref) if user_ref else _session_label(session,environment),
-            'tester_label':label,'input':input_text,'elapsed_ms':elapsed,'clarity_ref':str(clarity_ref) if clarity_ref else None,
+            'tester_label':label,'session_label':_session_label(session,environment),'input':input_text,'elapsed_ms':elapsed,'clarity_ref':str(clarity_ref) if clarity_ref else None,
             'conversation_id':conversation,'status':status})
     return {'ok':True,'source':'neon_first_party','environment':environment,'checked_at':checked.isoformat(),
             'window_minutes':minutes,'rows':rows,'limit':limit,'timestamp_zone':'UTC',
-            'identity_scope':'consented_tab_pseudonym','timer_scope':'elapsed_since_testing_opt_in'}
+            'identity_scope':'self_reported_name_per_session','timer_scope':'elapsed_since_testing_started'}
 
 
 def transcript_parameters(path,app_env):
