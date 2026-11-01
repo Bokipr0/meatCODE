@@ -291,6 +291,7 @@
     introduceDenver(welcome);
   }
   function stop(options) {
+    window.dispatchEvent(new Event('denver:session-end'));
     if(welcome){welcome.close();welcome.remove();welcome=null;}
     var sid = session || read(PENDING_KEY) || read(SESSION_KEY);
     active = false; chatConsent=false;conversations={};journey=null;save(JOURNEY_KEY,null);save(CHAT_KEY,null);save(CHAT_MAP,null);generation++; queue = []; phQueue = [];
@@ -343,7 +344,28 @@
     journeyFields(body);
     if(code)body.error_code=ERRORS.indexOf(code)>=0?code:'unknown';
     var controller=new AbortController();requests.add(controller);
-    post('chat',body,controller.signal).catch(function(){if(permitted())speak('The Oracle still works, but a chat-research update could not be saved.');}).finally(function(){requests.delete(controller);});
+    post('chat',body,controller.signal).then(function(response) {
+      if (state !== 'complete' || !demoMode) return;
+      return response.json().then(function(result) {
+        var number = result.rate_answer;
+        function sameSession() { return permitted() && generation===turn.generation && session===body.session_id; }
+        if (!sameSession() || !journey.tester_label || !Number.isInteger(number) || number<2 || number%2) return;
+        window.dispatchEvent(new CustomEvent('denver:rate-answer', {detail:{
+          turnId:turn.id, number:number, question:body.question.slice(0,100), valid:sameSession,
+          submit:function(rating) {
+            if (!sameSession()) return Promise.reject(new Error('Session ended'));
+            var request = new AbortController();
+            var timeout = setTimeout(function(){request.abort();},10000);
+            requests.add(request);
+            return post('answer-rating',{session_id:session,turn_id:turn.id,consent:true,consent_version:VERSION,
+              rating:rating,elapsed_ms:elapsed()},request.signal)
+              .then(function(res){return res.json();})
+              .then(function(ack){if(!ack.ok || !sameSession())throw new Error('Rating not acknowledged');})
+              .finally(function(){clearTimeout(timeout);requests.delete(request);});
+          }
+        }}));
+      });
+    }).catch(function(){if(permitted())speak('The Oracle still works, but a chat-research update could not be saved.');}).finally(function(){requests.delete(controller);});
     turn.lastWrite=performance.now();
   }
   function startOracle(question,chatKey) {

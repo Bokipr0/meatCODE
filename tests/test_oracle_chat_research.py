@@ -34,6 +34,33 @@ class DatabaseTests(unittest.TestCase):
   self.conn=psycopg2.connect(os.environ['USER_RESEARCH_TEST_DB_URL'],connect_timeout=5);self.cur=self.conn.cursor();self.cur.execute("SET LOCAL statement_timeout='5s'; SET LOCAL lock_timeout='3s'")
   self.p=payload();self.sid,self.turn=research.validate_chat(self.p)
  def tearDown(self):self.conn.rollback();self.conn.close()
+ def test_denver_cadence_and_rating_belong_to_one_session(self):
+  def send(sid,status,answer):
+   turn=dict(self.turn,turn_id=str(uuid.uuid4()),conversation_id=str(uuid.uuid4()),turn_index=1,
+             tester_label='Fixture',status=status,answer=answer)
+   return turn,research._write_chat(self.cur,'prod',sid,turn)
+  def rate(sid,turn,value='helpful'):
+   return research._save_answer_rating(self.cur,'prod',sid,turn['turn_id'],value,25)
+  first,ack=send(self.sid,'complete','First')
+  self.assertNotIn('rate_answer',ack)
+  for state in ('clarification','failed','interrupted','submitted'):
+   self.assertNotIn('rate_answer',send(self.sid,state,'Other')[1])
+  self.assertNotIn('rate_answer',send(self.sid,'complete',' \n')[1])
+  second,ack=send(self.sid,'complete','Second')
+  self.assertEqual(ack['rate_answer'],2)
+  self.assertNotIn('rate_answer',research._write_chat(self.cur,'prod',self.sid,second))
+  other=str(uuid.uuid4())
+  self.assertNotIn('rate_answer',send(other,'complete','Fresh session')[1])
+  for sid,turn in [(other,second),(self.sid,first)]:
+   with self.assertRaises(research.InputError):rate(sid,turn)
+  self.assertTrue(rate(self.sid,second)['ok']);self.assertTrue(rate(self.sid,second)['ok'])
+  with self.assertRaises(research.InputError):rate(self.sid,second,'neutral')
+  self.cur.execute('SELECT rating,context FROM user_research.feedback WHERE event_id=%s',(second['turn_id'],))
+  rating,ctx=self.cur.fetchone();self.assertEqual((rating,ctx['turn_id'],ctx['conversation_id'],ctx['answer_number']),('helpful',second['turn_id'],second['conversation_id'],2))
+  self.assertNotIn('rate_answer',send(self.sid,'complete','Third')[1])
+  self.assertEqual(send(self.sid,'complete','Fourth')[1]['rate_answer'],4)
+  research._withdraw(self.cur,'prod',self.sid)
+  with self.assertRaises(research.InputError):rate(self.sid,second)
  def test_terminal_response_cannot_be_overwritten_by_delayed_checkpoints(self):
   research._write_chat(self.cur,'prod',self.sid,self.turn)
   final=dict(self.turn,status='complete',revision=2,answer='actual answer',source_ids=[1,2]);research._write_chat(self.cur,'prod',self.sid,final)

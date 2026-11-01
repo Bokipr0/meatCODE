@@ -321,6 +321,42 @@ def _write_note(cur,environment,sid,note,identity,version):
     return {'ok':True,'duplicate':False}
 
 
+def write_answer_rating(db_url, app_env, payload):
+    fields = ('session_id','consent','consent_version','turn_id','rating','elapsed_ms')
+    _object(payload, fields, ('session_id','consent','consent_version','turn_id','rating'))
+    sid = _consent(payload)
+    environment = _environment(app_env)
+    turn_id = _uuid(payload['turn_id'])
+    rating = _choice(payload['rating'], ('helpful','neutral','unhelpful'))
+    with transaction(db_url) as cur:
+        return _save_answer_rating(cur, environment, sid, turn_id, rating, _elapsed(payload.get('elapsed_ms')))
+
+
+def _save_answer_rating(cur, environment, sid, turn_id, rating, elapsed_ms):
+    # The same lock serializes answers, ratings and withdrawal. A rating never creates a session.
+    _lock_session(cur, environment, sid)
+    cur.execute("""SELECT t.conversation_id,t.turn_index,t.answer_number
+                   FROM user_research.oracle_turns t JOIN user_research.sessions s USING(session_id,environment)
+                   WHERE t.turn_id=%s AND t.session_id=%s AND t.environment=%s AND t.status='complete'
+                     AND s.tester_label IS NOT NULL AND s.withdrawn_at IS NULL""", (turn_id,sid,environment))
+    turn = cur.fetchone()
+    if not turn or not turn[2] or turn[2] % 2:
+        raise InputError('This answer is not eligible for a Denver rating.')
+    context = {'kind':'denver.answer_rating','turn_id':turn_id,'turn_index':turn[1],
+               'conversation_id':str(turn[0]),'answer_number':turn[2]}
+    cur.execute("""INSERT INTO user_research.feedback(event_id,environment,session_id,rating,category,elapsed_ms,context)
+                   VALUES(%s,%s,%s,%s,'answer',%s,%s::jsonb)
+                   ON CONFLICT(event_id,environment) DO NOTHING""",
+                (turn_id,environment,sid,rating,elapsed_ms,json.dumps(context)))
+    if not cur.rowcount:
+        cur.execute("""SELECT 1 FROM user_research.feedback WHERE event_id=%s AND session_id=%s
+                       AND environment=%s AND rating=%s AND context->>'kind'='denver.answer_rating'""",
+                    (turn_id,sid,environment,rating))
+        if not cur.fetchone():
+            raise InputError('This answer already has a different rating.')
+    return {'ok':True}
+
+
 def write_note(db_url,app_env,payload):
     sid,note,identity=validate_note(payload)
     with transaction(db_url) as cur:
@@ -384,7 +420,20 @@ def _write_chat(cur,environment,sid,turn):
       truncated=EXCLUDED.truncated,updated_at=now()
       WHERE existing.status='submitted' AND EXCLUDED.revision>existing.revision""",
       (turn['turn_id'],environment,sid,turn['conversation_id'],turn['turn_index'],turn['question'],turn['answer'],turn['status'],turn['revision'],turn['source_ids'],turn.get('error_code'),turn['truncated'],turn.get('consent_version',CONSENT_VERSION),turn.get('elapsed_ms')))
-    return {'ok':True,'accepted':cur.rowcount}
+    result = {'ok':True, 'accepted':cur.rowcount}
+    if result['accepted'] and turn['status']=='complete' and turn['answer'].strip():
+        # _session already holds the per-session transaction lock. An SSE duplicate
+        # cannot advance the ordinal because terminal updates are immutable.
+        cur.execute("""UPDATE user_research.oracle_turns SET answer_number=(
+                         SELECT GREATEST(COALESCE(MAX(answer_number)+1, 0), COUNT(*))
+                         FROM user_research.oracle_turns
+                         WHERE session_id=%s AND environment=%s AND status='complete' AND answer ~ '[^[:space:]]')
+                       WHERE turn_id=%s AND environment=%s RETURNING answer_number""",
+                    (sid, environment, turn['turn_id'], environment))
+        number = cur.fetchone()[0]
+        if number % 2 == 0:
+            result['rate_answer'] = number
+    return result
 
 
 def write_chat(db_url,app_env,payload):

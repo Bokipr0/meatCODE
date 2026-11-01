@@ -53,7 +53,7 @@ class DenverCompanion extends HTMLElement{
  idleMotion(now) {
   if (!this.invite) return this.motion;
   const welcomeOpen = document.getElementById('mcTesterWelcome')?.open;
-  if (this.hidden || document.hidden || welcomeOpen || this.noteOpen || this.opening || this.busy) {
+  if (this.hidden || document.hidden || welcomeOpen || this.ratingOpen || this.noteOpen || this.opening || this.busy) {
     this.touchDenver();
     return this.motion;
   }
@@ -79,7 +79,7 @@ class DenverCompanion extends HTMLElement{
  play(name,force=true){if(!DenverMotions.motions[name])return;this.motion=name;this.started=performance.now();this.manual=force;this.paused=false;this.forcedTime=null;this.noteOpen=false;this.opening=false;if(this.paper)this.paper.hidden=true;if(force)this.setAttribute('motion-mode','on');if(this.hit)this.hit.setAttribute('aria-expanded','false');this.render(performance.now());}
  scrub(fraction){this.paused=true;this.forcedTime=DenverMotions.motions[this.motion].duration*Math.max(0,Math.min(1,fraction));this.render(performance.now());}
  openNote(focus=false){this.touchDenver();if(!focus&&performance.now()<(this.cooldown||0))return;if(this.noteOpen){if(focus)this.input.focus();return;}if(this.opening){this.focusAfterOpen ||= focus;return;}this.play('note',false);this.opening=true;this.focusAfterOpen=focus;this.hit.setAttribute('aria-expanded','true');this.output.textContent='';this.render(performance.now());}
- closeNote(){this.touchDenver();this.cooldown=performance.now()+700;this.paper.hidden=true;this.hit.setAttribute('aria-expanded','false');this.noteOpen=this.opening=false;this.play(this.mood,false);this.hit.focus({preventScroll:true});}
+ closeNote(){this.touchDenver();this.cooldown=performance.now()+700;this.paper.hidden=true;this.hit.setAttribute('aria-expanded','false');this.noteOpen=this.opening=false;this.play(this.mood,false);this.hit.focus({preventScroll:true});this.dispatchEvent(new Event('denver:note-close'));}
  render(now){if(!this.ctx||!this.w)return;const motion=this.idleMotion(now),M=DenverMotions.motions[motion],elapsed=this.forcedTime??(this.paused?this.lastElapsed||0:Math.max(0,now-this.started));this.lastElapsed=elapsed;let ms=M.loop?elapsed%M.duration:Math.min(elapsed,M.duration);if(!this.motionAllowed)ms=this.motion==='note'?M.duration:0;
   if(this.opening&&(ms>=440||!this.motionAllowed)){this.opening=false;this.noteOpen=true;this.paper.hidden=false;this.positionPaper();if(this.focusAfterOpen)this.input.focus({preventScroll:true});this.dispatchEvent(new CustomEvent('denver:note-open',{bubbles:true,composed:true}));}
   const target=this.demoPointer?{x:this.w*.38+Math.sin(now/650)*this.w*.30,y:this.h*.43+Math.cos(now/870)*this.h*.27,seen:true}:this.pointer;this.dot.hidden=!this.demoPointer;if(this.demoPointer){this.dot.style.left=target.x+'px';this.dot.style.top=target.y+'px';}

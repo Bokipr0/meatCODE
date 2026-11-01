@@ -48,6 +48,7 @@ def _excluded_browser(headers):
     return bool(_browser_exclusion(headers))
 
 _POST_ROUTES = {
+    "/api/research/answer-rating": "write_answer_rating",
     "/api/research/note": "write_note",
     "/api/research/name": "name_session",
     "/api/research/events": "write_events",

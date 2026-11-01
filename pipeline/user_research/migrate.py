@@ -9,14 +9,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from settings import ROOT, settings, research_database_url
 
 EXPECTED = {
-    'oracle_turns':{'elapsed_ms','turn_id','environment','session_id','conversation_id','turn_index','question','answer','status','revision','source_ids','error_code','truncated','consent_version','consent_at','created_at','updated_at'},
+    'oracle_turns':{'answer_number','elapsed_ms','turn_id','environment','session_id','conversation_id','turn_index','question','answer','status','revision','source_ids','error_code','truncated','consent_version','consent_at','created_at','updated_at'},
     'sessions': {'withdrawn_at','user_ref','clarity_ref','tester_label','session_id','environment','consent_version','consent_at','created_at','last_seen_at'},
     'events': {'elapsed_ms','event_id','environment','session_id','name','scene','duration_ms','error_code','source_count','created_at'},
     'feedback': {'source','context','elapsed_ms','event_id','environment','session_id','rating','category','comment','created_at'},
 
 }
 INDEXES = {'ur_sessions_clarity_ref','sessions_pkey','events_pkey','feedback_pkey',
-           'oracle_turns_pkey','ur_oracle_session','ur_oracle_updated','ur_sessions_last_seen','ur_events_session_time',
+           'oracle_turns_pkey','ur_completed_answer_number','ur_oracle_session','ur_oracle_updated','ur_sessions_last_seen','ur_events_session_time',
            'ur_events_created','ur_feedback_created'}
 
 
@@ -72,6 +72,7 @@ def run(environment, apply=False):
             # Fresh installs use the four-table baseline. Never replay archive-creating DDL.
             migrations=[] if existing else ['research_core_baseline.sql']
             migrations.append('0028_session_withdrawal.sql')
+            migrations.append('0030_denver_answer_number.sql')
             for migration in migrations:
                 sql=(ROOT/'db/migrations'/migration).read_text()
                 body='\n'.join(line for line in sql.splitlines() if line.strip() not in ('BEGIN;','COMMIT;'))

@@ -10,6 +10,72 @@
  function onOracle(){return !location.hash || location.hash==='#oracle';}
  function sync(){pet.hidden=!onOracle();}
  sync();document.body.appendChild(pet);window.addEventListener('hashchange',sync);
+ // Each offer arrives only after the research server commits an eligible answer.
+ const questions = [];
+ const panel = document.createElement('section');
+ panel.hidden = true;
+ panel.className = 'answer-rating';
+ panel.setAttribute('aria-label','Denver answer feedback');
+ panel.setAttribute('data-clarity-mask','true');
+ panel.innerHTML = `<strong>How good is this answer?</strong><p class="which"></p>
+   <div class="choices"><button data-rating="helpful">Good</button><button data-rating="neutral">Okay</button>
+   <button data-rating="unhelpful">Poor</button></div>
+   <button class="skip">Skip</button><small role="status"></small>`;
+ const design = document.createElement('style');
+ design.textContent = `.answer-rating{position:absolute;z-index:3;right:49px;top:15%;width:232px;max-width:calc(100% - 58px);max-height:80%;overflow:auto;padding:14px;border:1px solid #cbbd9f;border-radius:14px;background:#fff9e9;box-shadow:0 3px 12px #36222524;pointer-events:auto}
+ .answer-rating[hidden]{display:none}.answer-rating strong{font-size:16px}.answer-rating .which{font-size:12px;line-height:1.35;overflow-wrap:anywhere;margin:5px 0 10px;color:#685c54}
+ .choices{display:flex;gap:5px}.choices button{flex:1;padding:6px 2px;color:#165e58;background:#fff;border:1px solid #b7c9c2;border-radius:7px}
+ .answer-rating .skip{margin-top:7px;border:none;background:none;text-decoration:underline;color:#685c54}.answer-rating small:empty{display:none}`;
+ pet.shadowRoot.append(design,panel);
+ let sending = false;
+ let displayed = null;
+ function showRating() {
+   while (questions.length && !questions[0].valid()) questions.shift();
+   const next = questions[0];
+   const show = !!next && onOracle() && !pet.noteOpen && !pet.opening;
+   panel.hidden = !show;
+   pet.ratingOpen = show;
+   if (!show) return;
+   pet.touchDenver();
+   if (displayed === next) return;
+   displayed = next;
+   panel.querySelector('.which').textContent = 'Answer '+next.number+' · '+next.question;
+   panel.querySelector('small').textContent = '';
+   panel.querySelectorAll('button').forEach(button=>button.disabled=false);
+ }
+ panel.addEventListener('click', async function(event) {
+   const button=event.target.closest('button'), offer=questions[0];
+   if (!button || !offer || sending) return;
+   if (!offer.valid() || button.classList.contains('skip')) {
+     questions.shift();showRating();return;
+   }
+   sending=true;
+   panel.querySelectorAll('button').forEach(b=>b.disabled=true);
+   try {
+     await offer.submit(button.dataset.rating);
+     if (questions[0]===offer) questions.shift();
+   } catch (_) {
+     if (questions[0]===offer) {
+       panel.querySelector('small').textContent='Could not confirm the save. Retry your rating or skip.';
+       button.disabled=false;
+       panel.querySelector('.skip').disabled=false;
+     }
+   } finally {
+     sending=false;
+     showRating();
+   }
+ });
+ window.addEventListener('denver:rate-answer', function(event) {
+   const offer=event.detail;
+   if (!offer.valid() || questions.some(q=>q.turnId===offer.turnId)) return;
+   questions.push(offer);showRating();
+ });
+ window.addEventListener('denver:session-end', function() {
+   questions.length=0;displayed=null;showRating();
+ });
+ window.addEventListener('hashchange',showRating);
+ pet.addEventListener('denver:note-open',showRating);
+ pet.addEventListener('denver:note-close',showRating);
  function newContext(){return window.MCResearch&&MCResearch.noteContext(typeof window.oracleActiveId==='string'?window.oracleActiveId:null);}
  pet.addEventListener('denver:note-open',function(){if(!context || !pet.input.value.trim())context=newContext();});
  pet.input.addEventListener('input',function(){if(!context)context=newContext();});

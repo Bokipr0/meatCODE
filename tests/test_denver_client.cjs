@@ -3,11 +3,14 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),fs=require
 const root=process.env.DENVER_ROOT||path.resolve(__dirname,'..');
 (async()=>{const browser=await chromium.launch({headless:true,executablePath:process.env.PLAYWRIGHT_EXECUTABLE});
 try{
- const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();let fail=false;const records=[],errors=[];
+ const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();let fail=false,gradeTest=false,completeCount=0,gradeAttempts=0;const records=[],errors=[];
  await context.addInitScript(()=>Object.defineProperty(navigator,'webdriver',{get:()=>false}));page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',async route=>{const req=route.request(),u=new URL(req.url());if(u.hostname!=='127.0.0.1')return route.abort();
   if(u.pathname==='/api/research/config')return route.fulfill({json:{enabled:true,demo_mode:true,environment:'prod',consent_version:'2026-10-29-demo-v1',posthog:{enabled:false}}});
-  if(u.pathname.startsWith('/api/research/')){records.push({path:u.pathname,body:req.postDataJSON()});return route.fulfill({status:u.pathname.endsWith('/note')&&fail?503:200,json:{ok:true}});}
+  if(u.pathname.startsWith('/api/research/')){const body=req.postDataJSON();records.push({path:u.pathname,body});
+   if(gradeTest && u.pathname.endsWith('/chat') && body.status==='complete')return route.fulfill({json:{ok:true,rate_answer:++completeCount%2===0?completeCount:null}});
+   if(gradeTest && u.pathname.endsWith('/answer-rating'))return route.fulfill({status:++gradeAttempts===1?503:200,json:{ok:gradeAttempts>1}});
+   return route.fulfill({status:u.pathname.endsWith('/note')&&fail?503:200,json:{ok:true}});}
   if(u.pathname==='/api/version')return route.fulfill({json:{env:'prod'}});
   if(u.pathname==='/api/flags')return route.fulfill({json:{oracle_redesign:true,live_testing_dashboard:false}});
   if(u.pathname==='/api/ask')return route.fulfill({contentType:'text/event-stream',body:'event: chunk\ndata: Fixture response\n\nevent: done\ndata: {}\n\n'});
@@ -67,5 +70,23 @@ try{
  await page.setViewportSize({width:390,height:844});await page.locator('#mcDenver .hit').click();await page.locator('#mcDenver textarea').waitFor({state:'visible'});assert(await page.locator('#mcDenver .paper').evaluate(e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight;}));
  if(process.env.DENVER_SCREENSHOT)await page.screenshot({path:process.env.DENVER_SCREENSHOT});
  await page.evaluate(()=>location.hash='science');assert(!(await pet.isVisible()));assert.deepEqual(errors,[]);
+ gradeTest=true;
+ await page.evaluate(()=>{location.hash='oracle';document.querySelector('#mcDenver').closeNote();});
+ async function answer(question) {
+   const receipt=page.waitForResponse(r=>r.url().endsWith('/chat')&&r.request().postDataJSON().question===question&&r.request().postDataJSON().status==='complete');
+   await page.evaluate(q=>{const t=MCResearch.startOracle(q,'rating-fixture');MCResearch.appendOracle(t,'Sample');MCResearch.completeOracle(t);},question);
+   await receipt;
+ }
+ const rateBox=page.locator('#mcDenver .answer-rating');
+ await answer('One');assert(!await rateBox.isVisible());await answer('Two');await rateBox.waitFor();
+ assert(await rateBox.textContent().then(t=>t.includes('How good is this answer?')&&t.includes('Answer 2 · Two')));
+ await rateBox.getByText('Good',{exact:true}).click();await rateBox.getByText('Could not confirm',{exact:false}).waitFor();
+ await rateBox.getByText('Good',{exact:true}).click();await rateBox.waitFor({state:'hidden'});
+ const grades=records.filter(r=>r.path.endsWith('/answer-rating'));
+ const rated=records.find(r=>r.path.endsWith('/chat')&&r.body.question==='Two'&&r.body.status==='complete');
+ assert.equal(grades.length,2);assert.equal(grades[0].body.turn_id,rated.body.turn_id);
+ assert.equal(grades[1].body.session_id,rated.body.session_id);assert.equal(grades[1].body.rating,'helpful');
+ await answer('Three');await answer('Four');await rateBox.waitFor();await rateBox.getByText('Skip',{exact:true}).click();
+ assert(!await rateBox.isVisible());assert.equal(records.filter(r=>r.path.endsWith('/answer-rating')).length,2);
  console.log(JSON.stringify({persistent:true,transparent:true,notesAcknowledged:true,retrySameId:true,sessionAndName:true,openingContextPreserved:true,noFakeRating:true,draftHandoff:true,keyboard:true,reducedMotion:true,mobile:true,errors:0}));
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});
