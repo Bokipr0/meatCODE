@@ -9,7 +9,21 @@
  var context=null,pending=false;
  function onOracle(){return !location.hash || location.hash==='#oracle';}
  function sync(){pet.hidden=!onOracle();}
+ const still = document.getElementById('oracleDenverPeek');
+ function revealAnimation() {
+   // Leave the native editor intact if someone opened it while the kit was loading.
+   if (!still || !pet.lastPose || pet.canvas.width < 2 || pet.canvas.height < 2 || pet.hidden) return;
+   if (still.open || still.querySelector('textarea').value) { pet.style.visibility='hidden'; return; }
+   pet.style.visibility='';
+   still.hidden=true;
+   pet.removeEventListener('denver:frame',revealAnimation);
+ }
+ if (still) {
+   pet.addEventListener('denver:frame',revealAnimation);
+   still.addEventListener('toggle',revealAnimation);
+ }
  sync();document.body.appendChild(pet);window.addEventListener('hashchange',sync);
+ window.addEventListener('pageshow',()=>{if(pet.isConnected&&!pet.hidden)pet.resize();});
  // Each offer arrives only after the research server commits an eligible answer.
  const questions = [];
  const panel = document.createElement('section');
@@ -22,7 +36,7 @@
    <button data-rating="unhelpful">Poor</button></div>
    <button class="skip">Skip</button><small role="status"></small>`;
  const design = document.createElement('style');
- design.textContent = `.answer-rating{position:absolute;z-index:3;right:49px;top:15%;width:232px;max-width:calc(100% - 58px);max-height:80%;overflow:auto;padding:14px;border:1px solid #cbbd9f;border-radius:14px;background:#fff9e9;box-shadow:0 3px 12px #36222524;pointer-events:auto}
+ design.textContent = `.answer-rating{position:absolute;z-index:3;right:var(--denver-edge-width,49px);top:15%;width:232px;max-width:calc(100% - 58px);max-height:80%;overflow:auto;padding:14px;border:1px solid #cbbd9f;border-radius:14px;background:#fff9e9;box-shadow:0 3px 12px #36222524;pointer-events:auto}
  .answer-rating[hidden]{display:none}.answer-rating strong{font-size:16px}.answer-rating .which{font-size:12px;line-height:1.35;overflow-wrap:anywhere;margin:5px 0 10px;color:#685c54}
  .choices{display:flex;gap:5px}.choices button{flex:1;padding:6px 2px;color:#165e58;background:#fff;border:1px solid #b7c9c2;border-radius:7px}
  .answer-rating .skip{margin-top:7px;border:none;background:none;text-decoration:underline;color:#685c54}.answer-rating small:empty{display:none}`;

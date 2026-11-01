@@ -3,9 +3,10 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright'),fs=require
 const root=process.env.DENVER_ROOT||path.resolve(__dirname,'..');
 (async()=>{const browser=await chromium.launch({headless:true,executablePath:process.env.PLAYWRIGHT_EXECUTABLE});
 try{
- const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();let fail=false,gradeTest=false,completeCount=0,gradeAttempts=0;const records=[],errors=[];
+ const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage();let blockCompanion=false,fail=false,gradeTest=false,completeCount=0,gradeAttempts=0;const records=[],errors=[];
  await context.addInitScript(()=>Object.defineProperty(navigator,'webdriver',{get:()=>false}));page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',async route=>{const req=route.request(),u=new URL(req.url());if(u.hostname!=='127.0.0.1')return route.abort();
+  if(blockCompanion && u.pathname.endsWith('/oracle-companion.js'))return route.abort();
   if(u.pathname==='/api/research/config')return route.fulfill({json:{enabled:true,demo_mode:true,environment:'prod',consent_version:'2026-10-29-demo-v1',posthog:{enabled:false}}});
   if(u.pathname.startsWith('/api/research/')){const body=req.postDataJSON();records.push({path:u.pathname,body});
    if(gradeTest && u.pathname.endsWith('/chat') && body.status==='complete')return route.fulfill({json:{ok:true,rate_answer:++completeCount%2===0?completeCount:null}});
@@ -88,5 +89,19 @@ try{
  assert.equal(grades[1].body.session_id,rated.body.session_id);assert.equal(grades[1].body.rating,'helpful');
  await answer('Three');await answer('Four');await rateBox.waitFor();await rateBox.getByText('Skip',{exact:true}).click();
  assert(!await rateBox.isVisible());assert.equal(records.filter(r=>r.path.endsWith('/answer-rating')).length,2);
+ // The photographed Oracle state must still have visible art and a working
+ // note editor if the entire animation asset fails to load.
+ blockCompanion=true;
+ await page.reload();
+ const nativePeek=page.locator('#oracleDenverPeek');
+ await nativePeek.waitFor();
+ assert.equal(await page.locator('#mcDenver').count(),0);
+ const bounds=await nativePeek.locator('svg').boundingBox();
+ assert(bounds.width>=45 && bounds.x+bounds.width<=391 && bounds.y>=0);
+ await nativePeek.locator('summary').click();await nativePeek.locator('textarea').fill('Fallback note');
+ await nativePeek.getByRole('button',{name:'Send note'}).click();
+ await nativePeek.getByText('Your note was saved.').waitFor();
+ assert(records.some(r=>r.path.endsWith('/note') && r.body.comment==='Fallback note' && r.body.session_id===sid));
+ await page.evaluate(()=>location.hash='science');assert(!await nativePeek.isVisible());
  console.log(JSON.stringify({persistent:true,transparent:true,notesAcknowledged:true,retrySameId:true,sessionAndName:true,openingContextPreserved:true,noFakeRating:true,draftHandoff:true,keyboard:true,reducedMotion:true,mobile:true,errors:0}));
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exitCode=1;});

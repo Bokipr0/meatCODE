@@ -2290,6 +2290,18 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
    The wrap is still a bounded flex column with NO page scroll: the grounding line and the
    docked composer stay put and ONLY the conversation thread (#oracleThread) scrolls.
    (Prior 2026-07-21: the same frame around a single #oracleAnswerSlot answer.) */
+/* Keep a painted Denver at the viewport edge independently of animation startup. */
+#oracleDenverPeek { position:fixed; z-index:2051; right:0; top:clamp(100px,24vh,220px); margin-top:min(168px,17dvh); transform:translateY(-50%); }
+#oracleDenverPeek[hidden] { display:none !important; }
+#oracleDenverPeek summary { display:block; cursor:pointer; line-height:0; list-style:none; }
+#oracleDenverPeek summary::-webkit-details-marker { display:none; }
+#oracleDenverPeek summary svg { display:block; image-rendering:pixelated; }
+#oracleDenverPeek .denver-paper { position:absolute; right:100%; top:50%; transform:translateY(-50%); width:min(228px,calc(100vw - 78px)); padding:14px; border:1px solid #cbbd9f; border-radius:14px; background:#fff9e9; color:#362225; }
+#oracleDenverPeek textarea { display:block; width:100%; min-height:72px; margin:8px 0; padding:6px; font:inherit; }
+#oracleDenverPeek button { background:#165e58; color:white; border:0; border-radius:6px; padding:7px 10px; cursor:pointer; }
+#oracleDenverPeek small { display:block; }
+@media (max-width:600px), (max-height:550px) { #oracleDenverPeek summary svg { width:47px; height:147px; } }
+
 #oracle .canvas { overflow: hidden; display: flex; flex-direction: column; }
 #oracle .oracle-wrap { display: flex; flex-direction: column; height: 100%; min-height: 0; width: 100%; max-width: 1080px; }
 #oracle .oracle-heading, #oracle .oracle-composer { flex: 0 0 auto; }
@@ -3016,6 +3028,18 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 
 <!-- ==================== SCENE 3 :: Oracle ==================== -->
 <section class="scene" id="oracle">
+  <details id="oracleDenverPeek" data-clarity-mask="true">
+    <summary aria-label="Leave Denver a note" title="Leave Denver a note">
+      <svg aria-hidden="true" viewBox="33 10 25 78" width="65" height="203"><image width="96" height="96" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAYAAADimHc4AAAABHNCSVQICAgIfAhkiAAAAAFzUkdCAK7OHOkAAAL+SURBVHic7Z29TiMxFIWdXSQKmlAiWprsG0CzD4PEQyHxMNsQ8QSR0BbbIErSBJRilW32IjPxjO2ZZHyO53xVMknhucf3x2P5jnNCCCGEEEIIIcSUmJUewCG4Pj3bdf2+3G5g7xN2YCnEDO+DKsJJ6QEcgoeLy+D1+/Wbc865p4/3kUeUDqUANvPbDG/czc8/Py+3m+MPrAeQbtlGquFD/PjzDHmvlB7Qxu3ry961PmKNCeSsCHF9eraLGTMkgA9iIob3gFjY8Y0e+k9MlNLAC5DLwn3/8t0X5fb1ZefAPIFOACstXaPKafMQE2Tl/o4wunygBeiK+08f73v1fXP2MwAtQAib9WZ89ConBqQAfet91DDTxbfSAxgKepUTg1aAh4tL+vDjEBdiueEntg7w/4NUfhq0HlALkEk4h8ZCq+hY+kAvQAwTCPVpKMyghjxqbuKvlt3/tQOqAFXmgLv5+ZfHFMhUHYIYRKjSA5ig94DF6lfw+mrxc/Sx9AFCgNwE3GZ0RiAEOAa+SMjeUIUAN/Orz8+P699Fx5ILlQCh0OMb374ziTCJKgg5Z0xCAGQkQGHoBWjGe6b479iScBtsRveh9wB2qDzAX1ClVjbIizAnDyiPBCgMVQjyQQ8tqcgDCiMBCkMbggxtyBQA+eFaLpQCpKANmRHRhsxIaEOGFOScMQkBkJEAhaEXQBsyALAZ3YfeA9ih8gBtyBwJOzzHeMRoKBACTBmqEOSDHlpSkQcURgIUBu7kYOiwhp16HHLmS6ckD8D9+m3vCCo7FAI0Z35NIlAI4CoWAU6ArkUZ0wHsVOAEyKGGnEApQE3hCLI0M2LdcpuGD3VJV7eUAaS0K/ZFiLWpR+yYBf0saLndzKzbbVf/UEOtiwFga11MmYRDdLUuRu6oC+8B3rpgF+sPh2zoNuAFMNryAXvvUBoBUmBsXQyTjHJovr4qt8mrkvBAltvNDMmIQ6C+iVRPQJz5BqUHGIgGzYX+BnwY3ylZVRUUAtHoQgghhBBCiGnzDy3rHlsOnBVDAAAAAElFTkSuQmCC"/></svg>
+    </summary>
+    <div class="denver-paper">
+      <label for="denverFallbackText">A note for the team</label>
+      <textarea id="denverFallbackText" maxlength="2000" placeholder="Tell us what you noticed…"></textarea>
+      <button type="button">Send note</button>
+      <small role="status"></small>
+    </div>
+  </details>
+
   <div class="app">
     <header class="topbar">
       <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
@@ -10088,11 +10112,37 @@ document.addEventListener('keydown', function(e){
   else onScene();
 })();
 </script>
-<script src="/app/assets/denver/denver-sprite.js?v=2" defer></script>
+<script>
+/* The page includes Denver and a native, keyboard-operable note even before animation loads. */
+(function () {
+  var peek = document.getElementById('oracleDenverPeek');
+  var input = peek.querySelector('textarea'), send = peek.querySelector('button'), status = peek.querySelector('[role=status]');
+  var context, saving = false;
+  function currentContext() {
+    return window.MCResearch && MCResearch.noteContext(typeof oracleActiveId === 'string' ? oracleActiveId : null);
+  }
+  peek.addEventListener('toggle', function () {
+    if (peek.open && !input.value.trim()) context = currentContext();
+  });
+  send.addEventListener('click', async function () {
+    var text = input.value.trim();
+    if (saving) return;
+    if (!text) { input.focus(); return; }
+    context = context || currentContext();
+    if (!context) { status.textContent = 'Enter your name in the demo to save your note.'; return; }
+    saving = true; input.disabled = send.disabled = true;
+    status.textContent = 'Saving…';
+    try {
+      await MCResearch.submitNote(text, context);
+      input.value = ''; context = null; status.textContent = 'Your note was saved.';
+    } catch (_) {
+      status.textContent = 'Your note could not be saved. Please try again.';
+    } finally { saving = false; input.disabled = send.disabled = false; }
+  });
+})();
+</script>
+<script src="/app/assets/denver/oracle-companion.js?v=20261101-edge1" defer></script>
 <script src="/app/assets/user-research.js?v=20261101-denver-rating" defer></script>
-<script src="/app/assets/denver/denver-motions.js?v=1" defer></script>
-<script src="/app/assets/denver/denver-widget.js?v=3" defer></script>
-<script src="/app/assets/denver/denver-oracle.js?v=2" defer></script>
 <style>
 /* 2026-10-29: release switches govern navigation, starters and deep links. */
 body:not(.ff-maillard_sim) .domain[data-module-simulate],
