@@ -313,14 +313,14 @@ svg.map .halo{fill:var(--brand);opacity:.22;pointer-events:none}
 (async function(){
 'use strict';
 /* Boot: the topic taxonomy comes from the server (the bible, db/taxonomy/keywords_topics.json); people + papers
-   LIVE from Neon (GET /api/ecosystem/people); the Radar, the map outline and the offline copy of people/papers from
+   LIVE from Neon (GET /api/ecosystem/people); the reviewed inbox from its authenticated endpoint, and the map and offline copy from
    the data file named by /api/ecosystem/bootstrap. If the live call fails (Neon asleep or unreachable) the page uses
    that offline copy and says so in the header note. */
 async function bootData(){
   const get=u=>fetch(u,{credentials:'same-origin'}).then(r=>r.ok?r.json():Promise.reject(new Error(u+' '+r.status)));
   try{const b=await get('/api/ecosystem/bootstrap');
-    const [d,live]=await Promise.all([get(b.data_url||'/app/modules/ecosystem_data.json'),get('/api/ecosystem/people').catch(()=>null)]);
-    return{b,d,live:(live&&Array.isArray(live.people)&&live.people.length)?live:null};}
+    const [d,live,feed]=await Promise.all([get(b.data_url||'/app/modules/ecosystem_data.json'),get('/api/ecosystem/people').catch(()=>null),get('/api/ecosystem/inbox').catch(()=>null)]);
+    return{b,d,feed,live:(live&&Array.isArray(live.people)&&live.people.length)?live:null};}
   catch(err){document.getElementById('app').innerHTML='<section class="start"><h1>Ecosystem isn\u2019t available right now</h1><p class="lead">Please refresh in a moment. If this keeps happening, the Ecosystem may be switched off on this server.</p></section>';return null;}
 }
 const BOOT=await bootData();if(!BOOT)return;
@@ -376,7 +376,7 @@ function finishPeople(){
     if(!e.papers.length)paperTopics([e.expertise||'',...e.radar.map(id=>BYID[id]?BYID[id].name:'')].join(' ')).forEach(t=>c[t]=(c[t]||0)+1);
     e.topics=Object.entries(c).sort((a,b)=>b[1]-a[1]);e.tc=c;
     e.latest=e.papers.length?Math.max(...e.papers.map(p=>P[p].year)):(e.isNew?2026:null);
-    e.linked=e.papers.length>0||(!!e.isNew&&e.topics.length>0);
+    e.linked=e.papers.length>0||!!e.inbox;
     const co=new Map();e.papers.forEach(pid=>P[pid].authors.forEach(a=>{if(a!==e.id)co.set(a,(co.get(a)||0)+1);}));e.co=[...co.entries()].sort((a,b)=>b[1]-a[1]);});
   LINKED=EXPERTS.filter(e=>e.linked);MAXH=Math.max(1,...LINKED.map(e=>e.h||0));
 }
@@ -682,9 +682,9 @@ document.getElementById('sheetClose').onclick=closeProfile;scrim.onclick=closePr
 addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet.classList.contains('open')&&!document.body.classList.contains('fbmode'))closeProfile();});
 document.getElementById('home').onclick=()=>{closeProfile();viewStart();scrollTo(0,0);};
 
-const LAST_RUN=BOOT.d.snapshot.radar;
-/* ── Radar: real rows from the MeatCODE Agent Inbox (runs 27–30 Sep 2026) ── */
-const INBOX=BOOT.d.inbox;
+const LAST_RUN=BOOT.feed?.checked_at.slice(0,10);
+/* Radar and additional experts are published from the reviewed Google Sheet. */
+const INBOX=BOOT.feed?.inbox || {experts:[],events:[],courses:[],news:[],eco:[]};
 const AREA={events:{label:'Events & webinars',one:'Event'},courses:{label:'Courses',one:'Course'},news:{label:'Articles & news',one:'Article'},eco:{label:'Organisations & funding',one:'Organisation'}};
 const AREAORDER=['events','courses','news','eco'];
 /* Product rule (11 Oct): only rows a person reviewed reach users — status Approved, or Merged (a person merged it into
@@ -753,7 +753,7 @@ function setNav(m){document.getElementById('navPeople').setAttribute('aria-curre
 function viewRadar(tab){MODE='radar';setNav('radar');dock.hidden=true;closeProfile();if(tab)RADAR.tab=tab;
   const vis=ALL.filter(visible);
   const cnt=a=>vis.filter(i=>i.area===a).length;
-  let h=`<section class="radar"><h1>Radar</h1><p class="lead2" style="margin-bottom:20px">Events, courses, articles and organisations in meat-flavor R&D. Updated every week; last update ${fmtD(dt(LAST_RUN))}.</p>
+  let h=`<section class="radar"><h1>Radar</h1><p class="lead2" style="margin-bottom:20px">Events, courses, articles and organisations in meat-flavor R&D. ${LAST_RUN ? 'Reviewed sheet data as of '+fmtD(dt(LAST_RUN))+'.' : 'The reviewed sheet data is temporarily unavailable.'}</p>
    <div class="rtabs" role="group" aria-label="Radar sections"><button type="button" data-rtab="overview" aria-pressed="${RADAR.tab==='overview'}">Overview</button>${AREAORDER.map(a=>`<button type="button" data-rtab="${a}" aria-pressed="${RADAR.tab===a}"><span class="dotl" style="--tc:var(--c-${a})"></span>${AREA[a].label}<span class="n">${cnt(a)}</span></button>`).join('')}</div>`;
   if(RADAR.tab==='overview'){const ms=milestones().slice(0,8);const top=vis.filter(i=>i.tier==='P0'||i.tier==='P1'||forYouScore(i)).sort((a,b)=>forYouScore(b)-forYouScore(a)||b.score-a.score).slice(0,6);
     h+=`<div class="grid2"><div><h3 style="font-size:15px;margin:0 0 10px">${PREFS.branches.length?'Highlights for you':'Highlights'}</h3><div class="rlist">${top.map(rcard).join('')}</div></div>
@@ -776,7 +776,7 @@ function openItem(id){const it=BYID[id];if(!it)return;
    <h2 style="font-size:26px;font-weight:600;letter-spacing:-.03em;line-height:1.15;margin:10px 44px 0 0">${esc(it.name)}</h2>
    <div class="org" style="margin-top:6px">${esc(meta(it))}</div>${timeBadge(it)?`<div class="badges">${timeBadge(it)}</div>`:''}
    <div class="blk"><p style="margin:0">${esc(desc(it))}</p>${it.f.Authors?`<p class="note" style="margin-top:8px">${esc(it.f.Authors)}</p>`:''}</div>
-   <div class="acts"><a class="extl" href="${esc(it.link)}" target="_blank" rel="noopener noreferrer">Open</a></div>
+   ${it.link?'<div class="acts"><a class="extl" href="'+esc(it.link)+'" target="_blank" rel="noopener noreferrer">Open</a></div>':''}
    ${facts.length?`<div class="blk"><h3>Details</h3><dl class="facts">${facts.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${linkify(v)}</dd>`).join('')}</dl></div>`:''}
    ${urls.length?`<div class="blk"><h3>More sources</h3><ul class="srcs">${urls.map(u=>{let h=u;try{h=new URL(u).hostname.replace(/^www\./,'');}catch(_){}return `<li><a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(h)}</a></li>`;}).join('')}</ul></div>`:''}`;
   sheet.classList.add('open');sheet.setAttribute('aria-hidden','false');scrim.classList.add('on');inner.scrollTop=0;wireItems(inner);

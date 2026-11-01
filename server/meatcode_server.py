@@ -1850,7 +1850,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     def _handle_ecosystem(self, method, path):
         """All /api/ecosystem/* routes. Flag off -> 404 {"error":"not found"} (same as papers_browser).
-        No DB access. Any failure -> 503 JSON (the page then reads requests with its keyword fallback)."""
+        People and the reviewed inbox are read-only database lookups."""
         if not _flag_on("ecosystem_module"):
             return self._send_json({"error": "not found"}, 404)
         if ecosystem is None:
@@ -1858,6 +1858,9 @@ class Handler(SimpleHTTPRequestHandler):
         try:
             if method == "GET" and path == "/api/ecosystem/bootstrap":
                 return self._send_json(ecosystem.bootstrap())
+            if method == "GET" and path == "/api/ecosystem/inbox":
+                import ecosystem_inbox
+                return self._send_json(ecosystem_inbox.current(pg_rows))
             if method == "GET" and path == "/api/ecosystem/people":
                 # Live people + papers from Neon (SELECT-only, 10-min cache in ecosystem.live_people).
                 # No DB / DB error -> 503 and the page falls back to its labelled snapshot.
