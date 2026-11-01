@@ -174,14 +174,75 @@
     speak(demoMode ? 'Demo testing is active. New Oracle conversations are saved privately for review.' : 'Optional testing is on for this tab. You can stop at any time.');
     welcomeTester();
   }
+  function introduceDenver(dialog) {
+    var line = dialog.querySelector('.denver-typed');
+    var greeting = dialog.querySelector('#mcDenverGreeting').textContent;
+    var preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (preference.matches) {
+      line.textContent = greeting;
+      return;
+    }
+
+    var timer, length = 0;
+    function finish() {
+      clearTimeout(timer);
+      line.textContent = greeting;
+      line.classList.remove('typing');
+      dialog.removeEventListener('close', finish);
+      preference.removeEventListener('change', finish);
+    }
+    function typeNext() {
+      if (!dialog.open || length === greeting.length) {
+        finish();
+        return;
+      }
+      length++;
+      line.textContent = greeting.slice(0, length);
+      var character = greeting[length - 1];
+      var pause = character === '.' ? 220 : character === ',' ? 120 : 42;
+      timer = setTimeout(typeNext, pause);
+    }
+    dialog.addEventListener('close', finish);
+    preference.addEventListener('change', finish);
+    line.classList.add('typing');
+    typeNext();
+  }
   function welcomeTester(){
     if(!demoMode || !permitted() || !journey || journey.tester_label || (location.hash && scene()!=='oracle'))return;
     if(welcome){if(!welcome.open)welcome.showModal();return;}
-    var css=document.createElement('style');
-    css.textContent='#mcTesterWelcome{box-sizing:border-box;width:min(400px,calc(100vw - 32px));padding:32px;border:1px solid #ded5c5;border-radius:24px;background:#fbf7ee;color:#223b38;font:16px/1.5 var(--round,system-ui);text-align:center;box-shadow:0 24px 80px #143e3826}#mcTesterWelcome::backdrop{background:#173b3840}#mcTesterWelcome img{width:176px;max-width:100%;height:96px;object-fit:cover;image-rendering:pixelated}#mcTesterWelcome .denver-intro{margin:8px 0 0;font-size:15px}#mcTesterWelcome h2{font-size:25px;margin:16px 0 24px}#mcTesterWelcome input{box-sizing:border-box;width:100%;padding:13px 15px;border:1px solid #b7c9c2;border-radius:12px;background:white;color:#223b38;font:inherit}#mcTesterWelcome input:focus-visible,#mcTesterWelcome button:focus-visible{outline:3px solid #65b9b2;outline-offset:3px}#mcTesterWelcome button{width:100%;margin-top:14px;padding:13px;border:0;border-radius:12px;background:#00736e;color:white;font:inherit;cursor:pointer}#mcTesterWelcome button:disabled{opacity:.65;cursor:wait}#mcTesterWelcome [role=status]{margin:12px 0 0;font-size:13px}';
-    document.head.appendChild(css);
-    welcome=document.createElement('dialog');welcome.id='mcTesterWelcome';welcome.setAttribute('aria-labelledby','mcTesterTitle');welcome.setAttribute('data-clarity-mask','true');
-    welcome.innerHTML='<img src="/app/assets/denver/denver-front.png" alt="Denver, the MeatCODE character"><p class="denver-intro">Hi… I’m Denver.</p><h2 id="mcTesterTitle">What’s your name?</h2><form><input name="testerName" aria-label="Your name" placeholder="Your name" autocomplete="off" maxlength="80" required><button type="submit">Continue</button><p role="status" aria-live="polite"></p></form>';
+    welcome=document.createElement('dialog');
+    welcome.id='mcTesterWelcome';
+    welcome.setAttribute('aria-labelledby','mcTesterTitle');
+    welcome.setAttribute('aria-describedby','mcDenverGreeting');
+    welcome.setAttribute('data-clarity-mask','true');
+    welcome.innerHTML=`
+      <style>
+        #mcTesterWelcome { box-sizing:border-box; width:min(400px,calc(100vw - 24px)); max-height:calc(100dvh - 16px); margin:auto; padding:60px 6px 8px; border:0; background:transparent; color:#223b38; font:16px/1.5 var(--round,system-ui); text-align:center; }
+        #mcTesterWelcome::backdrop { background:#173b3859; }
+        #mcTesterWelcome .denver-card { position:relative; padding:32px clamp(16px,5vw,32px) 28px; border:1px solid #ded4c6; border-radius:22px; background:#fbf7ee; box-shadow:0 3px 6px #143e381c; }
+        #mcTesterWelcome .denver-peek { position:absolute; left:50%; top:-57px; transform:translateX(-50%); width:192px; height:72px; image-rendering:pixelated; pointer-events:none; }
+        #mcTesterWelcome .denver-intro { display:grid; width:fit-content; max-width:100%; margin:0 auto; color:#6a383a; font:500 15px/1.55 ui-monospace,Menlo,monospace; text-align:left; }
+        #mcTesterWelcome .denver-intro span { grid-area:1/1; }
+        #mcDenverGreeting { opacity:0; }
+        #mcTesterWelcome .typing::after { content:''; display:inline; border-right:2px solid currentColor; }
+        #mcTesterWelcome h2 { margin:10px 0 20px; font-size:26px; line-height:1.2; }
+        #mcTesterWelcome input { box-sizing:border-box; width:100%; padding:12px 14px; border:1px solid #b7c9c2; border-radius:12px; background:white; color:#223b38; font:inherit; }
+        #mcTesterWelcome :is(input,button):focus-visible { outline:3px solid #65b9b2; outline-offset:3px; }
+        #mcTesterWelcome button { width:100%; margin-top:12px; padding:12px; border:0; border-radius:12px; background:#00736e; color:white; font:inherit; cursor:pointer; }
+        #mcTesterWelcome button:disabled { opacity:.65; cursor:wait; }
+        #mcTesterWelcome [role=status] { margin:10px 0 0; font-size:13px; }
+        #mcTesterWelcome [role=status]:empty { margin:0; }
+      </style>
+      <div class="denver-card">
+        <img class="denver-peek" src="/app/assets/denver/denver-welcome-peek.png" width="192" height="72" alt="">
+        <p class="denver-intro"><span id="mcDenverGreeting">Hi, I'm Denver. Let's get meaty.</span><span class="denver-typed" aria-hidden="true"></span></p>
+        <h2 id="mcTesterTitle">What’s your name?</h2>
+        <form>
+          <input name="testerName" aria-label="Your name" placeholder="Your name" autocomplete="off" maxlength="80" required>
+          <button type="submit">Continue</button>
+          <p role="status" aria-live="polite"></p>
+        </form>
+      </div>`;
     welcome.addEventListener('cancel',function(e){e.preventDefault();});
     welcome.querySelector('form').addEventListener('submit',function(e){
       e.preventDefault();if(!permitted()||!journey)return;
@@ -199,6 +260,7 @@
       });
     });
     document.body.appendChild(welcome);welcome.showModal();welcome.querySelector('input').focus();
+    introduceDenver(welcome);
   }
   function stop(options) {
     if(welcome){welcome.close();welcome.remove();welcome=null;}
