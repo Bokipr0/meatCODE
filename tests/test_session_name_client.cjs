@@ -8,20 +8,23 @@ try{
  await context.addInitScript(()=>Object.defineProperty(navigator,'webdriver',{get:()=>false}));
  await context.route('**/*',async route=>{
   const req=route.request(),u=new URL(req.url());
-  if(u.pathname==='/')return route.fulfill({contentType:'text/html',body:'<!doctype html><html><head><meta charset="utf-8"></head><body style="background:#faf7f0"><h1>MeatCODE Oracle</h1><script src="/app/assets/user-research.js"></script></body></html>'});
+  if(u.pathname==='/')return route.fulfill({contentType:'text/html',body:'<!doctype html><html><head><meta charset="utf-8"></head><body style="background:#faf7f0"><h1>MeatCODE Oracle</h1><script src="/app/assets/denver/denver-sprite.js"></script><script src="/app/assets/user-research.js"></script></body></html>'});
   if(u.pathname==='/api/research/config')return route.fulfill({json:{enabled:true,demo_mode:true,environment:'prod',consent_version:'2026-10-29-demo-v1',posthog:{enabled:false}}});
   if(u.pathname.startsWith('/api/research/')){writes.push({path:u.pathname,body:req.postDataJSON()});return route.fulfill({status:u.pathname.endsWith('/name')&&fail?503:200,json:{ok:true}});}
   const file=path.join(root,u.pathname);if(fs.existsSync(file))return route.fulfill({contentType:file.endsWith('.js')?'application/javascript':'image/png',body:fs.readFileSync(file)});
   return route.abort();
  });
  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto('http://127.0.0.1:18774/#oracle');await page.locator('#mcTesterWelcome').waitFor();
- const greeting="Hi, I'm Denver. Let's get meaty.";
+ const greeting="I’m Denver, your meaty companion.";
  await page.waitForFunction(()=>{const el=document.querySelector('.denver-typed');return el && el.textContent.length>0 && el.textContent.length<document.querySelector('#mcDenverGreeting').textContent.length;});
  assert(await page.locator('input').evaluate(el=>el===document.activeElement&&!el.disabled));
  assert.equal(await page.locator('#mcDenverGreeting').textContent(),greeting);
- const peek=page.locator('.denver-peek');await peek.evaluate(el=>el.decode());
- assert(await peek.evaluate(el=>{const r=el.getBoundingClientRect(),c=el.parentElement.getBoundingClientRect();return r.top<c.top && r.bottom>c.top && el.naturalWidth===96;}));
+ const peek=page.locator('canvas.denver-peek');
+ await page.mouse.move(40,70);const left=await peek.evaluate(el=>el.toDataURL());
+ await page.mouse.move(950,700);assert.notEqual(await peek.evaluate(el=>el.toDataURL()),left,'welcome pupils move');
+ assert(await peek.evaluate(el=>{const r=el.getBoundingClientRect(),c=el.parentElement.getBoundingClientRect();return r.top<c.top && r.bottom>c.top && el.width===96;}));
  await page.waitForFunction(text=>document.querySelector('.denver-typed').textContent===text,greeting);
+ await page.waitForFunction(()=>document.querySelector('h2 .denver-typed').textContent==='What’s your name?');
  assert.equal(await page.locator('input').count(),1);const sid=await page.evaluate(()=>sessionStorage.getItem('mc_research_session_v1'));
  await page.locator('input').fill('Alex');await page.locator('button').click();await page.waitForFunction(()=>document.querySelector('#mcTesterWelcome [role=status]').textContent.includes('try again'));
  assert(await page.locator('#mcTesterWelcome').isVisible());fail=false;await page.locator('button').click();await page.locator('#mcTesterWelcome').waitFor({state:'hidden'});
@@ -30,7 +33,7 @@ try{
  await other.addInitScript(seed=>Object.entries(seed).forEach(([k,v])=>sessionStorage.setItem(k,v)),seed);
  await other.emulateMedia({reducedMotion:'reduce'});
  await other.goto('http://127.0.0.1:18774/#oracle');await other.locator('#mcTesterWelcome').waitFor();
- assert.equal(await other.locator('.denver-typed').textContent(),greeting);
+ assert.equal(await other.locator('.denver-intro .denver-typed').textContent(),greeting);
  assert.equal(await other.locator('.denver-typed.typing').count(),0);
  assert.notEqual(await other.evaluate(()=>sessionStorage.getItem('mc_research_session_v1')),sid);
  await other.setViewportSize({width:390,height:844});assert(await other.locator('#mcTesterWelcome').evaluate(el=>el.getBoundingClientRect().width<=innerWidth));

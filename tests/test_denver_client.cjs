@@ -32,6 +32,38 @@ try{
  await page.locator('#mcDenver textarea').fill('Oracle draft');await page.locator('#mcDenver .oracle').click();assert.equal(await page.locator('#oracleTextarea').inputValue(),'Oracle draft');assert(await pet.isVisible());
  await page.locator('#mcDenver .hit').focus();await page.keyboard.press('Enter');await page.locator('#mcDenver textarea').waitFor({state:'visible'});await page.keyboard.press('Escape');assert(!(await page.locator('#mcDenver textarea').isVisible()));
  await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await pet.evaluate(e=>e.motionAllowed),false);await page.reload();await pet.waitFor();assert.equal(await page.locator('#mcTesterWelcome').count(),0,'existing named testers still see Denver');
+ // With body animation paused, a pixel change in the eye proves actual gaze movement.
+ async function eyePixels() {
+  return pet.evaluate(e=>Array.from(e.sc.getImageData(43,50,14,14).data).join(','));
+ }
+ await page.mouse.move(25,30);await page.waitForTimeout(100);const beforeGaze=await eyePixels();
+ await page.mouse.move(1150,900);await page.waitForTimeout(100);assert.notEqual(await eyePixels(),beforeGaze);
+ await page.clock.install();
+ await page.locator('#mcDenver .hit').click();
+ await page.locator('#mcDenver textarea').fill('Draft stays awake');
+ await page.clock.fastForward(91000);await page.clock.runFor(80);
+ assert.equal(await page.locator('#mcDenver textarea').inputValue(),'Draft stays awake');
+ const invite=page.locator('#mcDenver .invite');
+ assert(!await invite.isVisible());
+ await page.locator('#mcDenver .close').click();
+ await page.mouse.move(30,20);
+ await page.clock.fastForward(18500);await page.clock.runFor(80);
+ assert(await pet.evaluate(e=>e.lastPose.lid<1));
+ await page.mouse.move(300,20);
+ await page.clock.fastForward(1700);await page.clock.runFor(80);
+ assert(await pet.evaluate(e=>e.lastPose.lid===1),'sleep after 20 seconds of Denver inactivity');
+ await page.clock.fastForward(68000);await page.clock.runFor(80);assert(!await invite.isVisible());
+ await page.clock.fastForward(2200);await page.clock.runFor(80);assert(await invite.isVisible());
+ assert(!await page.locator('#mcDenver textarea').isVisible());
+ await page.locator('#mcDenver .dismiss').click();
+ await page.clock.fastForward(91000);await page.clock.runFor(80);assert(!await invite.isVisible(),'dismissed reminder stays dismissed');
+ await page.locator('#mcDenver .hit').hover();await page.locator('#mcDenver textarea').waitFor({state:'visible'});
+ assert(await pet.evaluate(e=>e.lastPose.lid<1),'hover wakes Denver');
+ await page.locator('#mcDenver .close').click();await page.mouse.move(20,30);
+ await page.clock.fastForward(91000);await page.clock.runFor(80);
+ await page.locator('#mcDenver .invite .write').click();
+ assert.equal(await page.locator('#mcDenver textarea').inputValue(),'Draft stays awake');
+ await page.locator('#mcDenver .close').click();
  await page.setViewportSize({width:390,height:844});await page.locator('#mcDenver .hit').click();await page.locator('#mcDenver textarea').waitFor({state:'visible'});assert(await page.locator('#mcDenver .paper').evaluate(e=>{const r=e.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight;}));
  if(process.env.DENVER_SCREENSHOT)await page.screenshot({path:process.env.DENVER_SCREENSHOT});
  await page.evaluate(()=>location.hash='science');assert(!(await pet.isVisible()));assert.deepEqual(errors,[]);

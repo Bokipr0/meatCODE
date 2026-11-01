@@ -174,37 +174,65 @@
     speak(demoMode ? 'Demo testing is active. New Oracle conversations are saved privately for review.' : 'Optional testing is on for this tab. You can stop at any time.');
     welcomeTester();
   }
-  function introduceDenver(dialog) {
-    var line = dialog.querySelector('.denver-typed');
-    var greeting = dialog.querySelector('#mcDenverGreeting').textContent;
-    var preference = window.matchMedia('(prefers-reduced-motion: reduce)');
-    if (preference.matches) {
-      line.textContent = greeting;
-      return;
+  function trackWelcomeGaze(dialog) {
+    if (!window.DenverSprite) return;
+    var image = dialog.querySelector('.denver-peek');
+    var canvas = document.createElement('canvas');
+    canvas.width = 96;
+    canvas.height = 36;
+    canvas.className = image.className;
+    canvas.setAttribute('aria-hidden', 'true');
+    var ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.translate(0, -10);
+    function draw(x, y) {
+      DenverSprite.draw(ctx, {portraitPeek:true, upperOnly:true, animateEyes:true, lookX:x, lookY:y});
     }
-
-    var timer, length = 0;
+    draw(0, 2);
+    image.replaceWith(canvas);
+    function follow(e) {
+      if (e.pointerType === 'touch' || !dialog.open) return;
+      var rect = canvas.getBoundingClientRect();
+      var gaze = DenverSprite.gazeAt(e.clientX - (rect.left + rect.width / 2),
+                                     e.clientY - (rect.top + rect.height * .56));
+      draw(gaze.x, gaze.y);
+    }
+    window.addEventListener('pointermove', follow, {capture:true, passive:true});
+    dialog.addEventListener('close', function() {
+      window.removeEventListener('pointermove', follow, true);
+    }, {once:true});
+  }
+  function introduceDenver(dialog) {
+    trackWelcomeGaze(dialog);
+    var lines = Array.from(dialog.querySelectorAll('.denver-typed'));
+    var messages = lines.map(function(line) { return line.previousElementSibling.textContent; });
+    var preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var timer, sentence = 0, length = 0;
     function finish() {
       clearTimeout(timer);
-      line.textContent = greeting;
-      line.classList.remove('typing');
+      lines.forEach(function(line, index) {
+        line.textContent = messages[index];
+        line.classList.remove('typing');
+      });
       dialog.removeEventListener('close', finish);
       preference.removeEventListener('change', finish);
     }
     function typeNext() {
-      if (!dialog.open || length === greeting.length) {
-        finish();
-        return;
+      if (!dialog.open || sentence === lines.length) return finish();
+      var line = lines[sentence], message = messages[sentence];
+      line.classList.add('typing');
+      line.textContent = message.slice(0, ++length);
+      var character = message[length - 1];
+      if (length === message.length) {
+        line.classList.remove('typing');
+        sentence++;
+        length = 0;
       }
-      length++;
-      line.textContent = greeting.slice(0, length);
-      var character = greeting[length - 1];
-      var pause = character === '.' ? 220 : character === ',' ? 120 : 42;
-      timer = setTimeout(typeNext, pause);
+      timer = setTimeout(typeNext, character === '.' ? 220 : character === ',' ? 120 : 42);
     }
+    if (preference.matches) return finish();
     dialog.addEventListener('close', finish);
     preference.addEventListener('change', finish);
-    line.classList.add('typing');
     typeNext();
   }
   function welcomeTester(){
@@ -222,10 +250,10 @@
         #mcTesterWelcome .denver-card { position:relative; padding:32px clamp(16px,5vw,32px) 28px; border:1px solid #ded4c6; border-radius:22px; background:#fbf7ee; box-shadow:0 3px 6px #143e381c; }
         #mcTesterWelcome .denver-peek { position:absolute; left:50%; top:-57px; transform:translateX(-50%); width:192px; height:72px; image-rendering:pixelated; pointer-events:none; }
         #mcTesterWelcome .denver-intro { display:grid; width:fit-content; max-width:100%; margin:0 auto; color:#6a383a; font:500 15px/1.55 ui-monospace,Menlo,monospace; text-align:left; }
-        #mcTesterWelcome .denver-intro span { grid-area:1/1; }
-        #mcDenverGreeting { opacity:0; }
+        #mcTesterWelcome .denver-intro span, #mcTesterWelcome h2 span { grid-area:1/1; }
+        #mcDenverGreeting, #mcTesterTitleText { opacity:0; }
         #mcTesterWelcome .typing::after { content:''; display:inline; border-right:2px solid currentColor; }
-        #mcTesterWelcome h2 { margin:10px 0 20px; font-size:26px; line-height:1.2; }
+        #mcTesterWelcome h2 { display:grid; margin:10px 0 20px; font-size:26px; line-height:1.2; }
         #mcTesterWelcome input { box-sizing:border-box; width:100%; padding:12px 14px; border:1px solid #b7c9c2; border-radius:12px; background:white; color:#223b38; font:inherit; }
         #mcTesterWelcome :is(input,button):focus-visible { outline:3px solid #65b9b2; outline-offset:3px; }
         #mcTesterWelcome button { width:100%; margin-top:12px; padding:12px; border:0; border-radius:12px; background:#00736e; color:white; font:inherit; cursor:pointer; }
@@ -235,8 +263,8 @@
       </style>
       <div class="denver-card">
         <img class="denver-peek" src="/app/assets/denver/denver-welcome-peek.png" width="192" height="72" alt="">
-        <p class="denver-intro"><span id="mcDenverGreeting">Hi, I'm Denver. Let's get meaty.</span><span class="denver-typed" aria-hidden="true"></span></p>
-        <h2 id="mcTesterTitle">What’s your name?</h2>
+        <p class="denver-intro"><span id="mcDenverGreeting">I’m Denver, your meaty companion.</span><span class="denver-typed" aria-hidden="true"></span></p>
+        <h2 id="mcTesterTitle"><span id="mcTesterTitleText">What’s your name?</span><span class="denver-typed" aria-hidden="true"></span></h2>
         <form>
           <input name="testerName" aria-label="Your name" placeholder="Your name" autocomplete="off" maxlength="80" required>
           <button type="submit">Continue</button>

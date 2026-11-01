@@ -197,5 +197,13 @@
     }
     ctx.restore();
   }
-  global.DenverSprite={width:W,height:H,palette,motions,sample,draw,clamp,ease,keys};
+  // Screen-space pupil offsets. Scale with the viewport so distant corners
+  // still give distinct directions on a wide display.
+  function gazeAt(dx, dy) {
+    return {
+      x: 3 * Math.tanh(dx / Math.max(60, innerWidth * .36)),
+      y: 3 * Math.tanh(dy / Math.max(50, innerHeight * .27))
+    };
+  }
+  global.DenverSprite={gazeAt,width:W,height:H,palette,motions,sample,draw,clamp,ease,keys};
 })(globalThis);
