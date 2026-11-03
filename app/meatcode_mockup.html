@@ -1783,6 +1783,13 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
    History sections live in one internal scroll region (.oracle-rail-scroll) so
    the profile card + Lab Stash button stay pinned to the bottom, always visible
    without scrolling the page. */
+/* 2026-11-03 · Persistent fresh-chat entry point and accessible brand home links. */
+.mc-home-newchat { text-decoration:none; cursor:pointer; }
+.mc-home-newchat:focus-visible { outline:2px solid var(--wine); outline-offset:5px; border-radius:4px; }
+#oracle .oracle-sidebar-newchat { display:flex; align-items:center; justify-content:center; gap:9px; flex:0 0 auto; width:100%; min-height:44px; margin:0 0 20px; padding:11px 12px; border:1px solid var(--wine); border-radius:12px; background:var(--wine); color:var(--surface); font:700 14px var(--round); cursor:pointer; }
+#oracle .oracle-sidebar-newchat:hover { background:var(--wine-deep); }
+#oracle .oracle-sidebar-newchat:focus-visible { outline:3px solid var(--wine-tint); outline-offset:3px; }
+@media(max-width:600px) { #oracle .oracle-sidebar-newchat { font-size:11px; padding:9px 4px; gap:3px; } }
 #oracle .context { overflow: hidden; }
 #oracle .oracle-rail-scroll {
   flex: 1 1 auto; min-height: 0;
@@ -2612,7 +2619,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 <section class="scene" id="home">
   <div class="app">
     <header class="topbar">
-      <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
+      <div class="brand"><div class="brand-logo">M</div><a class="brand-name mc-home-newchat" href="#oracle" title="Oracle home · start a new chat">MeatCODE</a></div>
       <!-- Uniform domains authored here; the load-time nav pass DROPS Map + Database + Home
            and reorders → Oracle · Research · Simulate; setScene sets .active. -->
       <div class="domains">
@@ -2720,7 +2727,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
     <header class="topbar">
       <div class="brand">
         <div class="brand-logo">M</div>
-        <div class="brand-name">MeatCODE</div>
+        <a class="brand-name mc-home-newchat" href="#oracle" title="Oracle home · start a new chat">MeatCODE</a>
       </div>
       <div class="domains" style="opacity: 0.4; pointer-events: none;">
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
@@ -2804,7 +2811,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
     <header class="topbar">
       <div class="brand">
         <div class="brand-logo">M</div>
-        <div class="brand-name">MeatCODE</div>
+        <a class="brand-name mc-home-newchat" href="#oracle" title="Oracle home · start a new chat">MeatCODE</a>
       </div>
       <div class="domains" style="opacity: 0.4; pointer-events: none;">
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
@@ -2893,7 +2900,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
     <header class="topbar">
       <div class="brand">
         <div class="brand-logo">M</div>
-        <div class="brand-name">MeatCODE</div>
+        <a class="brand-name mc-home-newchat" href="#oracle" title="Oracle home · start a new chat">MeatCODE</a>
       </div>
       <div class="domains">
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
@@ -3042,7 +3049,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 
   <div class="app">
     <header class="topbar">
-      <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
+      <div class="brand"><div class="brand-logo">M</div><a class="brand-name mc-home-newchat" href="#oracle" title="Oracle home · start a new chat">MeatCODE</a></div>
       <div class="domains">
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
@@ -3069,6 +3076,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
            Both lists start empty here on purpose — never hand-edit rows. -->
       <!-- Pinned + History share one internal scroll region so the profile card
            and Lab Stash button below stay pinned to the bottom of the rail. -->
+      <button type="button" class="oracle-sidebar-newchat" id="oracleSidebarNewChatBtn"><span aria-hidden="true">＋</span><span>New chat</span></button>
       <div class="oracle-rail-scroll">
         <div class="context-section">
           <div class="context-label">Pinned Chats</div>
@@ -3215,7 +3223,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 <section class="scene" id="map">
   <div class="app">
     <header class="topbar">
-      <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
+      <div class="brand"><div class="brand-logo">M</div><a class="brand-name mc-home-newchat" href="#oracle" title="Oracle home · start a new chat">MeatCODE</a></div>
       <div class="domains">
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
@@ -3370,7 +3378,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 <section class="scene" id="research">
   <div class="app">
     <header class="topbar">
-      <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
+      <div class="brand"><div class="brand-logo">M</div><a class="brand-name mc-home-newchat" href="#oracle" title="Oracle home · start a new chat">MeatCODE</a></div>
       <div class="domains">
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
@@ -3477,7 +3485,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 <section class="scene" id="research-sub">
   <div class="app">
     <header class="topbar">
-      <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
+      <div class="brand"><div class="brand-logo">M</div><a class="brand-name mc-home-newchat" href="#oracle" title="Oracle home · start a new chat">MeatCODE</a></div>
       <div class="domains">
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
@@ -3612,7 +3620,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 <section class="scene" id="analytics">
   <div class="app">
     <header class="topbar">
-      <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
+      <div class="brand"><div class="brand-logo">M</div><a class="brand-name mc-home-newchat" href="#oracle" title="Oracle home · start a new chat">MeatCODE</a></div>
       <div class="domains">
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
@@ -3695,7 +3703,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 <section class="scene" id="papers">
   <div class="app">
     <header class="topbar">
-      <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
+      <div class="brand"><div class="brand-logo">M</div><a class="brand-name mc-home-newchat" href="#oracle" title="Oracle home · start a new chat">MeatCODE</a></div>
       <div class="domains">
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
@@ -3729,7 +3737,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 <section class="scene" id="science">
   <div class="app">
     <header class="topbar">
-      <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
+      <div class="brand"><div class="brand-logo">M</div><a class="brand-name mc-home-newchat" href="#oracle" title="Oracle home · start a new chat">MeatCODE</a></div>
       <div class="domains">
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
@@ -3765,7 +3773,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 <section class="scene" id="ecosystem">
   <div class="app">
     <header class="topbar">
-      <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
+      <div class="brand"><div class="brand-logo">M</div><a class="brand-name mc-home-newchat" href="#oracle" title="Oracle home · start a new chat">MeatCODE</a></div>
       <div class="domains">
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
@@ -3799,7 +3807,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 <section class="scene" id="database">
   <div class="app">
     <header class="topbar">
-      <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
+      <div class="brand"><div class="brand-logo">M</div><a class="brand-name mc-home-newchat" href="#oracle" title="Oracle home · start a new chat">MeatCODE</a></div>
       <div class="domains">
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
@@ -4011,7 +4019,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 <section class="scene" id="toolbench">
   <div class="app">
     <header class="topbar">
-      <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
+      <div class="brand"><div class="brand-logo">M</div><a class="brand-name mc-home-newchat" href="#oracle" title="Oracle home · start a new chat">MeatCODE</a></div>
       <div class="domains">
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
@@ -4127,7 +4135,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 <section class="scene" id="toolbench-tools">
   <div class="app">
     <header class="topbar">
-      <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
+      <div class="brand"><div class="brand-logo">M</div><a class="brand-name mc-home-newchat" href="#oracle" title="Oracle home · start a new chat">MeatCODE</a></div>
       <div class="domains">
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain active"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
@@ -4392,7 +4400,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 <section class="scene" id="simulate">
   <div class="app">
     <header class="topbar">
-      <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
+      <div class="brand"><div class="brand-logo">M</div><a class="brand-name mc-home-newchat" href="#oracle" title="Oracle home · start a new chat">MeatCODE</a></div>
       <div class="domains">
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
@@ -4572,7 +4580,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 <section class="scene" id="molecule-detail">
   <div class="app">
     <header class="topbar">
-      <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
+      <div class="brand"><div class="brand-logo">M</div><a class="brand-name mc-home-newchat" href="#oracle" title="Oracle home · start a new chat">MeatCODE</a></div>
       <div class="domains">
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
@@ -4625,7 +4633,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 <section class="scene" id="protocol-detail">
   <div class="app">
     <header class="topbar">
-      <div class="brand"><div class="brand-logo">M</div><div class="brand-name">MeatCODE</div></div>
+      <div class="brand"><div class="brand-logo">M</div><a class="brand-name mc-home-newchat" href="#oracle" title="Oracle home · start a new chat">MeatCODE</a></div>
       <div class="domains">
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
         <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
@@ -5431,7 +5439,15 @@ function mcRenderConversation(chat) {
 }
 
 /* Start a brand-new conversation (asking otherwise APPENDS to the active one). */
+var mcOracleRequestController = null;
 function mcNewOracleChat() {
+  if (mcOracleRequestController) { mcOracleRequestController.abort(); mcOracleRequestController = null; }
+  if (oracleAskBtn) oracleAskBtn.disabled = false;
+  window.mcOracleLastQuestion = '';
+  stopOracleDictation(); mcSetMicStatus('');
+  var attachment = document.querySelector('#oracleAttachRow .oracle-attach-x');
+  if (attachment) attachment.click();
+  if (oracleTextarea) { oracleTextarea.value = ''; if (window.mcAutoGrowOracle) window.mcAutoGrowOracle(); }
   oracleActiveId = null;
   mcActiveTurnRec = null;
   mcOracleActiveQuestion = '';
@@ -5443,6 +5459,13 @@ function mcNewOracleChat() {
 (function wireNewChat() {
   var b = document.getElementById('oracleNewChatBtn');
   if (b) b.addEventListener('click', mcNewOracleChat);
+  var sidebar = document.getElementById('oracleSidebarNewChatBtn');
+  if (sidebar) sidebar.addEventListener('click', mcNewOracleChat);
+  document.querySelectorAll('.mc-home-newchat').forEach(function(brand) {
+    brand.addEventListener('click', function(event) {
+      event.preventDefault(); location.hash = 'oracle'; setScene(); mcNewOracleChat();
+    });
+  });
 })();
 
 /* ============================================================
@@ -5928,19 +5951,24 @@ function askOracle() {
   // Use fetch + ReadableStream to consume the SSE response. EventSource only
   // supports GET, so we hand-roll the SSE parsing on POST.
   var researchTurn = window.MCResearch ? window.MCResearch.startOracle(q, oracleActiveId) : null;
+  var requestController = new AbortController();
+  mcOracleRequestController = requestController;
   fetch(API_BASE + '/api/ask', {
+    signal: requestController.signal,
     method: 'POST',
     credentials: 'same-origin',   // send the site password (Basic Auth) along with the request
     headers: { 'Content-Type': 'application/json' },
     /* 2026-10-25 · guided Oracle (flag oracle_guided) adds {guided, history, skip}; flag off → {question} as before */
     body: JSON.stringify(typeof mcOracleRequestBody === 'function' ? mcOracleRequestBody(q) : { question: q })
   }).then(function (res) {
+    if (requestController.signal.aborted) return;
     // 401 = the shared site password wasn't accepted. That's almost always an expired
     // browser sign-in, not a broken Oracle — say so plainly instead of a raw HTTP error.
     if (res.status === 401) { throw new Error('SESSION_EXPIRED'); }
     if (!res.ok) { return res.text().then(function (t) { throw new Error(t || ('HTTP ' + res.status)); }); }
     return streamSSE(res, researchTurn);
   }).catch(function (e) {
+    if (requestController.signal.aborted) { if (window.MCResearch) window.MCResearch.interruptOracle(researchTurn); return; }
     var msg = String(e && e.message ? e.message : e);
     if (window.MCResearch) window.MCResearch.failOracle(researchTurn, msg === 'SESSION_EXPIRED' ? 'session_expired' : (/load failed|failed to fetch|networkerror|network error/i.test(msg) ? 'network' : 'unknown'));
     // Safari rejects the fetch outright ("Load failed") when the server returns a password
@@ -5953,7 +5981,10 @@ function askOracle() {
   }).finally(function () {
     // Bulletproof: .finally() fires on success, on the error / SESSION_EXPIRED path,
     // and even if the .catch() handler itself throws — no path leaves Ask disabled.
-    if (oracleAskBtn) oracleAskBtn.disabled = false;
+    if (mcOracleRequestController === requestController) {
+      mcOracleRequestController = null;
+      if (oracleAskBtn) oracleAskBtn.disabled = false;
+    }
   });
 }
 
