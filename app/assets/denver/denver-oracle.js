@@ -106,5 +106,5 @@
   if(input.value.trim() && input.value.trim()!==e.detail.text.trim()){pet.setSubmission('error','Your Oracle question already has a draft. Send or clear it before moving this text.');return;}
   location.hash='oracle';input.value=e.detail.text;input.dispatchEvent(new Event('input',{bubbles:true}));pet.closeNote();input.focus();
  });
- window.addEventListener('mc:oracle-state',function(e){if(pending||pet.noteOpen||pet.opening)return;pet.react(e.detail.state==='pending'?'thinking':e.detail.state==='success'?'delighted':'oops');});
+ window.addEventListener('mc:oracle-state',function(e){pet.oraclePending=e.detail.state==='pending';pet.touchDenver();if(pending||pet.noteOpen||pet.opening)return;pet.react(e.detail.state==='pending'?'thinking':e.detail.state==='success'?'delighted':'oops');});
 })();

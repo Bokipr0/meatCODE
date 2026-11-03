@@ -259,6 +259,8 @@ global.DenverMotions={motions,pose,draw};
 /* Updated 2026-10-31: Oracle viewport adapter and acknowledged research-note states. Original kit preserved separately. */
 (function(){
 'use strict';
+// Milliseconds: change this constant to tune the inactivity reminder.
+const DENVER_IDLE_PROMPT_MS = 30_000;
 let nextId=0;
 class DenverCompanion extends HTMLElement{
  static get observedAttributes(){return ['mood','motion-mode'];}
@@ -278,15 +280,19 @@ class DenverCompanion extends HTMLElement{
  setupAttention() {
   const style = document.createElement('style');
   style.textContent = `
-   .invite { position:absolute; right:var(--denver-edge-width,54px); z-index:1; display:flex; align-items:center; gap:2px; max-width:calc(100% - 62px); padding:2px 4px 2px 8px; border:1px solid #cfbe9e; border-radius:13px; background:#fff9e9; box-shadow:0 2px 6px #36222515; pointer-events:auto; }
+   .invite { position:absolute; right:var(--denver-edge-width,54px); z-index:1; display:grid; grid-template-columns:1fr auto; align-items:center; gap:2px; max-width:calc(100% - 62px); padding:2px 4px 2px 8px; border:1px solid #cfbe9e; border-radius:13px; background:#fff9e9; box-shadow:0 2px 6px #36222515; pointer-events:auto; }
    .invite[hidden] { display:none; }
    .invite button { min-height:32px; border:0; background:transparent; color:#3c302c; line-height:1.25; }
-   .invite .dismiss { min-width:32px; color:#685c54; font-size:18px; }`;
+   .invite .dismiss { min-width:32px; color:#685c54; font-size:18px; }
+   .invite .idle-question { font-weight:700; padding:4px 2px; }
+   .invite .idle-actions { grid-column:1/-1; display:flex; flex-wrap:wrap; gap:8px; }
+   .invite .resume { font-weight:700; color:#165e58; }`;
   this.invite = document.createElement('div');
   this.invite.className = 'invite';
   this.invite.hidden = true;
-  this.invite.innerHTML = '<button type="button" class="write">Leave Denver a note</button><button type="button" class="dismiss" aria-label="Dismiss Denver’s reminder">×</button>';
+  this.invite.innerHTML = '<span class="idle-question" role="status" aria-live="polite"></span><button type="button" class="dismiss" aria-label="Dismiss Denver’s reminder">×</button><div class="idle-actions"><button type="button" class="resume">I’m here</button><button type="button" class="write">Leave a note</button></div>';
   this.shadowRoot.append(style, this.invite);
+  this.invite.querySelector('.resume').onclick = () => { this.touchDenver(); this.hit.focus({preventScroll:true}); };
   this.invite.querySelector('.write').onclick = () => this.openNote(true);
   this.invite.querySelector('.dismiss').onclick = () => {
     this.invite.hidden = true;
@@ -295,6 +301,15 @@ class DenverCompanion extends HTMLElement{
   };
   this.attentionListeners = new AbortController();
   const options = {signal:this.attentionListeners.signal};
+  // Watch interaction timing only; never read typed text or pointer coordinates.
+  // Keep the bubble visible while its own buttons are being clicked or focused.
+  const activity = event => {
+    if (event.composedPath().includes(this.invite)) return;
+    this.touchDenver();
+  };
+  ['pointermove','pointerdown','keydown','input','scroll','wheel'].forEach(name => {
+    document.addEventListener(name, activity, {...options, passive:true, capture:true});
+  });
   this.hit.addEventListener('pointerenter', () => this.touchDenver(), options);
   this.hit.addEventListener('pointerleave', () => this.touchDenver(), options);
   this.hit.addEventListener('focus', () => this.touchDenver(), options);
@@ -306,12 +321,13 @@ class DenverCompanion extends HTMLElement{
   if (!this.invite) return;
   this.idleSince = performance.now();
   this.invite.hidden = true;
+  this.invite.querySelector('.idle-question').textContent = '';
   this.inviteShown = false;
  }
  idleMotion(now) {
   if (!this.invite) return this.motion;
   const welcomeOpen = document.getElementById('mcTesterWelcome')?.open;
-  if (this.hidden || document.hidden || welcomeOpen || this.ratingOpen || this.noteOpen || this.opening || this.busy) {
+  if (this.hidden || document.hidden || welcomeOpen || this.ratingOpen || this.noteOpen || this.opening || this.busy || this.oraclePending || document.querySelector('dialog:modal')) {
     this.touchDenver();
     return this.motion;
   }
@@ -321,12 +337,13 @@ class DenverCompanion extends HTMLElement{
     this.touchDenver();
     return this.motion;
   }
-  if (idle >= 90000 && !this.inviteShown && !document.querySelector('dialog:modal')) {
+  if (idle >= DENVER_IDLE_PROMPT_MS && !this.inviteShown && !document.querySelector('dialog:modal')) {
     this.invite.style.top = Math.max(8, this.anchorY - 20) + 'px';
+    this.invite.querySelector('.idle-question').textContent = 'Still there?';
     this.invite.hidden = false;
     this.inviteShown = true;
   }
-  return 'sleepy';
+  return this.invite.hidden ? 'sleepy' : 'curious';
  }
  attributeChangedCallback(name,old,value){if(name==='mood'&&DenverMotions.motions[value]){this.mood=value;if(!this.noteOpen&&!this.opening)this.play(value,false);}if(name==='motion-mode'&&this.initialized)this.render(performance.now());}
  react(name){if(!DenverMotions.motions[name])return;this.motion=name;this.started=performance.now();this.forcedTime=null;this.paused=false;this.render(performance.now());}
@@ -469,5 +486,5 @@ customElements.define('denver-companion',DenverCompanion);
   if(input.value.trim() && input.value.trim()!==e.detail.text.trim()){pet.setSubmission('error','Your Oracle question already has a draft. Send or clear it before moving this text.');return;}
   location.hash='oracle';input.value=e.detail.text;input.dispatchEvent(new Event('input',{bubbles:true}));pet.closeNote();input.focus();
  });
- window.addEventListener('mc:oracle-state',function(e){if(pending||pet.noteOpen||pet.opening)return;pet.react(e.detail.state==='pending'?'thinking':e.detail.state==='success'?'delighted':'oops');});
+ window.addEventListener('mc:oracle-state',function(e){pet.oraclePending=e.detail.state==='pending';pet.touchDenver();if(pending||pet.noteOpen||pet.opening)return;pet.react(e.detail.state==='pending'?'thinking':e.detail.state==='success'?'delighted':'oops');});
 })();
