@@ -47,6 +47,10 @@ class OrganizationSearchTests(unittest.TestCase):
         self.assertEqual(result['query'],'Companies for aroma')
         self.assertEqual(result['sector'],'ngo')
 
+    def test_model_cannot_infer_country_from_its_results(self):
+        result=self.search('Companies for aroma in Europe',model={'country':'DE'})
+        self.assertEqual([r['id'] for r in result['organizations']],[1,4])
+
     def test_activity_filter_does_not_invent_activity_dates(self):
         result=self.search('Companies for aroma',model={'since':2025})
         self.assertEqual(result['organizations'],[])
