@@ -69,7 +69,7 @@ def read_request(body, pg_rows, call_model):
     def interpret(prompt):
         if entity=='organizations':
             prompt += ('\nThis request searches ORGANIZATIONS, not individual experts. Return additional fields '
-                       '"matches": [{"id": database id, "evidence": exact short substring of its description}], '
+                       '"matches": [{"id": database id}], '
                        '"country": ISO country code or null. Select only relevant organizations, ordered by semantic relevance. '
                        'Interpret synonyms and capabilities, not just literal word overlap. Respect all requested scientific constraints. '
                        'A general alternative-protein producer is not evidence of aroma expertise. Return an empty matches list '
@@ -104,7 +104,9 @@ def read_request(body, pg_rows, call_model):
         key=match.get('id');evidence=match.get('evidence')
         if isinstance(key,bool) or not isinstance(key,int) or key not in by_id or key in seen:continue
         row=by_id[key]
-        if not isinstance(evidence,str) or len(evidence.strip())<8 or evidence not in row['description']:continue
+        # Display factual text from the stored profile, never generated capability claims.
+        if not isinstance(evidence,str) or evidence not in row['description'] or len(evidence.strip())<8:
+            evidence=row['description'].split(' [')[0].split(' Directory categories:')[0][:500]
         if reading['sector']!='all' and row['sector']!=reading['sector']:continue
         if reading['country'] and row['country']!=reading['country']:continue
         if reading['region']!='any' and REGIONS.get(row['country'])!=reading['region']:continue

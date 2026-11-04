@@ -30,7 +30,8 @@ class OrganizationSearchTests(unittest.TestCase):
 
     def test_unfounded_matches_are_rejected(self):
         result=self.search('Companies for aroma',model={'matches':[{'id':1,'evidence':'Invented expertise'},{'id':999,'evidence':'savoury aroma for plant-based meat'}]})
-        self.assertEqual(result['organizations'],[])
+        self.assertEqual([r['id'] for r in result['organizations']],[1])
+        self.assertNotIn('Invented expertise',result['organizations'][0]['evidence'])
 
     def test_control_filters_override_original_query(self):
         result=self.search('Companies for aroma in Germany',filters={'entity':'organizations','country':'FR','region':'europe','sector':'industry'})
