@@ -1567,3 +1567,5 @@ Reduced review design to nine objects in two flows. Combined Oracle/API, collaps
 **Still stale (not touched, owner = Coordinator):** `MVP_BOARD.md` + `TEAM_BROADCAST.md` (1 Sep, end-of-August framing); `PROJECT_STATE.md` is 373 lines and needs a trim. START_HERE says Asana wins on priorities meanwhile.
 **Next:** Lior runs `refresh-handoff.command`, then `deploy-dev.command` so GitHub carries it.
 
+
+2026-11-04 · Ecosystem company and NGO requests now search public.organizations through one small Haiku semantic-matching call, with database ID/evidence validation and hard sector/country/region/count filters. Organization cards link to public websites; Industry/NGO controls refresh the organization search. Added 75 sourced organizations (61 companies, 14 associations/NGOs) to dev and production, plus documented capabilities on five existing flavour companies. Each database now has 112 organizations. Ten backend checks and a browser fixture for organization cards and sector refinement passed.

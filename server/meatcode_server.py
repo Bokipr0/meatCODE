@@ -1871,11 +1871,12 @@ class Handler(SimpleHTTPRequestHandler):
                 body = self._read_json_body()
                 def call_model(prompt):
                     resp = client.messages.create(
-                        model=CONSENSUS_MODEL, max_tokens=400,
+                        model=os.environ.get("ECOSYSTEM_INTENT_MODEL", CONSENSUS_MODEL), max_tokens=1800, timeout=35.0,
                         messages=[{"role": "user", "content": prompt}])
                     return "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
                 try:
-                    return self._send_json(ecosystem.read_intent(body, call_model))
+                    import ecosystem_organizations
+                    return self._send_json(ecosystem_organizations.read_request(body, pg_rows, call_model))
                 except ValueError as e:
                     return self._send_json({"error": str(e)[:200]}, 400)
             return self._send_json({"error": "not found"}, 404)

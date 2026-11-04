@@ -340,6 +340,8 @@ const RD=BOOT.live||BOOT.d.rd;
 const COUNTRIES={CN:'China',KR:'South Korea',DE:'Germany',CH:'Switzerland',US:'United States',SE:'Sweden',ES:'Spain',NZ:'New Zealand',NL:'Netherlands',TH:'Thailand',AT:'Austria',BE:'Belgium',CA:'Canada',EE:'Estonia',GB:'United Kingdom',FR:'France',SG:'Singapore',BR:'Brazil',IL:'Israel',JP:'Japan',IT:'Italy',DK:'Denmark',IE:'Ireland',FI:'Finland',IN:'India',AU:'Australia',PL:'Poland',RS:'Serbia',GR:'Greece',HR:'Croatia',MX:'Mexico',CL:'Chile',EG:'Egypt',PK:'Pakistan'};
 const REGION={DE:'europe',CH:'europe',SE:'europe',ES:'europe',NL:'europe',AT:'europe',BE:'europe',EE:'europe',GB:'europe',FR:'europe',IT:'europe',DK:'europe',IE:'europe',FI:'europe',PL:'europe',RS:'europe',GR:'europe',HR:'europe',US:'north_america',CA:'north_america',CN:'asia_pacific',KR:'asia_pacific',TH:'asia_pacific',NZ:'asia_pacific',SG:'asia_pacific',JP:'asia_pacific',IN:'asia_pacific',AU:'asia_pacific',PK:'asia_pacific',IL:'israel',BR:'latin_america',MX:'latin_america',CL:'latin_america'};
 const REGIONS={any:'Anywhere',europe:'Europe',north_america:'North America',asia_pacific:'Asia-Pacific',israel:'Israel',latin_america:'Latin America'};
+Object.assign(COUNTRIES,{RO:'Romania',LT:'Lithuania',CZ:'Czechia',TR:'Türkiye',AR:'Argentina',HK:'Hong Kong',ID:'Indonesia'});
+Object.assign(REGION,{RO:'europe',LT:'europe',CZ:'europe',TR:'europe',AR:'latin_america',HK:'asia_pacific',ID:'asia_pacific'});
 const SECTORS={all:'All',academic:'Academic',industry:'Industry',ngo:'NGO & gov'};
 const SECVAR={academic:'--acad',industry:'--ind',ngo:'--ngo',unknown:'--faint'};
 const ISO={'Germany':'DE','China':'CN','France':'FR','United Kingdom':'GB','New Zealand':'NZ','Sweden':'SE','Singapore':'SG','Brazil':'BR','Canada':'CA','United States':'US','Israel':'IL','Netherlands':'NL','Belgium':'BE','Spain':'ES','Switzerland':'CH'};
@@ -443,9 +445,9 @@ function localRead(text,prev){
    failure returns null and the caller falls back to the local keyword reader above. */
 async function aiRead(text,prev){
   try{const res=await fetch('/api/ecosystem/intent',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({text,prev:prev?{intent:prev.intent,topics:prev.topics,sector:prev.sector,region:prev.region,since:prev.since}:null})});
+      body:JSON.stringify({text,prev:prev?{intent:prev.intent,topics:prev.topics,sector:prev.sector,region:prev.region,since:prev.since,entity:prev.entity,limit:prev.limit,query:prev.query,country:prev.country}:null})});
     if(!res.ok)return null;const r=await res.json();if(!r||r.error)return null;
-    const out={intent:(INTENTS[r.intent]||r.intent==='person')?r.intent:'collaborate',topics:(Array.isArray(r.topics)?r.topics:[]).filter(s=>TOPIC[s]).slice(0,6),sector:SECTORS[r.sector]?r.sector:'all',region:REGIONS[r.region]?r.region:'any',since:Number.isInteger(r.since)?r.since:null,person:null,engine:'ai'};
+    const out={intent:(INTENTS[r.intent]||r.intent==='person')?r.intent:'collaborate',topics:(Array.isArray(r.topics)?r.topics:[]).filter(s=>TOPIC[s]).slice(0,6),sector:SECTORS[r.sector]?r.sector:'all',region:REGIONS[r.region]?r.region:'any',since:Number.isInteger(r.since)?r.since:null,person:null,engine:'ai',entity:r.entity||'people',limit:r.limit||5,query:r.query||text,country:r.country||null,organizations:Array.isArray(r.organizations)?r.organizations:[]};
     if(out.intent==='person'){const n=String(r.person||'').toLowerCase();const e=LINKED.find(x=>x.name.toLowerCase()===n)||LINKED.find(x=>n&&x.name.toLowerCase().includes(n));if(e)out.person=e.id;else out.intent='collaborate';}
     return out;}catch(_){return null;}
 }
@@ -459,6 +461,7 @@ function personText(e){if(!e._txt)e._txt=[e.expertise||'',e.org||'',...e.papers.
 const PLACEWORDS=new Set(Object.values(COUNTRIES).join(' ').toLowerCase().split(/\s+/).concat(['europe','european','north','america','american','asia','pacific','latin','world','country','countries','where']));
 function qWords(q){return String(q||'').toLowerCase().split(/[^a-z0-9]+/).filter(w=>w.length>=5&&!STOP.has(w)&&!PLACEWORDS.has(w));}
 function rank(r){
+  if(r.entity==='organizations')return (r.organizations||[]).filter(e=>eligible({...e,latest:null},r)).map(e=>({e:{...e,org:'',papers:[],radar:[]},fitPapers:0,score:1,hit:[]}));
   const w=(INTENTS[r.intent]||INTENTS.collaborate).w, want=new Set(r.topics), words=qWords(r.q);
   const rows=LINKED.filter(e=>eligible(e,r)).map(e=>{
     const hit=e.topics.filter(([s])=>want.has(s)).sort((a,b)=>b[1]*idf(b[0])-a[1]*idf(a[0]));
@@ -526,18 +529,18 @@ function viewStart(){
 function renderTurns(){
   dock.hidden=false;
   const last=turns[turns.length-1];
-  const wide=last&&last.status==='done'&&(last.r.intent==='explore'||last.r.intent==='partner');
+  const wide=last&&last.status==='done'&&(last.r.intent==='explore'||last.r.intent==='partner'||last.r.entity==='organizations');
   let main='';
   turns.forEach((t,i)=>{main+=turnHTML(t,i===turns.length-1);});
   let side='';
   if(wide){const rows=last.rows;const cc={};rows.forEach(x=>{if(x.e.country)cc[x.e.country]=(cc[x.e.country]||0)+1;});
     const sc={academic:0,industry:0,ngo:0};rows.forEach(x=>sc[x.e.sector]++);const tot=rows.length||1;
-    side=`<aside class="side" aria-label="Where they are"><div class="panel"><h3>Where they are</h3>${mapSVG(cc,{label:'Map of matching people'})}<p class="note" style="margin:8px 0 0">Pick a country to narrow down.</p></div>
+    side=`<aside class="side" aria-label="Where they are"><div class="panel"><h3>Where they are</h3>${mapSVG(cc,{label:last.r.entity==='organizations'?'Map of matching organizations':'Map of matching people'})}<p class="note" style="margin:8px 0 0">Pick a country to narrow down.</p></div>
       <div class="panel"><h3>By sector</h3><div class="split">${['academic','industry','ngo'].map(s=>`<i style="width:${sc[s]/tot*100}%;background:var(${SECVAR[s]})"></i>`).join('')}</div>
       <div class="legend">${['academic','industry','ngo'].map(s=>`<span style="--c:var(${SECVAR[s]})">${SECTORS[s]} ${sc[s]}</span>`).join('')}</div></div></aside>`;}
   app.innerHTML=`<div class="results${wide?' wide':''}"><div id="thread">${main}</div>${side}</div>`;
   wireThread();
-  if(wide)wireMap(app.querySelector('.side'),c=>{last.r.country=c;last.r.region='any';rerank(last);});
+  if(wide)wireMap(app.querySelector('.side'),c=>{last.r.country=c;last.r.region='any';rerank(last,true);});
 }
 function turnHTML(t,isLast){
   if(t.status==='thinking')return `<section class="turn"><p class="q">${esc(t.q)}</p><div class="thinking"><span class="dot3"><i></i><i></i><i></i></span>Reading what you need</div></section>`;
@@ -551,12 +554,15 @@ function turnHTML(t,isLast){
       <span>in</span><label class="sr" for="rg${t.k}">Region</label><select class="rsel" id="rg${t.k}" data-ctl="region" ${isLast?'':'disabled'}>${r.country?`<option value="cc" selected>${esc(COUNTRIES[r.country])}</option>`:''}${Object.entries(REGIONS).map(([k,v])=>`<option value="${k}" ${!r.country&&k===r.region?'selected':''}>${v}</option>`).join('')}</select>
       ${r.since?`<span class="tchip">Active since ${r.since}${isLast?'<button type="button" aria-label="Remove year limit" data-rmsince>×</button>':''}</span>`:''}</div>
     <div class="rline"><div class="seg" role="group" aria-label="Sector">${Object.entries(SECTORS).map(([k,v])=>`<button type="button" data-sector="${k}" aria-pressed="${k===r.sector}" ${isLast?'':'disabled'}>${v}</button>`).join('')}</div>
-      <span class="how">${I.how}${t.engine==='ai'?' Request read by AI.':' Request read by keywords.'}</span></div></div>`;
+      <span class="how">${r.entity==='organizations'?'Organizations matched to your request using their database profiles.':I.how}${t.engine==='ai'?' Request read by AI.':' Request read by keywords.'}</span></div></div>`;
   const radarFirst=r.intent==='learn'||r.intent==='events';
-  if(!r.topics.length&&r.intent!=='explore'&&!radarFirst)h+=`<p class="note" style="margin-top:14px">I couldn't connect that to a topic in the MeatCODE taxonomy, so this is everyone who fits the other settings. Naming a process, ingredient or method helps.</p>`;
+  if(r.entity!=='organizations'&&!r.topics.length&&r.intent!=='explore'&&!radarFirst)h+=`<p class="note" style="margin-top:14px">I couldn't connect that to a topic in the MeatCODE taxonomy, so this is everyone who fits the other settings. Naming a process, ingredient or method helps.</p>`;
   const rows=t.rows;
-  if(!rows.length&&!radarFirst)h+=`<p class="note" style="margin-top:16px">Nobody matches all of this. Try another sector or region above.</p>`;
-  if(r.intent==='explore'){
+  if(!rows.length&&!radarFirst)h+=`<p class="note" style="margin-top:16px">${r.entity==='organizations'?'No organizations match these requirements.':'Nobody matches all of this.'} Try another sector or region above.</p>`;
+  if(r.entity==='organizations'){
+    if(t.orgError)h+=`<p class="note" role="status">Organization search is unavailable. Please retry in a moment.</p>`;
+    h+=`<div class="list">${rows.map(x=>organizationCard(x.e)).join('')}</div>`;
+  } else if(r.intent==='explore'){
     h+=`<div class="panel rows" style="margin-top:18px">${rows.slice(0,12).map(x=>`<div class="row">${av(x.e)}<div><button class="nm" style="font-size:16px" type="button" data-open="${x.e.id}">${esc(x.e.name)}</button><div class="org">${esc(place(x.e))}</div></div><span class="note">${x.fitPapers||x.e.papers.length} papers</span></div>`).join('')}</div>`;
     if(rows.length>12)h+=`<p class="note">${rows.length-12} more. Narrow by sector, region or map.</p>`;
   } else if(radarFirst){
@@ -586,6 +592,10 @@ function crossLinks(t){const sci=scienceTopic(t.r.topics);
   return `<div class="xlinks"><button class="mc-xlink" type="button" data-oracle="${esc(t.q)}">Ask the Oracle about this</button>${sci?`<button class="mc-xlink" type="button" data-science="${sci}">The basics, in Science</button>`:''}</div>`;}
 function wireCross(root){root.querySelectorAll('[data-oracle]').forEach(b=>b.onclick=()=>MC.open('oracle',{ask:b.dataset.oracle,send:true}));
   root.querySelectorAll('[data-science]').forEach(b=>b.onclick=()=>MC.open('science',{topic:b.dataset.science}));}
+function organizationCard(e){
+  const country=COUNTRIES[e.country]||e.country_name||'Location not listed';
+  return `<article class="card">${av(e)}<div style="min-width:0"><h3 class="nm">${esc(e.name)}</h3><div class="org">${esc(country)} · ${esc(e.sector==='industry'?'Company':'NGO / industry association')}</div><p class="why">${esc(e.evidence)}</p>${e.website?`<a class="btn" href="${esc(e.website)}" target="_blank" rel="noopener noreferrer">Visit website ↗</a>`:''}<p class="note">Organization profile from the MeatCODE database</p></div></article>`;
+}
 function card(x,intent){const e=x.e;
   return `<article class="card">${av(e)}<div style="min-width:0"><button class="nm" type="button" data-open="${e.id}">${esc(e.name)}</button>${e.radar.length?'<span class="newb">New paper</span>':''}
     <div class="org">${esc(place(e))}${e.sector!=='unknown'?`<span class="sec" style="--sec:var(${SECVAR[e.sector]})">${SECTORS[e.sector]}</span>`:''}</div>
@@ -602,14 +612,28 @@ function wireThread(){
   app.querySelectorAll('[data-refine]').forEach(b=>b.onclick=()=>ask(b.textContent));
   const last=turns[turns.length-1];if(!last||last.status!=='done')return;
   const sec=app.querySelector(`[data-turn="${turns.length-1}"]`);if(!sec)return;
-  sec.querySelectorAll('[data-sector]').forEach(b=>b.onclick=()=>{last.r.sector=b.dataset.sector;rerank(last);});
-  sec.querySelectorAll('[data-rmt]').forEach(b=>b.onclick=()=>{last.r.topics=last.r.topics.filter(s=>s!==b.dataset.rmt);rerank(last);});
-  const rs=sec.querySelector('[data-rmsince]');if(rs)rs.onclick=()=>{last.r.since=null;rerank(last);};
-  sec.querySelector('[data-ctl="intent"]').onchange=e=>{last.r.intent=e.target.value;rerank(last);};
-  const at=sec.querySelector('[data-addtopic]');if(at)at.onchange=()=>{const sl=BYNAME[at.value];if(sl&&!last.r.topics.includes(sl)){last.r.topics.push(sl);rerank(last);}else if(!sl){at.value='';toast('Pick a topic from the list.');}};
-  sec.querySelector('[data-ctl="region"]').onchange=e=>{if(e.target.value==='cc')return;last.r.region=e.target.value;last.r.country=null;rerank(last);};
+  sec.querySelectorAll('[data-sector]').forEach(b=>b.onclick=()=>{last.r.sector=b.dataset.sector;last.r.entity=b.dataset.sector==='academic'?'people':['industry','ngo'].includes(b.dataset.sector)?'organizations':last.r.entity;rerank(last,true);});
+  sec.querySelectorAll('[data-rmt]').forEach(b=>b.onclick=()=>{last.r.topics=last.r.topics.filter(s=>s!==b.dataset.rmt);rerank(last,true);});
+  const rs=sec.querySelector('[data-rmsince]');if(rs)rs.onclick=()=>{last.r.since=null;rerank(last,true);};
+  sec.querySelector('[data-ctl="intent"]').onchange=e=>{last.r.intent=e.target.value;rerank(last,true);};
+  const at=sec.querySelector('[data-addtopic]');if(at)at.onchange=()=>{const sl=BYNAME[at.value];if(sl&&!last.r.topics.includes(sl)){last.r.topics.push(sl);rerank(last,true);}else if(!sl){at.value='';toast('Pick a topic from the list.');}};
+  sec.querySelector('[data-ctl="region"]').onchange=e=>{if(e.target.value==='cc')return;last.r.region=e.target.value;last.r.country=null;rerank(last,true);};
 }
-function rerank(t){t.rows=rank(t.r);t.radar=radarFor(t.r,t.q);t.also=t.r.intent==='explore'?[]:alsoTalk(t.r,t.rows.slice(0,5).map(x=>x.e.id));const y=scrollY;renderTurns();scrollTo(0,y);}
+async function rerank(t, refreshOrganizations=false){
+  const organizationMode=t.r.entity==='organizations';
+  const revision=(t.orgRevision||0)+1;t.orgRevision=revision;
+  if(organizationMode&&refreshOrganizations){
+    t.orgError=false;
+    try{
+      const response=await fetch('/api/ecosystem/intent',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:t.r.query||t.q,prev:t.r,filters:{entity:'organizations',sector:t.r.sector,region:t.r.region,country:t.r.country||null,limit:t.r.limit||5,topics:t.r.topics,since:t.r.since,intent:t.r.intent}})});
+      if(!response.ok)throw new Error('Organization search failed');
+      const result=await response.json();if(t.orgRevision!==revision)return;
+      t.r.organizations=Array.isArray(result.organizations)?result.organizations:[];
+    }catch(_){if(t.orgRevision!==revision)return;t.r.organizations=[];t.orgError=true;}
+  }
+  t.rows=rank(t.r);t.radar=organizationMode?[]:radarFor(t.r,t.q);t.also=organizationMode||t.r.intent==='explore'?[]:alsoTalk(t.r,t.rows.slice(0,5).map(x=>x.e.id));
+  const y=scrollY;renderTurns();scrollTo(0,y);
+}
 function mailGFI(subject,text){if(!CONTACT){toast('Requests to the GFI team aren\u2019t switched on here yet.');return;}
   const a=document.createElement('a');a.href='mailto:'+CONTACT+'?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(text);a.rel='noopener';document.body.appendChild(a);a.click();a.remove();}
 function intro(id){const e=E[id];if(!e)return;mailGFI('Introduction request: '+e.name,'Hi GFI Israel team,\n\nI would like an introduction to '+e.name+(e.org?' ('+e.org+')':'')+'.\n\nWhat I am working on:\n\n');}
@@ -622,10 +646,10 @@ async function ask(text,force){
   const t={q:text,status:'thinking',k:++kseq};turns.push(t);renderTurns();scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
   let r=force?Object.assign(localRead(text),{topics:[]},force):await aiRead(text,prev&&prev.r);
   t.engine=r&&r.engine==='ai'?'ai':'keywords';
-  if(!r)r=localRead(text,prev&&prev.r);
+  if(!r){r=localRead(text,prev&&prev.r);if(/\b(compan(?:y|ies)|ngos?|organizations?|organisations?|suppliers?)\b/i.test(text)){r.entity='organizations';r.organizations=[];t.orgError=true;}}
   if(r.intent==='person'&&r.person){turns.pop();if(!turns.length)viewStart();else renderTurns();openProfile(r.person);return;}
   if(r.intent==='person')r.intent='collaborate';
-  r.q=r.q||text;t.r=r;t.status='done';rerank(t);
+  r.q=r.q||text;t.r=r;t.status='done';await rerank(t,force&&r.entity==='organizations');
   const el=app.querySelector(`[data-turn="${turns.length-1}"]`);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
 }
 

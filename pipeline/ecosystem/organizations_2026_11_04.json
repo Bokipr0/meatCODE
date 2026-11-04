@@ -1,0 +1,737 @@
+[
+  {
+    "name": "[Mock]",
+    "org_type": "company",
+    "country": "United Kingdom",
+    "website": "https://mock.co.uk/",
+    "description": "UK-based producer of chef-quality, whole-cut, plant-based meat products for food service operators. Directory categories: Alternative protein type: Plant-based Company focus: Meat Operating region: Europe Product type: Whole muscle meat/seafood Region: Europe Technology focus: End product formulation and manufacturing Year founded: 2016 Location: London , United Kingdom [Directory source: https://ecosystem.gfi.org/company/mock/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/mock/",
+    "source_id": 1089,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "1.5 Degree",
+    "org_type": "company",
+    "country": "India",
+    "website": "https://1.5degree.co/",
+    "description": "Food tech startup develops plant-based dairy alternatives designed to align with global climate goals and consumer demand for sustainable options. Directory categories: Alternative protein type: Plant-based Company focus: Dairy Operating region: Asia Pacific Product types: Milk , Other dairy Region: Asia Pacific Technology focus: End product formulation and manufacturing Year founded: 2022 Location: New Delhi , India [Directory source: https://ecosystem.gfi.org/company/1-5-degree/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/1-5-degree/",
+    "source_id": 4672,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "21st.BIO",
+    "org_type": "company",
+    "country": "Denmark",
+    "website": "https://21st.bio/",
+    "description": "21st.BIO focuses on developing industrial precision fermentation production technology for proteins and peptides for food, nutrition, agriculture, biomaterials, and biomining industries. Directory categories: Alternative protein type: Fermentation Company focus: Bioprocessing infrastructure and equipment , Contract manufacturing/processing Operating region: Europe Product type: Ingredients Region: Europe Technology focus: Bioprocess design , Host strain development Year founded: 2020 Location: Søborg , Denmark [Directory source: https://ecosystem.gfi.org/company/21st-bio/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/21st-bio/",
+    "source_id": 80218,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "70/30 Food Tech",
+    "org_type": "company",
+    "country": "Mainland China",
+    "website": "https://7030foodtech.com/",
+    "description": "Whole-cut chicken with mycelium base. Directory categories: Alternative protein type: Fermentation Company focus: Meat Operating region: Asia Pacific Product types: Other meat/seafood , Whole muscle meat/seafood Region: Asia Pacific Technology focus: End product formulation and manufacturing Year founded: 2022 Location: Shanghai , Mainland China [Directory source: https://ecosystem.gfi.org/company/70-30-food-tech/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/70-30-food-tech/",
+    "source_id": 1101,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "AAK",
+    "org_type": "company",
+    "country": "Sweden",
+    "website": "https://www.aak.com/akoplanet",
+    "description": "Makers of plant-based oil ingredients for meat and cheese alternatives and other products. Directory categories: Alternative protein type: Plant-based Company focus: Ingredients and inputs Operating regions: Africa/Middle East , Asia Pacific , Australia/New Zealand , Europe , Latin America Product type: Oils and fats Region: Europe Technology focus: Ingredient optimization Year founded: 2005 Location: Sweden [Directory source: https://ecosystem.gfi.org/company/aak/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/aak/",
+    "source_id": 183548,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Açougue Vegano",
+    "org_type": "company",
+    "country": "Brazil",
+    "website": "https://acouguevegano.com.br/",
+    "description": "Plant-based butcher shop in Brazil offering frozen plant-based meat products in addition to counter service. Directory categories: Alternative protein type: Plant-based Company focus: Meat Operating region: Latin America Product type: Ground meat/seafood Region: Latin America Technology focus: End product formulation and manufacturing Year founded: 2016 Location: Brazil [Directory source: https://ecosystem.gfi.org/company/acougue-vegano/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/acougue-vegano/",
+    "source_id": 1113,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "ÄIO",
+    "org_type": "company",
+    "country": "Estonia",
+    "website": "https://aio.bio/",
+    "description": "Estonian start-up producing alternatives to animal fats, palm oil and coconut oil using microbial lipid production. Directory categories: Alternative protein type: Fermentation Company focus: Ingredients and inputs Operating region: Europe Product type: Oils and fats Region: Europe Technology focus: Bioprocess design , Ingredient optimization Year founded: 2022 Location: Tallinn , Estonia [Directory source: https://ecosystem.gfi.org/company/aio/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/aio/",
+    "source_id": 4427,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Air Protein",
+    "org_type": "company",
+    "country": "United States",
+    "website": "https://www.airprotein.com/",
+    "description": "U.S.-based startup focusing on using a closed loop carbon cycle to create food grade protein. Directory categories: Alternative protein type: Fermentation Company focus: Ingredients and inputs Operating region: United States and Canada Product type: Ingredients Region: North America Technology focus: Ingredient optimization Year founded: 2019 Location: San Leandro , California , United States [Directory source: https://ecosystem.gfi.org/company/air-protein/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/air-protein/",
+    "source_id": 1129,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Aivia",
+    "org_type": "company",
+    "country": "Romania",
+    "website": "https://aivia.ro/",
+    "description": "Produces plant-based meats, spreads, mayonnaise, creams, and desserts. Directory categories: Alternative protein type: Plant-based Company focus: Dairy , Meat Operating region: Europe Product types: Ground meat/seafood , Other dairy Region: Europe Technology focus: End product formulation and manufacturing Year founded: 2012 Location: Arad , Arad , Romania [Directory source: https://ecosystem.gfi.org/company/aivia/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/aivia/",
+    "source_id": 1131,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "alberts",
+    "org_type": "company",
+    "country": "United States",
+    "website": "https://www.purvegan.de/",
+    "description": "alberts makes plant-based meat from Lupine, including steak, burgers, sausages, fillets, schnitzel, and gyros. Directory categories: Alternative protein type: Plant-based Company focus: Meat Operating region: Europe Product type: Other meat/seafood Region: North America Technology focus: End product formulation and manufacturing Year founded: 2012 Location: Omaha , Nebraska , United States [Directory source: https://ecosystem.gfi.org/company/alberts/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/alberts/",
+    "source_id": 113191,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Alcheme Bio",
+    "org_type": "company",
+    "country": "United States",
+    "website": "https://www.alchemebio.com/",
+    "description": "Revolutionizes how cultured product companies optimize for flavor and nutrition, significantly reducing R&D, development, and manufacturing time and costs. Directory categories: Alternative protein type: Cultivated Company focus: Bioprocessing infrastructure and equipment , Ingredients and inputs Operating region: United States and Canada Product type: Ingredients Region: North America Technology focus: Cell culture media , Ingredient optimization Year founded: 2023 Location: New York , New York , United States [Directory source: https://ecosystem.gfi.org/company/alcheme-bio/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/alcheme-bio/",
+    "source_id": 1135,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Alfa-Ruby",
+    "org_type": "company",
+    "country": "United States",
+    "website": "https://alfa-ruby.com/",
+    "description": "Alfa-Ruby is pioneering a breakthrough plant protein derived from green alfalfa leaves that performs like the best animal proteins—whey and eggs—while offering a significant cost advantage over them. Directory categories: Alternative protein type: Plant-based Company focus: Dairy , Eggs , Ingredients and inputs , Meat Operating region: United States and Canada Product type: Ingredients Region: North America Technology focus: Bioprocess design , Ingredient optimization Year founded: 2025 Location: St. Louis , Missouri , United States [Directory source: https://ecosystem.gfi.org/company/alfa-ruby/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/alfa-ruby/",
+    "source_id": 319229,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "alfred’s",
+    "org_type": "company",
+    "country": "Israel",
+    "website": "https://www.alfreds.tech",
+    "description": "Plant‑based food-tech startup developing high‑protein sliced cheeses and deli‑style cold cuts using proprietary “PLANET”. Directory categories: Alternative protein type: Plant-based Company focus: Bioprocessing infrastructure and equipment Operating region: Africa/Middle East Product types: Cheese , Ingredients Region: Middle East Technology focus: Bioprocess design , End product formulation and manufacturing , Ingredient optimization Year founded: 2021 Location: Modi'in-Maccabim-Re'ut , Israel [Directory source: https://ecosystem.gfi.org/company/alfreds/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/alfreds/",
+    "source_id": 1140,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Algama",
+    "org_type": "company",
+    "country": "France",
+    "website": "http://algamafoods.com/",
+    "description": "Platform for microalgae-based plant-based foods and ingredients (including egg and dairy replacements). Directory categories: Alternative protein type: Fermentation Company focus: Contract manufacturing/processing , Food processing infrastructure and equipment , Ingredients and inputs Operating region: Europe Product types: Eggs , Ingredients Region: Europe Technology focus: Bioprocess design , End product formulation and manufacturing , Ingredient optimization Year founded: 2013 Location: Malakoff , France [Directory source: https://ecosystem.gfi.org/company/algama/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/algama/",
+    "source_id": 1142,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Alimentos Sanygran",
+    "org_type": "company",
+    "country": "Spain",
+    "website": "https://sanygran.com/es/",
+    "description": "Spanish company offering plant-based products and ingredients, as well as processing services. Directory categories: Alternative protein type: Plant-based Company focus: Contract manufacturing/processing , Ingredients and inputs , Meat Operating region: Europe Product types: Ground meat/seafood , Ingredients , Other meat/seafood Region: Europe Technology focus: End product formulation and manufacturing , Ingredient optimization Year founded: 2010 Location: Tudela , Spain [Directory source: https://ecosystem.gfi.org/company/alimentos-sanygran/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/alimentos-sanygran/",
+    "source_id": 1148,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "All G",
+    "org_type": "company",
+    "country": "Australia",
+    "website": "https://www.allg.com/",
+    "description": "Human and animal milk proteins made using precision fermentation. Directory categories: Alternative protein type: Fermentation Company focus: Dairy , Human breast milk Operating region: Australia/New Zealand Product type: Ingredients Region: Asia Pacific Technology focus: End product formulation and manufacturing Year founded: 2020 Location: Waterloo , Australia [Directory source: https://ecosystem.gfi.org/company/all-g/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/all-g/",
+    "source_id": 31443,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "All Vegetarian Inc.",
+    "org_type": "company",
+    "country": "United States",
+    "website": "https://veganforall.com/",
+    "description": "US-based producer of plant-based vegan egg, meat, and seafood products that bear striking resemblance to their analogues. Directory categories: Alternative protein type: Plant-based Company focus: Meat , Seafood Operating region: United States and Canada Product types: Other meat/seafood , Whole muscle meat/seafood Region: North America Technology focus: End product formulation and manufacturing Year founded: 1994 Location: Los Angeles , California , United States [Directory source: https://ecosystem.gfi.org/company/all-vegetarian-inc/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/all-vegetarian-inc/",
+    "source_id": 1152,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Allbiotech",
+    "org_type": "company",
+    "country": "Spain",
+    "website": "https://allbiotech.eu/",
+    "description": "Company that builds more accessible, efficient bioreactors for the alternative proteins value chain. Directory categories: Alternative protein type: Fermentation Company focus: Bioprocessing infrastructure and equipment Operating region: Europe Region: Europe Technology focus: Bioprocess design Year founded: 2024 Location: Noáin , Spain [Directory source: https://ecosystem.gfi.org/company/allbiotech/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/allbiotech/",
+    "source_id": 207782,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Allium Bio",
+    "org_type": "company",
+    "country": "Singapore",
+    "website": "https://www.alliumbio.com/",
+    "description": "Singapore startup co-culturing microalgae and mycelium to create functional ingredients for use in a range of plant-based foods. Directory categories: Alternative protein type: Fermentation Company focus: Ingredients and inputs Operating region: Asia Pacific Region: Asia Pacific Technology focus: Ingredient optimization Year founded: 2022 Location: Singapore [Directory source: https://ecosystem.gfi.org/company/allium-bio/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/allium-bio/",
+    "source_id": 1155,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Alpine Bio",
+    "org_type": "company",
+    "country": "United States",
+    "website": "https://alpbio.com/",
+    "description": "Develops affordable animal-free proteins. Directory categories: Alternative protein type: Plant-based Company focus: Dairy , Ingredients and inputs Operating region: United States and Canada Product type: Ingredients Region: North America Technology focus: Crop development , End product formulation and manufacturing , Ingredient optimization Year founded: 2016 Location: South San Francisco , California , United States [Directory source: https://ecosystem.gfi.org/company/alpine-bio/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/alpine-bio/",
+    "source_id": 3315,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "AlProtein",
+    "org_type": "company",
+    "country": "Egypt",
+    "website": "https://www.alprotein.tech/",
+    "description": "AlProtein uses AI-Powered biomanufacturing technology (OrionPro TM) to produce more affordable and functional ingredients from Lemma protein for plant-based cheese and meat products. Our products RubiPro and CheesePro offers complete protein, with fat and flavor enhancement while replacing the Methyl Cellouse totally through irreversible thermobinding characteristics. Directory categories: Alternative protein type: Fermentation , Plant-based Company focus: Dairy , Ingredients and inputs , Meat Operating regions: Africa/Middle East , Europe , United States and Canada Product types: Cheese , Ingredients , Oils and fats Region: Africa Technology focus: Bioprocess design , End product formulation and manufacturing , Ingredient optimization Year founded: 2023 Location: Giza Governorate , Egypt [Directory source: https://ecosystem.gfi.org/company/alprotein/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/alprotein/",
+    "source_id": 31462,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Alt Atlas",
+    "org_type": "company",
+    "country": "United Kingdom",
+    "website": "https://alt-atlas.com/",
+    "description": "Developing an innovative AI toolkit to assess cell health, reducing commercial R&D iterations to scale up cultivated meat production and ensure QA/QC in large-scale manufacturing. Directory categories: Alternative protein type: Cultivated Company focus: Bioprocessing infrastructure and equipment Operating region: Europe Region: Europe Technology focus: Bioprocess design , Cell culture media , Cell line development , Ingredient optimization Year founded: 2021 Location: London , United Kingdom [Directory source: https://ecosystem.gfi.org/company/alt-atlas/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/alt-atlas/",
+    "source_id": 1161,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "ALT Co.",
+    "org_type": "company",
+    "country": "India",
+    "website": "https://alt.company/",
+    "description": "Food Tech startup focused on launching sustainable food alternatives, primarily focused on plant-based dairy alternatives. . Directory categories: Alternative protein type: Plant-based Company focus: Dairy Operating region: Asia Pacific Product type: Milk Region: Asia Pacific Technology focus: End product formulation and manufacturing Year founded: 2021 Location: Bengaluru , India [Directory source: https://ecosystem.gfi.org/company/alt-co/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/alt-co/",
+    "source_id": 174878,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Alt Milk",
+    "org_type": "company",
+    "country": "United States",
+    "website": "https://altmilk.in/",
+    "description": "ALT MILK offers a variety of unsweetened & flavoured ( without any added sugar ) nut milks for vegans and people with lactose intolerance in Delhi NCR. Directory categories: Alternative protein type: Plant-based Company focus: Dairy Operating region: Asia Pacific Product type: Milk Region: North America Technology focus: End product formulation and manufacturing Year founded: 2022 Location: Omaha , Nebraska , United States [Directory source: https://ecosystem.gfi.org/company/alt-milk/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/alt-milk/",
+    "source_id": 113221,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Altro Food",
+    "org_type": "company",
+    "country": "Italy",
+    "website": "https://www.altrofood.com/",
+    "description": "Company specialising in dried mix for plant-based meat preparations. Directory categories: Alternative protein type: Plant-based Company focus: Eggs , Meat Operating region: Europe Product types: Eggs , Ingredients , Other meat/seafood Region: Europe Technology focus: End product formulation and manufacturing Year founded: 2008 Location: Cinisello Balsamo , Italy [Directory source: https://ecosystem.gfi.org/company/altro-food/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/altro-food/",
+    "source_id": 338709,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Amazonika Mundi",
+    "org_type": "company",
+    "country": "Brazil",
+    "website": "https://amazonikamundi.com.br/",
+    "description": "Brazil-based company producing various plant-based meat products, including burgers and meatballs, using Brazilian vegetables and fruits. Directory categories: Alternative protein type: Plant-based Company focus: Meat Operating region: Latin America Product types: Ground meat/seafood , Other meat/seafood Region: Latin America Technology focus: End product formulation and manufacturing Year founded: 2012 Location: Brazil [Directory source: https://ecosystem.gfi.org/company/amazonika-mundi/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/amazonika-mundi/",
+    "source_id": 1166,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "América Pampa",
+    "org_type": "company",
+    "country": "Argentina",
+    "website": "https://www.americapampa.com/",
+    "description": "Argentina-based manufacturer of plant-based soy ingredients, including textured soy protein, soy flour, expeller meal, and oil, for global food and meat-alternative markets. Directory categories: Alternative protein type: Plant-based Company focus: Ingredients and inputs Operating region: Latin America Product type: Ingredients Region: Latin America Technology focus: Ingredient optimization Year founded: 2009 Location: Rivadavia , Argentina [Directory source: https://ecosystem.gfi.org/company/america-pampa/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/america-pampa/",
+    "source_id": 282893,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Anamma Foods",
+    "org_type": "company",
+    "country": "Sweden",
+    "website": "https://www.anamma.eu/",
+    "description": "Sweden-based company that produces various plant-based meat products, as well as plant-based pizza and buns. Directory categories: Alternative protein type: Plant-based Company focus: Meat Operating region: Europe Product types: Ground meat/seafood , Other meat/seafood Region: Europe Technology focus: End product formulation and manufacturing Year founded: 1998 Location: Malmö , Sweden [Directory source: https://ecosystem.gfi.org/company/anamma-foods/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/anamma-foods/",
+    "source_id": 1171,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "ANDFOODS",
+    "org_type": "company",
+    "country": "New Zealand",
+    "website": "https://andfoods.co/",
+    "description": "Focus on using pulses to create protein and nutrient rich dairy alternatives using fermentation processes, that hold their shape and are allergen free. They can be used for bakery, confectionary, frozen desserts, toppings and creamers, whipping cream, and barista milk. Directory categories: Alternative protein type: Plant-based Company focus: Dairy Operating region: Australia/New Zealand Product types: Milk , Other dairy Region: Asia Pacific Year founded: 2023 Location: Palmerston North , New Zealand [Directory source: https://ecosystem.gfi.org/company/andfoods/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/andfoods/",
+    "source_id": 90144,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Ants Innovate",
+    "org_type": "company",
+    "country": "Singapore",
+    "website": "https://www.antsinnovate.com/",
+    "description": "Deep tech company that offers functional ingredients, powered by flavour engineering and precision texturization, to cost-effectively produce hybrid and blended meat cuts using plant and cultivated animal proteins. Directory categories: Alternative protein type: Cultivated , Plant-based Company focus: Food processing infrastructure and equipment , Ingredients and inputs , Meat Operating region: Asia Pacific Product types: Ingredients , Oils and fats , Whole muscle meat/seafood Region: Asia Pacific Technology focus: End product formulation and manufacturing , Ingredient optimization , Scaffolding and structure Year founded: 2020 Location: Singapore , Singapore [Directory source: https://ecosystem.gfi.org/company/ants-innovate/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/ants-innovate/",
+    "source_id": 1183,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Ark Bio Solutions",
+    "org_type": "company",
+    "country": "Brazil",
+    "website": "https://arkbio.com.br/",
+    "description": "Brazilian precision fermentation company developing next-generation functional breast milk proteins from agricultural co-products using AI-driven bioprocesses, and serum-free proteins powered by patented RNA technologies. Directory categories: Alternative protein type: Fermentation Company focus: Human breast milk , Ingredients and inputs Operating region: Latin America Product type: Ingredients Region: Latin America Technology focus: Cell culture media , Host strain development Year founded: 2022 Location: Florianópolis , Brazil [Directory source: https://ecosystem.gfi.org/company/ark-bio-solutions/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/ark-bio-solutions/",
+    "source_id": 3501,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Ark Biotech",
+    "org_type": "company",
+    "country": "United States",
+    "website": "https://www.ark-biotech.com",
+    "description": "Produces scalable, affordable bioreactors and operating systems for the industrial production of cultivated meat. Directory categories: Alternative protein type: Cultivated Company focus: Food processing infrastructure and equipment Operating region: United States and Canada Region: North America Technology focus: Bioprocess design Year founded: 2021 Location: Cambridge , Massachusetts , United States [Directory source: https://ecosystem.gfi.org/company/ark-biotech/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/ark-biotech/",
+    "source_id": 1188,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Armored Fresh",
+    "org_type": "company",
+    "country": "South Korea",
+    "website": "http://www.armoredfresh.com/",
+    "description": "Armored Fresh vegan cheese provides flavor and taste comparable to regular cow-milk based cheese by fermenting plant-based protein milk the same way as natural cheese. Directory categories: Alternative protein type: Plant-based Company focus: Dairy Operating regions: Asia Pacific , United States and Canada Product type: Cheese Region: Asia Pacific Technology focus: End product formulation and manufacturing Year founded: 2021 Location: South Korea [Directory source: https://ecosystem.gfi.org/company/armored-fresh/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/armored-fresh/",
+    "source_id": 1192,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Art of Greens",
+    "org_type": "company",
+    "country": "Germany",
+    "website": "https://artofgreens.de/",
+    "description": "Germany-based company that produces plant-based meat and fish products for wholesale market of german restaurant and catering industries. Directory categories: Alternative protein type: Plant-based Company focus: Meat , Seafood Operating region: Europe Product types: Ground meat/seafood , Whole muscle meat/seafood Region: Europe Technology focus: End product formulation and manufacturing Year founded: 2017 Location: Berlin , Germany [Directory source: https://ecosystem.gfi.org/company/art-of-greens/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/art-of-greens/",
+    "source_id": 1193,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Arummi Foods",
+    "org_type": "company",
+    "country": "Indonesia",
+    "website": "https://www.arummi.com",
+    "description": "Dairy alternative company using locally sourced ingredients from Southeast Asia, currently producing a cashew Milk and a barista version. Directory categories: Alternative protein type: Plant-based Company focus: Dairy Operating region: Asia Pacific Product types: Milk , Other dairy Region: Asia Pacific Technology focus: End product formulation and manufacturing Year founded: 2022 Location: Indonesia [Directory source: https://ecosystem.gfi.org/company/arummi-foods/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/arummi-foods/",
+    "source_id": 140611,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Aspyre Foods",
+    "org_type": "company",
+    "country": "United States",
+    "website": "https://aspyrefoods.com/",
+    "description": "Aspyre Foods is building the most resilient, resource efficient and scalable protein production system, using duckweed and plant molecular farming. Our first two products are Rubisco and casein, enabling a broad range of complementary functionality for food producers. Directory categories: Alternative protein type: Plant-based Company focus: Dairy , Eggs , Ingredients and inputs Operating regions: Africa/Middle East , United States and Canada Product type: Ingredients Region: North America Technology focus: Crop development , Ingredient optimization Year founded: 2022 Location: Palo Alto , California , United States [Directory source: https://ecosystem.gfi.org/company/aspyre-foods/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/aspyre-foods/",
+    "source_id": 343046,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Asterix Foods",
+    "org_type": "company",
+    "country": "Israel",
+    "website": "https://pitchbook.com/profiles/company/501380-47#overview",
+    "description": "Israel-based company using plant cell culture to create glycoproteins. Directory categories: Alternative protein type: Plant-based Company focus: Ingredients and inputs Operating region: Africa/Middle East Region: Middle East Technology focus: Ingredient optimization Year founded: 2022 Location: Ness Ziona , Israel [Directory source: https://ecosystem.gfi.org/company/asterix-foods/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/asterix-foods/",
+    "source_id": 1203,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Atura Proteins",
+    "org_type": "company",
+    "country": "United Kingdom",
+    "website": "https://aturaproteins.com/",
+    "description": "UK-based company that produces chickpea, red lentil, and fava bean protein. Directory categories: Alternative protein type: Plant-based Company focus: Ingredients and inputs Operating region: Europe Product type: Ingredients Region: Europe Technology focus: Ingredient optimization Year founded: 2019 Location: Bason Bridge , United Kingdom [Directory source: https://ecosystem.gfi.org/company/atura-proteins/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/atura-proteins/",
+    "source_id": 1210,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Australian Plant Proteins",
+    "org_type": "company",
+    "country": "Australia",
+    "website": "https://www.approteins.com.au",
+    "description": "Australia’s only manufacturer of protein isolate powders (ingredients) extracted from Australian grown pulses (Faba Beans, Yellow Pea, Yellow Lentil, Red Lentil, Mung Beans. Directory categories: Alternative protein type: Plant-based Company focus: Ingredients and inputs Operating region: Australia/New Zealand Product type: Ingredients Region: Asia Pacific Technology focus: End product formulation and manufacturing , Ingredient optimization Year founded: 2016 Location: Horsham , Australia [Directory source: https://ecosystem.gfi.org/company/australian-plant-proteins/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/australian-plant-proteins/",
+    "source_id": 255698,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "AuX Labs",
+    "org_type": "company",
+    "country": "Canada",
+    "website": "https://www.auxlabs.com/",
+    "description": "Canadian food technology company developing animal-free casein proteins through precision fermentation for use in cheese alternatives. Directory categories: Alternative protein type: Fermentation Company focus: Dairy , Ingredients and inputs Operating region: United States and Canada Product type: Ingredients Region: North America Technology focus: Bioprocess design , Host strain development Year founded: 2021 Location: Toronto , Canada [Directory source: https://ecosystem.gfi.org/company/aux-labs/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/aux-labs/",
+    "source_id": 422137,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Avafina Organics",
+    "org_type": "company",
+    "country": "Canada",
+    "website": "https://www.avafina.com/",
+    "description": "Canadian producer of plant-based cheese protein dips (QUEEN CHEESE) and caviar (CHAVIAR) lines. Directory categories: Alternative protein type: Plant-based Company focus: Dairy , Seafood Operating region: United States and Canada Product types: Other dairy , Other meat/seafood Region: North America Technology focus: End product formulation and manufacturing Year founded: 2008 Location: Coquitlam , Canada [Directory source: https://ecosystem.gfi.org/company/avafina-organics/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/avafina-organics/",
+    "source_id": 1214,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Avant Meats",
+    "org_type": "company",
+    "country": "Hong Kong",
+    "website": "https://www.avantmeats.com/",
+    "description": "Hong Kong-based company using a proprietary biotechnology platform to produce cultivated fish products, including food and other functional applications. Directory categories: Alternative protein type: Cultivated Company focus: Meat , Seafood Operating region: Asia Pacific Product type: Ground meat/seafood Region: Asia Pacific Technology focus: End product formulation and manufacturing Year founded: 2018 Location: Hong Kong [Directory source: https://ecosystem.gfi.org/company/avant-meats/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/avant-meats/",
+    "source_id": 1215,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Axiom Foods",
+    "org_type": "company",
+    "country": "United States",
+    "website": "http://axiomfoods.com",
+    "description": "Hypoallergenic producer of protein concentrates. Directory categories: Alternative protein type: Plant-based Company focus: Ingredients and inputs Operating region: United States and Canada Product type: Ingredients Region: North America Technology focus: Ingredient optimization Year founded: 2005 Location: Los Angeles , California , United States [Directory source: https://ecosystem.gfi.org/company/axiom-foods/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/axiom-foods/",
+    "source_id": 1219,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "B.I.F.E",
+    "org_type": "company",
+    "country": "Argentina",
+    "website": "https://www.bife.net.ar/",
+    "description": "Argentina-based bioengineering startup working to innovate cellular agriculture processes. Directory categories: Alternative protein type: Cultivated Company focus: Bioprocessing infrastructure and equipment , Meat Operating region: Latin America Region: Latin America Technology focus: Bioprocess design , Cell culture media Year founded: 2016 Location: Buenos Aires , Argentina [Directory source: https://ecosystem.gfi.org/company/b-i-f-e/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/b-i-f-e/",
+    "source_id": 1222,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Bahama Burger",
+    "org_type": "company",
+    "country": "United States",
+    "website": "https://bahamaburger.com/",
+    "description": "Produces rice curd-based meat that resembles raw ground beef. Directory categories: Alternative protein type: Plant-based Company focus: Meat Operating region: United States and Canada Product type: Ground meat/seafood Region: North America Technology focus: End product formulation and manufacturing Year founded: 1919 Location: Windermere , Florida , United States [Directory source: https://ecosystem.gfi.org/company/bahama-burger/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/bahama-burger/",
+    "source_id": 3714,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Be Better My Friend",
+    "org_type": "company",
+    "country": "Netherlands",
+    "website": "https://bebettermyfriend.com/",
+    "description": "Amsterdam-based developer of the plant-based butter alternative “Be Better plant-butter”, as an easy 1:1 ingredient swap with cow butter with a focus on pastry and bakery applications. Directory categories: Alternative protein type: Plant-based Company focus: Dairy Operating regions: Africa/Middle East , Asia Pacific , Europe Region: Europe Technology focus: End product formulation and manufacturing Year founded: 2021 Location: Amsterdam , Netherlands [Directory source: https://ecosystem.gfi.org/company/be-better-my-friend/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/be-better-my-friend/",
+    "source_id": 1235,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Bean Possible",
+    "org_type": "company",
+    "country": "Brazil",
+    "website": "http://beanpossible.com.br",
+    "description": "Bean Possible is a Brazilian company redefining plant-based ingredients by upcycling common beans into nutritious proteins, fibers, and starches for next-generation food and beverage creations. Directory categories: Alternative protein type: Plant-based Company focus: Ingredients and inputs Operating region: Latin America Product type: Ingredients Region: Latin America Technology focus: Feedstocks , Ingredient optimization Year founded: 2022 Location: Rio de Janeiro , Brazil [Directory source: https://ecosystem.gfi.org/company/bean-possible/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/bean-possible/",
+    "source_id": 343050,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "BeanStalk Brands",
+    "org_type": "company",
+    "country": "Spain",
+    "website": "https://beanstalkbrands.co/",
+    "description": "Spain-based plant-based snacks, sauces, and protein bars. Directory categories: Alternative protein type: Plant-based Company focus: Meat Operating region: Europe Product types: Ground meat/seafood , Other meat/seafood Region: Europe Technology focus: End product formulation and manufacturing Year founded: 2023 Location: Torrejón de Ardoz , Spain [Directory source: https://ecosystem.gfi.org/company/beanstalk-brands/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/beanstalk-brands/",
+    "source_id": 175189,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Before the Butcher",
+    "org_type": "company",
+    "country": "United States",
+    "website": "https://btbfoods.com/",
+    "description": "Plant-based meat including burgers, under the brands “UNCUT” and “Mainstream”. Directory categories: Alternative protein type: Plant-based Company focus: Meat Operating region: United States and Canada Product type: Ground meat/seafood Region: North America Technology focus: End product formulation and manufacturing Year founded: 2017 Location: San Diego , California , United States [Directory source: https://ecosystem.gfi.org/company/before-the-butcher/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/before-the-butcher/",
+    "source_id": 1246,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Benji Gourmet",
+    "org_type": "company",
+    "country": "Mexico",
+    "website": "https://www.benji.com.mx",
+    "description": "Mexico-based company that produces plant-based meat products. Directory categories: Alternative protein type: Plant-based Company focus: Meat Operating regions: Latin America , United States and Canada Product types: Ground meat/seafood , Other meat/seafood Regions: Latin America , North America Technology focus: End product formulation and manufacturing Year founded: 2005 Location: Santiago de Querétaro , Mexico [Directory source: https://ecosystem.gfi.org/company/benji-gourmet/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/benji-gourmet/",
+    "source_id": 1250,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Berief Food",
+    "org_type": "company",
+    "country": "Germany",
+    "website": "https://www.berief-food.de/en/",
+    "description": "German company producing plant-based meat, plant-based milks, plant-based yogurt, and tofu. Directory categories: Alternative protein type: Plant-based Company focus: Dairy Operating region: Europe Product type: Milk Region: Europe Technology focus: End product formulation and manufacturing Year founded: 1985 Location: Beckum , Nordrhein-Westfalen , Germany [Directory source: https://ecosystem.gfi.org/company/berief-food/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/berief-food/",
+    "source_id": 1252,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "BettaF!sh",
+    "org_type": "company",
+    "country": "Germany",
+    "website": "https://bettafish.co/",
+    "description": "Develops plant-based seafood using European seaweed and plant proteins. Directory categories: Alternative protein type: Plant-based Company focus: Seafood Operating region: Europe Product types: Ground meat/seafood , Other meat/seafood Region: Europe Technology focus: End product formulation and manufacturing Year founded: 2020 Location: Berlin , Germany [Directory source: https://ecosystem.gfi.org/company/bettafsh/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/bettafsh/",
+    "source_id": 1254,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Better Balance",
+    "org_type": "company",
+    "country": "Mexico",
+    "website": "https://www.betterbalanceshop.com/",
+    "description": "Mexican producer of plant-based meats, including grounds, burgers, and sausages. Directory categories: Alternative protein type: Plant-based Company focus: Meat Operating region: Latin America Product types: Ground meat/seafood , Other meat/seafood Regions: Latin America , North America Technology focus: End product formulation and manufacturing Year founded: 2022 Location: Monterrey , Mexico [Directory source: https://ecosystem.gfi.org/company/better-balance/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/better-balance/",
+    "source_id": 1255,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Better Dairy",
+    "org_type": "company",
+    "country": "United Kingdom",
+    "website": "https://betterdairy.co.uk/",
+    "description": "UK-based company producing animal-free dairy products using precision fermentation. Directory categories: Alternative protein type: Fermentation Company focus: Dairy Operating region: Europe Product types: Cheese , Milk , Other dairy Region: Europe Technology focus: End product formulation and manufacturing Year founded: 2019 Location: United Kingdom [Directory source: https://ecosystem.gfi.org/company/better-dairy/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/better-dairy/",
+    "source_id": 1540,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Better Foods",
+    "org_type": "company",
+    "country": "United States",
+    "website": "http://www.better-foods.com/sub/products.html",
+    "description": "Company making plant-based meat and dairy products such as milk, cheese, and sauces. Directory categories: Alternative protein type: Plant-based Company focus: Dairy , Meat Operating regions: Asia Pacific , United States and Canada Product types: Cheese , Ground meat/seafood , Other meat/seafood Region: North America Technology focus: End product formulation and manufacturing Year founded: 2022 Location: Watsonville , California , United States [Directory source: https://ecosystem.gfi.org/company/better-foods/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/better-foods/",
+    "source_id": 233335,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "BezMięsny",
+    "org_type": "company",
+    "country": "Poland",
+    "website": "https://bezmiesnymiesny.pl/",
+    "description": "The first online plant-based butcher in Poland, selling its own plant-based meat products. Directory categories: Alternative protein type: Plant-based Company focus: Meat , Seafood Operating region: Europe Product type: Ground meat/seafood Region: Europe Technology focus: End product formulation and manufacturing Year founded: 2016 Location: Warszawa , Poland [Directory source: https://ecosystem.gfi.org/company/bezmiesny/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/bezmiesny/",
+    "source_id": 178343,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Biftek.co",
+    "org_type": "company",
+    "country": "Türkiye",
+    "website": "http://biftek.co/",
+    "description": "Start-up working on cultivated meat and serum-free cell culture media. Directory categories: Alternative protein type: Cultivated Company focus: Bioprocessing infrastructure and equipment , Meat Operating region: United States and Canada Product type: Ground meat/seafood Region: Middle East Technology focus: Cell culture media Year founded: 2020 Location: Gölbaşı , Türkiye [Directory source: https://ecosystem.gfi.org/company/biftek-co/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/biftek-co/",
+    "source_id": 1552,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "BioBQ",
+    "org_type": "company",
+    "country": "United States",
+    "website": "https://www.biobqing.com",
+    "description": "Start-up producing cultivated beef brisket. Directory categories: Alternative protein type: Cultivated Company focus: Meat Operating region: United States and Canada Product type: Whole muscle meat/seafood Region: North America Technology focus: Cell line development , End product formulation and manufacturing Year founded: 2018 Location: Austin , Texas , United States [Directory source: https://ecosystem.gfi.org/company/biobq/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/biobq/",
+    "source_id": 1557,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "BioBrew",
+    "org_type": "company",
+    "country": "United States",
+    "website": "https://biobrew.com/",
+    "description": "BioBrew is a technology platform for precision fermentation at large, commercial scale. Biobrew applies centuries of large-scale fermentation and downstream processing expertise to purpose-built capability for the biotechnology of food and sustainable bio-products, the next evolution of brewing. Directory categories: Alternative protein type: Fermentation Company focus: Bioprocessing infrastructure and equipment Operating regions: Europe , United States and Canada Region: North America Technology focus: Bioprocess design , Host strain development , Target molecule selection Year founded: 2019 Location: New York , New York , United States [Directory source: https://ecosystem.gfi.org/company/biobrew/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/biobrew/",
+    "source_id": 1559,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Biofect Innovations",
+    "org_type": "company",
+    "country": "Canada",
+    "website": "https://www.biofectinnovations.com/",
+    "description": "Canada-based company that utilizes fermentation to produce plant-proteins for a variety of food and beverage industries. Directory categories: Alternative protein type: Fermentation Company focus: Ingredients and inputs Operating region: United States and Canada Region: North America Technology focus: Ingredient optimization Year founded: 2018 Location: Toronto , Canada [Directory source: https://ecosystem.gfi.org/company/biofect-innovations/; checked 2026-11-04.]",
+    "source_url": "https://ecosystem.gfi.org/company/biofect-innovations/",
+    "source_id": 341253,
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Arom & Kryddföreningen",
+    "org_type": "ngo_gov",
+    "country": "Sweden",
+    "website": "https://www.aromochkryddforeningen.se",
+    "description": "Flavour industry association in Sweden. Listed by the European Flavour Association as a National Association Ordinary Member, representing the flavour and aroma sector. [Directory source: https://effa.eu/about/our-members; checked 2026-11-04.]",
+    "source_url": "https://effa.eu/about/our-members",
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "UK Flavour Association",
+    "org_type": "ngo_gov",
+    "country": "United Kingdom",
+    "website": "https://www.ukflavourassociation.org",
+    "description": "Flavour industry association in United Kingdom. Listed by the European Flavour Association as a National Association Ordinary Member, representing the flavour and aroma sector. [Directory source: https://effa.eu/about/our-members; checked 2026-11-04.]",
+    "source_url": "https://effa.eu/about/our-members",
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Danish Flavour Organisation",
+    "org_type": "ngo_gov",
+    "country": "Denmark",
+    "website": "https://www.danishflavourorganisation.com",
+    "description": "Flavour industry association in Denmark. Listed by the European Flavour Association as a National Association Ordinary Member, representing the flavour and aroma sector. [Directory source: https://effa.eu/about/our-members; checked 2026-11-04.]",
+    "source_url": "https://effa.eu/about/our-members",
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Deutscher Verband der Aromenindustrie (DVAI)",
+    "org_type": "ngo_gov",
+    "country": "Germany",
+    "website": "https://aromenverband.de",
+    "description": "Flavour industry association in Germany. Listed by the European Flavour Association as a National Association Ordinary Member, representing the flavour and aroma sector. [Directory source: https://effa.eu/about/our-members; checked 2026-11-04.]",
+    "source_url": "https://effa.eu/about/our-members",
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "NEA Netherlands",
+    "org_type": "ngo_gov",
+    "country": "Netherlands",
+    "website": "https://www.nea-nederland.nl",
+    "description": "Flavour industry association in Netherlands. Listed by the European Flavour Association as a National Association Ordinary Member, representing the flavour and aroma sector. [Directory source: https://effa.eu/about/our-members; checked 2026-11-04.]",
+    "source_url": "https://effa.eu/about/our-members",
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "AROMA Belgium",
+    "org_type": "ngo_gov",
+    "country": "Belgium",
+    "website": "https://aroma-be.org",
+    "description": "Flavour industry association in Belgium. Listed by the European Flavour Association as a National Association Ordinary Member, representing the flavour and aroma sector. [Directory source: https://effa.eu/about/our-members; checked 2026-11-04.]",
+    "source_url": "https://effa.eu/about/our-members",
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Syndicat National des Ingrédients Aromatiques Alimentaires (SNIAA)",
+    "org_type": "ngo_gov",
+    "country": "France",
+    "website": "https://www.sniaa.org",
+    "description": "Flavour industry association in France. Listed by the European Flavour Association as a National Association Ordinary Member, representing the flavour and aroma sector. [Directory source: https://effa.eu/about/our-members; checked 2026-11-04.]",
+    "source_url": "https://effa.eu/about/our-members",
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Verband der Essenzenindustrie (Essenzenverband)",
+    "org_type": "ngo_gov",
+    "country": "Austria",
+    "website": "https://www.dielebensmittel.at",
+    "description": "Flavour industry association in Austria. Listed by the European Flavour Association as a National Association Ordinary Member, representing the flavour and aroma sector. [Directory source: https://effa.eu/about/our-members; checked 2026-11-04.]",
+    "source_url": "https://effa.eu/about/our-members",
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Swiss Flavour and Fragrance Industry Association (SFFIA)",
+    "org_type": "ngo_gov",
+    "country": "Switzerland",
+    "website": "https://www.sffia.org",
+    "description": "Flavour industry association in Switzerland. Listed by the European Flavour Association as a National Association Ordinary Member, representing the flavour and aroma sector. [Directory source: https://effa.eu/about/our-members; checked 2026-11-04.]",
+    "source_url": "https://effa.eu/about/our-members",
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Asociación Española de Fragancias y Aromas Alimentarios (AEFAA)",
+    "org_type": "ngo_gov",
+    "country": "Spain",
+    "website": "https://www.aefaa.com",
+    "description": "Flavour industry association in Spain. Listed by the European Flavour Association as a National Association Ordinary Member, representing the flavour and aroma sector. [Directory source: https://effa.eu/about/our-members; checked 2026-11-04.]",
+    "source_url": "https://effa.eu/about/our-members",
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "AISPEC",
+    "org_type": "ngo_gov",
+    "country": "Italy",
+    "website": "https://aispec.federchimica.it",
+    "description": "Flavour industry association in Italy. Listed by the European Flavour Association as a National Association Ordinary Member, representing the flavour and aroma sector. [Directory source: https://effa.eu/about/our-members; checked 2026-11-04.]",
+    "source_url": "https://effa.eu/about/our-members",
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "AREP",
+    "org_type": "ngo_gov",
+    "country": "Türkiye",
+    "website": "https://www.arep.org.tr",
+    "description": "Flavour industry association in Türkiye. Listed by the European Flavour Association as a National Association Ordinary Member, representing the flavour and aroma sector. [Directory source: https://effa.eu/about/our-members; checked 2026-11-04.]",
+    "source_url": "https://effa.eu/about/our-members",
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "PZPA Poland",
+    "org_type": "ngo_gov",
+    "country": "Poland",
+    "website": "https://www.pzpa.org",
+    "description": "Flavour industry association in Poland. Listed by the European Flavour Association as a National Association Ordinary Member, representing the flavour and aroma sector. [Directory source: https://effa.eu/about/our-members; checked 2026-11-04.]",
+    "source_url": "https://effa.eu/about/our-members",
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "European Flavour Association (EFFA)",
+    "org_type": "ngo_gov",
+    "country": "Belgium",
+    "website": "https://effa.eu",
+    "description": "European flavour industry association representing national associations and companies. Provides scientific coordination, regulatory guidance and industry communication about food flavourings. [Directory source: https://effa.eu/about/about-effa; checked 2026-11-04.]",
+    "source_url": "https://effa.eu/about/about-effa",
+    "reviewed_at": "2026-11-04"
+  },
+  {
+    "name": "Silesia",
+    "org_type": "company",
+    "country": "Germany",
+    "website": "https://www.silesia-aroma.com",
+    "description": "Food flavour house listed by the European Flavour Association as a Company Ordinary Member, with its published address in Neuss, Germany. [Directory source: https://effa.eu/about/our-members; checked 2026-11-04.]",
+    "source_url": "https://effa.eu/about/our-members",
+    "reviewed_at": "2026-11-04"
+  }
+]
