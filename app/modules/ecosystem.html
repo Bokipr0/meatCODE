@@ -498,7 +498,7 @@ function alsoTalk(r,shown){
 function mapSVG(counts,opts){
   opts=opts||{};const max=Math.max(1,...Object.values(counts));
   let pins='';Object.entries(counts).forEach(([c,n])=>{const p=MAP.c[c];if(!p)return;const r=4+9*Math.sqrt(n/max);
-    const lbl=r>=8?`<text class="pinlbl" x="${p[0]}" y="${p[1]+4}" text-anchor="middle">${n}</text>`:'';pins+=`<circle class="halo" cx="${p[0]}" cy="${p[1]}" r="${(r*2.1).toFixed(1)}"/><circle class="pin" tabindex="0" role="button" data-cc="${c}" cx="${p[0]}" cy="${p[1]}" r="${r.toFixed(1)}" aria-label="${esc(COUNTRIES[c])}: ${n} ${n>1?'people':'person'}"><title>${esc(COUNTRIES[c])}: ${n}</title></circle>${lbl}`;});
+    const lbl=r>=8?`<text class="pinlbl" x="${p[0]}" y="${p[1]+4}" text-anchor="middle">${n}</text>`:'';pins+=`<circle class="halo" cx="${p[0]}" cy="${p[1]}" r="${(r*2.1).toFixed(1)}"/><circle class="pin" tabindex="0" role="button" data-cc="${c}" cx="${p[0]}" cy="${p[1]}" r="${r.toFixed(1)}" aria-label="${esc(COUNTRIES[c])}: ${n} ${opts.organizations?(n>1?'organizations':'organization'):(n>1?'people':'person')}"><title>${esc(COUNTRIES[c])}: ${n}</title></circle>${lbl}`;});
   return `<div class="mapframe"><svg class="map" viewBox="0 0 ${MAP.W} ${MAP.H}" role="img" aria-label="${esc(opts.label||'World map of people')}"><path class="land" d="${MAP.d}"/>${pins}</svg></div>`;
 }
 function wireMap(root,fn){root.querySelectorAll('[data-cc]').forEach(c=>{c.onclick=()=>fn(c.dataset.cc);c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fn(c.dataset.cc);}};});}
@@ -535,7 +535,7 @@ function renderTurns(){
   let side='';
   if(wide){const rows=last.rows;const cc={};rows.forEach(x=>{if(x.e.country)cc[x.e.country]=(cc[x.e.country]||0)+1;});
     const sc={academic:0,industry:0,ngo:0};rows.forEach(x=>sc[x.e.sector]++);const tot=rows.length||1;
-    side=`<aside class="side" aria-label="Where they are"><div class="panel"><h3>Where they are</h3>${mapSVG(cc,{label:last.r.entity==='organizations'?'Map of matching organizations':'Map of matching people'})}<p class="note" style="margin:8px 0 0">Pick a country to narrow down.</p></div>
+    side=`<aside class="side" aria-label="Where they are"><div class="panel"><h3>Where they are</h3>${mapSVG(cc,{label:last.r.entity==='organizations'?'Map of matching organizations':'Map of matching people',organizations:last.r.entity==='organizations'})}<p class="note" style="margin:8px 0 0">Pick a country to narrow down.</p></div>
       <div class="panel"><h3>By sector</h3><div class="split">${['academic','industry','ngo'].map(s=>`<i style="width:${sc[s]/tot*100}%;background:var(${SECVAR[s]})"></i>`).join('')}</div>
       <div class="legend">${['academic','industry','ngo'].map(s=>`<span style="--c:var(${SECVAR[s]})">${SECTORS[s]} ${sc[s]}</span>`).join('')}</div></div></aside>`;}
   app.innerHTML=`<div class="results${wide?' wide':''}"><div id="thread">${main}</div>${side}</div>`;
