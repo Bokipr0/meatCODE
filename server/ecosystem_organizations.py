@@ -111,5 +111,6 @@ def read_request(body, pg_rows, call_model):
         # Organization profiles do not establish activity in a particular year.
         if reading['since']:continue
         seen.add(key);matches.append({**row,'evidence':evidence})
-    reading.update(organizations=matches[:limit],search_mode='semantic',query=(prev.get('query',text) if prev and not ORG_WORDS.search(text) else text))
+    refinement = bool(prev and re.match(r'^(only|just|in\b|from\b|and\b|active\b|since\b)',text,re.I))
+    reading.update(organizations=matches[:limit],search_mode='semantic',query=(prev.get('query',text) if refinement else text))
     return reading

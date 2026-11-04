@@ -513,7 +513,7 @@ function viewStart(){
   MODE='people';setNav('people');dock.hidden=true;turns.length=0;
   const cc={};LINKED.forEach(e=>{if(e.country)cc[e.country]=(cc[e.country]||0)+1;});
   app.innerHTML=`<section class="start"><h1>Who should you talk to?</h1>
-   <p class="lead">Describe what you're working on. MeatCODE Ecosystem finds the people, papers, events and courses that fit, and tells you why.</p>
+   <p class="lead">Describe what you're working on. MeatCODE Ecosystem finds the researchers, companies, NGOs, papers, events and courses that fit, and tells you why.</p>
    <form class="composer" id="formA" autocomplete="off"><label class="sr" for="qA">Describe what you're working on</label>
     <textarea id="qA" rows="1" placeholder="e.g. our pea-protein patty tastes beany after grilling"></textarea>
     <button class="send" type="submit" aria-label="Find people"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 16V4M4.5 9.5 10 4l5.5 5.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></form>

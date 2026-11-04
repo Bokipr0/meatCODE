@@ -41,6 +41,11 @@ class OrganizationSearchTests(unittest.TestCase):
         self.assertEqual(result['query'],'Companies for aroma')
         self.assertEqual(len(result['organizations']),1)
 
+    def test_ngo_refinement_keeps_original_subject(self):
+        result=self.search('Only NGOs',prev={'entity':'organizations','query':'Companies for aroma','sector':'industry','limit':5})
+        self.assertEqual(result['query'],'Companies for aroma')
+        self.assertEqual(result['sector'],'ngo')
+
     def test_activity_filter_does_not_invent_activity_dates(self):
         result=self.search('Companies for aroma',model={'since':2025})
         self.assertEqual(result['organizations'],[])
