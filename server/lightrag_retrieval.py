@@ -74,7 +74,7 @@ def status(run):
             'created_at': batch['created_at'], 'relevance_gate': None}
 
 
-def search(question, run, limit=8):
+def search(question, run, limit=8, *, use_vectors=True):
     start = time.monotonic()
     state = status(run)
     if state['status'] != 'imported':
@@ -82,10 +82,12 @@ def search(question, run, limit=8):
     batch = state['batch_id']
     mode, vectors, embedding_issue = 'vector_graph', None, None
     try:
+        if not use_vectors:
+            raise ValueError('Vector retrieval not requested')
         verify_model(batch, state['embedding_model'], run)
         vectors = embedding(question, state['embedding_model'])
     except Exception as exc:
-        mode, embedding_issue = 'lexical_graph', type(exc).__name__
+        mode, embedding_issue = 'lexical_graph', (type(exc).__name__ if use_vectors else 'not_requested')
     limit = max(1, min(int(limit), 20))
     if vectors is not None:
         seeds = run('SELECT item_id,kind,entity_id,relation_id,content,1-(embedding <=> %s::vector) AS score '
