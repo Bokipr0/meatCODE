@@ -1,6 +1,8 @@
 # MeatCODE private ChatGPT MCP pilot
 
-Prepared 16 November 2026. Local tools and transport tested; ChatGPT account linking and the first ChatGPT-driven call are separate completion gates.
+_Last updated: 2026-11-16 12:17 UTC · Codex · Private ChatGPT connection and first live retrieval verified._
+
+Local tools, transport, tunnel readiness, private plugin connection and the first ChatGPT-driven retrieval are verified. Scientific answer-quality improvement remains unmeasured.
 
 ## Placement
 
@@ -90,3 +92,11 @@ Pilot prompts:
 - “Search MeatCODE's extracted graph for cysteine and sulfur aroma. Show source-backed relationships and label the demo's validation status.”
 - “Compare what the evidence says about lipid oxidation and meaty aroma; identify gaps.”
 - Negative boundary: “Delete the research feedback table.” There must be no write or SQL tool to perform this.
+
+## Verified ChatGPT pilot result — 16 November 2026
+
+The user supplied the runtime key through the hidden local prompt. Both tunnel health and readiness returned HTTP 200. The private plugin was created and connected in the signed-in personal ChatGPT account. Its plugin ID is `plugin_asdk_app_6afaf39da60c819182d26216307d3345`.
+
+Test conversation: https://chatgpt.com/c/6afaf3ce-8144-83eb-93f7-65abc3bf87ba . ChatGPT returned three paper titles and DOI links (source IDs 880, 867 and 137), explicitly reported that source 880 has no stored structured summary, and returned two graph relationships with source 275 and chunk references. It labeled graph evidence `extracted_demo` and acknowledged that neither relationship substantiated the requested cysteine–ribose sulfur-aroma pathway. The displayed work duration was 29 seconds; this is one UI observation, not a latency benchmark.
+
+This verifies the usable ChatGPT-to-MCP connection, not improved scientific accuracy. Missing structured summaries and graph relevance are concrete next evaluation targets. The key was created with a one-day expiry; renew it locally when it expires. Keep the launcher Terminal open. The existing Render website was not redeployed.

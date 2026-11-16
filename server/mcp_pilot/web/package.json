@@ -1,0 +1,13 @@
+{
+  "name": "meatcode-mcp-signin",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild signin.js --bundle --minify --format=esm --outfile=dist/signin.js"
+  },
+  "dependencies": {
+    "@neon/auth": "0.8.2",
+    "esbuild": "0.28.2"
+  }
+}
