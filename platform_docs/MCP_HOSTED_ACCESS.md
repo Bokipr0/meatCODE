@@ -1,6 +1,6 @@
 # Hosted MeatCODE MCP — invited collaborators
 
-_Last updated: 2026-11-16 21:40 UTC · Codex · Render live and OAuth configured; owner sign-in verification pending._
+_Last updated: 2026-11-16 21:48 UTC · Codex · Render OAuth sign-in and all three ChatGPT tools verified; invitations sent._
 
 ## Architecture
 
@@ -44,8 +44,14 @@ References: https://developers.openai.com/plugins/deploy/connect-chatgpt · http
 
 Connection page: https://meatcode-mcp.onrender.com/ . MCP resource: https://meatcode-mcp.onrender.com/mcp . Render service `srv-dbtfjv49v7es73agd5vg` in My Workspace / Frankfurt, Starter plan. Dedicated Git branch `codex/private-mcp-pilot`, source `eb8e50fb0cadb72c9622c6cf82f484907cd904e7`. Deployment `dep-dbtfk049v7es73agd9gg` reached live and `/healthz` matched the exact source. The existing website main/dev deployments were not changed.
 
-Live HTTP checks: home/script/config/discovery 200; unauthenticated MCP 401 with correct resource metadata challenge; Neon discovery advertises S256 and CIMD; all three collaborator addresses accepted by invitation check and outsider rejected. OAuth server configured with the exact hosted resource, login and consent pages. Auth verification codes enabled, localhost disabled, only hosted origin trusted. The sign-in UI accepted the owner OTP request; owner was asked to enter it directly in the browser. Full authenticated hosted ChatGPT retrieval remains pending until that handoff finishes. Render connector log retrieval returned a transient 503; live deploy metadata and direct HTTPS checks succeeded.
+Live HTTP checks: home/script/config/discovery 200; unauthenticated MCP 401 with correct resource metadata challenge; Neon discovery advertises S256 and CIMD; all three collaborator addresses accepted by invitation check and outsider rejected. OAuth server configured with the exact hosted resource, login and consent pages. Auth verification codes enabled, localhost disabled, only hosted origin trusted. The sign-in UI accepted the owner OTP request; owner was asked to enter it directly in the browser. The owner subsequently completed sign-in and explicitly approved the ChatGPT connection disclosure; the authenticated hosted ChatGPT test then succeeded. Render connector log retrieval returned a transient 503; live deploy metadata and direct HTTPS checks succeeded.
 
 The authenticated local HTTP protocol fixture also passed using a real EdDSA-signed token plus mocked OIDC userinfo: initialize, exact three-tool discovery, scientific search and refusal of arbitrary SQL. Total focused tests: 12. This does not replace the pending real Neon OAuth browser flow.
 
-ChatGPT created the hosted custom-plugin entry and reached its connection-disclosure dialog. Automatic approval review rejected the final Connect action because relevant chats/memories might be shared beyond the previously authorized scope. User approval was requested; do not retry until it arrives. The service remains protected, and collaborator invitation emails have not been sent.
+ChatGPT created the hosted custom-plugin entry and reached its connection-disclosure dialog. Automatic approval review initially rejected the final Connect action because relevant chats/memories might be shared beyond the previously authorized scope. The owner subsequently explicitly approved that disclosure. The account is now connected using OAuth; collaborator invitation emails were sent after the hosted scientific smoke test succeeded.
+
+## Completed hosted smoke and invitations
+
+Observed ChatGPT plugin settings for `plugin_asdk_app_6afb78301cd881919eeef93bbb884dc7`: exact hosted `/mcp` address, OAuth supported/used, owner account connected. A fresh ChatGPT conversation selected MeatCODE research and returned successful results for search, fetch and search_knowledge_graph. Literature source IDs 880 and 144 were returned; fetch 880 explicitly reported no stored structured summary. Graph query `cysteine sulfur aroma`, limit 3 returned three seeds and two neighbors, labeled `extracted_demo`, with source 275. ChatGPT acknowledged indirect relevance rather than claiming a direct cysteine–sulfur pathway. UI work duration was 13 seconds, a single smoke observation rather than a quality or latency benchmark.
+
+Gmail confirmed SENT for two invitation messages: one to Yochai’s approved contractor address with his approved Gmail copied, and one to Daniel’s approved GFI address. Both contain the hosted connection page, exact `/mcp` URL, OAuth setup steps, test prompt and pilot limitations. No credentials were shared. Invitations being sent does not establish either collaborator has signed in or installed the custom connection. Their account/workspace controls may restrict custom MCP creation. The hosted service does not require the local tunnel or owner computer.
