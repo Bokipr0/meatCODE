@@ -1,6 +1,6 @@
 # Hosted MeatCODE MCP — invited collaborators
 
-_Last updated: 2026-11-16 · Codex · Hosted adapter prepared; live sign-in verification pending._
+_Last updated: 2026-11-16 21:40 UTC · Codex · Render live and OAuth configured; owner sign-in verification pending._
 
 ## Architecture
 
@@ -39,3 +39,13 @@ Before calling deployment complete: verify Render deploy is live, `/healthz` mat
 Send the deployed connection page to invited collaborators. Each signs into their own ChatGPT account and adds the service's `/mcp` address as a custom MCP server using OAuth, subject to their ChatGPT account/workspace policies. A published public-directory plugin is a separate process; a plain link does not automatically install an unpublished custom plugin in another account.
 
 References: https://developers.openai.com/plugins/deploy/connect-chatgpt · https://developers.openai.com/plugins/build/auth · https://neon.com/docs/auth/guides/plugins/oauth-provider · https://neon.com/docs/auth/guides/plugins/email-otp · https://render.com/docs/deploys
+
+## Deployment observed — 16 November 2026
+
+Connection page: https://meatcode-mcp.onrender.com/ . MCP resource: https://meatcode-mcp.onrender.com/mcp . Render service `srv-dbtfjv49v7es73agd5vg` in My Workspace / Frankfurt, Starter plan. Dedicated Git branch `codex/private-mcp-pilot`, source `eb8e50fb0cadb72c9622c6cf82f484907cd904e7`. Deployment `dep-dbtfk049v7es73agd9gg` reached live and `/healthz` matched the exact source. The existing website main/dev deployments were not changed.
+
+Live HTTP checks: home/script/config/discovery 200; unauthenticated MCP 401 with correct resource metadata challenge; Neon discovery advertises S256 and CIMD; all three collaborator addresses accepted by invitation check and outsider rejected. OAuth server configured with the exact hosted resource, login and consent pages. Auth verification codes enabled, localhost disabled, only hosted origin trusted. The sign-in UI accepted the owner OTP request; owner was asked to enter it directly in the browser. Full authenticated hosted ChatGPT retrieval remains pending until that handoff finishes. Render connector log retrieval returned a transient 503; live deploy metadata and direct HTTPS checks succeeded.
+
+The authenticated local HTTP protocol fixture also passed using a real EdDSA-signed token plus mocked OIDC userinfo: initialize, exact three-tool discovery, scientific search and refusal of arbitrary SQL. Total focused tests: 12. This does not replace the pending real Neon OAuth browser flow.
+
+ChatGPT created the hosted custom-plugin entry and reached its connection-disclosure dialog. Automatic approval review rejected the final Connect action because relevant chats/memories might be shared beyond the previously authorized scope. User approval was requested; do not retry until it arrives. The service remains protected, and collaborator invitation emails have not been sent.

@@ -1,5 +1,6 @@
 # Last updated: 2026-11-16 · Codex · OAuth and invitation boundary tests.
 import asyncio
+import json
 import time
 import unittest
 from types import SimpleNamespace
@@ -56,6 +57,30 @@ class OAuthBoundaries(unittest.IsolatedAsyncioTestCase):
 
 
 class HostedProtocol(unittest.TestCase):
+    def test_authenticated_protocol_discovers_and_calls_scientific_tools(self):
+        private = Ed25519PrivateKey.generate()
+        verifier = InvitedTokenVerifier(SETTINGS)
+        verifier.jwks = SimpleNamespace(get_signing_key_from_jwt=lambda _: SimpleNamespace(key=private.public_key()))
+        verifier.identity = AsyncMock(return_value={'sub': 'owner', 'email': 'invited@example.org', 'email_verified': True})
+        token = jwt.encode({'iss': SETTINGS.issuer, 'aud': SETTINGS.resource, 'exp': int(time.time()) + 600,
+                            'sub': 'owner', 'client_id': 'test-client', 'scope': 'openid email'}, private, algorithm='EdDSA')
+        backend = SimpleNamespace(search=lambda query: {'results': [{'id': '880', 'title': query}]},
+                                  fetch=lambda id: {'id': id}, graph_search=lambda query, limit: {'items': [], 'limit': limit})
+        headers = {'Authorization': 'Bearer ' + token, 'Accept': 'application/json, text/event-stream'}
+        with TestClient(create_hosted_app(SETTINGS, backend, verifier), base_url='https://mcp.example.org', headers=headers) as client:
+            init = client.post('/mcp', json={'jsonrpc': '2.0', 'id': 1, 'method': 'initialize', 'params': {
+                'protocolVersion': '2025-11-25', 'capabilities': {}, 'clientInfo': {'name': 'test', 'version': '1'}}})
+            self.assertEqual(init.status_code, 200)
+            listed = client.post('/mcp', json={'jsonrpc': '2.0', 'id': 2, 'method': 'tools/list'}).json()
+            self.assertEqual({tool['name'] for tool in listed['result']['tools']}, {'search', 'fetch', 'search_knowledge_graph'})
+            result = client.post('/mcp', json={'jsonrpc': '2.0', 'id': 3, 'method': 'tools/call', 'params': {
+                'name': 'search', 'arguments': {'query': 'cysteine'}}}).json()
+            payload = result['result'].get('structuredContent') or json.loads(result['result']['content'][0]['text'])
+            self.assertEqual(payload['results'][0]['id'], '880')
+            denied = client.post('/mcp', json={'jsonrpc': '2.0', 'id': 4, 'method': 'tools/call', 'params': {
+                'name': 'run_sql', 'arguments': {'query': 'DELETE FROM sources'}}}).json()
+            self.assertTrue(denied['result']['isError'])
+
     def test_discovery_and_anonymous_calls_never_reach_backend(self):
         backend = SimpleNamespace(search=lambda _: self.fail('Anonymous request reached scientific data'))
         verifier = SimpleNamespace(verify_token=AsyncMock(return_value=None))
