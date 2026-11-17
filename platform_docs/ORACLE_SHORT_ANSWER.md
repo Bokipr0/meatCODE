@@ -1,6 +1,6 @@
 # Oracle - short answer first, detail on request
 
-_Last updated: 2026-11-17 · Codex · Implemented and locally verified; release verification follows below._
+_Last updated: 2026-11-17 · Codex · Live on development and production; local browser verification passed._
 
 Lior requested a less formal, less academic first answer that leads with the information most useful to the actual question, plus a clickable way to expand. This is the specific authorization to implement the presentation change; the broader development-priority PDF remains reference material.
 
@@ -37,4 +37,10 @@ Automatic approval review rejected a proposed direct Claude style smoke because 
 
 ## Deployment record
 
-Prepared on isolated `codex/oracle-answer-disclosure` from the verified website main/dev base `33cc8b8`. The canonical working folder has extensive unrelated changes; it must not be committed or deployed wholesale. Stage and verify the narrow release before production, preserving the standalone MCP branch/service.
+Source release `7081ab48021eb3dbd053824bcc535f4c897d36e0`, isolated `codex/oracle-answer-disclosure` from website main/dev base `33cc8b8`.
+
+- Development: `dep-dbu76hajnfac73e69c5g` terminal **live**; public `/api/version` confirmed exact source and `/api/health` returned 200. These health fields check configuration presence, not real model/database execution. The asset URL correctly retained the existing sign-in gate (unauthenticated 401).
+- Production: the same source was fast-forwarded to main; deployment `dep-dbu77q5bedkc73f6b4ig` is terminal **live**. Public `/api/version` confirmed exact source `7081ab48021eb3dbd053824bcc535f4c897d36e0` and `/api/health` returned 200. No real model question was submitted.
+- Scoped edits were merged into the canonical working folder without publishing its extensive unrelated changes. Its existing local turn status/synchronization arguments were preserved; canonical inline-script and Python checks passed.
+- Local preview screenshots: `data/verification/oracle-short-answer-20261117/collapsed-local-fixture.jpg` and `expanded-local-fixture.jpg`. They show sample answers, not a Claude quality evaluation.
+- The separate hosted MCP branch/service remains unchanged.
