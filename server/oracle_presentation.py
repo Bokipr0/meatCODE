@@ -20,7 +20,7 @@ ANSWER_STYLE = (
     "that marker behind an Expand answer control. Do not repeat the short answer in the detail, "
     "and do not tell the user to click a button. Do not emit a details marker without useful detail. "
     "Use plain prose paragraphs separated by blank lines, with no markdown headings, bullets or code blocks. "
-    "After all prose, add a final 'Follow-ups:' line containing 2-3 short follow-up questions separated by ' · '."
+    "Do not add suggested follow-up questions or a Follow-ups line."
 )
 
 

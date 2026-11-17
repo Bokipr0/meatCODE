@@ -1,9 +1,11 @@
+// Updated 2026-11-17 20:26 UTC · Codex · Denver panels below the character, with non-overlapping space.
 /* Updated 2026-10-31 · Persistent Denver at Oracle's viewport edge; first-party research notes. */
 (function(){
  'use strict';
  if(document.getElementById('mcDenver') || !customElements.get('denver-companion'))return;
  var css=document.createElement('style');
- css.textContent='#mcDenver{position:fixed;right:0;top:clamp(100px,24vh,220px);width:min(360px,100vw);height:min(390px,calc(100dvh - 110px));z-index:2050;pointer-events:none}#mcDenver[hidden]{display:none!important}@media(max-height:550px){#mcDenver{top:70px;height:calc(100dvh - 75px)}}';
+ css.textContent='#mcDenver{position:fixed;right:0;top:clamp(100px,24vh,220px);width:min(360px,100vw);height:min(650px,calc(100dvh - clamp(100px,24vh,220px) - 12px));z-index:2050;pointer-events:none}#mcDenver[hidden]{display:none!important}@media(max-height:550px){#mcDenver{top:70px;height:calc(100dvh - 75px)}}';
+ css.textContent+='@media(max-width:999px){body.mc-denver-panel-open #oracle .canvas{overflow-y:auto}body.mc-denver-panel-open #mcDenver{position:relative;top:auto;right:auto;width:100%;height:400px;max-height:none;flex-shrink:0}body.mc-denver-panel-open #oracle .oracle-wrap{min-height:500px}}';
  document.head.appendChild(css);
  var pet=document.createElement('denver-companion');pet.id='mcDenver';pet.setAttribute('viewport','');pet.setAttribute('mood','curious');pet.setAttribute('motion-mode','system');pet.setAttribute('data-clarity-mask','true');pet.setAttribute('aria-label','Denver, your MeatCODE companion');
  var context=null,pending=false;
@@ -22,7 +24,7 @@
    pet.addEventListener('denver:frame',revealAnimation);
    still.addEventListener('toggle',revealAnimation);
  }
- sync();document.body.appendChild(pet);window.addEventListener('hashchange',sync);
+ sync();(document.querySelector('#oracle .canvas')||document.body).prepend(pet);window.addEventListener('hashchange',sync);
  window.addEventListener('pageshow',()=>{if(pet.isConnected&&!pet.hidden)pet.resize();});
  // Each offer arrives only after the research server commits an eligible answer.
  const questions = [];
@@ -36,7 +38,7 @@
    <button data-rating="unhelpful">Poor</button></div>
    <button class="skip">Skip</button><small role="status"></small>`;
  const design = document.createElement('style');
- design.textContent = `.answer-rating{position:absolute;z-index:3;right:var(--denver-edge-width,49px);top:15%;width:232px;max-width:calc(100% - 58px);max-height:80%;overflow:auto;padding:14px;border:1px solid #cbbd9f;border-radius:14px;background:#fff9e9;box-shadow:0 3px 12px #36222524;pointer-events:auto}
+ design.textContent = `.answer-rating{position:absolute;z-index:3;right:8px;top:var(--denver-panel-top,256px);width:232px;max-width:calc(100% - 16px);max-height:calc(100% - var(--denver-panel-top,256px) - 8px);overflow:auto;padding:14px;border:1px solid #cbbd9f;border-radius:14px;background:#fff9e9;box-shadow:0 3px 12px #36222524;pointer-events:auto}
  .answer-rating[hidden]{display:none}.answer-rating strong{font-size:16px}.answer-rating .which{font-size:12px;line-height:1.35;overflow-wrap:anywhere;margin:5px 0 10px;color:#685c54}
  .choices{display:flex;gap:5px}.choices button{flex:1;padding:6px 2px;color:#165e58;background:#fff;border:1px solid #b7c9c2;border-radius:7px}
  .answer-rating .skip{margin-top:7px;border:none;background:none;text-decoration:underline;color:#685c54}.answer-rating small:empty{display:none}`;

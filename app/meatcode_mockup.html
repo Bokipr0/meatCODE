@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- Last updated: 2026-11-17 15:27 UTC · Codex · Short opening, expandable answer detail and saved boundary. -->
+<!-- Last updated: 2026-11-17 20:26 UTC · Codex · Direct evidence links, complete stance counts and Denver below-character panels. -->
 <meta charset="utf-8" />
 <!-- Last updated: 2026-10-28 · Codex UI/UX · optional masked research integration and content-free Oracle lifecycle hooks; no question/answer payloads. -->
 <!-- Prior update: 2026-10-27 11:37 UTC · Codex UI/UX · removed Simulate sidebar recents, SLR families and presets; Analytics zone switch now exposes the Analytics nav chip (legacy alias supported). -->
@@ -1216,7 +1216,7 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
   background: rgba(42, 31, 31, 0.45);
   backdrop-filter: blur(4px);
   display: none; align-items: center; justify-content: center;
-  z-index: 200; padding: 40px;
+  z-index: 5000; padding: 40px;
 }
 .modal-backdrop.open { display: flex; }
 .modal {
@@ -2319,12 +2319,13 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 #oracleDenverPeek summary { display:block; cursor:pointer; line-height:0; list-style:none; }
 #oracleDenverPeek summary::-webkit-details-marker { display:none; }
 #oracleDenverPeek summary svg { display:block; image-rendering:pixelated; }
-#oracleDenverPeek .denver-paper { position:absolute; right:100%; top:50%; transform:translateY(-50%); width:min(228px,calc(100vw - 78px)); padding:14px; border:1px solid #cbbd9f; border-radius:14px; background:#fff9e9; color:#362225; }
+#oracleDenverPeek .denver-paper { position:absolute; right:8px; top:100%; width:min(228px,calc(100vw - 78px)); padding:14px; border:1px solid #cbbd9f; border-radius:14px; background:#fff9e9; color:#362225; }
 #oracleDenverPeek textarea { display:block; width:100%; min-height:72px; margin:8px 0; padding:6px; font:inherit; }
 #oracleDenverPeek button { background:#165e58; color:white; border:0; border-radius:6px; padding:7px 10px; cursor:pointer; }
 #oracleDenverPeek small { display:block; }
 @media (max-width:600px), (max-height:550px) { #oracleDenverPeek summary svg { width:47px; height:147px; } }
 
+@media(min-width:1000px){body.mc-denver-panel-open #oracle .oracle-wrap{max-width:calc(100% - 248px);margin-right:248px;}}
 #oracle .canvas { overflow: hidden; display: flex; flex-direction: column; }
 #oracle .oracle-wrap { display: flex; flex-direction: column; height: 100%; min-height: 0; width: 100%; max-width: 1080px; }
 #oracle .oracle-heading, #oracle .oracle-composer { flex: 0 0 auto; }
@@ -2373,6 +2374,19 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
   background: var(--surface); border: 1.5px dashed var(--line-strong); border-radius: 16px;
   padding: 14px 18px; font-size: 13px; line-height: 1.55; color: var(--ink-faint);
 }
+
+
+.oracle-sources-list .oracle-paper { display:flex; flex-wrap:wrap; gap:8px; align-items:center; width:100%; padding:10px 12px; border:1px solid var(--line); border-left:4px solid var(--ink-faint); border-radius:12px; background:var(--surface); }
+.oracle-paper-title { flex:1 1 65%; color:inherit; text-decoration:underline; font:inherit; font-size:13px; text-align:left; }
+.oracle-stance { font-size:11px; font-weight:700; }
+.oracle-paper-access { border:0; cursor:pointer; font:inherit; font-size:11px; text-decoration:underline; background:transparent; color:inherit; }
+.oracle-paper[data-stance="agree"],.oracle-cite-chip[data-stance="agree"] { color:#14604b; border-color:#14604b; background:#edf7f1; }
+.oracle-paper[data-stance="oppose"],.oracle-cite-chip[data-stance="oppose"] { color:#963f29; border-color:#963f29; background:#fff1eb; }
+.oracle-paper[data-stance="neutral"],.oracle-cite-chip[data-stance="neutral"] { color:#365e88; border-color:#365e88; background:#edf3fa; }
+.oracle-paper[data-stance="unassessed"] { color:var(--ink-dim); }
+.oracle-consensus-claim { font-size:12px!important; color:var(--ink-dim); }
+button.oracle-cite-chip { border:0; font-family:inherit; cursor:pointer; }
+.oracle-cite-chip:focus-visible,.oracle-paper-title:focus-visible { outline:2px solid var(--wine); outline-offset:3px; }
 
 /* consensus chip — rendered ONLY when the server sends an `event: consensus` */
 .oracle-consensus {
@@ -5430,7 +5444,16 @@ function mcRenderConversation(chat) {
       anyAnswer = true;
       host.innerHTML = '<div class="oracle-answer"><h3>Answer</h3><div class="oracle-answer-body"></div></div>';
       var body = host.querySelector('.oracle-answer-body');
-      mcRenderAnswerContent(body, t.a, {}, t.brief_chars);
+      var savedSources = Array.isArray(t.sources) ? t.sources : [], savedMap = {};
+      savedSources.forEach(function(p){savedMap[p.id]=p;});
+      mcRenderAnswerContent(body, t.a, savedMap, t.brief_chars);
+      mcPaintCitations(body,t.consensus);
+      if(savedSources.length){
+        var evidence=document.createElement('div');evidence.className='oracle-evidence';
+        evidence.innerHTML='<div class="oracle-evidence-label">Sources</div><div class="saved-consensus"></div><div class="oracle-sources-list"></div>';
+        host.querySelector('.oracle-answer').appendChild(evidence);
+        mcRenderEvidence(evidence.querySelector('.oracle-sources-list'),evidence.querySelector('.saved-consensus'),savedSources,t.consensus);
+      }
     } else {
       host.innerHTML = '<div class="oracle-turn-note">This question was saved before answers were kept in your history — ' +
                        'ask it again to get a fresh grounded answer.</div>';
@@ -5551,6 +5574,8 @@ function mcLoadOracleChats() {
           turns.push({
             q: t.q.trim().slice(0, 300),
             a: (typeof t.a === 'string') ? t.a.slice(0, MC_ORACLE_ANS_MAX) : '',
+            sources: mcCleanOracleSources(t.sources),
+            consensus: t.consensus && typeof t.consensus === 'object' ? t.consensus : null,
             brief_chars: Number.isInteger(t.brief_chars) && t.brief_chars > 0 && t.brief_chars <= String(t.a || '').length ? t.brief_chars : null
           });
         });
@@ -6035,6 +6060,7 @@ function streamSSE(res, researchTurn) {
   var fullText    = '';                // file its answer against a later question
   var briefEnd    = null;              // optional server boundary; legacy streams use paragraph/word fallback
   var askedTurn   = false;             // guided Oracle: this turn was a question back, not an answer
+  var sourceRows  = [];
   var citedIds    = {};   // id -> source object, for modal lookup
 
   var reader  = res.body.getReader();
@@ -6081,86 +6107,20 @@ function streamSSE(res, researchTurn) {
           if (window.MCResearch && Array.isArray(arr)) window.MCResearch.sourceCount(researchTurn, arr.length, arr.map(function(s){return s.id;}));
           window.__REAKTZIA_SOURCES = {};
           arr.forEach(function (s) { window.__REAKTZIA_SOURCES[s.id] = s; });
-          var citeHTML = function (s) {
-            return '<div class="oracle-cite">' +
-                     '<span class="oracle-cite-chip" data-paper-id="' + s.id + '">[' + s.id + ']</span>' +
-                     '<span class="oracle-cite-text">' + escapeHtml(s.title) + ' — ' + (s.year || '') +
-                     (s.journal ? (' · ' + escapeHtml(s.journal)) : '') + '</span>' +
-                   '</div>';
-          };
-          // Show the first 2 sources; the rest hide behind a "+N more" toggle.
-          var __extra = arr.length - 2;
-          sourcesEl.innerHTML = arr.slice(0, 2).map(citeHTML).join('') +
-            (__extra > 0
-              ? '<div class="oracle-cite-more" id="oracleCiteMore" style="display:none">' + arr.slice(2).map(citeHTML).join('') + '</div>' +
-                '<button type="button" class="oracle-cite-expand" id="oracleCiteExpand">+ ' + __extra + ' more source' + (__extra === 1 ? '' : 's') + '</button>'
-              : '');
-          // ADDITIVE `claims` key: when a source carries extracted claims, list them under
-          // the pills tagged with the same real [id]. Absent on older servers → nothing shows.
-          var __claims = [];
-          arr.forEach(function (s) {
-            if (!s || !s.claims) return;
-            var list = Array.isArray(s.claims) ? s.claims : [s.claims];
-            list.forEach(function (c) {
-              var txt = (c && typeof c === 'object') ? (c.text || c.claim || c.statement || '') : c;
-              txt = String(txt == null ? '' : txt).trim();
-              if (txt) __claims.push({ id: s.id, text: txt });
-            });
-          });
-          if (__claims.length) {
-            sourcesEl.innerHTML +=
-              '<div class="oracle-claims">' +
-                '<div class="oracle-claims-label">Claims from these sources</div>' +
-                __claims.slice(0, 6).map(function (c) {
-                  return '<div class="oracle-claim">' +
-                           '<span class="oracle-cite-chip" data-paper-id="' + escapeHtml(String(c.id)) + '">[' + escapeHtml(String(c.id)) + ']</span>' +
-                           '<span>' + escapeHtml(c.text) + '</span>' +
-                         '</div>';
-                }).join('') +
-              '</div>';
-          }
-          var __exp = sourcesEl.querySelector('#oracleCiteExpand');
-          if (__exp) __exp.addEventListener('click', function () {
-            var m = sourcesEl.querySelector('#oracleCiteMore');
-            if (m) m.style.display = 'flex';
-            __exp.style.display = 'none';
-          });
-          if (arr.length === 0) {
-            // "No matches" note is DEV-ONLY (visit with ?dev=1 to see it); hidden from normal users.
-            if (/[?&]dev=1(?:&|$)/.test(location.search)) {
-              sourcesEl.innerHTML = '<div class="oracle-cite"><span class="oracle-cite-text">No matches in the database — answering from the question alone.</span></div>';
-            } else {
-              var __srcBlock = document.getElementById('oracleSources');
-              if (__srcBlock) __srcBlock.style.display = 'none';
-            }
-          }
-          attachCiteHandlers(sourcesEl);
+          arr = mcCleanOracleSources(arr);
+          sourceRows = arr;
+          arr.forEach(function(s){ citedIds[s.id] = s; });
+          if (turnRec) { turnRec.sources = arr; mcSaveOracleChats(); }
+          mcRenderEvidence(sourcesEl, consensusEl, arr, null);
+
         } catch (e) { /* ignore malformed */ }
       } else if (event === 'consensus') {
-        // ADDITIVE server event. Rendered ONLY when it actually arrives, and only with the
-        // counts the server sent — nothing is inferred or invented.
         try {
-          var cs  = JSON.parse(data) || {};
-          var num = function (a, b) {
-            var v = (cs[a] !== undefined) ? cs[a] : cs[b];
-            v = Number(v);
-            return isFinite(v) && v > 0 ? Math.round(v) : 0;
-          };
-          var sup = num('support', 'support_count');
-          var opp = num('oppose',  'oppose_count');
-          var neu = num('neutral', 'neutral_count');
-          if (consensusEl && (sup || opp || neu)) {
-            consensusEl.innerHTML =
-              '<div class="oracle-consensus" title="How the retrieved sources line up on this question">' +
-                '<span class="cs-lbl">Consensus</span>' +
-                '<span class="cs support"><b>' + sup + '</b> support</span>' +
-                '<span class="cs-sep">·</span>' +
-                '<span class="cs oppose"><b>' + opp + '</b> oppose</span>' +
-                '<span class="cs-sep">·</span>' +
-                '<span class="cs neutral"><b>' + neu + '</b> neutral</span>' +
-              '</div>';
-          }
-        } catch (e) { /* malformed / absent → no chip, never a fabricated one */ }
+          var cs = JSON.parse(data) || {};
+          if (turnRec) { turnRec.consensus = cs; mcSaveOracleChats(); }
+          mcRenderEvidence(sourcesEl, consensusEl, sourceRows, cs);
+          mcPaintCitations(bodyEl, cs);
+        } catch (e) { /* unavailable classifications stay explicitly not assessed */ }
       } else if (event === 'ask') {
         // Guided Oracle (flag oracle_guided): one short question back instead of an answer.
         askedTurn = true;
@@ -6202,27 +6162,11 @@ function finalizeAnswer(fullText, bodyEl, followsEl, citedIds, relatedEl, turnRe
   var cleanText = mainText.trim();
   if (Number.isInteger(briefEnd)) briefEnd = Math.max(0, briefEnd - (mainText.length - mainText.trimStart().length));
   mcRenderAnswerContent(bodyEl, cleanText, citedIds, briefEnd);
-  if (followsText) {
-    var followups = followsText.split(/\s+·\s+|·|^\d\.\s|\n-\s*/).map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 4);
-    followsEl.innerHTML =
-      '<div class="oracle-followups">' +
-        '<div class="oracle-followups-label">Try next</div>' +
-        followups.map(function (f) {
-          return '<button class="oracle-followup">' + escapeHtml(f) + '</button>';
-        }).join('') +
-      '</div>';
-    followsEl.querySelectorAll('.oracle-followup').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        if (oracleTextarea) oracleTextarea.value = btn.textContent;
-        askOracle();
-      });
-    });
-  }
-  // Keep the finished answer in the conversation store so the rail can replay this thread.
+  // Keep only the requested expansion control; no suggested questions or molecule requests.
+  if (followsEl) followsEl.innerHTML = '';
+  if (relatedEl) relatedEl.innerHTML = '';
+  mcPaintCitations(bodyEl, turnRec && turnRec.consensus);
   mcStoreTurnAnswer(cleanText, turnRec, briefEnd);
-  // Once the answer has settled, surface related molecules from the same corpus. mainText is
-  // the prose (follow-ups stripped) so the lookup reflects what was actually discussed.
-  mcFetchRelatedMolecules(mcOracleActiveQuestion, mainText, relatedEl);
   mcThreadFollow();
 }
 
@@ -6329,7 +6273,9 @@ function renderAnswerHTML(text, citedIds) {
   return paras.map(function (p) {
     // Replace [12] markers with clickable inline chips
     var html = escapeHtml(p).replace(/\[(\d+)\]/g, function (_, id) {
-      return '<span class="oracle-cite-chip inline" data-paper-id="' + id + '">[' + id + ']</span>';
+      var source = citedIds[id] || {}, href = window.MCOracleEvidence && MCOracleEvidence.paperURL(source);
+      return href ? '<a class="oracle-cite-chip inline" data-paper-id="' + id + '" href="' + escapeHtml(href) + '" target="_blank" rel="noopener">[' + id + ']</a>' :
+        '<button type="button" class="oracle-cite-chip inline" data-paper-id="' + id + '">[' + id + ']</button>';
     });
     return '<p>' + html + '</p>';
   }).join('');
@@ -6341,8 +6287,43 @@ function escapeHtml(s) {
   });
 }
 
+function mcCleanOracleSources(rows) {
+  return (Array.isArray(rows)?rows:[]).slice(0,20).filter(function(p){return p && Number.isSafeInteger(Number(p.id)) && Number(p.id)>0;}).map(function(p){
+    return {id:Number(p.id),title:String(p.title||p.name||'').slice(0,600),year:p.year,journal:String(p.journal||'').slice(0,200),doi:String(p.doi||'').slice(0,300),url:String(p.url||'').slice(0,2000)};
+  });
+}
+function mcPaintCitations(root, data) {
+  var map = {};
+  ((data && data.per_source) || []).forEach(function(p){map[String(p.id)] = p.stance === 'support' ? 'agree' : p.stance;});
+  root.querySelectorAll('[data-paper-id]').forEach(function(el){
+    var stance = map[el.getAttribute('data-paper-id')] || 'unassessed';
+    if (['agree','oppose','neutral'].indexOf(stance)<0) stance='unassessed';
+    el.setAttribute('data-stance',stance);
+  });
+}
+function mcRenderEvidence(list, summary, sources, data) {
+  if (!window.MCOracleEvidence) return;
+  var cs = MCOracleEvidence.consensus(sources,data);
+  list.innerHTML = sources.map(function(p){
+    var id=escapeHtml(String(p.id)), href=MCOracleEvidence.paperURL(p);
+    var stance=(cs.per_source.filter(function(x){return String(x.id)===String(p.id);})[0]||{}).stance||'unassessed';
+    return '<div class="oracle-paper" data-stance="'+stance+'">'+
+      (href?'<a class="oracle-paper-title" href="'+escapeHtml(href)+'" target="_blank" rel="noopener">':'<button type="button" class="oracle-paper-title oracle-cite-chip" data-paper-id="'+id+'">')+
+      '['+id+'] '+escapeHtml(p.title||p.name||'Untitled paper')+(href?'</a>':'</button>')+
+      '<span class="oracle-stance">'+MCOracleEvidence.label(stance)+'</span>'+
+      '<button type="button" class="oracle-paper-access oracle-cite-chip" data-paper-id="'+id+'">Details / PDF</button></div>';
+  }).join('');
+  attachCiteHandlers(list);
+  if(summary) summary.innerHTML = cs.total ? '<div class="oracle-consensus" title="Model assessment of these retrieved papers, not a systematic literature review">'+
+    '<span class="cs-lbl">'+cs.total+' sources</span><span class="cs support"><b>'+cs.agree+'</b> support</span> · '+
+    '<span class="cs oppose"><b>'+cs.oppose+'</b> oppose</span> · <span class="cs neutral"><b>'+cs.neutral+'</b> neutral</span>'+
+    (cs.unassessed?' · <span class="cs"><b>'+cs.unassessed+'</b> not assessed</span>':'')+'</div>'+
+    (cs.central_claim?'<p class="oracle-consensus-claim">Assessed claim: '+escapeHtml(cs.central_claim)+'</p>':''):'';
+}
+
 function attachCiteHandlers(root) {
   root.querySelectorAll('.oracle-cite-chip[data-paper-id]').forEach(function (chip) {
+    if (chip.tagName === 'A' && chip.getAttribute('href')) return;
     chip.addEventListener('click', function () {
       var id = chip.getAttribute('data-paper-id');
       openPaperModal(id);
@@ -6358,21 +6339,34 @@ var modalBody     = document.getElementById('paperModalBody');
 var modalCloseEl  = document.getElementById('paperModalClose');
 
 function openPaperModal(id) {
-  modalBody.innerHTML =
+  var cached = (window.__REAKTZIA_SOURCES || {})[id];
+  modalBody.innerHTML = cached ? renderPaperModal(cached) :
     '<div class="oracle-loading" style="padding: 0;"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="label">Loading paper…</span></div>';
   modalBackdrop.classList.add('open');
-  fetch(API_BASE + '/api/papers/' + id)
+  modalBody.dataset.paperId=String(id);
+  if(cached)mcBindPaperPDF(id);
+  fetch(API_BASE + '/api/papers/' + encodeURIComponent(id), {credentials:'same-origin'})
     .then(function (r) { if (!r.ok) throw new Error('Not found'); return r.json(); })
-    .then(function (p) { modalBody.innerHTML = renderPaperModal(p); })
+    .then(function (p) { if(modalBody.dataset.paperId!==String(id))return; modalBody.innerHTML = renderPaperModal(p); mcBindPaperPDF(id); })
     .catch(function (e) {
-      modalBody.innerHTML =
-        '<h2>Paper unavailable</h2>' +
-        '<div class="modal-meta">id ' + escapeHtml(id) + '</div>' +
-        '<p style="color:var(--ink-dim); font-size:14px;">' +
-          'Couldn\'t load this paper. The most common cause is that the FastAPI server isn\'t running on port 8000 — start it from the <code>reaktzia-mvp/</code> folder.' +
-        '</p>';
+      if(modalBody.dataset.paperId!==String(id))return;
+      if (cached) { modalBody.innerHTML = renderPaperModal(cached); mcBindPaperPDF(id); return; }
+      modalBody.innerHTML = '<h2>Paper details unavailable</h2><p>Please retry in a moment. Your answer is still available.</p>';
+
     });
 }
+function mcBindPaperPDF(id) {
+  var button=modalBody.querySelector('.paper-check-pdf');
+  if(button)button.onclick=function(){button.disabled=true;button.textContent='Checking…';mcResolvePaperPDF(id);};
+}
+function mcResolvePaperPDF(id) {
+  fetch(API_BASE+'/api/papers/'+encodeURIComponent(id)+'/access',{credentials:'same-origin'}).then(function(r){if(!r.ok)throw new Error();return r.json();}).then(function(p){
+    var el=modalBody.querySelector('#paperPDFAccess');if(!el||modalBody.dataset.paperId!==String(id))return;
+    var href=MCOracleEvidence.safeURL(p.pdf_url);
+    el.innerHTML=href?'<a class="modal-cta" href="'+escapeHtml(href)+'" target="_blank" rel="noopener" download>Open / download PDF ↗</a>':'No open PDF link is available. Use the publisher link to check institutional access.';
+  }).catch(function(){var el=modalBody.querySelector('#paperPDFAccess');if(el)el.textContent='PDF availability could not be checked. The publisher link is still available.';});
+}
+
 function closePaperModal() { modalBackdrop.classList.remove('open'); }
 modalCloseEl.addEventListener('click', closePaperModal);
 modalBackdrop.addEventListener('click', function (e) { if (e.target === modalBackdrop) closePaperModal(); });
@@ -6386,11 +6380,11 @@ function renderPaperModal(p) {
   var authors  = p.authors || '';
   var abs      = p.abstract || '(no abstract on file)';
   var doiLine  = '';
-  var doiHref  = p.doi ? ('https://doi.org/' + encodeURIComponent(p.doi)) : (p.url || '');
+  var doiHref  = window.MCOracleEvidence ? MCOracleEvidence.paperURL(p) : '';
   var topics   = p.dimensions_topics || [];
 
   return '' +
-    '<h2>' + escapeHtml(p.name || '(untitled)') + '</h2>' +
+    '<h2>' + escapeHtml(p.name || p.title || '(untitled)') + '</h2>' +
     '<div class="modal-meta">' +
       [authors, journal, year].filter(Boolean).map(escapeHtml).join(' · ') +
     '</div>' +
@@ -6403,6 +6397,7 @@ function renderPaperModal(p) {
       '<h4>Abstract</h4>' +
       '<div class="modal-abstract">' + escapeHtml(abs) + '</div>' +
     '</div>' +
+    '<div id="paperPDFAccess" class="modal-meta" role="status"><button type="button" class="modal-cta ghost paper-check-pdf">Check open PDF</button></div>' +
     '<div class="modal-cta-row">' +
       (doiHref
         ? '<a class="modal-cta" href="' + escapeHtml(doiHref) + '" target="_blank" rel="noopener">Open at publisher →</a>'
@@ -9272,42 +9267,7 @@ function mcRenderOracleAsk(raw, turnRec) {
       .replace(/<p>(\s*Next step:)/, '<p class="oracle-nextstep">$1');
   };
 
-  var SCIENCE_OF = [
-    ['fat', /\b(fat|fats|lipid|lipids|oxidation|aldehydes?|hexanal|decadienal|marbling|oleogel)/i],
-    ['juice', /\b(maillard|strecker|amino acids?|cysteine|methionine|sugars?|ribose|xylose|thiamine|nucleotides?|pyrazines?|precursors?)/i],
-    ['matrix', /\b(matrix|texture|extru\w*|connective|collagen|water[- ]holding|fibres?|fibers?)/i]
-  ];
-  function scienceTopic(q, a) {
-    for (var pass = 0; pass < 2; pass++) {
-      var t = pass === 0 ? q : a;
-      for (var i = 0; i < SCIENCE_OF.length; i++) if (SCIENCE_OF[i][1].test(t || '')) return SCIENCE_OF[i][0];
-    }
-    return null;
-  }
-  var baseFinalize = finalizeAnswer;
-  finalizeAnswer = function (fullText, bodyEl, followsEl, citedIds, relatedEl, turnRec) {
-    baseFinalize.apply(this, arguments);
-    try {
-      var card = bodyEl && bodyEl.closest ? bodyEl.closest('.oracle-answer') : null;
-      if (!card || card.querySelector('.oracle-xactions') || typeof window.mcOpenModule !== 'function') return;
-      var cls = document.body.classList;
-      var q = (turnRec && turnRec.q) || mcOracleActiveQuestion || '';
-      var topic = cls.contains('ff-science_module') ? scienceTopic(q, fullText) : null;
-      var eco = cls.contains('ff-ecosystem_module');
-      if (!topic && !eco) return;
-      var row = document.createElement('div');
-      row.className = 'oracle-xactions';
-      row.innerHTML = (topic ? '<button type="button" class="oracle-xaction" data-x="science">Open in Science →</button>' : '') +
-                      (eco ? '<button type="button" class="oracle-xaction" data-x="ecosystem">Experts on this →</button>' : '');
-      row.querySelectorAll('[data-x]').forEach(function (b) {
-        b.addEventListener('click', function () {
-          if (b.getAttribute('data-x') === 'science') window.mcOpenModule('science', { topic: topic });
-          else window.mcOpenModule('ecosystem', { q: q });
-        });
-      });
-      card.appendChild(row);
-    } catch (e) { /* never break a finished answer over its cross-links */ }
-  };
+
 })();
 </script>
 
@@ -10204,8 +10164,9 @@ document.addEventListener('keydown', function(e){
   });
 })();
 </script>
+<script src="/app/assets/oracle-evidence.js?v=20261117-sources" defer></script>
 <script src="/app/assets/oracle-answer.js?v=20261117-brief" defer></script>
-<script src="/app/assets/denver/oracle-companion.js?v=20261103-idle30" defer></script>
+<script src="/app/assets/denver/oracle-companion.js?v=20261117-below" defer></script>
 <script src="/app/assets/user-research.js?v=20261101-denver-rating" defer></script>
 <style>
 /* 2026-10-29: release switches govern navigation, starters and deep links. */

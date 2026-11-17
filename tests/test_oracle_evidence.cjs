@@ -1,0 +1,10 @@
+const assert=require('node:assert/strict'),e=require('../app/assets/oracle-evidence.js');
+const sources=[1,2,3,4,5,6].map(id=>({id}));
+let c=e.consensus(sources,{agree:2,neutral:4,per_source:sources.map(p=>({id:String(p.id),stance:p.id<=2?'agree':'neutral'}))});
+assert.equal(c.agree,2);assert.equal(c.neutral,4);assert.equal(c.total,6);assert.equal(c.unassessed,0);
+c=e.consensus(sources,{per_source:[{id:1,stance:'support'},{id:2,stance:'oppose'},{id:3,stance:'neutral'},{id:4,stance:'invalid'},{id:99,stance:'agree'}]});
+assert.deepEqual([c.agree,c.oppose,c.neutral,c.unassessed],[1,1,1,3]);
+assert.equal(e.consensus(sources,null).unassessed,6);
+assert.equal(e.paperURL({doi:'https://doi.org/10.1016/j.foodres.2025.118315'}),'https://doi.org/10.1016/j.foodres.2025.118315');
+assert.equal(e.safeURL('javascript:alert(1)'),'');assert.equal(e.paperURL({url:'data:whatever'}),'');
+console.log('PASS: six-paper totals, agree/support compatibility, missing assessments, DOI links and unsafe URLs.');

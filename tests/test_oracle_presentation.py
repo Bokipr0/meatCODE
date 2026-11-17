@@ -71,5 +71,27 @@ class EndpointPresentationTests(unittest.TestCase):
             self.assertNotIn(DETAIL_MARKER, wire)
             self.assertEqual(len(calls), 1)
 
+class EvidenceTests(unittest.TestCase):
+    def test_classifier_accounts_for_all_six_without_inventing_neutral(self):
+        with patch.dict(os.environ, {'ANTHROPIC_API_KEY':'local-fixture-not-a-key','DATABASE_URL':''}):
+            import meatcode_server as server
+        rows=[{'id':str(i),'title':'Fixture','main_claim':'Fixture claim'} for i in range(1,7)]
+        model=SimpleNamespace(messages=SimpleNamespace(create=lambda **_:SimpleNamespace(content=[SimpleNamespace(type='text',text='{"central_claim":"Fixture claim","per_source":[{"id":1,"stance":"agree"},{"id":2,"stance":"oppose"},{"id":3,"stance":"neutral"},{"id":4,"stance":"invalid"}]}')])) )
+        with patch.object(server,'client',model):
+            result=server._consensus_classify(rows,'Fixture answer')
+        self.assertEqual([result[k] for k in ['agree','oppose','neutral','unassessed','total']],[1,1,1,3,6])
+        self.assertEqual(result['central_claim'],'Fixture claim')
+
+    def test_paper_access_route_works_without_papers_browser_feature_flag(self):
+        with patch.dict(os.environ, {'ANTHROPIC_API_KEY':'local-fixture-not-a-key','DATABASE_URL':''}):
+            import meatcode_server as server
+        handler=server.Handler.__new__(server.Handler)
+        handler.path='/api/papers/315/access';handler._authorized=lambda:True
+        handler._send_json=lambda body,status=200:(status,body)
+        with patch.object(server,'DATABASE_URL','fixture-only'),patch.object(server,'_flag_on',return_value=False),patch.object(server.papers_browser,'resolve_pdf',return_value=(200,{'id':315,'pdf_url':None})) as resolve:
+            status,body=handler._handle_api_get(handler.path)
+        self.assertEqual(status,200);self.assertEqual(body['id'],315)
+        self.assertEqual(resolve.call_args[0][0],{'id':['315']})
+
 if __name__ == '__main__':
     unittest.main()

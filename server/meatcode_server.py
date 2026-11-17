@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Last updated: 2026-11-17 15:27 UTC · Codex · Short practical opening and streamed supporting-detail boundary.
+# Last updated: 2026-11-17 20:26 UTC · Codex · Explicit paper access lookup and complete per-source stance accounting.
 #   `ecosystem_module`): the Ecosystem's people + papers LIVE from Neon via ecosystem.live_people(pg_rows)
 #   (SELECT-only, 10-min cache); no DATABASE_URL or a DB error -> 503 and the page uses its labelled offline copy.
 # Prev 2026-10-25 19:15 UTC · Yochai (PM) with Claude · Guided Oracle behind flag `oracle_guided`:
@@ -778,7 +778,7 @@ def _consensus_classify(rows, answer_text=None):
 
     Returns {"agree": n, "oppose": n, "neutral": n, "per_source": [{"id","stance"}]}.
     Raises on any failure — callers guard and simply skip the event (never break the
-    stream). Every retrieved source gets a stance; ids the model drops default neutral."""
+    stream). Every retrieved source is accounted for; missing/invalid assessments stay unassessed."""
     def _s(x):
         if x is None:
             return ""
@@ -831,15 +831,17 @@ def _consensus_classify(rows, answer_text=None):
         except (TypeError, ValueError):
             continue
         stance = str(item.get("stance", "")).strip().lower()
-        stance_of[sid] = stance if stance in ("agree", "oppose", "neutral") else "neutral"
-    per_source = [{"id": r["id"], "stance": stance_of.get(r["id"], "neutral")} for r in rows]
+        stance_of[sid] = stance if stance in ("agree", "oppose", "neutral") else "unassessed"
+    per_source = [{"id": r["id"], "stance": stance_of.get(int(r["id"]), "unassessed")} for r in rows]
     out = {
         "agree":   sum(1 for p in per_source if p["stance"] == "agree"),
         "oppose":  sum(1 for p in per_source if p["stance"] == "oppose"),
         "neutral": sum(1 for p in per_source if p["stance"] == "neutral"),
+        "unassessed": sum(1 for p in per_source if p["stance"] == "unassessed"),
+        "total": len(per_source),
         "per_source": per_source,
     }
-    if answer_text is None and data.get("central_claim"):
+    if data.get("central_claim"):
         out["central_claim"] = str(data["central_claim"])[:400]
     return out
 
@@ -1365,6 +1367,13 @@ class Handler(SimpleHTTPRequestHandler):
                     "FROM sources WHERE year IS NOT NULL "
                     "ORDER BY year DESC NULLS LAST, id DESC LIMIT %s",
                     (limit,)))
+            access = re.match(r"^/api/papers/(\d+)/access$", path)
+            if access:
+                if papers_browser is None:
+                    return self._send_json({"error":"PDF lookup unavailable"},503)
+                code, out = papers_browser.resolve_pdf(
+                    {"id":[access.group(1)]}, pg_rows, os.environ.get("UNPAYWALL_EMAIL", ""))
+                return self._send_json(out, code)
             m = re.match(r"^/api/papers/(\d+)$", path)
             if m:
                 rows = pg_rows(

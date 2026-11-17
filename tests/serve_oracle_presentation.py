@@ -18,7 +18,7 @@ DETAIL = ('Working from: the protein base and heating process you described. Ope
           'Compare each trial with the same unmodified base. Keep the analytical method consistent so a change in '
           'sampling does not look like a change in aroma. This is supporting detail in a local UI fixture [102].\n\n'
           'Next step: write down the one factor you will vary, how you will measure it, and the comparison you will use.')
-STATE = {'asks': 0, 'research_writes': 0}
+STATE = {'asks': 0, 'research_writes': 0, 'pdf_checks': 0}
 
 
 class Fixture(SimpleHTTPRequestHandler):
@@ -39,12 +39,17 @@ class Fixture(SimpleHTTPRequestHandler):
         if path == '/api/research/config': return self.send_json({'enabled': False, 'environment': 'dev', 'posthog': {'enabled': False}, 'clarity_project_id': ''})
         if path == '/api/test-status': return self.send_json(STATE)
         if path == '/api/molecule-suggestions': return self.send_json([])
+        if path.endswith('/access'):
+            STATE['pdf_checks'] += 1
+            return self.send_json({'pdf_url':'http://127.0.0.1:18791/fixture.pdf'})
+        if path=='/fixture.pdf':
+            body=b'%PDF-1.4\n% Local PDF download fixture only\n%%EOF';self.send_response(200);self.send_header('Content-Type','application/pdf');self.send_header('Content-Disposition','attachment; filename=local-fixture.pdf');self.end_headers();self.wfile.write(body);return
         if path.startswith('/api/papers/'):
-            return self.send_json({'id': int(path.rsplit('/', 1)[1]), 'title': 'Local evidence fixture', 'name': 'Local evidence fixture', 'year': 2026, 'abstract': 'Local test record. No scientific data queried.', 'url': 'https://example.org/evidence'})
+            return self.send_json({'id': int(path.rsplit('/', 1)[1]), 'title': 'Local evidence fixture', 'name': 'Local evidence fixture', 'year': 2026, 'abstract': 'Local test record. No scientific data queried.', 'doi':'10.1016/j.foodres.2025.118315', 'url': 'https://doi.org/10.1016/j.foodres.2025.118315'})
         if path.startswith('/api/'): return self.send_json({'ok': True, 'rows': [], 'totals': {}})
         if path == '/':
             data = (ROOT / 'app/meatcode_mockup.html').read_text()
-            data = data.replace('<body', '<body', 1).replace('</body>', '<div style="position:fixed;top:3px;left:45%;z-index:99999;font:11px sans-serif;color:#007b78;pointer-events:none">Local test · sample answer</div></body>')
+            data = data.replace('<body', '<body', 1).replace('</body>', '''<div style="position:fixed;top:3px;left:45%;z-index:99999;font:11px sans-serif;color:#007b78;pointer-events:none">Local test · sample answer</div><button id="feedbackFixture" style="position:fixed;top:0;left:0;z-index:99999" onclick="window.dispatchEvent(new CustomEvent('denver:rate-answer',{detail:{turnId:'fixture-rating',number:2,question:'Local sample answer',valid:()=>true,submit:async()=>{}}}))">Show feedback fixture</button></body>''')
             body = data.encode(); self.send_response(200); self.send_header('Content-Type', 'text/html; charset=utf-8'); self.end_headers(); self.wfile.write(body); return
         return super().do_GET()
 
@@ -62,7 +67,7 @@ class Fixture(SimpleHTTPRequestHandler):
             self.wfile.write(text.encode()); self.wfile.flush()
         if 'Clarify' in question:
             event('ask', json.dumps({'question': 'Which protein base?', 'options': ['Pea', 'Soy'], 'asked': 1, 'max': 3})); event('done', ''); return
-        sources = [{'id': i, 'title': 'Local evidence fixture '+str(i), 'year': 2026, 'journal': 'UI fixture'} for i in (101, 102)]
+        sources = [{'id': i, 'title': 'Local evidence fixture '+str(i), 'year': 2026, 'journal': 'UI fixture','doi':'10.1016/j.foodres.2025.118315'} for i in (101,102,103,104,105,106)]
         event('sources', json.dumps(sources))
         if 'Quick' in question: raw = 'Change one variable at a time and compare it with your unchanged base [101].'
         elif 'Legacy' in question: raw = 'A short legacy lead [101].\n\nSupporting explanation from an older response [102].'
@@ -75,6 +80,7 @@ class Fixture(SimpleHTTPRequestHandler):
                 for name, data in presentation.feed(raw[i:i+23]): event(name, data)
                 time.sleep(.035 if 'Streaming' in question else .001)
             for name, data in presentation.finish(): event(name, data)
+            event('consensus',json.dumps({'agree':2,'neutral':4,'per_source':[{'id':i,'stance':'agree' if i<=102 else 'neutral'} for i in (101,102,103,104,105,106)]}))
             event('done', '')
         except (BrokenPipeError, ConnectionResetError): pass
 
