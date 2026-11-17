@@ -1,4 +1,4 @@
-# Last updated: 2026-10-25 19:12 UTC · Yochai (PM) with Claude · NEW guided-Oracle (elicitation) helpers behind flag
+# Last updated: 2026-11-17 15:27 UTC · Codex · Guided parameter recap follows the practical short answer.
 #   `oracle_guided`. Prompt text only + parsing — no HTTP, no SQL, no retrieval (meatcode_server.py owns those and
 #   reuses the existing _retrieve_sources / _grounding_system_prompt unchanged). Flag OFF -> nothing here runs.
 """Guided Oracle — the elicitation step from the Oracle spec (section 5, closed 11 Oct; tested in the Oracle Sandbox).
@@ -7,7 +7,7 @@ Before answering, one small model call reads the whole conversation and decides:
 METHOD / LANDSCAPE / GAP / FIND / OUT OF SCOPE question, which parameters are already given or implied, and whether
 to ASK for the single most important missing one (max 3 questions per conversation, one per turn, with typical
 values to tap) or ANSWER now. When it answers, guided_answer_rules() is appended to the existing grounding prompt so
-the answer opens with a "Working from:" playback line and never fills a gap with a fixed default.
+the answer opens with a practical short reply, with a "Working from:" recap in expandable detail and never fills a gap with a fixed default.
 
 Output format stays the production Oracle's: plain prose paragraphs + a final "Follow-ups:" line, real source ids
 in [brackets]. The "never narrate retrieval" product rule (2026-07-20) is kept: no [general] markers.
@@ -163,8 +163,10 @@ def guided_answer_rules(decision):
         "\n\nGUIDED ANSWER RULES (the user went through MeatCODE's guided questions; these refine, never override, "
         "the rules above):\n"
         "Question type: %s.\nParameters gathered:\n%s\n"
-        "- When parameters were gathered (FORMULATION, METHOD, GAP), make the FIRST paragraph one line in exactly "
-        "this shape: \"Working from: <the given and implied parameters>. Open: <parameters left open, or none>. "
+        "- Give the useful short answer FIRST, following the short-answer and details format above. "
+        "When parameters were gathered (FORMULATION, METHOD, GAP), put the parameter recap in the supporting "
+        "detail AFTER [[MEATCODE_DETAILS]], in this shape: "
+        "\"Working from: <the given and implied parameters>. Open: <parameters left open, or none>. "
         "Change any of these and I'll redo it.\"\n"
         "- Never fill an open or missing parameter with a fixed default. Where an open parameter changes the "
         "chemistry, show how the answer differs across the two cases that matter (for example pH below about 5.5 "

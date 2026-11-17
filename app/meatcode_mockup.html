@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- Last updated: 2026-10-29 · Codex · DEV brand badge and visible Oracle chat deletion. -->
+<!-- Last updated: 2026-11-17 15:27 UTC · Codex · Short opening, expandable answer detail and saved boundary. -->
 <meta charset="utf-8" />
 <!-- Last updated: 2026-10-28 · Codex UI/UX · optional masked research integration and content-free Oracle lifecycle hooks; no question/answer payloads. -->
 <!-- Prior update: 2026-10-27 11:37 UTC · Codex UI/UX · removed Simulate sidebar recents, SLR families and presets; Analytics zone switch now exposes the Analytics nav chip (legacy alias supported). -->
@@ -559,6 +559,22 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 }
 .oracle-answer::-webkit-scrollbar-thumb:hover { background: var(--wine-soft); }
 .oracle-answer.empty { max-height: none; overflow: visible; }
+/* 2026-11-17 · The recommendation stays visible; supporting explanation opens on request. */
+.oracle-answer-detail { margin-top: 16px; }
+.oracle-answer-detail > summary {
+  display: inline-flex; align-items: center; gap: 9px; list-style: none; cursor: pointer;
+  padding: 9px 15px; border: 1px solid var(--line-strong); border-radius: 100px;
+  color: var(--wine); background: var(--surface); font: inherit; font-size: 13px; font-weight: 600;
+}
+.oracle-answer-detail > summary::-webkit-details-marker { display: none; }
+.oracle-answer-detail > summary::after { content: '+'; font-size: 17px; line-height: 1; }
+.oracle-answer-detail[open] > summary::after { content: '−'; }
+.oracle-answer-detail > summary:hover { background: var(--wine-mist); }
+.oracle-answer-detail > summary:focus-visible { outline: 2px solid var(--wine); outline-offset: 3px; }
+.oracle-answer-detail .oracle-collapse-label { display: none; }
+.oracle-answer-detail[open] .oracle-expand-label { display: none; }
+.oracle-answer-detail[open] .oracle-collapse-label { display: inline; }
+.oracle-answer-support { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
 .oracle-answer h3 { font-size: 11px; font-weight: 700; color: var(--wine); letter-spacing: 0.18em; text-transform: uppercase; margin: 0 0 12px; }
 .oracle-answer p { font-size: 15.5px; line-height: 1.7; color: var(--ink); margin: 0 0 12px; }
 .oracle-answer p:last-of-type { margin-bottom: 18px; }
@@ -5414,8 +5430,7 @@ function mcRenderConversation(chat) {
       anyAnswer = true;
       host.innerHTML = '<div class="oracle-answer"><h3>Answer</h3><div class="oracle-answer-body"></div></div>';
       var body = host.querySelector('.oracle-answer-body');
-      body.innerHTML = renderAnswerHTML(t.a, {});
-      attachCiteHandlers(body);
+      mcRenderAnswerContent(body, t.a, {}, t.brief_chars);
     } else {
       host.innerHTML = '<div class="oracle-turn-note">This question was saved before answers were kept in your history — ' +
                        'ask it again to get a fresh grounded answer.</div>';
@@ -5481,7 +5496,7 @@ var MC_ORACLE_MAX = 25;          // per list, so the store can't grow unbounded
    title?, turns:[{q, a}]}. Older records (no `turns`) still load — they just replay as a
    single question with no stored answer. Caps keep localStorage from ballooning. */
 var MC_ORACLE_TURN_MAX = 12;     // turns kept per conversation
-var MC_ORACLE_ANS_MAX  = 4000;   // chars of answer text kept per turn
+var MC_ORACLE_ANS_MAX  = 12000;  // keep short answer plus supporting detail, including older long responses
 var mcActiveTurnRec    = null;   // the turn record currently being streamed into
 
 /* Shown on a first visit / empty store so the rail is never blank. */
@@ -5535,7 +5550,8 @@ function mcLoadOracleChats() {
           if (!t || typeof t.q !== 'string' || !t.q.trim()) return;
           turns.push({
             q: t.q.trim().slice(0, 300),
-            a: (typeof t.a === 'string') ? t.a.slice(0, MC_ORACLE_ANS_MAX) : ''
+            a: (typeof t.a === 'string') ? t.a.slice(0, MC_ORACLE_ANS_MAX) : '',
+            brief_chars: Number.isInteger(t.brief_chars) && t.brief_chars > 0 && t.brief_chars <= String(t.a || '').length ? t.brief_chars : null
           });
         });
         if (turns.length) row.turns = turns.slice(-MC_ORACLE_TURN_MAX);
@@ -5738,11 +5754,12 @@ function mcRecordOracleQuestion(q) {
 }
 /* File the finished prose into the open turn. Idempotent — finalizeAnswer can fire twice
    (SSE `done` + stream close) and a re-run just rewrites the same field. */
-function mcStoreTurnAnswer(text, turnRec) {
+function mcStoreTurnAnswer(text, turnRec, briefEnd) {
   try {
     var rec = turnRec || mcActiveTurnRec;
     if (!rec) return;
     rec.a = String(text || '').trim().slice(0, MC_ORACLE_ANS_MAX);
+    rec.brief_chars = Number.isInteger(briefEnd) && briefEnd > 0 && briefEnd <= rec.a.length ? briefEnd : null;
     mcSaveOracleChats();
   } catch (e) { /* never break the answer over persistence */ }
 }
@@ -6016,6 +6033,7 @@ function streamSSE(res, researchTurn) {
   var relatedEl   = oracleSlot.querySelector('#oracleRelated');
   var turnRec     = mcActiveTurnRec;   // pinned to THIS turn, so a slow stream can't
   var fullText    = '';                // file its answer against a later question
+  var briefEnd    = null;              // optional server boundary; legacy streams use paragraph/word fallback
   var askedTurn   = false;             // guided Oracle: this turn was a question back, not an answer
   var citedIds    = {};   // id -> source object, for modal lookup
 
@@ -6026,7 +6044,7 @@ function streamSSE(res, researchTurn) {
   return reader.read().then(function pump(chunk) {
     if (chunk.done) {
       if (window.MCResearch) window.MCResearch.interruptOracle(researchTurn); // no-op after an explicit done/error
-      if (!askedTurn) finalizeAnswer(fullText, bodyEl, followsEl, citedIds, relatedEl, turnRec);
+      if (!askedTurn) finalizeAnswer(fullText, bodyEl, followsEl, citedIds, relatedEl, turnRec, briefEnd);
       return;
     }
     buffer += decoder.decode(chunk.value, { stream: true });
@@ -6046,8 +6064,10 @@ function streamSSE(res, researchTurn) {
         if (!fullText) hideOraclePhase();
         fullText += data;
         if(window.MCResearch)window.MCResearch.appendOracle(researchTurn,data);
-        bodyEl.innerHTML = renderAnswerHTML(fullText, citedIds);
+        mcRenderAnswerContent(bodyEl, fullText, citedIds, briefEnd, true);
         mcThreadFollow();          // keep the growing answer in view if we're at the bottom
+      } else if (event === 'answer_section') {
+        try { if (JSON.parse(data).section === 'detail' && briefEnd === null) briefEnd = fullText.length; } catch (e) {}
       } else if (event === 'status') {
         // Additive server event (older server builds simply never send it — the
         // local fallbacks below cover that case).
@@ -6148,7 +6168,7 @@ function streamSSE(res, researchTurn) {
         if (typeof mcRenderOracleAsk === 'function') mcRenderOracleAsk(data, turnRec);
       } else if (event === 'done') {
         if (window.MCResearch) window.MCResearch.completeOracle(researchTurn);
-        if (!askedTurn) finalizeAnswer(fullText, bodyEl, followsEl, citedIds, relatedEl, turnRec);
+        if (!askedTurn) finalizeAnswer(fullText, bodyEl, followsEl, citedIds, relatedEl, turnRec, briefEnd);
       } else if (event === 'error') {
         if (window.MCResearch) window.MCResearch.failOracle(researchTurn, 'model_unavailable');
         setOracleError(data);
@@ -6168,7 +6188,7 @@ function mcThreadFollow() {
   } catch (e) {}
 }
 
-function finalizeAnswer(fullText, bodyEl, followsEl, citedIds, relatedEl, turnRec) {
+function finalizeAnswer(fullText, bodyEl, followsEl, citedIds, relatedEl, turnRec, briefEnd) {
   hideOraclePhase(bodyEl);
   // Split off "Follow-ups:" line if present
   var match = fullText.match(/\n+\s*Follow-?ups?:\s*([\s\S]+)$/i);
@@ -6178,7 +6198,10 @@ function finalizeAnswer(fullText, bodyEl, followsEl, citedIds, relatedEl, turnRe
     mainText = fullText.slice(0, match.index);
     followsText = match[1].trim();
   }
-  bodyEl.innerHTML = renderAnswerHTML(mainText, citedIds);
+  // The stored answer is plain text; the numeric boundary preserves the same preview on reload.
+  var cleanText = mainText.trim();
+  if (Number.isInteger(briefEnd)) briefEnd = Math.max(0, briefEnd - (mainText.length - mainText.trimStart().length));
+  mcRenderAnswerContent(bodyEl, cleanText, citedIds, briefEnd);
   if (followsText) {
     var followups = followsText.split(/\s+·\s+|·|^\d\.\s|\n-\s*/).map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 4);
     followsEl.innerHTML =
@@ -6195,9 +6218,8 @@ function finalizeAnswer(fullText, bodyEl, followsEl, citedIds, relatedEl, turnRe
       });
     });
   }
-  attachCiteHandlers(bodyEl);
   // Keep the finished answer in the conversation store so the rail can replay this thread.
-  mcStoreTurnAnswer(mainText, turnRec);
+  mcStoreTurnAnswer(cleanText, turnRec, briefEnd);
   // Once the answer has settled, surface related molecules from the same corpus. mainText is
   // the prose (follow-ups stripped) so the lookup reflects what was actually discussed.
   mcFetchRelatedMolecules(mcOracleActiveQuestion, mainText, relatedEl);
@@ -6289,6 +6311,16 @@ function mcRouteToMolecule(id, name) {
   }
   if (location.hash !== '#database') location.hash = '#database';
   else if (typeof setScene === 'function') setScene();
+}
+
+function mcRenderAnswerContent(bodyEl, text, citedIds, briefEnd, streaming) {
+  if (window.MCOracleAnswer) {
+    window.MCOracleAnswer.mount(bodyEl, text, citedIds, { briefEnd: briefEnd, streaming: streaming, format: renderAnswerHTML });
+  } else {
+    // A failed asset load must leave the original answer available.
+    bodyEl.innerHTML = renderAnswerHTML(text, citedIds);
+  }
+  attachCiteHandlers(bodyEl);
 }
 
 function renderAnswerHTML(text, citedIds) {
@@ -10172,6 +10204,7 @@ document.addEventListener('keydown', function(e){
   });
 })();
 </script>
+<script src="/app/assets/oracle-answer.js?v=20261117-brief" defer></script>
 <script src="/app/assets/denver/oracle-companion.js?v=20261103-idle30" defer></script>
 <script src="/app/assets/user-research.js?v=20261101-denver-rating" defer></script>
 <style>

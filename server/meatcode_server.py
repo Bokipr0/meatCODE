@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Last updated: 2026-10-29 · Codex · dashboard page and read APIs enforce the Release Center environment flag.
+# Last updated: 2026-11-17 15:27 UTC · Codex · Short practical opening and streamed supporting-detail boundary.
 #   `ecosystem_module`): the Ecosystem's people + papers LIVE from Neon via ecosystem.live_people(pg_rows)
 #   (SELECT-only, 10-min cache); no DATABASE_URL or a DB error -> 503 and the page uses its labelled offline copy.
 # Prev 2026-10-25 19:15 UTC · Yochai (PM) with Claude · Guided Oracle behind flag `oracle_guided`:
@@ -272,17 +272,14 @@ CONSENSUS_MODEL      = "claude-haiku-4-5-20251001"
 CONSENSUS_MAX_TOKENS = 600
 ORACLE_TOP_K          = 6    # sources retrieved + handed to Claude per question
 ORACLE_MIN_RELEVANCE  = 60   # relevance_llm gate; sources scored below this are off-topic (PROJECT_STATE.md)
+from oracle_presentation import ANSWER_STYLE, AnswerSections
 SYSTEM_PROMPT = (
     "You are MeatCODE Oracle — a flavor & aroma research assistant for "
-    "GFI Israel. Answer concisely (3–5 short paragraphs max). Focus on "
+    "GFI Israel. Focus on "
     "meat-flavor chemistry: Maillard, sulfur volatiles, lipid oxidation, "
     "off-note masking, plant-protein flavor systems, cultivated meat, "
     "and the analytical techniques behind them (GC-MS, GC-O, SPME, etc.). "
-    "Use plain prose paragraphs separated by blank lines. Cite compounds "
-    "by name. After the main answer, add a final line starting with "
-    "'Follow-ups:' followed by 2–3 short follow-up questions separated "
-    "by ' · ' (a space, middle dot, space). Do not use markdown headers, "
-    "bullets, or code blocks."
+    "Cite compounds by name. " + ANSWER_STYLE
 )
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -1827,6 +1824,7 @@ class Handler(SimpleHTTPRequestHandler):
         send_event("status", "answering")
         try:
             answer_parts = []
+            presentation = AnswerSections()
             with client.messages.stream(
                 model=MODEL,
                 max_tokens=MAX_TOKENS,
@@ -1835,8 +1833,12 @@ class Handler(SimpleHTTPRequestHandler):
             ) as stream:
                 for text in stream.text_stream:
                     if text:
-                        answer_parts.append(text)
-                        send_event("chunk", text)
+                        for event, part in presentation.feed(text):
+                            if event == "chunk": answer_parts.append(part)
+                            send_event(event, part)
+            for event, part in presentation.finish():
+                if event == "chunk": answer_parts.append(part)
+                send_event(event, part)
             if grounded and sources_rows:
                 try:
                     consensus = _consensus_classify(sources_rows, "".join(answer_parts))
@@ -2460,6 +2462,7 @@ class Handler(SimpleHTTPRequestHandler):
         send_event("status", "answering")
         try:
             answer_parts = []
+            presentation = AnswerSections()
             with client.messages.stream(
                 model=MODEL,
                 max_tokens=MAX_TOKENS,
@@ -2468,8 +2471,12 @@ class Handler(SimpleHTTPRequestHandler):
             ) as stream:
                 for text in stream.text_stream:
                     if text:
-                        answer_parts.append(text)
-                        send_event("chunk", text)
+                        for event, part in presentation.feed(text):
+                            if event == "chunk": answer_parts.append(part)
+                            send_event(event, part)
+            for event, part in presentation.finish():
+                if event == "chunk": answer_parts.append(part)
+                send_event(event, part)
 
             # 3) consensus event — ADDITIVE, emitted BEFORE `done`, and fully guarded:
             #    one small Haiku call classifies each retrieved source's main_claim as
