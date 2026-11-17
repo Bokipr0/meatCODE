@@ -1,6 +1,6 @@
 # Oracle evidence access and Denver placement
 
-Updated 2026-11-17 · Codex · Implementation verified locally; deployment record follows.
+Updated 2026-11-17 · Codex · Live on development and production; local browser checks passed.
 
 Lior reported source pills/citation315 inaccessible, Denver feedback overlapping answer text, extra action buttons, and a mismatch between four neutral classifications and six retrieved sources.
 
@@ -26,10 +26,16 @@ A proposed live Unpaywall availability check was rejected by automatic approval 
 
 ## Validation
 
-Six offline Python tests cover normal/guided stream compatibility, boundaries, six-source accounting with numeric/string IDs, missing/invalid assessments, and the independent PDF-access route without the papers-browser flag. JavaScript tests cover six-source totals, agree/support compatibility, unknown IDs, absent assessments, DOI normalization and unsafe links. All19 inline scripts parse and the Denver generated bundle matches its sources.
+Six offline Python tests cover normal/guided stream compatibility, boundaries, six-source accounting with numeric/string IDs, missing/invalid assessments, and the independent PDF-access route without the papers-browser flag. JavaScript tests cover six-source totals, agree/support compatibility, unknown IDs, absent assessments, DOI normalization and unsafe links. The two existing local SSE regressions also passed. All19 inline scripts parse and the Denver generated bundle matches its sources.
 
-Actual local-browser checks verified six displayed sources and 2 support + 4 neutral, native DOI links, paper details, a completed sample PDF download, saved-history links/colors, absence of extra answer actions, and below-character rating/note placement. At1280×720, the rating panel began below the character and beyond the answer's right edge. At800×800, it was above the visible conversation and within the viewport. These are deterministic fixture results, not scientific model evaluations. No production research events were submitted.
+Actual local-browser checks verified six displayed sources and 2 support + 4 neutral, native DOI links, paper details, a completed sample PDF download, saved-history links/colors, absence of extra answer actions, and below-character rating/note placement. At1280×720, the rating panel began below the character and beyond the answer's right edge. At800×800, it was above the visible conversation and within the viewport. Opening paper details produced zero PDF lookups; pressing Check open PDF produced the sample PDF link. These are deterministic fixture results, not scientific model evaluations. No production research events were submitted.
 
 ## Deployment
 
-Prepared on isolated `codex/oracle-evidence-access`, based on prior verified release documentation `ae5d20b` (runtime7081ab4). Canonical folder contains unrelated local work and is synchronized only with scoped edits. Stage on dev first, then promote the same source to production. Hosted MCP and Neon schema are unchanged.
+Released source `cc9abdaf82bec147b424697648b347cafb6ef541` from isolated `codex/oracle-evidence-access`, based on prior release documentation `ae5d20b` (runtime7081ab4).
+
+- Development deploy `dep-dbubhprbc2fs73a425u0`: terminal **live**; exact version confirmed.
+- Production deploy `dep-dbubibou01pc73enpeh0`: terminal **live**; exact same version confirmed.
+- Both public health endpoints returned200 (configuration checks only); no production error-level log entries in the release window. No real model/PDF request or synthetic research record was submitted.
+- Canonical source was synchronized with scoped edits, retaining unrelated chat-state/sync work and its existing local20-second idle setting; its Denver bundle was rebuilt from those canonical sources. The isolated deployed release preserves the prior30-second setting.
+- Screenshot evidence: `data/verification/oracle-evidence-20261117/evidence-denver-local-fixture.jpg` (sample data). Hosted MCP, retrieval limits, Neon schema, capture logic and feature flags are unchanged.
