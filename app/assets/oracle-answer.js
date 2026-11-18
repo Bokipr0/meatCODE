@@ -19,6 +19,11 @@
       while ((match = sentence.exec(candidate))) last = match.index + match[0].length;
       if (last > 0) boundary = last;
     }
+    // Never cut an explicit next-step recommendation in half at the legacy word cap.
+    var action = /\bNext step:\s*[\s\S]*?(?=\n\s*\n|$)/i.exec(text);
+    if (action && action.index < boundary && action.index + action[0].length > boundary) {
+      boundary = action.index + action[0].length;
+    }
     var brief = text.slice(0, boundary).trim(), detail = text.slice(boundary).trim();
     // Older guided answers placed their explicit action in the final paragraph. Keep that
     // recommendation visible without generating, shortening or inventing another one.

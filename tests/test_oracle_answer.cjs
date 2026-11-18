@@ -25,3 +25,6 @@ assert.equal((parts.brief+' '+parts.detail).match(/Next step:/g).length,1);
 assert.equal(api.split('Recommendation. Next step: open the paper.\n\nFurther evidence.').brief,'Recommendation. Next step: open the paper.');
 assert(!api.split('Key fact.\n\nNo action is recorded here.').brief.includes('Next step:'),'do not invent a recommendation for old answers');
 console.log('PASS: explicit next-step promotion, no duplication, no invented legacy recommendations.');
+
+const cappedAction=Array(110).fill('context').join(' ')+' Next step: '+Array(25).fill('necessary').join(' ')+' final-condition.';
+assert(api.split(cappedAction).brief.endsWith('final-condition.'),'an explicit action crossing the legacy cap stays whole');
