@@ -1,4 +1,4 @@
-# Last updated: 2026-11-17 15:27 UTC · Codex · Guided parameter recap follows the practical short answer.
+# Last updated: 2026-11-18 09:04 UTC · Codex · Compact source expansion and visible next steps.
 #   `oracle_guided`. Prompt text only + parsing — no HTTP, no SQL, no retrieval (meatcode_server.py owns those and
 #   reuses the existing _retrieve_sources / _grounding_system_prompt unchanged). Flag OFF -> nothing here runs.
 """Guided Oracle — the elicitation step from the Oracle spec (section 5, closed 11 Oct; tested in the Oracle Sandbox).
@@ -9,7 +9,7 @@ to ASK for the single most important missing one (max 3 questions per conversati
 values to tap) or ANSWER now. When it answers, guided_answer_rules() is appended to the existing grounding prompt so
 the answer opens with a practical short reply, with a "Working from:" recap in expandable detail and never fills a gap with a fixed default.
 
-Output format stays the production Oracle's: plain prose paragraphs + a final "Follow-ups:" line, real source ids
+Output format stays the production Oracle's: plain prose paragraphs, real source ids
 in [brackets]. The "never narrate retrieval" product rule (2026-07-20) is kept: no [general] markers.
 """
 from __future__ import annotations
@@ -174,11 +174,11 @@ def guided_answer_rules(decision):
         "- FORMULATION: give the precursors, then the reaction and conditions, then the key volatiles for the target "
         "note, adjusted for the protein base, process, pH and matrix.\n"
         "- Say plainly what is unknown or untested for this system.\n"
-        "- Make the last paragraph before the Follow-ups line one suggested next step, starting \"Next step:\" (an "
-        "analytical check, the kind of expert to talk to, or a source to open).\n"
+        "- Put one recommended next step in the visible short answer BEFORE [[MEATCODE_DETAILS]], starting \"Next step:\" "
+        "(an analytical check, the kind of expert to talk to, or a source to open).\n"
         "- Keep the parameters for the rest of the conversation; if the user changes one, change only that one.\n"
         "- Never quote more than 150 consecutive characters from a source. Reply in the user's language.\n"
-        "- Keep the production format: plain prose paragraphs, no bullets or headers, final 'Follow-ups:' line.\n"
+        "- Keep the production format: plain prose paragraphs, no bullets or headers, no suggested follow-up questions or Follow-ups line.\n"
         % (decision.get("intent") or "UNCLEAR", params))
 
 

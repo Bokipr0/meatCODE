@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- Last updated: 2026-11-17 20:26 UTC · Codex · Direct evidence links, complete stance counts and Denver below-character panels. -->
+<!-- Last updated: 2026-11-18 09:04 UTC · Codex · Two-source preview, whole-card links and shared answer expansion. -->
 <meta charset="utf-8" />
 <!-- Last updated: 2026-10-28 · Codex UI/UX · optional masked research integration and content-free Oracle lifecycle hooks; no question/answer payloads. -->
 <!-- Prior update: 2026-10-27 11:37 UTC · Codex UI/UX · removed Simulate sidebar recents, SLR families and presets; Analytics zone switch now exposes the Analytics nav chip (legacy alias supported). -->
@@ -2377,9 +2377,12 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 
 
 .oracle-sources-list .oracle-paper { display:flex; flex-wrap:wrap; gap:8px; align-items:center; width:100%; padding:10px 12px; border:1px solid var(--line); border-left:4px solid var(--ink-faint); border-radius:12px; background:var(--surface); }
-.oracle-paper-title { flex:1 1 65%; color:inherit; text-decoration:underline; font:inherit; font-size:13px; text-align:left; }
+.oracle-paper-title { flex:1 1 65%; color:inherit; text-decoration:none; font:inherit; font-size:13px; text-align:left; }
 .oracle-stance { font-size:11px; font-weight:700; }
-.oracle-paper-access { border:0; cursor:pointer; font:inherit; font-size:11px; text-decoration:underline; background:transparent; color:inherit; }
+a.oracle-paper,button.oracle-paper { text-decoration:none; color:inherit; cursor:pointer; font:inherit; text-align:left; }
+.oracle-paper [class] { text-decoration:none; }
+.oracle-paper[hidden] { display:none!important; }
+.oracle-paper:focus-visible { outline:2px solid var(--wine); outline-offset:3px; }
 .oracle-paper[data-stance="agree"],.oracle-cite-chip[data-stance="agree"] { color:#14604b; border-color:#14604b; background:#edf7f1; }
 .oracle-paper[data-stance="oppose"],.oracle-cite-chip[data-stance="oppose"] { color:#963f29; border-color:#963f29; background:#fff1eb; }
 .oracle-paper[data-stance="neutral"],.oracle-cite-chip[data-stance="neutral"] { color:#365e88; border-color:#365e88; background:#edf3fa; }
@@ -6259,12 +6262,13 @@ function mcRouteToMolecule(id, name) {
 
 function mcRenderAnswerContent(bodyEl, text, citedIds, briefEnd, streaming) {
   if (window.MCOracleAnswer) {
-    window.MCOracleAnswer.mount(bodyEl, text, citedIds, { briefEnd: briefEnd, streaming: streaming, format: renderAnswerHTML });
+    window.MCOracleAnswer.mount(bodyEl, text, citedIds, { briefEnd: briefEnd, streaming: streaming, moreSources: Object.keys(citedIds || {}).length > 2, format: renderAnswerHTML });
   } else {
     // A failed asset load must leave the original answer available.
     bodyEl.innerHTML = renderAnswerHTML(text, citedIds);
   }
   attachCiteHandlers(bodyEl);
+  mcSyncAnswerExpansion(bodyEl.closest('.oracle-answer'));
 }
 
 function renderAnswerHTML(text, citedIds) {
@@ -6301,19 +6305,33 @@ function mcPaintCitations(root, data) {
     el.setAttribute('data-stance',stance);
   });
 }
+function mcSyncAnswerExpansion(card) {
+  if (!card) return;
+  var disclosure = card.querySelector('.oracle-answer-detail');
+  function sync() {
+    var open = !!(disclosure && disclosure.open);
+    card.querySelectorAll('.oracle-source-extra').forEach(function(row){row.hidden=!open;});
+  }
+  if (disclosure && !disclosure.dataset.sourceToggleBound) {
+    disclosure.dataset.sourceToggleBound='true';
+    disclosure.addEventListener('toggle',sync);
+  }
+  sync();
+}
 function mcRenderEvidence(list, summary, sources, data) {
   if (!window.MCOracleEvidence) return;
   var cs = MCOracleEvidence.consensus(sources,data);
-  list.innerHTML = sources.map(function(p){
+  list.innerHTML = sources.map(function(p,index){
     var id=escapeHtml(String(p.id)), href=MCOracleEvidence.paperURL(p);
     var stance=(cs.per_source.filter(function(x){return String(x.id)===String(p.id);})[0]||{}).stance||'unassessed';
-    return '<div class="oracle-paper" data-stance="'+stance+'">'+
-      (href?'<a class="oracle-paper-title" href="'+escapeHtml(href)+'" target="_blank" rel="noopener">':'<button type="button" class="oracle-paper-title oracle-cite-chip" data-paper-id="'+id+'">')+
-      '['+id+'] '+escapeHtml(p.title||p.name||'Untitled paper')+(href?'</a>':'</button>')+
-      '<span class="oracle-stance">'+MCOracleEvidence.label(stance)+'</span>'+
-      '<button type="button" class="oracle-paper-access oracle-cite-chip" data-paper-id="'+id+'">Details / PDF</button></div>';
+    var classes='oracle-paper'+(index>=2?' oracle-source-extra':'')+(href?'':' oracle-cite-chip');
+    var attrs=' class="'+classes+'" data-paper-id="'+id+'" data-stance="'+stance+'"'+(index>=2?' hidden':'');
+    return (href?'<a'+attrs+' href="'+escapeHtml(href)+'" target="_blank" rel="noopener">':'<button type="button"'+attrs+'>')+
+      '<span class="oracle-paper-title">['+id+'] '+escapeHtml(p.title||p.name||'Untitled paper')+'</span>'+
+      '<span class="oracle-stance">'+MCOracleEvidence.label(stance)+'</span>'+(href?'</a>':'</button>');
   }).join('');
   attachCiteHandlers(list);
+  mcSyncAnswerExpansion(list.closest('.oracle-answer'));
   if(summary) summary.innerHTML = cs.total ? '<div class="oracle-consensus" title="Model assessment of these retrieved papers, not a systematic literature review">'+
     '<span class="cs-lbl">'+cs.total+' sources</span><span class="cs support"><b>'+cs.agree+'</b> support</span> · '+
     '<span class="cs oppose"><b>'+cs.oppose+'</b> oppose</span> · <span class="cs neutral"><b>'+cs.neutral+'</b> neutral</span>'+
@@ -10165,7 +10183,7 @@ document.addEventListener('keydown', function(e){
 })();
 </script>
 <script src="/app/assets/oracle-evidence.js?v=20261117-sources" defer></script>
-<script src="/app/assets/oracle-answer.js?v=20261117-brief" defer></script>
+<script src="/app/assets/oracle-answer.js?v=20261118-compact" defer></script>
 <script src="/app/assets/denver/oracle-companion.js?v=20261117-below" defer></script>
 <script src="/app/assets/user-research.js?v=20261101-denver-rating" defer></script>
 <style>

@@ -1,4 +1,4 @@
-# Last updated: 2026-11-17 · Codex · Short first answer, optional supporting detail.
+# Last updated: 2026-11-18 09:04 UTC · Codex · Compact source expansion and visible next steps.
 """Presentation-only streaming boundary; no retrieval, model or persistence changes."""
 
 DETAIL_MARKER = '[[MEATCODE_DETAILS]]'
@@ -8,8 +8,11 @@ ANSWER_STYLE = (
     "Use a clear, practical, conversational voice. Start with the answer itself: no introductory essay, "
     "praise, academic framing, broad background, or recap of the question. "
     "The visible short answer must be 2-4 concise sentences, at most 100 words. "
-    "Give the key recommendation or finding first, its most important reason, and a concrete next step "
-    "when useful. Keep essential conditions, uncertainty and qualifications in that short answer; "
+    "Give the key recommendation or finding first and its most important reason. "
+    "End the visible short answer with one concrete recommended action, starting 'Next step:'. "
+    "Put that next step BEFORE [[MEATCODE_DETAILS]], never only in the supporting explanation. "
+    "For a factual lookup, recommend a useful verification or source to consult rather than inventing an experiment. "
+    "Keep essential conditions, uncertainty and qualifications in that short answer; "
     "never hide a qualification that changes the recommendation in the supporting detail. "
     "Keep necessary scientific names, units and valid source citations, but explain jargon briefly. "
     "For a simple question, the short answer can stand alone. If useful supporting explanation remains, "

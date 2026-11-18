@@ -1,4 +1,4 @@
-# Last updated: 2026-11-17 · Codex · Local HTTP UI fixture; no real model, DB or analytics.
+# Last updated: 2026-11-18 09:04 UTC · Codex · Compact source expansion and visible next steps.
 """Serve the real Oracle UI against deterministic local streams on 127.0.0.1:18791."""
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -13,11 +13,11 @@ from oracle_presentation import AnswerSections, DETAIL_MARKER
 
 BRIEF = ('Start with a small, controlled precursor trial: fix your protein base and heating process, then vary '
          'one factor at a time [101]. Record the aroma change before scaling up.\n\n'
-         'The best conditions depend on your matrix, so use the first trial as a comparison, not a validated recipe.')
+         'The best conditions depend on your matrix, so use the first trial as a comparison, not a validated recipe.\n\n'
+         'Next step: write down the one factor you will vary and the comparison you will use.')
 DETAIL = ('Working from: the protein base and heating process you described. Open: exact pH and precursor levels.\n\n'
           'Compare each trial with the same unmodified base. Keep the analytical method consistent so a change in '
-          'sampling does not look like a change in aroma. This is supporting detail in a local UI fixture [102].\n\n'
-          'Next step: write down the one factor you will vary, how you will measure it, and the comparison you will use.')
+          'sampling does not look like a change in aroma. This is supporting detail in a local UI fixture [102].')
 STATE = {'asks': 0, 'research_writes': 0, 'pdf_checks': 0}
 
 
@@ -70,6 +70,8 @@ class Fixture(SimpleHTTPRequestHandler):
         sources = [{'id': i, 'title': 'Local evidence fixture '+str(i), 'year': 2026, 'journal': 'UI fixture','doi':'10.1016/j.foodres.2025.118315'} for i in (101,102,103,104,105,106)]
         event('sources', json.dumps(sources))
         if 'Quick' in question: raw = 'Change one variable at a time and compare it with your unchanged base [101].'
+        elif 'NoDetail' in question: raw = 'Keep the conditions fixed [101]. Next step: compare a single trial [102].'
+        elif 'LegacyNext' in question: raw = 'Key finding [101].\n\nSupporting explanation [102].\n\nNext step: compare a single trial [102].'
         elif 'Legacy' in question: raw = 'A short legacy lead [101].\n\nSupporting explanation from an older response [102].'
         elif 'Long' in question: raw = BRIEF+'\n\n'+DETAIL_MARKER+'\n\n'+('Supporting legacy paragraph [102]. '+('additional evidence '*35)+'\n\n')*7
         else: raw = BRIEF+'\n\n'+DETAIL_MARKER+'\n\n'+DETAIL

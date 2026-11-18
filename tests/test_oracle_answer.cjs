@@ -1,4 +1,4 @@
-/* Last updated: 2026-11-17 · Codex · Legacy and formatted answer splitting. */
+/* Last updated: 2026-11-18 09:04 UTC · Codex · Compact source expansion and visible next steps. */
 const assert = require('node:assert/strict');
 const api = require('../app/assets/oracle-answer.js');
 let text = 'Recommendation first [880].\n\nWorking from: pea protein.\n\nMechanism and evidence [144].';
@@ -17,3 +17,11 @@ assert(api.split(text, -1).detail);
 assert.equal(api.split('First sentence. '+text).brief, 'First sentence.');
 assert(api.split('条件を確認してください。\n\n追加の説明。').detail);
 console.log('PASS: marked boundaries, short and legacy answers, 120-word fallback, intact full content, invalid boundaries and Unicode.');
+const legacy = 'Key answer [1].\n\nMechanism and evidence [2].\n\nNext step: compare one controlled trial [3].';
+parts=api.split(legacy,legacy.indexOf('Mechanism'));
+assert(parts.brief.includes('Next step: compare one controlled trial [3].'));
+assert.equal(parts.detail,'Mechanism and evidence [2].');
+assert.equal((parts.brief+' '+parts.detail).match(/Next step:/g).length,1);
+assert.equal(api.split('Recommendation. Next step: open the paper.\n\nFurther evidence.').brief,'Recommendation. Next step: open the paper.');
+assert(!api.split('Key fact.\n\nNo action is recorded here.').brief.includes('Next step:'),'do not invent a recommendation for old answers');
+console.log('PASS: explicit next-step promotion, no duplication, no invented legacy recommendations.');
