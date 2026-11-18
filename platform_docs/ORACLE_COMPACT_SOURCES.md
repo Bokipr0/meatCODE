@@ -1,6 +1,6 @@
 # Oracle — compact sources and visible next step
 
-Updated 2026-11-18 · Codex · Implemented from Lior’s accepted UI specification; release status below.
+Updated 2026-11-18 · Codex · Live on development and production; implemented from Lior’s accepted UI specification.
 
 ## Required behavior
 
@@ -25,4 +25,4 @@ No retrieval, schema, API credentials, research capture, Denver, standalone grap
 
 ## Release
 
-Isolated branch `codex/oracle-compact-sources`, based on `6895f02` (previous runtime `cc9abda`). Publish to development first, verify exact deployed revision/health, then promote the same source to production. Canonical merge must retain unrelated local graph/chat-state work.
+Source `38c1cda4f7eb916ea72c829e343c3157f4511792` on isolated `codex/oracle-compact-sources`, based on `6895f02` (previous runtime `cc9abda`). Development deploy `dep-dbumlfgu01pc73f6ae10` is terminal live; public version confirms the exact source and health returned200 (configuration check only). That exact source was promoted to main. Production deploy `dep-dbumm2ivcj2c738v7k4g` is terminal live; both sites confirmed exact revision38c1cda and health200, with no error-level production log entries during the release window. No live Claude/PDF request or synthetic production research event was submitted. Scoped changes were synchronized into canonical while preserving unrelated local graph/chat-state work. Screenshot also saved to `data/verification/oracle-compact-sources-20261118/collapsed-local-fixture.jpg`.
