@@ -1,5 +1,9 @@
 <!DOCTYPE html>
-<!-- Last updated: 2026-10-25 20:40 UTC · Yochai (PM) with Claude · People + papers now LIVE from Neon
+<!-- Last updated: 2026-11-19 10:41 UTC · Yochai (PM) with Claude · Cross-links (Hila's ask): article authors link to
+     profiles; event/course sheets show their speakers or instructors (sheet column "Speakers / instructors") and people
+     from the organiser's or provider's institution; profiles show "Speaking and teaching". Looser name match
+     (surname + compatible first name, initial only with the same institution) also feeds "New on the Radar".
+     Prev 2026-10-25 20:40 UTC · Yochai (PM) with Claude · People + papers now LIVE from Neon
      (GET /api/ecosystem/people); ecosystem_data.json's "rd" is only the labelled offline copy; header note + profile
      provenance say which one is showing; more countries in the region maps (RS, GR, HR, MX, CL, EG, PK).
      Prev 2026-10-25 19:08 UTC · Yochai (PM) with Claude · NEW product module: MeatCODE Ecosystem (People + Radar),
@@ -373,7 +377,7 @@ function finishPeople(){
     const pu=f['Profile URL']||'';if(pu){if(/researchgate|linkedin/i.test(pu)){}else if(/orcid\.org/.test(pu)){if(!e.orcid)e.orcid=pu.split('orcid.org/')[1];}else if(/scholar\.google/.test(pu))e.links.gs=pu;else if(/openalex\.org/.test(pu)){if(!e.oa)e.oa=pu.split('openalex.org/')[1];}else e.links.page=pu;}
     if(f.OpenAlex&&!e.oa)e.oa=f.OpenAlex.split('openalex.org/')[1];
     e.role=e.role||f.Role;e.expertise=e.expertise||f.Expertise;e.inbox=x.id;});
-  INBOX.news.forEach(n=>authorsOf(n).forEach(a=>{const e=byKey[nameKey(a)];if(e&&!e.radar.includes(n.id))e.radar.push(n.id);}));
+  INBOX.news.forEach(n=>authorsOf(n).forEach(a=>{const e=matchPerson(a);if(e&&!e.radar.includes(n.id))e.radar.push(n.id);}));
   EXPERTS.forEach(e=>{const c={};e.papers.forEach(pid=>P[pid].topics.forEach(t=>c[t]=(c[t]||0)+1));
     if(!e.papers.length)paperTopics([e.expertise||'',...e.radar.map(id=>BYID[id]?BYID[id].name:'')].join(' ')).forEach(t=>c[t]=(c[t]||0)+1);
     e.topics=Object.entries(c).sort((a,b)=>b[1]-a[1]);e.tc=c;
@@ -666,7 +670,8 @@ function openProfile(id){const e=E[id];if(!e)return;
   if(e.orcid)prof.push(['ORCID','https://orcid.org/'+e.orcid]);
   if(e.oa)prof.push(['OpenAlex','https://openalex.org/'+e.oa]);
   const ext=(l,u)=>`<a class="btn" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(l)} ↗</a>`;
-  const kp=[];if(papers.length)kp.push([papers.length,'papers in MeatCODE']);if(e.latest)kp.push([e.latest,'latest work']);if(e.h)kp.push([e.h,'h-index (OpenAlex)']);if(e.radar.length)kp.push([e.radar.length,'new on the Radar']);
+  const talks=talksOf(e);
+  const kp=[];if(papers.length)kp.push([papers.length,'papers in MeatCODE']);if(talks.length)kp.push([talks.length,talks.length>1?'talks and courses':'talk or course']);if(e.latest)kp.push([e.latest,'latest work']);if(e.h)kp.push([e.h,'h-index (OpenAlex)']);if(e.radar.length)kp.push([e.radar.length,'new on the Radar']);
   inner.innerHTML=`<div class="ph">${av(e)}<div><h2>${esc(e.name)}</h2><div class="org">${esc(place(e))}${e.sector!=='unknown'?`<span class="sec" style="--sec:var(${SECVAR[e.sector]})">${SECTORS[e.sector]}</span>`:''}</div>${e.role?`<div class="note" style="margin:4px 0 0">${esc(e.role)}</div>`:''}</div></div>
    ${kp.length?`<div class="kpis">${kp.slice(0,3).map(([v,l])=>`<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join('')}</div>`:''}
    <div class="blk"><h3>Get in touch</h3><div class="contact"><button class="btn pri" type="button" id="pIntro">Ask GFI for an introduction</button>${followBtn(e.id)}${prof.map(([l,u])=>ext(l,u)).join('')}</div>
@@ -676,6 +681,7 @@ function openProfile(id){const e=E[id];if(!e)return;
    ${e.expertise?`<div class="blk"><h3>Works on</h3><p style="margin:0">${esc(e.expertise)}</p></div>`:''}
    ${e.topics.length?`<div class="blk"><h3>Known for</h3><div class="ktags">${e.topics.slice(0,12).map(([s,n])=>`<button type="button" data-topic="${s}">${esc(TOPIC[s].n)}${papers.length?`<small>${n}</small>`:''}</button>`).join('')}</div></div>`:''}
    ${e.co.length?`<div class="blk"><h3>Works with</h3><div class="faces">${e.co.slice(0,8).map(([o])=>`<button class="face" type="button" data-open="${o}">${av(E[o])}<span>${esc(E[o].name)}</span></button>`).join('')}</div><p class="prov">Co-authors on MeatCODE papers.</p></div>`:''}
+   ${talks.length?`<div class="blk"><h3>Speaking and teaching</h3>${talks.map(x=>rrow(x.it,x.role)).join('')}<p class="prov">Named on the event's or course's page.</p></div>`:''}
    ${e.radar.length?`<div class="blk"><h3>New on the Radar</h3>${e.radar.map(id=>BYID[id]?rrow(BYID[id]):'').join('')}</div>`:''}
    ${papers.length?`<div class="blk"><h3>Papers in MeatCODE</h3>${papers.map(p=>{const others=Math.max(0,(p.na||0)-p.authors.length);const co=p.authors.filter(a=>a!==e.id);
      return `<div class="paper"><button class="t" type="button" aria-expanded="false" data-paper>${esc(p.title)}</button><div class="m">${esc(p.journal||'')}${p.journal?', ':''}${p.year}</div>
@@ -741,6 +747,64 @@ const EXPKEY=Object.fromEntries(INBOX.experts.map(e=>[nkey(e.name),e.id]));
 function authorsOf(it){return (it.f.Authors||'').split(/[;,]/).map(s=>s.replace(/et al\.?|\(corresponding\)/g,'').trim()).filter(Boolean);}
 function linkedExperts(it){return [...new Set(authorsOf(it).map(a=>EXPKEY[nkey(a)]).filter(Boolean))];}
 function articlesBy(exp){const k=nkey(exp.name);return INBOX.news.filter(n=>authorsOf(n).some(a=>nkey(a)===k));}
+/* ── Cross-links (19 Nov; Hila's ask: a person shows their talks and courses, an event or course shows its people).
+   Computed here from public fields only: article Authors, the sheet's "Speakers / instructors" column (names printed
+   on the event's or course's own page) and the organiser's or provider's institution. "Database people involved" is
+   never used: it names private Master contacts. A name links to a person on an exact full-name match, or when the
+   surname and first name fit exactly one person; a shortened first name ("Don" / "Donald S.") or a bare initial also
+   needs the same institution. Institution matches are shown as "from this institution", never as involvement. ── */
+const ORG_ALIAS=[[/\bpenn state\b/g,'pennsylvania state'],[/\buc davis\b/g,'university of california davis'],[/\bwur\b/g,'wageningen']];
+/* Only connector and generic words are dropped. Subject words (science, technology, agricultural) stay, so that
+   "Tianjin University" and "Tianjin University of Science and Technology" never count as one place. */
+const ORG_STOP=new Set(('university universite universitat universita universidad universidade of the and for at in de der des la le du di fur und '+
+  'institute institut instituto research campus world continuing professional education academy foundation society association associates '+
+  'group media events markets conferences conference symposium congress ltd limited inc gmbh company corp').split(' '));
+const SUBUNIT=/^(department|dept|school|faculty|division|centre|center|laboratory|lab|unit|chair|section)\b/i;
+function orgTokens(s){let t=String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\([^)]*\)/g,' ');
+  const seg=t.split(',').map(x=>x.trim()).filter(Boolean);t=(seg.length>1?seg.filter(x=>!SUBUNIT.test(x)):seg).join(' ').toLowerCase();
+  ORG_ALIAS.forEach(([re,v])=>{t=t.replace(re,v);});return [...new Set(t.split(/[^a-z]+/).filter(w=>w.length>2&&!ORG_STOP.has(w)))];}
+function orgIn(a,b){const x=orgTokens(a);if(x.join('').length<6)return false;const y=new Set(orgTokens(b));return x.every(w=>y.has(w));}
+const orgMatch=(a,b)=>orgIn(a,b)||orgIn(b,a);
+const nameParts=n=>clean(String(n||'')).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').split(/[\s.]+/).map(w=>w.replace(/[^a-z]/g,'')).filter(Boolean);
+let PIX=null;
+function personIndex(){if(PIX&&PIX.n===EXPERTS.length)return PIX;const by={},full={};
+  EXPERTS.forEach(e=>{full[nameKey(e.name)]=e;const p=nameParts(e.name);if(p.length>1)(by[p[p.length-1]]=by[p[p.length-1]]||[]).push({e,first:p[0]});});
+  return PIX={n:EXPERTS.length,by,full};}
+/* 'same' = identical first name (middle initials may differ); 'short' = one is a prefix of the other ("Don" /
+   "Donald"); 'initial' = one side is an initial. Only 'same' links without an institution: a prefix alone is not
+   enough ("Xin Li" is not "Xinjing Li"). */
+function firstOk(a,b){if(a===b)return 'same';if(a.length===1||b.length===1)return a[0]===b[0]?'initial':'';return a.length>=3&&b.length>=3&&(a.startsWith(b)||b.startsWith(a))?'short':'';}
+function matchPerson(name,org){const ix=personIndex(),exact=ix.full[nameKey(name)];if(exact)return exact;
+  const p=nameParts(name);if(p.length<2)return null;
+  const c=(ix.by[p[p.length-1]]||[]).map(x=>({e:x.e,how:firstOk(p[0],x.first)})).filter(x=>x.how&&
+    (org&&x.e.org?orgMatch(org,x.e.org):x.how==='same'));
+  return c.length===1?c[0].e:null;}
+const ORGWORD=/univers|institut|college|centre|center|school|academy|foundation|gmbh|\binc\b|\bltd\b|company|laborator/i;
+function speakersOf(it){return String(it.f['Speakers / instructors']||'').split(';').map(s=>s.trim()).filter(Boolean).map(s=>{
+  const m=/^([^(]+?)\s*\((.*)\)\s*$/.exec(s);if(!m)return{name:s,role:'',org:''};
+  const parts=m[2].split(',').map(x=>x.trim());if(parts.length===1&&ORGWORD.test(parts[0]))return{name:m[1],role:'',org:parts[0]};
+  return{name:m[1],role:parts[0],org:parts.slice(1).join(', ')};});}
+function peopleOn(it){if(it._ppl)return it._ppl;const out=[],seen=new Set(),add=(e,role)=>{if(e&&!seen.has(e.id)){seen.add(e.id);out.push({e,role});}};
+  if(it.area==='news')authorsOf(it).forEach(a=>add(matchPerson(a),'Author'));
+  if(it.area==='events'||it.area==='courses')speakersOf(it).forEach(s=>add(matchPerson(s.name,s.org),s.role||(it.area==='courses'?'Instructor':'Speaker')));
+  return it._ppl=out;}
+const hostOf=it=>it.area==='events'?it.f.Organiser||'':it.area==='courses'?it.f.Provider||'':'';
+function instPeople(it,skip){const host=hostOf(it);if(!host)return [];
+  return LINKED.filter(e=>!skip.has(e.id)&&e.org&&orgIn(host,e.org)).sort((a,b)=>b.papers.length-a.papers.length||(b.h||0)-(a.h||0));}
+function talksOf(e){return ALL.filter(it=>(it.area==='events'||it.area==='courses')&&visible(it)).map(it=>({it,x:peopleOn(it).find(x=>x.e===e)})).filter(o=>o.x)
+  .map(o=>({it:o.it,role:o.x.role})).sort((a,b)=>((dt(a.it.f['Start date']||a.it.f['Next start'])||new Date(2100,0))-(dt(b.it.f['Start date']||b.it.f['Next start'])||new Date(2100,0))));}
+const faceBtn=(e,sub)=>`<button class="face" type="button" data-open="${e.id}">${av(e)}<span>${esc(e.name)}${sub?`<small style="display:block;color:var(--muted)">${esc(sub)}</small>`:''}</span></button>`;
+function authorsHTML(it){const raw=it.f.Authors||'';if(!raw)return '';const a=authorsOf(it);
+  return `<p class="note" style="margin-top:8px">${a.map(n=>{const e=matchPerson(n);return e?`<button type="button" data-open="${e.id}" style="border:0;background:none;padding:0;color:var(--brand);font-size:inherit">${esc(n)}</button>`:esc(n);}).join(', ')}${/et al/i.test(raw)?' et al.':''}</p>`;}
+function itemPeopleHTML(it){if(it.area!=='events'&&it.area!=='courses')return '';const course=it.area==='courses';
+  const sp=speakersOf(it),ppl=peopleOn(it),rest=sp.filter(s=>!matchPerson(s.name,s.org));let h='';
+  if(sp.length)h+=`<div class="blk"><h3>${course?'Taught by':'Speakers'}</h3>${ppl.length?`<div class="faces">${ppl.map(x=>faceBtn(x.e,x.role)).join('')}</div>`:''}
+    ${rest.length?`<p style="margin:${ppl.length?'12px':'0'} 0 0">${ppl.length?'Also: ':''}${rest.map(s=>esc(s.name+(s.role||s.org?' ('+[s.role,s.org].filter(Boolean).join(', ')+')':''))).join('; ')}</p>`:''}
+    <p class="prov">Named on the ${course?'course':'event'}'s page.${ppl.length?' Linked to MeatCODE profiles by name and institution.':''}</p></div>`;
+  const inst=instPeople(it,new Set(ppl.map(x=>x.e.id)));
+  if(inst.length)h+=`<div class="blk"><h3>From ${esc(hostOf(it).replace(/\s*\(.*?\)\s*/g,' ').split(',')[0].trim())} in MeatCODE</h3><div class="faces">${inst.slice(0,8).map(e=>faceBtn(e,e.papers.length?e.papers.length+' paper'+(e.papers.length>1?'s':''):'')).join('')}</div>
+    <p class="prov">Same institution as the ${course?'course provider':'organiser'}. Not necessarily involved in this ${course?'course':'event'}.${inst.length>8?` ${inst.length-8} more in the People directory.`:''}</p></div>`;
+  return h;}
 function milestones(){const out=[];const add=(d,label,it)=>{if(d&&d>=TODAY&&daysTo(d)<=200)out.push({d,label,it});};
   ALL.filter(visible).forEach(it=>{const f=it.f;
     if(it.area==='events'){add(dt(f['CFP deadline']),'Abstracts due',it);add(dt(f['Registration deadline']),'Registration closes',it);add(dt(f['Start date']),'Starts',it);}
@@ -748,7 +812,7 @@ function milestones(){const out=[];const add=(d,label,it)=>{if(d&&d>=TODAY&&days
     if(it.area==='eco'&&/award|decision/i.test(f['Recent activity']||''))(f['Recent activity'].match(/\d{4}-\d{2}-\d{2}/g)||[]).forEach(s=>add(dt(s),'Award decisions due',it));});
   return out.sort((a,b)=>a.d-b.d);}
 function meta(it){const f=it.f;
-  if(it.area==='events'){const s=dt(f['Start date']),e=dt(f['End date']);return [s?(e&&+e!==+s?`${s.getDate()}–${fmtD(e)}`:fmtD(s)):'Dates not published',f['Location / online']].filter(Boolean).join(', ');}
+  if(it.area==='events'){const s=dt(f['Start date']),e=dt(f['End date']);return [s?(e&&+e!==+s?(s.getMonth()===e.getMonth()&&s.getFullYear()===e.getFullYear()?`${s.getDate()}–${fmtD(e)}`:`${s.toLocaleDateString('en-GB',{day:'numeric',month:'short'})} – ${fmtD(e)}`):fmtD(s)):'Dates not published',f['Location / online']].filter(Boolean).join(', ');}
   if(it.area==='courses')return [f.Provider,f.Format,f.Cost].filter(Boolean).join(', ');
   if(it.area==='news')return [f.Publication,f['Published date']?fmtD(dt(f['Published date'])):''].filter(Boolean).join(', ');
   if(it.area==='eco')return [f.Type,f.Country].filter(Boolean).join(', ');
@@ -761,7 +825,7 @@ function statusBadge(it){return `<span class="bdg ${it.status==='Merged'||it.sta
 function rcard(it){return `<article class="rc2" style="--tc:var(--c-${it.area})">${ttag(it)}
   <button class="rname" type="button" data-item="${it.id}">${esc(it.name)}</button><div class="org">${esc(meta(it))}</div>
   <p class="why clamp" style="margin:6px 0 0;font-size:14px;color:var(--muted)">${esc(desc(it))}</p>${timeBadge(it)?`<div class="badges">${timeBadge(it)}</div>`:''}</article>`;}
-function rrow(it){return `<div class="rrow" style="grid-template-columns:128px minmax(0,1fr)"><span>${ttag(it)}</span><div style="min-width:0"><button class="rname" type="button" data-item="${it.id}">${esc(it.name)}</button><small>${esc(meta(it))}</small></div></div>`;}
+function rrow(it,note){return `<div class="rrow" style="grid-template-columns:128px minmax(0,1fr)"><span>${ttag(it)}</span><div style="min-width:0"><button class="rname" type="button" data-item="${it.id}">${esc(it.name)}</button><small>${esc(meta(it))}${note?' · '+esc(note):''}</small></div></div>`;}
 function radarFor(r,q){const want=new Set(r.topics);const words=(q||'').toLowerCase().split(/[^a-z0-9]+/).filter(w=>w.length>=5&&!STOP.has(w));
   return ALL.filter(visible).map(it=>{let s=0;it.topics.forEach(t=>{if(want.has(t))s+=2;});const tl=it.text.toLowerCase();words.forEach(w=>{if(tl.includes(w.slice(0,6)))s+=1;});const ord=RORDER[r.intent]||RORDER.collaborate;return{it,s:s?s+({P0:1.5,P1:1,P2:.5}[it.tier]||0)+(4-ord.indexOf(it.area))*0.4:0};}).filter(x=>x.s>=3).sort((a,b)=>b.s-a.s).map(x=>x.it);}
 const RORDER={collaborate:['news','events','courses','eco'],partner:['eco','events','news','courses'],review:['news','events','courses','eco'],explore:['eco','events','news','courses'],learn:['courses','events','news','eco'],events:['events','courses','news','eco']};
@@ -793,17 +857,19 @@ function viewRadar(tab){MODE='radar';setNav('radar');dock.hidden=true;closeProfi
 function wireItems(root){root.querySelectorAll('[data-item]').forEach(b=>b.onclick=()=>openItem(b.dataset.item));root.querySelectorAll('[data-goradar]').forEach(b=>b.onclick=()=>{viewRadar('overview');scrollTo(0,0);});}
 function linkify(s){const parts=String(s||'').split(/(https?:\/\/[^\s);]+)/g);return parts.map((p,i)=>{if(i%2){let host=p;try{host=new URL(p).hostname.replace(/^www\./,'');}catch(_){}return `<a href="${esc(p)}" target="_blank" rel="noopener noreferrer">${esc(host)}</a>`;}return esc(p);}).join('');}
 function openItem(id){const it=BYID[id];if(!it)return;
-  const HIDE=new Set(['Summary','Database people involved','Authors']);
+  const HIDE=new Set(['Summary','Database people involved','Authors','Speakers / instructors']);
   const facts=Object.entries(it.f).filter(([k])=>!HIDE.has(k)).map(([k,v])=>[k,/^\d{4}-\d{2}-\d{2}$/.test(v)?fmtD(dt(v)):v]);
   const urls=[...new Set((it.evidence.match(/https?:\/\/[^\s);]+/g)||[]))].filter(u=>u!==it.link);
   inner.innerHTML=`<div>${ttag(it)}</div>
    <h2 style="font-size:26px;font-weight:600;letter-spacing:-.03em;line-height:1.15;margin:10px 44px 0 0">${esc(it.name)}</h2>
    <div class="org" style="margin-top:6px">${esc(meta(it))}</div>${timeBadge(it)?`<div class="badges">${timeBadge(it)}</div>`:''}
-   <div class="blk"><p style="margin:0">${esc(desc(it))}</p>${it.f.Authors?`<p class="note" style="margin-top:8px">${esc(it.f.Authors)}</p>`:''}</div>
+   <div class="blk"><p style="margin:0">${esc(desc(it))}</p>${authorsHTML(it)}</div>
    ${it.link?'<div class="acts"><a class="extl" href="'+esc(it.link)+'" target="_blank" rel="noopener noreferrer">Open</a></div>':''}
+   ${itemPeopleHTML(it)}
    ${facts.length?`<div class="blk"><h3>Details</h3><dl class="facts">${facts.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${linkify(v)}</dd>`).join('')}</dl></div>`:''}
    ${urls.length?`<div class="blk"><h3>More sources</h3><ul class="srcs">${urls.map(u=>{let h=u;try{h=new URL(u).hostname.replace(/^www\./,'');}catch(_){}return `<li><a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(h)}</a></li>`;}).join('')}</ul></div>`:''}`;
   sheet.classList.add('open');sheet.setAttribute('aria-hidden','false');scrim.classList.add('on');inner.scrollTop=0;wireItems(inner);
+  inner.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openProfile(b.dataset.open));
   document.getElementById('sheetClose').focus({preventScroll:true});}
 
 document.getElementById('navRadar').onclick=()=>{viewRadar();scrollTo(0,0);};

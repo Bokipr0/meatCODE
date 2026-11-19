@@ -1,3 +1,4 @@
+# Last updated: 2026-11-19 10:47 UTC · Yochai (PM) with Claude · test for the optional "Speakers / instructors" column
 import sys
 import unittest
 from pathlib import Path
@@ -25,6 +26,17 @@ class InboxTests(unittest.TestCase):
         self.assertNotIn('score', result['experts'][0])
         self.tabs['Experts'][1][1] = 'Declined'
         self.assertEqual(reviewed_inbox(self.tabs)['experts'], [])
+
+    def test_optional_speakers_column_published_only_when_present(self):
+        events = self.tabs['Events']
+        events[1] += [''] * (len(events[0]) - len(events[1]))
+        events[0].append('Speakers / instructors')
+        events[1].append('Jane K. Parker (keynote, University of Reading); jane@example.org')
+        result = reviewed_inbox(self.tabs)
+        speakers = result['events'][0]['f']['Speakers / instructors']
+        self.assertTrue(speakers.startswith('Jane K. Parker (keynote, University of Reading)'))
+        self.assertNotIn('@', speakers)
+        self.assertNotIn('Speakers / instructors', result['courses'][0]['f'])
 
     def test_incomplete_or_invalid_editions_rejected(self):
         self.tabs['Events'][1][0] = '" unsafe-id'

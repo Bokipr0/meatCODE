@@ -1,3 +1,39 @@
+## 2026-11-19 10:47 UTC · Yochai (PM) with Claude · Ecosystem cross-links: people ↔ articles, events, courses (branch yochai/entity-links, not deployed)
+
+Hila asked in the 16 Nov demo (Gal & Hila): a researcher's profile should show not only papers but also the
+courses they teach and the events they speak at, and an event or course should show its people. Yochai told Lior
+about it on 18 Nov and chose to build it himself. Work is on the local branch `yochai/entity-links`, cut from `origin/dev` 72bf917.
+Git was run here with Yochai's explicit OK. Nothing is pushed or deployed.
+
+- **Sheet (Agent Inbox, 19 Nov):** new column **Speakers / instructors** at the end of Events (AH) and Courses (AG),
+  with a header note giving the format `Name (role, affiliation); …`. It sits at the end so the agent's positional writes don't shift.
+  The agent's Spec & Runbook (stages 3 and 4) now tells it to fill the column. The Cowork task's own prompt still has
+  to be updated by hand.
+- **`server/ecosystem_inbox.py`:** new `OPTIONAL` map. "Speakers / instructors" is published for Events and Courses
+  when the tab has it, and it is never required, so a renamed column can't stop the daily publication.
+  "Database people involved" stays out because it names private Master contacts. `tests/test_ecosystem_inbox.py` gained a test for it, and all 3 tests pass.
+- **`app/modules/ecosystem.html`:**
+  - **Article sheets:** the authors that match People are now buttons that open the profile.
+  - **Event and course sheets:** a "Speakers" / "Taught by" block shows matched people as faces with their role. Names that don't match are listed as plain text.
+  - **"From <institution> in MeatCODE":** people whose org matches the organiser or provider, labelled as not necessarily involved.
+  - **Profiles:** a "Speaking and teaching" block, plus a KPI, lists upcoming visible events and courses with the person's role.
+  - **Name rule:** an exact full name, or a unique surname + identical first name. A shortened first name or a bare initial also needs the same institution. "Don Mottram (Reading)" therefore finds Donald S. Mottram, but "Xin Li" doesn't link to Xinjing Li, which a first draft did.
+  - **Institution rule:** only connector words are dropped, so "Tianjin University" ≠ "Tianjin University of Science and Technology". Sub-unit clauses such as ", School of …" are ignored.
+  - **"New on the Radar":** the profile block uses the same name rule.
+  - **Fixed:** cross-month event dates showed "27–1 Jul 2027"; they now read "27 Jun – 1 Jul 2027".
+- **`pipeline/ecosystem/README.md`:** documents the optional column.
+- **Verified in a browser** against a local stand-in server (scratchpad only, not in the repo). It served the repo, the real reviewed inbox from Neon
+  (`ecosystem_module.inbox_snapshot`, 18 Nov) and the 8 Oct offline people.
+  - **Real data:** 13 of 27 articles now link at least one author. All links are exact-name matches except the one false link, which was then removed.
+  - **Test-only speaker values:** exact, initial + institution, short name + institution and short name without institution all behave as designed.
+  - **Test-only provider:** "Jiangnan University, School of …" gives 17 people, showing 8 faces plus "9 more".
+  - **Checks:** profile ↔ item navigation works both ways, the people search still works, and there are no JS errors.
+- **Not verified:** the real server and the live `/api/ecosystem/people` path (no local `.env`). These run on staging after a push.
+- **Data reality:** none of today's approved events or courses has an organiser or provider whose institution has people
+  in the People directory, and no speakers are filled yet. The new blocks will stay empty until the agent fills the column
+  (first run Wed 25 Nov) and rows get approved.
+- **Next:** merge into `dev` → staging check → promote. The daily inbox sync will carry the new column once this code is on the branch it runs from.
+
 ## 2026-11-18 09:10 UTC · Codex · Compact Oracle sources and visible next steps live
 
 Implemented Lior’s accepted specification in source38c1cda4f7eb916ea72c829e343c3157f4511792 on codex/oracle-compact-sources. Two source cards initially (existing retrieval order), remaining cards controlled by the same Expand answer / Show less disclosure; each complete card is a native publisher link or one metadata fallback button, without underlining or separate Details/PDF button. Existing consensus colors/counts retained. Normal and guided instructions now require Next step in the visible brief before the detail marker; removed the contradictory guided last-paragraph/Follow-ups instruction. Older explicit Next step paragraphs move into the brief without changing stored text or inventing a recommendation; actions crossing the legacy word cap stay whole. JS tests, six offline Python tests, compilation,19 inline-script parses and real local browser checks passed:2→6→2 sources, independent turns, prose-free detail, replay, full-card padding hit targets and no underlines/PDF controls. Screenshot data/verification/oracle-compact-sources-20261118/collapsed-local-fixture.jpg uses sample data. Dev dep-dbumlfgu01pc73f6ae10 and prod dep-dbumm2ivcj2c738v7k4g terminal live, exact source/health200 confirmed, release-window error-level logs empty. Scoped canonical merge preserved unrelated local graph/chat-state work. No schema, retrieval, Denver, capture, flags, credentials or MCP changes; live model/PDF checks remain skipped. Details platform_docs/ORACLE_COMPACT_SOURCES.md.

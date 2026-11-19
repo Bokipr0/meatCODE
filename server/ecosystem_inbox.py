@@ -1,3 +1,4 @@
+# Last updated: 2026-11-19 10:41 UTC · Yochai (PM) with Claude · optional "Speakers / instructors" column (Events, Courses)
 """Publish complete, human-reviewed editions of the private Ecosystem inbox."""
 import datetime as dt
 import math
@@ -10,6 +11,13 @@ TABS = {
     'Courses': ('courses', ('Provider', 'Level', 'Format', 'Duration', 'Cost', 'Language', 'Next start')),
     'News & Articles': ('news', ('Type', 'Publication', 'Published date', 'Authors', 'DOI', 'Summary')),
     'Ecosystem': ('eco', ('Type', 'Segment', 'Country', 'Website', 'Recent activity')),
+}
+# Published when the tab has the column, never required: a renamed enrichment column must not stop the
+# whole publication. Public by definition: the names printed on the event's or course's own page. The page
+# links them to People. ("Database people involved" stays out: it names private Master contacts.)
+OPTIONAL = {
+    'Events': ('Speakers / instructors',),
+    'Courses': ('Speakers / instructors',),
 }
 DATE_FIELDS = {'Start date', 'End date', 'CFP deadline', 'Registration deadline', 'Next start', 'Published date'}
 EMAIL = re.compile(r'[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}')
@@ -52,6 +60,7 @@ def reviewed_inbox(tables):
         named_headers = [name for name in header if name]
         if not required.issubset(named_headers) or len(named_headers) != len(set(named_headers)):
             raise ValueError('Incomplete or ambiguous headers in ' + title)
+        fields = (*fields, *(name for name in OPTIONAL.get(title, ()) if name in named_headers))
         output = result[section] = []
         for values in rows[1:]:
             row = dict(zip(header, values))

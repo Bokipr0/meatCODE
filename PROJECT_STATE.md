@@ -1,3 +1,16 @@
+## 2026-11-19 10:47 UTC · Yochai (PM) with Claude · Ecosystem cross-links built, on branch yochai/entity-links (not deployed)
+
+**In flight:** people ↔ Radar links in `app/modules/ecosystem.html` (Hila's ask, 16 Nov).
+- Article authors link to profiles.
+- Event and course sheets show their speakers and instructors from the new Agent Inbox column "Speakers / instructors", plus people from the organiser's or provider's institution.
+- Profiles show "Speaking and teaching".
+
+`server/ecosystem_inbox.py` publishes that column as optional. Tests pass, and the page was browser-checked against a local stand-in server. Waiting on merge to `dev` → staging → promote.
+
+**Decision (19 Nov, Yochai):** links are computed in the page from public fields only. "Database people involved" (Master contacts) is never published. There is no links table until reviewers need to confirm or override matches.
+
+**Data gap:** no speakers are filled yet; the agent's first fill run is 25 Nov. Today no approved event or course is hosted by an institution that has People. Details in AGENT_UPDATE_LOG.
+
 ## 2026-11-18 09:10 UTC · Codex · Compact Oracle sources and visible next steps live
 
 Implemented Lior’s accepted specification in source38c1cda4f7eb916ea72c829e343c3157f4511792 on codex/oracle-compact-sources. Two source cards initially (existing retrieval order), remaining cards controlled by the same Expand answer / Show less disclosure; each complete card is a native publisher link or one metadata fallback button, without underlining or separate Details/PDF button. Existing consensus colors/counts retained. Normal and guided instructions now require Next step in the visible brief before the detail marker; removed the contradictory guided last-paragraph/Follow-ups instruction. Older explicit Next step paragraphs move into the brief without changing stored text or inventing a recommendation; actions crossing the legacy word cap stay whole. JS tests, six offline Python tests, compilation,19 inline-script parses and real local browser checks passed:2→6→2 sources, independent turns, prose-free detail, replay, full-card padding hit targets and no underlines/PDF controls. Screenshot data/verification/oracle-compact-sources-20261118/collapsed-local-fixture.jpg uses sample data. Dev dep-dbumlfgu01pc73f6ae10 and prod dep-dbumm2ivcj2c738v7k4g terminal live, exact source/health200 confirmed, release-window error-level logs empty. Scoped canonical merge preserved unrelated local graph/chat-state work. No schema, retrieval, Denver, capture, flags, credentials or MCP changes; live model/PDF checks remain skipped. Details platform_docs/ORACLE_COMPACT_SOURCES.md.
