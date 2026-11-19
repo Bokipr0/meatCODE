@@ -155,6 +155,25 @@ Applied `db/migrations/0031_user_accounts_claude_link.sql` to the **dev** databa
 **Cross-territory note (ROLES.md):** this change spans Full-Stack (`server/`, `render.yaml`, Release Center), Data (`db/` migration) and UI/UX (`app/` two new pages + one line in the mockup) at the PM's explicit request in one session. The migration needs the Data Engineer's/Lior's review before it is applied; the two pages are a first pass for the UI/UX Designer to restyle.
 
 **Next (Lior):** confirm Render workspace is Pro; apply the migration to dev; follow the runbook (Render OIDC → Claude OAuth app → env vars → flip `user_accounts` on dev → `deploy-dev.command` → test as a customer). Decide sign-up policy and custom domain (Anthropic needs a DNS-proven homepage domain to publish the app) before prod.
+## 2026-11-19 11:16 UTC · Yochai (PM) with Claude · Speakers on staging data + parser fitted to the agent's entries
+
+- **Sheet:** the agent's 19 Nov re-run made its OWN "Speakers / instructors" column (Events AD, Courses AC) and filled it.
+  The empty one added earlier at the end of each tab was deleted, because a duplicate header makes `reviewed_inbox` reject the tab and stops
+  the whole daily publication. The header note now sits on the remaining column.
+- **Staging data (Yochai's explicit "publish now"; Neon dev branch `br-orange-fog-alnxovak` only):** a staging-only patch.
+  - **What changed:** one SQL UPDATE added `f["Speakers / instructors"]` to the 5 approved items in the existing 18 Nov edition that have speakers in the
+    sheet: EVT-pangborn-2027, CRS-ucdavis-introsensory-coursera, CRS-psu-sensory-gradcert-2027, CRS-nottingham-foodflavour-2027 and
+    CRS-vwa-thermalprocess-2027.
+  - **What didn't:** the counts (6/5/27/14/7) and `checked_at` (2026-11-18 20:03:49Z), so the next regular sync of a newer sheet
+    revision replaces this edition as usual. Production has 0 rows with speakers.
+  - **Why a patch and not a full edition:** a full `publish_inbox.py --sql` statement (~65 KB of base64) can't reliably go through the connector.
+- **Page (`ecosystem.html`):** the real entries broke the first parser. "Kirkmeyer (Faculty, …; Senior Manager…, Kroger)" was split in two,
+  and "Professor Don Mottram" read as first name "essor". Entries now split on ";" outside parentheses only. Titles and post-nominals
+  (Professor/Prof/Dr/Mr/Ms…, ", Ph.D.", MBE) are dropped for matching, and unmatched entries are listed as written.
+  - **Verified** against the real staging edition, served locally: Penn State 3 people, Pangborn 11 entries (with a nested parenthesis), VWA 2.
+    A test-only "Prof. Dr. Khizar Hayat, Ph.D." links to his profile. No JS errors.
+- **Reality:** none of the speakers on approved items is in the experts DB, so staging shows them as names without profile links.
+- **Not pushed yet:** this parser fix is committed locally and waits for Yochai's OK to push to `dev`.
 
 ## 2026-11-19 10:58 UTC · Yochai (PM) with Claude · Ecosystem cross-links behind flag `ecosystem_crosslinks` → pushed to dev (staging)
 

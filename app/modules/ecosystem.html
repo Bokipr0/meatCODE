@@ -1,5 +1,8 @@
 <!DOCTYPE html>
-<!-- Last updated: 2026-11-19 10:58 UTC · Yochai (PM) with Claude · Cross-links (behind flag ecosystem_crosslinks, from
+<!-- Last updated: 2026-11-19 11:16 UTC · Yochai (PM) with Claude · Speakers parser fitted to the agent's real entries:
+     split on ";" outside parentheses only; titles and post-nominals dropped for matching ("Professor", "Dr", ", Ph.D.");
+     unmatched entries listed as written.
+     Prev 2026-11-19 10:58 UTC · Yochai (PM) with Claude · Cross-links (behind flag ecosystem_crosslinks, from
      /api/ecosystem/bootstrap `crosslinks`; flag off = the page as before). Cross-links (Hila's ask): article authors link to
      profiles; event/course sheets show their speakers or instructors (sheet column "Speakers / instructors") and people
      from the organiser's or provider's institution; profiles show "Speaking and teaching". Looser name match
@@ -783,10 +786,17 @@ function matchPerson(name,org){const ix=personIndex(),exact=ix.full[nameKey(name
     (org&&x.e.org?orgMatch(org,x.e.org):x.how==='same'));
   return c.length===1?c[0].e:null;}
 const ORGWORD=/univers|institut|college|centre|center|school|academy|foundation|gmbh|\binc\b|\bltd\b|company|laborator/i;
-function speakersOf(it){return String(it.f['Speakers / instructors']||'').split(';').map(s=>s.trim()).filter(Boolean).map(s=>{
-  const m=/^([^(]+?)\s*\((.*)\)\s*$/.exec(s);if(!m)return{name:s,role:'',org:''};
-  const parts=m[2].split(',').map(x=>x.trim());if(parts.length===1&&ORGWORD.test(parts[0]))return{name:m[1],role:'',org:parts[0]};
-  return{name:m[1],role:parts[0],org:parts.slice(1).join(', ')};});}
+/* Entries are split on ";" outside parentheses only ("Name (Faculty, X; Y, Kroger)" stays one entry). Titles and
+   post-nominals are dropped for matching ("Professor", "Dr", "Mr", ", Ph.D.", "MBE"); unmatched entries show as written. */
+function splitTop(s){const out=[];let d=0,cur='';for(const ch of String(s||'')){if(ch==='(')d++;else if(ch===')')d=Math.max(0,d-1);
+  if(ch===';'&&!d){out.push(cur);cur='';}else cur+=ch;}out.push(cur);return out.map(x=>x.trim()).filter(Boolean);}
+const HONOR=/^(?:(?:assoc(?:iate)?|assist(?:ant)?)\.?\s+)?(?:professor|prof|dr|mr|mrs|ms|mx|sir|dame)\.?\s+/i;
+const POSTNOM=/,?\s+(?:ph\.?\s?d|m\.?d|d\.?phil|mbe|obe|cbe|frs|frsc|jr|sr)\.?$/i;
+function bareName(n){let s=String(n||'').trim(),p;do{p=s;s=s.replace(HONOR,'').replace(POSTNOM,'').trim();}while(s!==p);return s;}
+function speakersOf(it){return splitTop(it.f['Speakers / instructors']).map(raw=>{
+  const m=/^([^(]+?)\s*\((.*)\)\s*$/.exec(raw);if(!m)return{raw,name:bareName(raw),role:'',org:''};
+  const parts=m[2].split(',').map(x=>x.trim()),name=bareName(m[1]);if(parts.length===1&&ORGWORD.test(parts[0]))return{raw,name,role:'',org:parts[0]};
+  return{raw,name,role:parts[0],org:parts.slice(1).join(', ')};});}
 function peopleOn(it){if(it._ppl)return it._ppl;const out=[],seen=new Set(),add=(e,role)=>{if(e&&!seen.has(e.id)){seen.add(e.id);out.push({e,role});}};
   if(it.area==='news')authorsOf(it).forEach(a=>add(matchPerson(a),'Author'));
   if(it.area==='events'||it.area==='courses')speakersOf(it).forEach(s=>add(matchPerson(s.name,s.org),s.role||(it.area==='courses'?'Instructor':'Speaker')));
@@ -802,7 +812,7 @@ function authorsHTML(it){const raw=it.f.Authors||'';if(!raw)return '';const a=au
 function itemPeopleHTML(it){if(it.area!=='events'&&it.area!=='courses')return '';const course=it.area==='courses';
   const sp=speakersOf(it),ppl=peopleOn(it),rest=sp.filter(s=>!matchPerson(s.name,s.org));let h='';
   if(sp.length)h+=`<div class="blk"><h3>${course?'Taught by':'Speakers'}</h3>${ppl.length?`<div class="faces">${ppl.map(x=>faceBtn(x.e,x.role)).join('')}</div>`:''}
-    ${rest.length?`<p style="margin:${ppl.length?'12px':'0'} 0 0">${ppl.length?'Also: ':''}${rest.map(s=>esc(s.name+(s.role||s.org?' ('+[s.role,s.org].filter(Boolean).join(', ')+')':''))).join('; ')}</p>`:''}
+    ${rest.length?`${ppl.length?'<p class="note" style="margin:12px 0 4px">Also:</p>':''}<ul style="margin:0;padding-left:18px">${rest.map(s=>`<li style="margin:2px 0">${esc(s.raw)}</li>`).join('')}</ul>`:''}
     <p class="prov">Named on the ${course?'course':'event'}'s page.${ppl.length?' Linked to MeatCODE profiles by name and institution.':''}</p></div>`;
   const inst=instPeople(it,new Set(ppl.map(x=>x.e.id)));
   if(inst.length)h+=`<div class="blk"><h3>From ${esc(hostOf(it).replace(/\s*\(.*?\)\s*/g,' ').split(',')[0].trim())} in MeatCODE</h3><div class="faces">${inst.slice(0,8).map(e=>faceBtn(e,e.papers.length?e.papers.length+' paper'+(e.papers.length>1?'s':''):'')).join('')}</div>
