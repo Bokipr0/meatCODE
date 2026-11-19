@@ -1,3 +1,8 @@
+## 2026-11-19 10:58 UTC · Yochai (PM) with Claude · Ecosystem cross-links on staging behind flag `ecosystem_crosslinks` (dev ON / prod OFF)
+
+**In flight:** waiting on Yochai's staging check and a demo to Daniel. Production stays off until Yochai flips
+`ecosystem_crosslinks.prod`, so Lior's routine promotions publish the code without showing it.
+
 ## 2026-11-19 10:47 UTC · Yochai (PM) with Claude · Ecosystem cross-links built, on branch yochai/entity-links (not deployed)
 
 **In flight:** people ↔ Radar links in `app/modules/ecosystem.html` (Hila's ask, 16 Nov).

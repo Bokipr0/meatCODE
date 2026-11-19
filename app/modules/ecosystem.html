@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<!-- Last updated: 2026-11-19 10:41 UTC · Yochai (PM) with Claude · Cross-links (Hila's ask): article authors link to
+<!-- Last updated: 2026-11-19 10:58 UTC · Yochai (PM) with Claude · Cross-links (behind flag ecosystem_crosslinks, from
+     /api/ecosystem/bootstrap `crosslinks`; flag off = the page as before). Cross-links (Hila's ask): article authors link to
      profiles; event/course sheets show their speakers or instructors (sheet column "Speakers / instructors") and people
      from the organiser's or provider's institution; profiles show "Speaking and teaching". Looser name match
      (surname + compatible first name, initial only with the same institution) also feeds "New on the Radar".
@@ -328,6 +329,8 @@ async function bootData(){
   catch(err){document.getElementById('app').innerHTML='<section class="start"><h1>Ecosystem isn\u2019t available right now</h1><p class="lead">Please refresh in a moment. If this keeps happening, the Ecosystem may be switched off on this server.</p></section>';return null;}
 }
 const BOOT=await bootData();if(!BOOT)return;
+/* Flag `ecosystem_crosslinks` (staging on, production off until Yochai switches it on): people ↔ Radar links. */
+const XL=!!(BOOT.b&&BOOT.b.crosslinks);
 const PEOPLE_AS_OF=BOOT.live?BOOT.live.as_of.slice(0,10):BOOT.d.snapshot.people_papers;
 document.getElementById('snapNote').textContent=BOOT.live?'People & papers: live from the MeatCODE database':'People & papers: offline copy of '+new Date(PEOPLE_AS_OF+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
 const CONTACT=BOOT.b.contact_email||'';
@@ -377,7 +380,7 @@ function finishPeople(){
     const pu=f['Profile URL']||'';if(pu){if(/researchgate|linkedin/i.test(pu)){}else if(/orcid\.org/.test(pu)){if(!e.orcid)e.orcid=pu.split('orcid.org/')[1];}else if(/scholar\.google/.test(pu))e.links.gs=pu;else if(/openalex\.org/.test(pu)){if(!e.oa)e.oa=pu.split('openalex.org/')[1];}else e.links.page=pu;}
     if(f.OpenAlex&&!e.oa)e.oa=f.OpenAlex.split('openalex.org/')[1];
     e.role=e.role||f.Role;e.expertise=e.expertise||f.Expertise;e.inbox=x.id;});
-  INBOX.news.forEach(n=>authorsOf(n).forEach(a=>{const e=matchPerson(a);if(e&&!e.radar.includes(n.id))e.radar.push(n.id);}));
+  INBOX.news.forEach(n=>authorsOf(n).forEach(a=>{const e=XL?matchPerson(a):byKey[nameKey(a)];if(e&&!e.radar.includes(n.id))e.radar.push(n.id);}));
   EXPERTS.forEach(e=>{const c={};e.papers.forEach(pid=>P[pid].topics.forEach(t=>c[t]=(c[t]||0)+1));
     if(!e.papers.length)paperTopics([e.expertise||'',...e.radar.map(id=>BYID[id]?BYID[id].name:'')].join(' ')).forEach(t=>c[t]=(c[t]||0)+1);
     e.topics=Object.entries(c).sort((a,b)=>b[1]-a[1]);e.tc=c;
@@ -670,7 +673,7 @@ function openProfile(id){const e=E[id];if(!e)return;
   if(e.orcid)prof.push(['ORCID','https://orcid.org/'+e.orcid]);
   if(e.oa)prof.push(['OpenAlex','https://openalex.org/'+e.oa]);
   const ext=(l,u)=>`<a class="btn" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(l)} ↗</a>`;
-  const talks=talksOf(e);
+  const talks=XL?talksOf(e):[];
   const kp=[];if(papers.length)kp.push([papers.length,'papers in MeatCODE']);if(talks.length)kp.push([talks.length,talks.length>1?'talks and courses':'talk or course']);if(e.latest)kp.push([e.latest,'latest work']);if(e.h)kp.push([e.h,'h-index (OpenAlex)']);if(e.radar.length)kp.push([e.radar.length,'new on the Radar']);
   inner.innerHTML=`<div class="ph">${av(e)}<div><h2>${esc(e.name)}</h2><div class="org">${esc(place(e))}${e.sector!=='unknown'?`<span class="sec" style="--sec:var(${SECVAR[e.sector]})">${SECTORS[e.sector]}</span>`:''}</div>${e.role?`<div class="note" style="margin:4px 0 0">${esc(e.role)}</div>`:''}</div></div>
    ${kp.length?`<div class="kpis">${kp.slice(0,3).map(([v,l])=>`<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join('')}</div>`:''}
@@ -863,9 +866,9 @@ function openItem(id){const it=BYID[id];if(!it)return;
   inner.innerHTML=`<div>${ttag(it)}</div>
    <h2 style="font-size:26px;font-weight:600;letter-spacing:-.03em;line-height:1.15;margin:10px 44px 0 0">${esc(it.name)}</h2>
    <div class="org" style="margin-top:6px">${esc(meta(it))}</div>${timeBadge(it)?`<div class="badges">${timeBadge(it)}</div>`:''}
-   <div class="blk"><p style="margin:0">${esc(desc(it))}</p>${authorsHTML(it)}</div>
+   <div class="blk"><p style="margin:0">${esc(desc(it))}</p>${XL?authorsHTML(it):(it.f.Authors?`<p class="note" style="margin-top:8px">${esc(it.f.Authors)}</p>`:'')}</div>
    ${it.link?'<div class="acts"><a class="extl" href="'+esc(it.link)+'" target="_blank" rel="noopener noreferrer">Open</a></div>':''}
-   ${itemPeopleHTML(it)}
+   ${XL?itemPeopleHTML(it):''}
    ${facts.length?`<div class="blk"><h3>Details</h3><dl class="facts">${facts.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${linkify(v)}</dd>`).join('')}</dl></div>`:''}
    ${urls.length?`<div class="blk"><h3>More sources</h3><ul class="srcs">${urls.map(u=>{let h=u;try{h=new URL(u).hostname.replace(/^www\./,'');}catch(_){}return `<li><a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(h)}</a></li>`;}).join('')}</ul></div>`:''}`;
   sheet.classList.add('open');sheet.setAttribute('aria-hidden','false');scrim.classList.add('on');inner.scrollTop=0;wireItems(inner);

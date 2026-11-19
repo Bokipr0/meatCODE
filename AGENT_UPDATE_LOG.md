@@ -1,3 +1,21 @@
+## 2026-11-19 10:58 UTC · Yochai (PM) with Claude · Ecosystem cross-links behind flag `ecosystem_crosslinks` → pushed to dev (staging)
+
+Yochai wants to show this to Daniel before anything goes public. Production is promoted almost daily (17 and 18 Nov),
+so anything on `dev` would go public with the next promotion.
+- **Flag:** the cross-links now sit behind the new flag **`ecosystem_crosslinks`** (`Release Center/features.json`: dev ON / prod OFF, status preview).
+- **Server:** `server/meatcode_server.py` adds `crosslinks` (the flag for this environment) to `GET /api/ecosystem/bootstrap`.
+- **Page:** `app/modules/ecosystem.html` reads it as `XL`. With the flag off, the page behaves exactly as before: plain author text,
+  exact-name "New on the Radar", no Speakers / Taught by / institution / "Speaking and teaching" blocks, and the raw
+  column hidden. Only the cross-month date fix applies either way.
+- **Verified** against the local stand-in server, with the flag on and then off:
+  - **Flag on:** 13/27 articles link authors, the speakers block and the profile block both show, and there are no JS errors.
+  - **Flag off:** 0/27 articles link authors, there are no new blocks, and the raw column stays hidden.
+  - **Tests:** `tests.test_ecosystem_inbox` and `tests.test_dashboard_feature_flag` pass (7 tests).
+- **Published (Yochai's explicit OK):** branch `yochai/entity-links` fast-forwarded onto `origin/dev` (72bf917 → this commit). Render rebuilds the staging site `meatcode-dev`.
+  Production is not touched, and `prod` stays OFF until Yochai switches it on.
+- **Data:** Yochai asked the agent to re-run on 19 Nov to fill the blank cells. The inbox sync must carry the new optional
+  column for speakers to reach staging's Neon dev branch.
+
 ## 2026-11-19 10:47 UTC · Yochai (PM) with Claude · Ecosystem cross-links: people ↔ articles, events, courses (branch yochai/entity-links, not deployed)
 
 Hila asked in the 16 Nov demo (Gal & Hila): a researcher's profile should show not only papers but also the

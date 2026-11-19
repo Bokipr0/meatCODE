@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-# Last updated: 2026-11-17 20:26 UTC · Codex · Explicit paper access lookup and complete per-source stance accounting.
+# Last updated: 2026-11-19 10:58 UTC · Yochai (PM) with Claude · /api/ecosystem/bootstrap also returns
+#   `crosslinks` = flag `ecosystem_crosslinks` for this environment.
+# Prev 2026-11-17 20:26 UTC · Codex · Explicit paper access lookup and complete per-source stance accounting.
 #   `ecosystem_module`): the Ecosystem's people + papers LIVE from Neon via ecosystem.live_people(pg_rows)
 #   (SELECT-only, 10-min cache); no DATABASE_URL or a DB error -> 503 and the page uses its labelled offline copy.
 # Prev 2026-10-25 19:15 UTC · Yochai (PM) with Claude · Guided Oracle behind flag `oracle_guided`:
@@ -1868,7 +1870,8 @@ class Handler(SimpleHTTPRequestHandler):
             return self._send_json({"error": "ecosystem module unavailable on this server"}, 503)
         try:
             if method == "GET" and path == "/api/ecosystem/bootstrap":
-                return self._send_json(ecosystem.bootstrap())
+                # crosslinks = flag `ecosystem_crosslinks` for THIS environment (staging on, production off).
+                return self._send_json({**ecosystem.bootstrap(), "crosslinks": _flag_on("ecosystem_crosslinks")})
             if method == "GET" and path == "/api/ecosystem/inbox":
                 import ecosystem_inbox
                 return self._send_json(ecosystem_inbox.current(pg_rows))

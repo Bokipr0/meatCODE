@@ -418,6 +418,21 @@
       },
       "dev": true,
       "prod": true
+    },
+    "ecosystem_crosslinks": {
+      "label": "Ecosystem cross-links",
+      "description": "People linked to Radar items: article authors open profiles; event and course sheets show speakers / instructors and people from the host institution; profiles show 'Speaking and teaching'.",
+      "kind": "feature",
+      "added": "2026-11-19",
+      "status": "preview",
+      "where": {
+        "screen": "Ecosystem",
+        "spot": "Radar item sheet (authors, Speakers / Taught by, From <institution>) and the person profile (Speaking and teaching).",
+        "file": "app/modules/ecosystem.html"
+      },
+      "note": "Hila's ask (16 Nov demo). Yochai, 19 Nov: on in staging for a demo to Daniel, off in production until he switches it on. Needs ecosystem_module on.",
+      "dev": true,
+      "prod": false
     }
   }
 }
