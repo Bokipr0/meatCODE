@@ -448,6 +448,24 @@
       "note": "Ships dark. Needs migration db/migrations/0031 applied, Render managed OIDC (Pro workspace) and a Claude OAuth app — see platform_docs/CLAUDE_LINKED_BILLING_SETUP.md. Sign-up is invitation-only by default (SIGNUP_MODE / SIGNUP_INVITE_CODE). Signed-in individuals never fall back to the shared Anthropic key.",
       "dev": true,
       "prod": false
+    },
+    "graph_oracle": {
+      "label": "Knowledge Graph Oracle",
+      "description": "Separate graph-only Oracle: ask the connected LightRAG graph, explore five process stages (precursors, reactions, volatiles, descriptors, methods) with evidence by entity ID, refine maps and continue from an earlier map in a new chat.",
+      "kind": "screen",
+      "added": "2026-11-17",
+      "updated": "2026-11-22",
+      "status": "preview",
+      "where": {
+        "screen": "Graph Oracle module — 'Graph Oracle' button in the top nav (in-app #graphoracle scene, iframing /app/modules/graph-oracle.html) and the standalone page with the same banner and GFI logo",
+        "spot": "Nav button after Science/Ecosystem, added by app/assets/graph-oracle-nav.js only when /api/graph-oracle/status reports ready; routes /api/graph-oracle/status|ask|feedback.",
+        "file": "app/meatcode_mockup.html + app/modules/graph-oracle.html + app/modules/graph-oracle.js + app/modules/graph-oracle.css + app/assets/graph-oracle-nav.js + server/graph_oracle.py"
+      },
+      "destination": "Local demo for now. Needs expert scoring of answer quality and a decision on promoting the LightRAG graph into Neon before any staging/production use (platform_docs/GRAPH_ORACLE_DEMO.md).",
+      "url": "/app/modules/graph-oracle.html",
+      "note": "Not gated by these switches: availability depends on KG_ORACLE_GRAPH_PATH (a local LightRAG GraphML export, no Neon retrieval), which is configured locally only; staging and production report not ready. Run locally via Release Center/demo-graph-oracle.command. Feedback is stored as unverified, provenance-labelled graph overlay nodes.",
+      "dev": true,
+      "prod": false
     }
   }
 }

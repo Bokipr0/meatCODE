@@ -1110,7 +1110,7 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
-        if urlparse(self.path).path.startswith(("/api/research/", "/api/account/")):
+        if urlparse(self.path).path.startswith(("/api/research/", "/api/account/", "/api/graph-oracle/")):
             self.send_header("Cache-Control", "no-store")
         for _k, _v in (headers or {}).items():          # e.g. Set-Cookie for the session
             self.send_header(_k, _v)
@@ -1354,6 +1354,9 @@ class Handler(SimpleHTTPRequestHandler):
 
     def _handle_api_get(self, path):
         qs = parse_qs(urlparse(self.path).query)
+        if path == "/api/graph-oracle/status":
+            import graph_oracle
+            return graph_oracle.handle(self, "status", client, MODEL)
         if path in ("/api/research/dashboard","/api/research/transcript","/api/research/journey"):
             if research_dashboard is None:
                 return self._send_json({"error": "Research dashboard unavailable."}, 503)
@@ -2632,6 +2635,12 @@ class Handler(SimpleHTTPRequestHandler):
             return self._handle_admin_post(path)
         if not self._authorized():
             return self._deny()
+        if path in ("/api/graph-oracle/ask", "/api/graph-oracle/feedback"):
+            import graph_oracle
+            llm = self._resolve_llm() if path.endswith("/ask") else client   # who pays: see _resolve_llm
+            if llm is None:
+                return
+            return graph_oracle.handle(self, path.rsplit("/", 1)[-1], llm, MODEL)
         if path == "/api/research/operations":
             if not _flag_on('live_testing_dashboard'):
                 self.close_connection = True

@@ -332,8 +332,8 @@ body.ff-backup_center .mc-backup-wrap { display: inline-flex; }
 
 /* 2026-10-25 · #science / #ecosystem (flags science_module / ecosystem_module) embed the product modules in
    app/modules/ full-width, same pattern as #papers: no left context panel, the module owns the canvas. */
-#science .context, #ecosystem .context { display: none; }
-#science .canvas, #ecosystem .canvas { grid-column: 1 / -1; }
+#science .context, #ecosystem .context, #graphoracle .context { display: none; }
+#science .canvas, #ecosystem .canvas, #graphoracle .canvas { grid-column: 1 / -1; }
 /* 2026-10-26 · Science replaces Research in the top nav (flag research_nav_hidden, only while Science shows): the
    Research chip is HIDDEN, not removed — the #research scene and every in-content link into it still work. */
 .domains .domain.mc-nav-hidden { display: none !important; }
@@ -3836,6 +3836,43 @@ button.oracle-cite-chip { border:0; font-family:inherit; cursor:pointer; }
 
 
 
+<!-- ==================== SCENE 6f :: Knowledge Graph Oracle (module chip appears when /api/graph-oracle/status is ready) ====================
+     2026-11-21 · the graph-only Oracle demo as its own module page: same top banner (GFI logo, module chips, Dev Area,
+     backup, dashboard) as every other scene, iframing /app/modules/graph-oracle.html?embed=1. Chip added by
+     app/assets/graph-oracle-nav.js; reached via #graphoracle. -->
+<section class="scene" id="graphoracle">
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><div class="brand-logo">M</div><a class="brand-name mc-home-newchat" href="#oracle" title="Oracle home · start a new chat">MeatCODE</a></div>
+      <div class="domains">
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h10v7H8l-3 2v-2H3z"/></svg>Oracle</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7c0-2 2-4 4-4s4 2 4 4-2 4-4 4-4-2-4-4z"/><line x1="10" y1="10" x2="13" y2="13"/></svg>Research</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><ellipse cx="8" cy="3.4" rx="5" ry="2"/><path d="M3 3.4v9.2c0 1.1 2.2 2 5 2s5-.9 5-2V3.4"/><path d="M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/></svg>Database</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="2"/><ellipse cx="8" cy="8" rx="6" ry="2.5"/><ellipse cx="8" cy="8" rx="6" ry="2.5" transform="rotate(60 8 8)"/></svg>Simulate</div>
+        <div class="domain"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></svg>Map</div>
+      </div>
+      <div class="topbar-right">
+        <a class="mc-devarea-btn" href="/app/dev/index.html" aria-label="Dev Area — experimental modules" title="Dev Area — experimental modules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2v6.5L4.5 17.7A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.3L14 8.5V2"/><path d="M8.5 2h7"/><path d="M7.2 14.5h9.6"/></svg><span>Dev Area</span></a>
+        <div class="mc-backup-wrap">
+          <button type="button" class="mc-backup-btn" aria-haspopup="menu" aria-expanded="false" aria-label="Download a backup" title="Download a backup" onclick="mcToggleBackupMenu(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>Backups</span></button>
+          <div class="mc-backup-menu" role="menu">
+            <a role="menuitem" href="/api/backup"><span>⬇ Repo backup <small>(.zip)</small></span></a>
+            <a role="menuitem" href="/api/data-backup"><span>⬇ Data backup <small>(Neon)</small></span></a>
+          </div>
+        </div>
+        <a class="mc-dashboard-btn" href="/research-dashboard" title="Live insights dashboard" aria-label="Open live insights dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16v-3m5 3V8m5 8v-6"/></svg><span>Dashboard</span></a>
+      </div>
+    </header>
+
+    <main class="canvas mc-embed-canvas">
+      <iframe class="mc-embed-frame" src="/app/modules/graph-oracle.html?embed=1" title="MeatCODE Knowledge Graph Oracle" loading="lazy"></iframe>
+    </main>
+  </div>
+</section>
+
+
+
+
 <!-- ==================== SCENE 7 :: Database ==================== -->
 <section class="scene" id="database">
   <div class="app">
@@ -4779,6 +4816,7 @@ function setScene() {
     analytics: 'analytics',   /* own nav category → lights the flag-gated Analytics chip (2026-09-01) */
     papers: 'papers',         /* own nav category → lights the flag-gated Papers chip (2026-10-05) */
     science: 'science', ecosystem: 'ecosystem',   /* flag-gated product module chips (2026-10-25) */
+    graphoracle: 'graphoracle',   /* Knowledge Graph Oracle module chip (2026-11-21) */
     simulate: 'simulate'
     /* database / molecule-detail / protocol-detail / map → no active chip (Data is not a top-nav button) */
   };
@@ -4792,6 +4830,7 @@ function setScene() {
                 : (lbl === 'papers') ? 'papers'
                 : (lbl === 'science') ? 'science'
                 : (lbl === 'ecosystem') ? 'ecosystem'
+                : (lbl === 'graph oracle') ? 'graphoracle'
                 : (lbl === 'simulate') ? 'simulate'
                 : '';
     d.classList.toggle('active', !!navCat && chipCat === navCat);
@@ -10214,6 +10253,7 @@ body:not(.ff-analytics) a[href="/analytics"] {display:none!important}
 </script>
 <script src="/app/assets/environment-badge.js" defer></script>
 <script src="/app/assets/oracle-appearance.js" defer></script>
+<script src="/app/assets/graph-oracle-nav.js" defer></script>
 <script src="/app/assets/account-menu.js" defer></script>
 </body>
 </html>
