@@ -1,4 +1,4 @@
-# Last updated: 2026-11-21 22:40 UTC · Claude (Opus 5.5) · hosted LightRAG source (KG_ORACLE_REMOTE_URL + KEY) via authenticated /graphs, TTL cache, truncation surfaced · prev 2026-11-18 · Codex · native feedback writer and provenance isolation.
+# Last updated: 2026-11-22 UTC · Claude (Fable 5.2) · model call no longer passes `temperature` (SDK 2.x TypeError -> "unavailable"); unexpected failures are logged. Prior: 2026-11-21 22:40 UTC · Claude (Opus 5.5) · hosted LightRAG source (KG_ORACLE_REMOTE_URL + KEY) via authenticated /graphs, TTL cache, truncation surfaced · prev 2026-11-18 · Codex · native feedback writer and provenance isolation.
 """Graph-only Oracle. Feedback augments a provenance-labelled graph overlay.
 
 Two graph sources (read-only):
@@ -353,8 +353,10 @@ def handle(handler, action, client, model):
             return handler._send_json({'error':'Request is too large.'},413)
         body=handler._read_json_body() if action != 'status' else {}
         def reason(prompt):
+            # No `temperature`: the Anthropic SDK 2.x `messages.create()` has no such argument and raises TypeError,
+            # which surfaced only as "Graph Oracle is unavailable" (dev, 2026-11-21).
             response=client.messages.create(model=os.environ.get('KG_ORACLE_MODEL',model),max_tokens=3500,
-                temperature=0,timeout=60,messages=[{'role':'user','content':prompt}])
+                timeout=60,messages=[{'role':'user','content':prompt}])
             return ''.join(b.text for b in response.content if getattr(b,'type',None)=='text')
         result=dispatch(action,body,handler.headers.get('X-KG-Session',''),reason)
         return handler._send_json(result)
@@ -365,4 +367,6 @@ def handle(handler, action, client, model):
     except Exception as exc:
         if getattr(exc, 'status_code', None) in (401,403):
             return handler._send_json({'error':'The reasoning-model credential was rejected. Update the local Anthropic API key and restart the demo.'},503)
+        # Say WHY in the server log (type + short message, never the prompt or a key); the person sees fixed wording.
+        sys.stderr.write('[graph-oracle] %s failed: %s %s\n' % (action, type(exc).__name__, str(exc)[:300]))
         return handler._send_json({'error':'Graph Oracle is unavailable. Your previous maps are preserved. Retry shortly.'},503)
