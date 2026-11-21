@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Last updated: 2026-11-22 UTC · Claude (Sonnet 5.5) · free trial sessions on our key, then the person's own Claude credits; credits_required event + usage trial/needs_credits. Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · individual accounts layer (flag user_accounts): landing/account pages, /api/account/*, Claude callback, per-request billing (_resolve_llm) on every LLM route. Prior 2026-11-19 10:58 UTC · Yochai (PM) with Claude · /api/ecosystem/bootstrap also returns
+# Last updated: 2026-11-22 UTC · Claude (Sonnet 5.5) · live DEV feature switches (feature_flag_overrides): a Release Center dev toggle takes effect on the dev site without a redeploy. Prior: 2026-11-22 UTC · Claude (Sonnet 5.5) · free trial sessions on our key, then the person's own Claude credits; credits_required event + usage trial/needs_credits. Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · individual accounts layer (flag user_accounts): landing/account pages, /api/account/*, Claude callback, per-request billing (_resolve_llm) on every LLM route. Prior 2026-11-19 10:58 UTC · Yochai (PM) with Claude · /api/ecosystem/bootstrap also returns
 #   `crosslinks` = flag `ecosystem_crosslinks` for this environment.
 # Prev 2026-11-17 20:26 UTC · Codex · Explicit paper access lookup and complete per-source stance accounting.
 #   `ecosystem_module`): the Ecosystem's people + papers LIVE from Neon via ecosystem.live_people(pg_rows)
@@ -341,16 +341,88 @@ def _resolve_repo_file(name):
     _resolve_cache[name] = hit
     return hit
 
-def load_flags():
-    """The registry: {key: {label, description, kind, added, status, where, dev, prod, ...}}.
-    Only `dev`/`prod` are behavioural (they drive /api/flags → ff-<key> body classes);
-    every other key is descriptive metadata rendered by the Dev Area hub."""
+def _read_flags_file():
+    """The registry exactly as committed in features.json — what the Release Center edits and saves.
+    Admin handlers use THIS (never the merged view), so a live override is never written back into the file."""
     try:
         with open(_resolve_repo_file("features.json"), encoding="utf-8") as _f:
             data = json.load(_f)
         return data.get("flags", {}) if isinstance(data, dict) else {}
     except Exception:
         return {}
+
+
+# Live DEV switches. The Release Center saves a toggle to features.json AND, for env 'dev', to the dev database
+# (table feature_flag_overrides). A dev server merges them in within a few seconds, so flipping a DEV switch changes
+# the dev site at once — no redeploy. Production NEVER reads this: prod changes only through promote. A missing
+# table or a database blip simply means the committed value stands.
+_FLAG_OVERRIDE_TTL = 5.0
+_flag_overrides_state = {"at": 0.0, "map": {}, "ok": False}
+_flag_overrides_lock = threading.Lock()
+
+
+def _flag_overrides():
+    if APP_ENV != "dev" or not DATABASE_URL:
+        return {}
+    with _flag_overrides_lock:
+        if time.time() - _flag_overrides_state["at"] < _FLAG_OVERRIDE_TTL:
+            return dict(_flag_overrides_state["map"])
+    try:
+        rows = pg_rows("SELECT key, value FROM feature_flag_overrides WHERE env = 'dev'")
+        found, ok = {r["key"]: bool(r["value"]) for r in rows}, True
+    except Exception:
+        with _flag_overrides_lock:
+            found, ok = dict(_flag_overrides_state["map"]), False         # keep the last known values
+    with _flag_overrides_lock:
+        _flag_overrides_state.update(at=time.time(), map=found, ok=ok)
+    return dict(found)
+
+
+def _flag_overrides_write(sql, params):
+    """Run one write against the dev database; True on success. Never raises."""
+    if APP_ENV != "dev" or not DATABASE_URL:
+        return False
+    try:
+        import psycopg2
+        conn = psycopg2.connect(DATABASE_URL)
+        try:
+            with conn.cursor() as cur:
+                cur.execute(sql, params)
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception as e:
+        sys.stderr.write("[flags] live dev override not saved: %s\n" % type(e).__name__)
+        return False
+    with _flag_overrides_lock:
+        _flag_overrides_state["at"] = 0.0                                 # next read refreshes
+    return True
+
+
+def _set_flag_override(key, value):
+    """Make a dev toggle live. True when the dev database took it (False: only features.json was saved)."""
+    return _flag_overrides_write(
+        "INSERT INTO feature_flag_overrides (env, key, value, updated_at) VALUES ('dev', %s, %s, now()) "
+        "ON CONFLICT (env, key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()", (key, bool(value)))
+
+
+def _clear_flag_override(key):
+    return _flag_overrides_write("DELETE FROM feature_flag_overrides WHERE env = 'dev' AND key = %s", (key,))
+
+
+def _live_dev_available():
+    """True when dev toggles can take effect live here (dev server, database reachable, table present)."""
+    _flag_overrides()
+    return APP_ENV == "dev" and bool(DATABASE_URL) and bool(_flag_overrides_state["ok"])
+
+
+def load_flags():
+    """The registry as THIS server should behave: features.json, with live dev overrides merged into the dev column."""
+    flags = _read_flags_file()
+    for key, value in _flag_overrides().items():
+        if isinstance(flags.get(key), dict):
+            flags[key] = {**flags[key], "dev": value}
+    return flags
 
 def save_flags(flags):
     """Write the registry back, PRESERVING any other top-level keys (e.g. `_schema`)."""
@@ -1384,7 +1456,8 @@ class Handler(SimpleHTTPRequestHandler):
             return self._send_json({k: bool(v.get(APP_ENV, False)) for k, v in flags.items()})
         if path == "/api/flags/all":
             # Full dev+prod matrix — powers the Release Center dashboard.
-            return self._send_json({"env": APP_ENV, "admin": self._local_admin_ok(), "flags": load_flags()})
+            return self._send_json({"env": APP_ENV, "admin": self._local_admin_ok(), "flags": load_flags(),
+                                    "live_dev": _live_dev_available()})
         # ── Maillard simulator (flag-gated; see server/maillard/CONTRACT.md) ──
         if path == "/api/simulate/health" or path.startswith("/api/simulate/"):
             if not _flag_on("maillard_sim"):
@@ -2493,12 +2566,13 @@ class Handler(SimpleHTTPRequestHandler):
             if type(body.get("value")) is not bool:
                 return self._send_json({"error":"value must be true or false"},400)
             val = body["value"]
-            flags = load_flags()
+            flags = _read_flags_file()
             if key not in flags or env not in ("dev", "prod"):
                 return self._send_json({"error": "unknown flag or env"}, 400)
             flags[key][env] = val
             save_flags(flags)
-            return self._send_json({"ok": True, "flags": flags})
+            live = _set_flag_override(key, val) if env == "dev" else False    # dev: also live on the dev site (no redeploy)
+            return self._send_json({"ok": True, "flags": load_flags(), "live": live})
         if path == "/api/flags/upsert":
             # Create OR update a whole registry entry, so a new feature/screen can be
             # registered from the Dev Area hub instead of hand-editing features.json.
@@ -2506,7 +2580,7 @@ class Handler(SimpleHTTPRequestHandler):
             key = str(body.get("key", "")).strip()
             if not re.match(r"^[a-z0-9][a-z0-9_]{1,48}$", key):
                 return self._send_json({"error": "key must be lowercase a-z0-9_ (2-49 chars)"}, 400)
-            flags = load_flags()
+            flags = _read_flags_file()
             entry = dict(flags.get(key) or {})
             is_new = key not in flags
             for f in FLAG_TEXT_FIELDS:
@@ -2535,7 +2609,7 @@ class Handler(SimpleHTTPRequestHandler):
             flags[key] = entry
             save_flags(flags)
             return self._send_json({"ok": True, "created": is_new, "key": key,
-                                    "entry": entry, "flags": flags})
+                                    "entry": entry, "flags": load_flags()})
         if path in ("/api/release/deploy-dev", "/api/release/promote"):
             if not release_jobs.authorized_request(self.headers):
                 return self._send_json({"error":"Use the local Release Center to authorize this action."},403)

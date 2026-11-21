@@ -47,3 +47,9 @@ The list is empty until you've promoted at least once — each Promote creates a
 ## Flag #1: the new logo
 
 `new_logo` is wired as the first example (currently a placeholder restyle of the wordmark until the real asset is dropped in). It's ON in dev, OFF in prod — so staging shows it and the public site doesn't. Drop the real logo file in and it swaps in behind the same switch.
+
+## DEV switches are live (2026-11-22)
+Flipping a **DEV** switch in the Release Center now changes the **dev site within seconds — no deploy needed** (reload the dev page). The switch is saved to `features.json` as before AND written to the dev database table `feature_flag_overrides` (migration 0036); every dev server merges those rows into its flags (cached ~5 s). The page shows `dev · live` next to the toggle when this is working, and `dev · saved` when only the file could be saved (the toast then says "Deploy to update staging").
+- **Production is unchanged:** PROD switches still change only through *Promote*; the table rejects any non-dev row and production never reads it.
+- **Needs:** the local cockpit must run the new code (**restart** `release-center.command`) and its `.env.dev` `DATABASE_URL` must be the dev database.
+- **If the file and the live value ever differ** (e.g. someone edits `features.json` and deploys), the live dev value wins on the dev site until that switch is toggled again; the Release Center always shows the live value.

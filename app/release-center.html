@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Last updated: 2026-10-29 10:49 UTC · Full-Stack · local-admin dashboard entry; saved versus observed production status preserved. -->
+<!-- Last updated: 2026-11-22 UTC · Claude (Sonnet 5.5) · DEV switches show 'live' and take effect on the dev site at once. Prior: 2026-10-29 10:49 UTC · Full-Stack · local-admin dashboard entry; saved versus observed production status preserved. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -90,11 +90,11 @@
 
 <script>
 const $ = s => document.querySelector(s);
-let savedFlags = {}, observedProduction = null;
+let savedFlags = {}, observedProduction = null, liveDev = false;   // liveDev: a DEV switch takes effect on the dev site at once
 function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),3600); }
 function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function ctl(key,env,on,admin,label){
-  if(admin) return `<div class="sw">${env} · saved<button class="toggle" aria-label="${esc(label||key)} — ${env}" aria-pressed="${!!on}" data-key="${esc(key)}" data-env="${env}"></button></div>`;
+  if(admin) return `<div class="sw">${env} · ${env==='dev'&&liveDev?'live':'saved'}<button class="toggle" aria-label="${esc(label||key)} — ${env}" aria-pressed="${!!on}" data-key="${esc(key)}" data-env="${env}"></button></div>`;
   return `<div class="sw">${env}<span class="ro ${on?'on':''}">${on?'ON':'off'}</span></div>`;
 }
 function updatePublished(){
@@ -141,6 +141,7 @@ async function load(){
     $('#productionStatus').style.display='block';
     checkProduction();
   }
+  liveDev = !!data.live_dev;
   const flags = savedFlags = data.flags||{};
   const keys = Object.keys(flags);
   $('#flags').innerHTML = keys.length ? keys.map(k=>{
@@ -168,7 +169,7 @@ async function onToggle(e){
     savedFlags=result.flags||savedFlags;
     b.setAttribute('aria-pressed', next?'true':'false');
     updatePublished();
-    toast(`${key}: ${env} → ${next?'ON':'off'} saved. ${env==='prod'?'Promote and verify to publish.':'Deploy to update staging.'}`);
+    toast(env==='dev'&&result.live ? `${key}: dev → ${next?'ON':'off'} — live on the dev site now (reload it).` : `${key}: ${env} → ${next?'ON':'off'} saved. ${env==='prod'?'Promote and verify to publish.':'Deploy to update staging.'}`);
   }catch(_){ toast('Could not save — is the local server running?'); }
   finally{ b.disabled=false; }
 }
