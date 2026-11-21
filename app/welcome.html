@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · shared-password team members see "Open MeatCODE" instead of Connect Claude. Prior: GFI logo embedded (data URI) so the page also renders when opened as a file. Prior: landing: GFI Israel + MeatCODE lockup, ONE button ("Connect Claude" -> /connect), no create-account buttons, the explainer box removed, "open-source, free platform" copy. Self-contained apart from the public GFI logo. -->
+<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · footer and the top-right button removed — the hero "Connect Claude" is the only button. Prior: shared-password team members see "Open MeatCODE" instead of Connect Claude. Prior: GFI logo embedded (data URI) so the page also renders when opened as a file. Prior: landing: GFI Israel + MeatCODE lockup, ONE button ("Connect Claude" -> /connect), no create-account buttons, the explainer box removed, "open-source, free platform" copy. Self-contained apart from the public GFI logo. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -30,7 +30,6 @@
   .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
   .card h3{margin:0 0 6px;font-size:17px}
   .card p{margin:0;color:var(--ink-2);font-size:15px}
-  footer{border-top:1px solid var(--line);padding:20px 0 40px;color:var(--ink-2);font-size:14px;display:flex;gap:14px;flex-wrap:wrap;justify-content:space-between}
   .off{display:none}
   @media (max-width:560px){.lockup img{height:36px}.lockup .mc{font-size:21px}.lockup .bar{height:28px}.lockup{gap:12px}}
 </style>
@@ -45,7 +44,6 @@
     </a>
     <nav>
       <a class="btn quiet off" id="navAccount" href="/account">Account</a>
-      <a class="btn primary" id="navMain" href="/connect">Connect Claude</a>
     </nav>
   </header>
 
@@ -65,10 +63,6 @@
     </section>
   </main>
 
-  <footer>
-    <span>Owner: Daniel Dikovsky (GFI IL, SciTech) · Built by Lior Teper</span>
-    <a href="/app/meatcode_mockup.html">Team member? Sign in with the shared password</a>
-  </footer>
 </div>
 <script>
 (function(){
@@ -77,7 +71,7 @@
     if(!d)return;
     if(d.signed_in)document.getElementById('navAccount').classList.remove('off');
     if(d.team||(d.signed_in&&d.claude&&d.claude.status==='linked')){
-      ['navMain','heroMain'].forEach(function(id){var a=document.getElementById(id);a.textContent='Open MeatCODE';a.href='/app/meatcode_mockup.html'});
+      ['heroMain'].forEach(function(id){var a=document.getElementById(id);a.textContent='Open MeatCODE';a.href='/app/meatcode_mockup.html'});
     }
   }).catch(function(){});
 })();

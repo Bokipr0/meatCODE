@@ -253,8 +253,10 @@ class AccountsServerTests(unittest.TestCase):
 
     def test_landing_has_one_button_the_gfi_lockup_and_the_new_copy(self):
         html = self.call("GET", "/welcome")[1]
-        self.assertEqual(html.count('class="btn primary"'), 2)                       # nav + hero: the same single action
-        self.assertEqual(html.count(">Connect Claude<"), 2)
+        self.assertEqual(html.count('class="btn primary"'), 1)                       # exactly one button on the page…
+        self.assertEqual(html.count(">Connect Claude<"), 1)                          # …and it is Connect Claude (hero only; no top-right twin)
+        for gone_too in ("Team member?", "Owner: Daniel", "<footer"):                # footer removed
+            self.assertNotIn(gone_too, html)
         for gone in ("Create account", "Create your account", "Bring your own Claude", ">Sign in<"):
             self.assertNotIn(gone, html)
         self.assertIn("MeatCODE is an open-source, free platform", html)
