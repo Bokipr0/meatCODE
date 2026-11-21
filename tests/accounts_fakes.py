@@ -107,18 +107,28 @@ class MemoryLinkStore:
     def set_error(self, user_id, code):
         self.rows[user_id]["last_error"] = code
 
+    def set_needs_credits(self, user_id, flag):
+        self.rows[user_id]["needs_credits"] = bool(flag)
+
 
 class MemoryUsageStore:
     """Same interface as usage_log.PgUsageStore. `users` (a MemoryStore) supplies last_login_at like the SQL join does."""
 
-    def __init__(self, users=None):
-        self.rows, self.last_used, self.users = [], {}, users
+    def __init__(self, users=None, links=None):
+        self.rows, self.last_used, self.users, self.links = [], {}, users, links
 
     def record(self, user_id, route, model, input_tokens, output_tokens, status, **extra):
         self.rows.append({"user_id": user_id, "route": route, "model": model, "input_tokens": input_tokens,
                           "output_tokens": output_tokens, "status": status, "created_at": time.time(), **extra})
         if status != "error":
             self.last_used[user_id] = time.time()
+            if self.links and extra.get("billed_to", "user_profile") != "trial" and user_id in self.links.rows:
+                self.links.rows[user_id]["needs_credits"] = False          # like the SQL: a successful billed call proves credit
+
+    def trial_answer_times(self, user_id):
+        import datetime
+        return [datetime.datetime.fromtimestamp(r["created_at"], datetime.timezone.utc) for r in self.rows
+                if r["user_id"] == user_id and r.get("billed_to") == "trial" and r.get("kind") == "answer"]
 
     def last_times(self, user_id):
         import datetime

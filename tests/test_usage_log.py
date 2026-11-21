@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "server"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import claude_link as cl
 import usage_log
+from datetime import datetime, timedelta, timezone
 from accounts_fakes import MemoryUsageStore
 
 
@@ -69,10 +70,10 @@ class RecorderTests(unittest.TestCase):
                 {"role": "user", "content": "first"}, {"role": "assistant", "content": "reply"},
                 {"role": "user", "content": "What makes umami?"}]):
             pass
-        self.assertEqual(self.texts[-1], {"input_text": "What makes umami?", "output_text": "The ANSWER."})     # last user message only
+        self.assertEqual(self.texts[-1], {"input_text": "What makes umami?", "output_text": "The ANSWER.", "kind": "answer"})   # last user message only
         self.assertNotIn("SOURCES", str(self.texts))                                                          # never the system prompt
         client.messages.create(model="m", messages=[{"role": "user", "content": "HELPER PROMPT WITH CLAIMS"}])
-        self.assertEqual(self.texts[-1], {"input_text": None, "output_text": None})                           # counts only
+        self.assertEqual(self.texts[-1], {"input_text": None, "output_text": None, "kind": "helper"})        # counts only
 
     def test_block_style_user_content_and_a_failed_stream_are_handled(self):
         b, _ = base()
@@ -88,6 +89,111 @@ class RecorderTests(unittest.TestCase):
     def test_no_recorder_is_fine(self):
         b, _ = base()
         cl.BilledClient(b, "uprof_1").messages.create(model="m")
+
+
+class CreditErr(Exception):
+    def __init__(self, status, text=None):
+        super().__init__(text or "HTTP %s" % status)
+        self.status_code = status
+
+
+def refusing(status, text=None):
+    """A fake Claude whose requests fail like an API refusal."""
+    class Mgr:
+        def __enter__(self): raise CreditErr(status, text)
+        def __exit__(self, *a): return False
+    def create(**kw): raise CreditErr(status, text)
+    return SimpleNamespace(messages=SimpleNamespace(create=create, stream=lambda **kw: Mgr()))
+
+
+class CreditsAndTrialClientTests(unittest.TestCase):
+    def setUp(self):
+        self.seen, self.flagged = [], []
+        self.rec = lambda model, i, o, status, **kw: self.seen.append((status, kw.get("kind")))
+        self.hook = lambda: self.flagged.append(1)
+
+    def test_trial_mode_passes_calls_through_unbilled_and_unchanged(self):
+        calls = []
+        b = SimpleNamespace(messages=SimpleNamespace(create=lambda **kw: calls.append(kw) or SimpleNamespace(usage=None), stream=None))
+        cl.BilledClient(b, None, recorder=self.rec).messages.create(model="m", extra_headers={"x": "1"})
+        self.assertEqual(calls[0], {"model": "m", "extra_headers": {"x": "1"}})                 # no billing headers/body at all
+        self.assertEqual(self.seen, [("ok", "helper")])
+
+    def test_kinds_answer_for_streams_helper_for_create(self):
+        b, _ = base()
+        client = cl.BilledClient(b, "uprof_1", recorder=self.rec)
+        client.messages.create(model="m")
+        with client.messages.stream(model="m", messages=[{"role": "user", "content": "q"}]):
+            pass
+        self.assertEqual(self.seen, [("ok", "helper"), ("ok", "answer")])
+
+    def test_a_billed_call_refused_for_credit_becomes_credits_required_and_flags_it(self):
+        for status, text in ((402, None), (403, '{"error":"user_profile_not_billable"}')):
+            self.flagged.clear()
+            client = cl.BilledClient(refusing(status, text), "uprof_1", recorder=self.rec, on_credits_required=self.hook)
+            with self.assertRaises(cl.CreditsRequired):
+                with client.messages.stream(model="m", messages=[{"role": "user", "content": "q"}]):
+                    pass
+            with self.assertRaises(cl.CreditsRequired):
+                client.messages.create(model="m")
+            self.assertEqual(len(self.flagged), 2, status)
+        self.assertIn(("error", "answer"), self.seen)                                            # the failed attempt is still logged
+
+    def test_other_failures_and_the_trial_key_are_never_turned_into_credits_required(self):
+        with self.assertRaises(CreditErr):                                                       # a 500 stays a plain failure
+            cl.BilledClient(refusing(500), "uprof_1", on_credits_required=self.hook).messages.create(model="m")
+        with self.assertRaises(CreditErr):                                                       # our own key out of credit is OUR problem, not the user's
+            cl.BilledClient(refusing(402), None, on_credits_required=self.hook).messages.create(model="m")
+        self.assertEqual(self.flagged, [])
+
+    def test_the_403_not_billable_wording_counts_as_credit_too(self):
+        self.assertTrue(cl.is_credit_error(CreditErr(402)))
+        self.assertTrue(cl.is_credit_error(Exception('{"error":"user_profile_not_billable"}')))
+        self.assertFalse(cl.is_credit_error(CreditErr(429)))
+
+
+class TrialStateTests(unittest.TestCase):
+    NOW = datetime(2026, 11, 22, 12, 0, tzinfo=timezone.utc)
+    POLICY = {"sessions": 2, "idle_minutes": 30, "answers": 3}
+
+    def state(self, *minutes_ago):
+        class S:
+            def trial_answer_times(self_inner, uid):
+                return sorted(self.NOW - timedelta(minutes=m) for m in minutes_ago)
+        return usage_log.trial_state(S(), 1, self.POLICY, now=self.NOW)
+
+    def test_fresh_user_has_both_sessions(self):
+        s = self.state()
+        self.assertEqual((s["allowed"], s["sessions_used"], s["answers_in_session"]), (True, 0, 0))
+
+    def test_answers_within_the_idle_window_are_one_session(self):
+        s = self.state(20, 10, 5)                                                  # 3 answers, but the cap (3) ends the session
+        self.assertEqual((s["sessions_used"], s["allowed"]), (1, True))            # session 2 is still available
+        s = self.state(20, 10)
+        self.assertEqual((s["sessions_used"], s["answers_in_session"], s["allowed"]), (1, 2, True))
+
+    def test_a_long_gap_starts_a_new_session_and_two_sessions_end_the_trial(self):
+        s = self.state(300, 290, 3)                                                # session 1 long ago, session 2 just started
+        self.assertEqual((s["sessions_used"], s["answers_in_session"], s["allowed"]), (2, 1, True))      # may continue session 2
+        s = self.state(600, 300, 100)                                              # three separate sessions' worth of gaps
+        self.assertEqual((s["sessions_used"], s["allowed"], s["exhausted"]), (3, False, True))
+        s = self.state(300, 290, 285, 120)                                         # session 1 (cap hit) then session 2 closed by idle
+        self.assertEqual((s["allowed"], s["exhausted"]), (False, True))
+
+    def test_cap_reached_in_the_last_session_ends_the_trial_immediately(self):
+        s = self.state(300, 20, 15, 10)                                            # session 1; session 2 = 3 answers (cap), still recent
+        self.assertEqual((s["sessions_used"], s["answers_in_session"], s["allowed"]), (2, 0, False))
+
+    def test_trial_can_be_switched_off(self):
+        self.assertEqual(usage_log.trial_policy({"TRIAL_SESSIONS": "0"})["sessions"], 0)
+        class S:
+            def trial_answer_times(self, uid): return []
+        self.assertFalse(usage_log.trial_state(S(), 1, usage_log.trial_policy({"TRIAL_SESSIONS": "0"}))["allowed"])
+
+    def test_policy_defaults_and_garbage_values(self):
+        self.assertEqual(usage_log.trial_policy({}), {"sessions": 2, "idle_minutes": 30, "answers": 10})
+        self.assertEqual(usage_log.trial_policy({"TRIAL_SESSIONS": "lots", "TRIAL_ANSWERS_PER_SESSION": "9999"}),
+                         {"sessions": 2, "idle_minutes": 30, "answers": 200})
 
 
 class SnapshotTests(unittest.TestCase):

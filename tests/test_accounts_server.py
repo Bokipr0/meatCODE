@@ -26,7 +26,8 @@ BASIC = {"Authorization": "Basic " + base64.b64encode(b"meatcode:team-pw").decod
 JSON_H = {"Content-Type": "application/json"}
 ENV = {"CLAUDE_OAUTH_CLIENT_ID": "client-xyz", "CLAUDE_OAUTH_REDIRECT_URI": "https://site.test/claude/billing/callback",
        "ANTHROPIC_FEDERATION_RULE_ID": "fdrl_1", "ANTHROPIC_ORGANIZATION_ID": "org", "ANTHROPIC_SERVICE_ACCOUNT_ID": "svac_1",
-       "ANTHROPIC_WORKSPACE_ID": "wrkspc_1", "SIGNUP_MODE": "invite", "SIGNUP_INVITE_CODE": "seaweed", "APP_ENV": "dev"}
+       "ANTHROPIC_WORKSPACE_ID": "wrkspc_1", "SIGNUP_MODE": "invite", "SIGNUP_INVITE_CODE": "seaweed", "APP_ENV": "dev",
+       "TRIAL_SESSIONS": "0"}                              # free trial off by default here; its own tests switch it on
 
 
 def answer_text(sse):
@@ -40,19 +41,30 @@ def answer_text(sse):
     return "".join(out)
 
 
-def fake_claude(label, log):
+class CreditError(Exception):
+    status_code = 402
+
+
+def fake_claude(label, log, fail=None):
     """A fake Anthropic client that records which 'account' answered and with what kwargs."""
     class Stream:
-        text_stream = iter("Hello from " + label)
+        @property
+        def text_stream(self):                                   # a fresh stream per request (this fake client is reused)
+            return iter("Hello from " + label)
         current_message_snapshot = SimpleNamespace(usage=SimpleNamespace(input_tokens=11, output_tokens=22))
         def get_final_message(self): return SimpleNamespace(content=[SimpleNamespace(type="text", text="Hello from " + label)])
-        def __enter__(self): return self
+        def __enter__(self):
+            if fail:
+                raise fail
+            return self
         def __exit__(self, *a): return False
     def stream(**kw):
         log.append((label, kw))
         return Stream()
     def create(**kw):
         log.append((label, kw))
+        if fail:
+            raise fail
         return SimpleNamespace(content=[SimpleNamespace(type="text", text="{}")], usage=SimpleNamespace(input_tokens=3, output_tokens=4))
     return SimpleNamespace(messages=SimpleNamespace(stream=stream, create=create))
 
@@ -61,7 +73,8 @@ class AccountsServerTests(unittest.TestCase):
     def setUp(self):
         user_accounts.THROTTLE.reset(*list(user_accounts.THROTTLE._hits))
         self.users, self.links, self.calls = MemoryStore(), MemoryLinkStore(), []
-        self.usage = MemoryUsageStore(self.users)
+        self.usage = MemoryUsageStore(self.users, self.links)
+        self.operator_fail = None
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         token = os.path.join(tmp.name, "token")
@@ -73,7 +86,7 @@ class AccountsServerTests(unittest.TestCase):
             patch.object(server, "_usage_store", lambda: self.usage),
             patch.object(server, "SITE_PASSWORD", "team-pw"),
             patch.object(server, "client", fake_claude("OUR-KEY", self.calls)),
-            patch.object(server, "_operator_client", lambda: fake_claude("OPERATOR", self.calls)),
+            patch.object(server, "_operator_client", lambda: fake_claude("OPERATOR", self.calls, self.operator_fail)),
             patch.object(server, "DATABASE_URL", ""),
             patch.object(os, "environ", env),
         ]
@@ -97,13 +110,15 @@ class AccountsServerTests(unittest.TestCase):
             r = conn.getresponse()
             if "text/event-stream" in (r.getheader("Content-Type") or ""):
                 # The server leaves the socket open after a stream (existing behaviour, keep-alive header), so read to `done`.
-                lines = []
+                lines, terminal = [], False
                 while True:
                     line = r.fp.readline().decode("utf-8", "replace")
                     if not line:
                         break
                     lines.append(line)
-                    if line.strip() == "event: done":
+                    if line.strip() in ("event: done", "event: error", "event: credits_required"):
+                        terminal = True                                   # read this event's data line too, then stop
+                    elif terminal and line.strip() == "":
                         break
                 raw = "".join(lines)
             else:
@@ -228,6 +243,72 @@ class AccountsServerTests(unittest.TestCase):
         with patch.object(server, "_usage_store", lambda: (_ for _ in ()).throw(RuntimeError("table missing"))):
             self.assertEqual(self.call("GET", "/api/account/usage", headers=cookie)[1], {"available": False})
 
+    # ── free trial on our key, then the person's own credits ────────────────
+    def linked_user(self, cookie=None):
+        cookie = cookie or self.sign_up()
+        self.links.ensure_row(1)
+        self.links.rows[1].update(status="linked", connection_id="ocon_1", user_profile_id="uprof_ME")
+        return cookie
+
+    def test_first_answers_run_on_our_key_unbilled_and_are_logged_as_trial(self):
+        with patch.dict(os.environ, {"TRIAL_SESSIONS": "2"}):
+            cookie = self.linked_user()
+            self.assertEqual(answer_text(self.ask(cookie)[1]), "Hello from OUR-KEY")
+            label, kw = self.calls[0]
+            self.assertNotIn("extra_body", kw)                                           # nothing billed to the person
+            row = self.usage.rows[0]
+            self.assertEqual((row["billed_to"], row["kind"], row["user_profile_id"]), ("trial", "answer", "uprof_ME"))
+            usage = self.call("GET", "/api/account/usage", headers=cookie)[1]
+            self.assertEqual((usage["trial"]["sessions_used"], usage["trial"]["answers_in_session"], usage["trial"]["allowed"]), (1, 1, True))
+            self.assertFalse(usage["needs_credits"])
+
+    def test_after_the_free_answers_the_persons_own_organization_pays(self):
+        with patch.dict(os.environ, {"TRIAL_SESSIONS": "1", "TRIAL_ANSWERS_PER_SESSION": "2"}):
+            cookie = self.linked_user()
+            self.assertEqual([answer_text(self.ask(cookie)[1]) for _ in range(3)],
+                             ["Hello from OUR-KEY", "Hello from OUR-KEY", "Hello from OPERATOR"])
+            label, kw = self.calls[-1]
+            self.assertEqual((label, kw["extra_body"]["billing_policy"]["bill_to"]), ("OPERATOR", "user_profile"))
+            self.assertEqual([r["billed_to"] for r in self.usage.rows], ["trial", "trial", "user_profile"])
+            self.assertTrue(self.call("GET", "/api/account/usage", headers=cookie)[1]["trial"]["exhausted"])
+
+    def test_no_credits_after_the_trial_gives_the_guided_event_and_flags_the_connection(self):
+        self.operator_fail = CreditError("402 no credit")
+        cookie = self.linked_user()                                                      # trial off here: straight to their org
+        status, body, _ = self.ask(cookie)
+        self.assertEqual(status, 200)
+        self.assertIn("event: credits_required", body)
+        self.assertIn("https://platform.claude.com/settings/billing", body)
+        self.assertNotIn("event: error", body)                                           # not the generic "Oracle unavailable"
+        self.assertTrue(self.links.rows[1]["needs_credits"])
+        usage = self.call("GET", "/api/account/usage", headers=cookie)[1]
+        self.assertEqual((usage["needs_credits"], usage["billing_url"]), (True, "https://platform.claude.com/settings/billing"))
+        self.assertTrue(self.call("GET", "/api/account/me", headers=cookie)[1]["claude"]["needs_credits"])
+        self.operator_fail = None                                                        # they bought credits and retry…
+        self.assertEqual(answer_text(self.ask(cookie)[1]), "Hello from OPERATOR")
+        self.assertFalse(self.links.rows[1]["needs_credits"])                            # …the flag clears itself
+
+    def test_other_failures_stay_the_generic_unavailable_message(self):
+        class Boom(Exception):
+            status_code = 500
+        self.operator_fail = Boom("provider down")
+        body = self.ask(self.linked_user())[1]
+        self.assertIn("event: error", body)
+        self.assertNotIn("credits_required", body)
+
+    def test_if_the_trial_allowance_cannot_be_proven_our_key_is_never_used(self):
+        class Broken(MemoryUsageStore):
+            def trial_answer_times(self, user_id):
+                raise RuntimeError("table missing")
+        self.usage = Broken(self.users, self.links)
+        with patch.dict(os.environ, {"TRIAL_SESSIONS": "2"}), patch.object(server, "_usage_store", lambda: self.usage):
+            self.assertEqual(answer_text(self.ask(self.linked_user())[1]), "Hello from OPERATOR")
+        self.assertNotIn("OUR-KEY", [label for label, _ in self.calls])
+
+    def test_the_connect_screen_promises_two_free_sessions(self):
+        body = self.call("GET", "/connect")[1]
+        self.assertIn("first two sessions are free", body)
+
     def test_a_revoked_link_stops_billing_immediately(self):
         cookie = self.sign_up()
         self.links.ensure_row(1)
@@ -332,11 +413,6 @@ class AccountsServerTests(unittest.TestCase):
         self.assertEqual((me["user"]["email"], me["claude"]["status"]), ("dana@example.com", "linked"))      # same profile, same link
         self.assertEqual(self.call("POST", "/api/account/credentials", body, {**cookie, **origin})[0], 409)  # already has an email
 
-    def test_the_page_is_told_the_claude_connector_address(self):
-        self.assertEqual(self.call("GET", "/api/account/me")[1]["mcp_connector"]["url"], "https://meatcode-mcp.onrender.com/mcp")
-        with patch.dict(os.environ, {"MCP_CONNECTOR_URL": "https://example.test/mcp"}):
-            self.assertEqual(self.call("GET", "/api/account/me")[1]["mcp_connector"]["url"], "https://example.test/mcp")
-
     def test_everyone_can_see_whether_claude_linking_is_set_up_and_dev_sees_what_is_missing(self):
         me = self.call("GET", "/api/account/me")[1]
         self.assertEqual(me["claude_setup"], {"available": True})                        # fully configured in this test env
@@ -393,10 +469,7 @@ class AccountsServerTests(unittest.TestCase):
             self.assertNotIn(gone, body)
         for gone in ("What happens next", "You stay in control", "You'll need"):          # one centred column, no side cards
             self.assertNotIn(gone, body)
-        self.assertIn("saved on your profile", body)                                     # the storage notice must stay (API-organization route)
-        for needle in ("Add custom connector", 'id="mcpUrl"', "Open Claude", 'id="goApi"'):   # the MCP connector is the main route
-            self.assertIn(needle, body)
-        self.assertLess(body.index('id="mcp"'), body.index('id="link"'))                  # …listed before the API-organization route
+        self.assertIn("saved on your profile", body)                                     # the storage notice must stay
         for page in ("/connect", "/welcome", "/account"):
             html = self.call("GET", page)[1]
             self.assertNotRegex(html, r"<script[^>]+src=|<link[^>]+href=\"https?://|@import", page)   # self-contained: no third-party loads

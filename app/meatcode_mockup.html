@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · loads app/assets/account-menu.js: the sidebar profile card becomes the signed-in user's profile pop-out (Claude connection, usage, log out). Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · /api/ask 402 (individual not yet connected to Claude) now shows a clear message pointing to /account; nothing else touched. Prior 2026-11-18 09:04 UTC · Codex · Two-source preview, whole-card links and shared answer expansion. -->
+<!-- Last updated: 2026-11-22 UTC · Claude (Sonnet 5.5) · handles the credits_required event (guided Add-credits card via account-menu.js). Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · loads app/assets/account-menu.js: the sidebar profile card becomes the signed-in user's profile pop-out (Claude connection, usage, log out). Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · /api/ask 402 (individual not yet connected to Claude) now shows a clear message pointing to /account; nothing else touched. Prior 2026-11-18 09:04 UTC · Codex · Two-source preview, whole-card links and shared answer expansion. -->
 <meta charset="utf-8" />
 <!-- Last updated: 2026-10-28 · Codex UI/UX · optional masked research integration and content-free Oracle lifecycle hooks; no question/answer payloads. -->
 <!-- Prior update: 2026-10-27 11:37 UTC · Codex UI/UX · removed Simulate sidebar recents, SLR families and presets; Analytics zone switch now exposes the Analytics nav chip (legacy alias supported). -->
@@ -6126,6 +6126,13 @@ function streamSSE(res, researchTurn) {
           mcRenderEvidence(sourcesEl, consensusEl, sourceRows, cs);
           mcPaintCitations(bodyEl, cs);
         } catch (e) { /* unavailable classifications stay explicitly not assessed */ }
+      } else if (event === 'credits_required') {
+        // flag user_accounts: the free sessions are used and the person's own Claude account has no credit —
+        // account-menu.js draws the guided "Add credits" card in place of the answer.
+        if (window.MCResearch) window.MCResearch.failOracle(researchTurn, 'model_unavailable');
+        hideOraclePhase();
+        if (typeof window.mcShowCreditsGate === 'function') window.mcShowCreditsGate(data, bodyEl, window.mcOracleActiveQuestion || '');
+        else setOracleError('Add credits to your Claude account to keep asking.');
       } else if (event === 'ask') {
         // Guided Oracle (flag oracle_guided): one short question back instead of an answer.
         askedTurn = true;

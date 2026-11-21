@@ -1,4 +1,4 @@
-# Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · BilledClient reports token usage to an optional recorder (usage log). Prior: NEW — Claude Platform OAuth "Linked billing" (user pays for their own Claude usage)
+# Last updated: 2026-11-22 UTC · Claude (Sonnet 5.5) · unbilled trial mode, CreditsRequired + needs_credits flag, billing URL. Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · BilledClient reports token usage to an optional recorder (usage log). Prior: NEW — Claude Platform OAuth "Linked billing" (user pays for their own Claude usage)
 """Let a signed-in MeatCODE user link THEIR OWN Claude organization, so Oracle calls they make are billed to them.
 
 Anthropic docs (Beta — endpoints may change): platform.claude.com/docs/en/manage-claude/oauth-apps/organization-billing-connections
@@ -30,6 +30,7 @@ import urllib.request
 BILLING_BETA = "user-profiles-billing-2026-10-01"
 AUTH_BASE_DEFAULT = "https://auth.claude.com"
 PENDING_MINUTES = 10                        # Anthropic's request_uri lives 600 s
+BILLING_URL = "https://platform.claude.com/settings/billing"   # where credits are bought ("Buy credits"; Admin/Billing role)
 _JWT_BEARER = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
 
 # Env the feature needs (names only — values are secrets or IDs and live in the Render dashboard).
@@ -41,6 +42,16 @@ REQUIRED_ENV = (
     "ANTHROPIC_SERVICE_ACCOUNT_ID",
     "ANTHROPIC_WORKSPACE_ID",
 )
+
+
+class CreditsRequired(Exception):
+    """A request billed to the person's own Claude organization was refused because it has no usable credit
+    (HTTP 402, or 403 user_profile_not_billable). Carries no provider detail — the UI shows guided wording."""
+
+
+def is_credit_error(exc) -> bool:
+    text = str(exc).lower()
+    return getattr(exc, "status_code", None) == 402 or "user_profile_not_billable" in text
 
 
 class LinkError(Exception):
@@ -144,31 +155,47 @@ def billing_kwargs(user_profile_id: str) -> dict:
 
 
 class BilledClient:
-    """Duck-types the slice of the Anthropic client MeatCODE uses (`.messages.create` / `.messages.stream`)
-    and adds the billing arguments to every call. Hand it to code that expects `client`.
+    """Duck-types the slice of the Anthropic client MeatCODE uses (`.messages.create` / `.messages.stream`).
 
-    `recorder(model, input_tokens, output_tokens, status)` — optional — is called once per call with the token
-    counts the API reported (metadata only). It is best-effort: a failing recorder never affects the request."""
+    With a `user_profile_id` every call is billed to that person's Claude organization. With `None` it passes calls
+    straight through to `base_client` unbilled — used for the free trial sessions on MeatCODE's own key.
+    `recorder(model, input_tokens, output_tokens, status, input_text=, output_text=, kind=)` is called once per call
+    (kind 'answer' for streamed answers, 'helper' for the small supporting calls); it is best-effort and never affects
+    the request. `on_credits_required()` fires when Claude refuses a *billed* call for lack of credit; the caller then
+    gets CreditsRequired instead of a raw provider error."""
 
-    def __init__(self, base_client, user_profile_id, recorder=None):
-        self._base, self._extra, self._rec = base_client, billing_kwargs(user_profile_id), recorder
+    def __init__(self, base_client, user_profile_id, recorder=None, on_credits_required=None):
+        self._base, self._rec, self._on_credits = base_client, recorder, on_credits_required
+        self._extra = billing_kwargs(user_profile_id) if user_profile_id else None
         self.messages = self._Messages(self)
 
     def _with_billing(self, kw):
-        """Caller's own extra_headers/extra_body are kept; the billing fields always win."""
+        """Caller's own extra_headers/extra_body are kept; the billing fields always win (no-op for the trial)."""
+        if not self._extra:
+            return dict(kw)
         out = dict(kw)
         out["extra_headers"] = {**(kw.get("extra_headers") or {}), **self._extra["extra_headers"]}
         out["extra_body"] = {**(kw.get("extra_body") or {}), **self._extra["extra_body"]}
         return out
 
-    def _record(self, model, input_tokens, output_tokens, status, input_text=None, output_text=None):
+    def _record(self, model, input_tokens, output_tokens, status, input_text=None, output_text=None, kind=None):
         if not self._rec:
             return
         try:
             self._rec(model, int(input_tokens or 0), int(output_tokens or 0), status,
-                      input_text=input_text, output_text=output_text)
+                      input_text=input_text, output_text=output_text, kind=kind)
         except Exception as e:                                   # never let logging break an answer
             sys.stderr.write("[claude-link] usage log failed: %s\n" % type(e).__name__)
+
+    def _credit_refused(self, exc):
+        """Billed call refused for lack of credit -> note it and raise the guided error. Anything else: re-raise as is."""
+        if self._extra and is_credit_error(exc):
+            if self._on_credits:
+                try:
+                    self._on_credits()
+                except Exception as e:
+                    sys.stderr.write("[claude-link] credits flag failed: %s\n" % type(e).__name__)
+            raise CreditsRequired("credits required") from exc
 
     class _Messages:
         def __init__(self, outer):
@@ -178,11 +205,12 @@ class BilledClient:
             o = self._o
             try:
                 resp = o._base.messages.create(**o._with_billing(kw))
-            except Exception:
-                o._record(kw.get("model"), 0, 0, "error")
+            except Exception as e:
+                o._record(kw.get("model"), 0, 0, "error", kind="helper")
+                o._credit_refused(e)
                 raise
             usage = getattr(resp, "usage", None)
-            o._record(kw.get("model"), getattr(usage, "input_tokens", 0), getattr(usage, "output_tokens", 0), "ok")
+            o._record(kw.get("model"), getattr(usage, "input_tokens", 0), getattr(usage, "output_tokens", 0), "ok", kind="helper")
             return resp
 
         def stream(self, **kw):
@@ -213,7 +241,12 @@ class _RecordedStream:
         self._outer, self._model, self._manager, self._stream, self._input = outer, model, manager, None, input_text
 
     def __enter__(self):
-        self._stream = self._manager.__enter__()
+        try:
+            self._stream = self._manager.__enter__()             # this is where the HTTP request is made
+        except Exception as e:
+            self._outer._record(self._model, 0, 0, "error", input_text=self._input, kind="answer")
+            self._outer._credit_refused(e)
+            raise
         return self._stream
 
     def __exit__(self, exc_type, exc, tb):
@@ -231,7 +264,7 @@ class _RecordedStream:
             except Exception:
                 pass
         self._outer._record(self._model, input_tokens, output_tokens, "error" if exc_type else "ok",
-                            input_text=self._input, output_text=output_text)
+                            input_text=self._input, output_text=output_text, kind="answer")
         return self._manager.__exit__(exc_type, exc, tb)
 
 
@@ -289,6 +322,10 @@ class PgLinkStore:
 
     def set_error(self, user_id, code):
         self._run("UPDATE claude_connections SET last_error=%s, updated_at=now() WHERE user_id=%s", (code, user_id))
+
+    def set_needs_credits(self, user_id, flag):
+        self._run("UPDATE claude_connections SET needs_credits=%s, needs_credits_at = CASE WHEN %s THEN now() ELSE needs_credits_at END, "
+                  "updated_at=now() WHERE user_id=%s", (bool(flag), bool(flag), user_id))
 
 
 def create_user_profile(op, user_id) -> str:
@@ -411,7 +448,8 @@ def public_status(store, user, env) -> dict:
     row = store.get(user["id"]) or {}
     ready = configured(env)
     out = {"available": ready, "status": row.get("status") or "unlinked",
-           "linked_at": row.get("linked_at"), "needs_attention": row.get("last_error") == "remote_revoke_failed"}
+           "linked_at": row.get("linked_at"), "needs_attention": row.get("last_error") == "remote_revoke_failed",
+           "needs_credits": bool(row.get("needs_credits")), "billing_url": BILLING_URL}
     if not ready and (env.get("APP_ENV") or "").lower() != "prod":
         out["setup_missing"] = missing_env(env)               # dev only: tells the team what to configure
     return out

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · individual accounts layer (flag user_accounts): landing/account pages, /api/account/*, Claude callback, per-request billing (_resolve_llm) on every LLM route. Prior 2026-11-19 10:58 UTC · Yochai (PM) with Claude · /api/ecosystem/bootstrap also returns
+# Last updated: 2026-11-22 UTC · Claude (Sonnet 5.5) · free trial sessions on our key, then the person's own Claude credits; credits_required event + usage trial/needs_credits. Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · individual accounts layer (flag user_accounts): landing/account pages, /api/account/*, Claude callback, per-request billing (_resolve_llm) on every LLM route. Prior 2026-11-19 10:58 UTC · Yochai (PM) with Claude · /api/ecosystem/bootstrap also returns
 #   `crosslinks` = flag `ecosystem_crosslinks` for this environment.
 # Prev 2026-11-17 20:26 UTC · Codex · Explicit paper access lookup and complete per-source stance accounting.
 #   `ecosystem_module`): the Ecosystem's people + papers LIVE from Neon via ecosystem.live_people(pg_rows)
@@ -524,6 +524,7 @@ try:
     import usage_log
 except ImportError:
     user_accounts = claude_link = usage_log = None
+_CREDITS_EXC = (claude_link.CreditsRequired,) if claude_link else ()   # `except ():` matches nothing when accounts are off
 
 try:
     import research_dashboard
@@ -1043,15 +1044,24 @@ class Handler(SimpleHTTPRequestHandler):
                              "message": "Connect your Claude organization to use this. Open Account → Connect Claude."}, 402)
             return None
         try:
-            route, uid, usage = urlparse(self.path).path, user["id"], _usage_store()
-            link = _acct_store()[1].get(uid) or {}
+            route, uid, usage, links = urlparse(self.path).path, user["id"], _usage_store(), _acct_store()[1]
+            link = links.get(uid) or {}
             # every logged call carries the Claude identity it was billed to (as of now) and the login session it ran in
             who = {"user_profile_id": profile, "connection_id": link.get("connection_id"),
                    "session_ref": user_accounts.session_ref(self.headers)}
-            return claude_link.BilledClient(
-                _operator_client(), profile,
-                recorder=lambda model, i, o, status, input_text=None, output_text=None:
-                    usage.record(uid, route, model, i, o, status, input_text=input_text, output_text=output_text, **who))   # best-effort
+            def recorder(billed_to):
+                return lambda model, i, o, status, input_text=None, output_text=None, kind=None: usage.record(
+                    uid, route, model, i, o, status, input_text=input_text, output_text=output_text, kind=kind,
+                    billed_to=billed_to, **who)                                    # best-effort (BilledClient swallows failures)
+            try:                                                                   # first sessions are on MeatCODE's own key…
+                trial = usage_log.trial_state(usage, uid, usage_log.trial_policy(os.environ))
+            except Exception:                                                      # …but if we can't prove the allowance, NEVER spend ours
+                trial = {"allowed": False}
+            if trial["allowed"]:
+                return claude_link.BilledClient(client, None, recorder=recorder("trial"))
+            return claude_link.BilledClient(                                       # …after that: the person's own Claude organization
+                _operator_client(), profile, recorder=recorder("user_profile"),
+                on_credits_required=lambda: links.set_needs_credits(uid, True))
         except claude_link.LinkError as e:
             self._send_json({"error": str(e)}, e.status)
             return None
@@ -1179,7 +1189,6 @@ class Handler(SimpleHTTPRequestHandler):
             user = self._session_user()
             out = {"enabled": True, "signed_in": bool(user), "signup_mode": user_accounts.signup_mode(os.environ),
                    "team": self._basic_ok()}           # shared-password team member: the landing page offers "Open MeatCODE"
-            out["mcp_connector"] = {"url": os.environ.get("MCP_CONNECTOR_URL") or "https://meatcode-mcp.onrender.com/mcp"}   # the Claude connector address
             out["claude_setup"] = {"available": claude_link.configured(os.environ)}     # known to everyone, so /connect can say so up front
             if not out["claude_setup"]["available"] and (os.environ.get("APP_ENV") or "").lower() != "prod":
                 out["claude_setup"]["setup_missing"] = claude_link.missing_env(os.environ)   # names only, never on production
@@ -1198,7 +1207,14 @@ class Handler(SimpleHTTPRequestHandler):
                 self._send_json({"error": "sign in required"}, 401)
                 return True
             try:
-                self._send_json({"available": True, **usage_log.snapshot(_usage_store(), user["id"])})
+                snap = usage_log.snapshot(_usage_store(), user["id"])
+                try:
+                    snap["trial"] = usage_log.trial_state(_usage_store(), user["id"], usage_log.trial_policy(os.environ))
+                except Exception:
+                    snap["trial"] = None
+                snap["needs_credits"] = bool((_acct_store()[1].get(user["id"]) or {}).get("needs_credits"))
+                snap["billing_url"] = claude_link.BILLING_URL
+                self._send_json({"available": True, **snap})
             except Exception as e:                    # e.g. migration 0032 not applied yet — the pop-out says so, nothing breaks
                 sys.stderr.write("[accounts] usage unavailable: %s\n" % type(e).__name__)
                 self._send_json({"available": False})
@@ -2090,6 +2106,8 @@ class Handler(SimpleHTTPRequestHandler):
                 except Exception as e:
                     sys.stderr.write("[oracle-guided] consensus skipped: %s\n" % str(e)[:300])
             send_event("done", "")
+        except _CREDITS_EXC:
+            send_event("credits_required", json.dumps({"billing_url": claude_link.BILLING_URL}))
         except Exception as e:
             sys.stderr.write("[oracle-guided] answer error: %s\n" % str(e)[:300])
             send_event("error", "The MeatCODE Oracle is unavailable right now. Please try again in a moment.")
@@ -2746,6 +2764,8 @@ class Handler(SimpleHTTPRequestHandler):
                 except Exception as e:
                     sys.stderr.write("[oracle] consensus skipped: %s\n" % str(e)[:300])
             send_event("done", "")
+        except _CREDITS_EXC:
+            send_event("credits_required", json.dumps({"billing_url": claude_link.BILLING_URL}))
         except Exception as e:
             # Keep the real diagnostic in the server log (Render → Logs), but show the
             # user vendor-neutral product language — never name the model provider.

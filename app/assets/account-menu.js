@@ -1,4 +1,4 @@
-/* Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · NEW — the sidebar profile card becomes the signed-in user's profile pop-out: Claude connection, usage this month + recent activity, Log out (returns to /welcome). Self-contained; every server string is written with textContent. */
+/* Last updated: 2026-11-22 UTC · Claude (Sonnet 5.5) · free-trial status and a highlighted Add-credits button in the pop-out; window.mcShowCreditsGate draws the guided Add-credits card in the Oracle. Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · NEW — the sidebar profile card becomes the signed-in user's profile pop-out: Claude connection, usage this month + recent activity, Log out (returns to /welcome). Self-contained; every server string is written with textContent. */
 (function () {
   'use strict';
   var ME = null, POP = null, OPEN_FOR = null;
@@ -65,7 +65,15 @@
       '#mc-acct-pop .btn{display:inline-block;padding:8px 16px;border-radius:999px;border:1.5px solid #2F7F79;color:#2F7F79;background:transparent;text-decoration:none;font:inherit;font-weight:600;cursor:pointer}' +
       '#mc-acct-pop .btn.primary{background:#2F7F79;color:#fff}#mc-acct-pop .btn.out{width:100%;border-color:#D2C8B5;color:#4A4A4A;text-align:center}' +
       '#mc-acct-pop .btn:focus-visible{outline:3px solid #B5DDD8;outline-offset:2px}#mc-acct-pop .btn[disabled]{opacity:.6;cursor:progress}' +
-      '#mc-acct-pop .muted{color:#6B6A64;font-size:13px}';
+      '#mc-acct-pop .muted{color:#6B6A64;font-size:13px}#mc-acct-pop p.warnline{color:#A8573A;font-weight:600}' +
+      '.mc-gate{border:1.5px solid #D97757;background:#FFF8F4;border-radius:14px;padding:18px 20px;margin:6px 0;max-width:620px;color:#1A1A1A;font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}' +
+      '.mc-gate h4{margin:0 0 6px;font-size:17px}.mc-gate p{margin:0 0 8px;color:#4A4A4A}.mc-gate ol{margin:6px 0 10px;padding-left:22px;color:#4A4A4A}.mc-gate li{margin:4px 0}' +
+      '.mc-gate .row{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 8px}.mc-gate small{display:block;color:#6B6A64;font-size:12.5px}' +
+      '.mc-gate .btn,#mc-acct-pop .btn.pulse{display:inline-block;padding:10px 18px;border-radius:999px;border:1.5px solid #2F7F79;color:#2F7F79;background:transparent;text-decoration:none;font:inherit;font-weight:600;cursor:pointer}' +
+      '.mc-gate .btn.primary,.mc-gate .btn.pulse,#mc-acct-pop .btn.pulse{background:#2F7F79;color:#fff}' +
+      '@keyframes mcpulse{0%{box-shadow:0 0 0 0 rgba(217,119,87,.55)}70%{box-shadow:0 0 0 12px rgba(217,119,87,0)}100%{box-shadow:0 0 0 0 rgba(217,119,87,0)}}' +
+      '.mc-gate .btn.pulse,#mc-acct-pop .btn.pulse{animation:mcpulse 1.8s ease-out infinite}' +
+      '@media (prefers-reduced-motion:reduce){.mc-gate .btn.pulse,#mc-acct-pop .btn.pulse{animation:none;outline:3px solid #D97757;outline-offset:2px}}';
     document.head.appendChild(s);
   }
 
@@ -77,7 +85,26 @@
     h.appendChild(a); h.appendChild(box);
     return h;
   }
-  function claudeSection() {
+  var BILLING = 'https://platform.claude.com/settings/billing';
+  function addCreditsButton(url) {
+    var a = el('a', 'btn pulse', 'Add credits');                       // the highlighted step: opens Claude's Billing page
+    a.href = (url && /^https:\/\/platform\.claude\.com\//.test(url)) ? url : BILLING; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    return a;
+  }
+  function fillClaudeExtra(box, u) {
+    var t = u.trial;
+    if (u.needs_credits) {
+      box.appendChild(el('p', 'warnline', 'Your Claude account has no credits, so answers are paused.'));
+      box.appendChild(addCreditsButton(u.billing_url));
+      box.appendChild(el('p', 'muted', 'Buy credits on Claude, then come back — any amount works.'));
+    } else if (t && t.sessions_total > 0) {
+      var n = Math.min(t.answers_in_session > 0 ? t.sessions_used : t.sessions_used + 1, t.sessions_total);
+      box.appendChild(el('p', 'muted', t.exhausted
+        ? 'Free sessions used. Answers are now billed to your Claude account.'
+        : 'Free trial: session ' + n + ' of ' + t.sessions_total + ' · ' + t.answers_in_session + ' of ' + t.answers_per_session + ' answers used.'));
+    }
+  }
+  function claudeSection(usageP) {
     var c = (ME && ME.claude) || {}, sec = el('div', 'sec'), t = el('div', 't');
     t.appendChild(el('span', null, 'Claude'));
     var pill = el('span', 'pill ' + (linked() ? 'ok' : (c.needs_attention ? 'warn' : '')),
@@ -87,16 +114,18 @@
       ? 'Questions you ask run on your own Claude organization and are billed to it.'
       : (c.available === false ? 'Connecting Claude isn\'t switched on for this server yet.'
          : 'Connect your Claude organization to ask the Oracle.')));
+    var extra = el('div'); sec.appendChild(extra);                      // trial status / Add credits, once usage has loaded
+    usageP.then(function (r) { if (r.ok && r.json && r.json.available !== false) fillClaudeExtra(extra, r.json); }).catch(function () {});
     if (linked() || c.available !== false) {
       var a = el('a', 'btn' + (linked() ? '' : ' primary'), linked() ? 'Manage connection' : 'Connect Claude');
       a.href = '/connect'; sec.appendChild(a);
     }
     return sec;
   }
-  function usageSection() {
+  function usageSection(usageP) {
     var sec = el('div', 'sec'), t = el('div', 't'), label = el('span', null, 'Usage'), body = el('div');
     t.appendChild(label); sec.appendChild(t); body.appendChild(el('p', 'muted', 'Loading…')); sec.appendChild(body);
-    api('/api/account/usage').then(function (r) {
+    usageP.then(function (r) {
       body.textContent = '';
       if (!r.ok || !r.json || r.json.available === false) { body.appendChild(el('p', 'muted', 'Usage isn\'t available yet.')); return; }
       var u = r.json;
@@ -150,7 +179,8 @@
     var p = el('div'); p.id = 'mc-acct-pop'; p.setAttribute('role', 'dialog'); p.setAttribute('aria-label', 'Your profile'); p.tabIndex = -1;
     if (ME.signed_in) {
       p.appendChild(header(initials(ME.user.display_name || '?'), ME.user.display_name || 'You', ME.user.email || 'Signed in with Claude'));
-      p.appendChild(claudeSection()); p.appendChild(usageSection());
+      var usageP = api('/api/account/usage');                         // one request feeds both sections
+      p.appendChild(claudeSection(usageP)); p.appendChild(usageSection(usageP));
       if (ME.user.has_credentials === false) p.appendChild(credsHint());
       p.appendChild(logoutSection());
     } else {
@@ -178,6 +208,28 @@
     // usage loads after first paint and can change the height: re-place once it settles
     setTimeout(function () { if (POP && OPEN_FOR === card) place(card); }, 400);
   }
+
+  /* ── Oracle: free sessions used + no credits on the person's Claude account ── */
+  window.mcShowCreditsGate = function (data, bodyEl, question) {
+    var info = {}; try { info = JSON.parse(data) || {}; } catch (_) {}
+    injectStyle();
+    var card = el('div', 'mc-gate'); card.setAttribute('role', 'alert');
+    card.appendChild(el('h4', null, 'Add credits to keep asking'));
+    card.appendChild(el('p', null, 'You\'ve used your free sessions. From here, answers are billed to your own Claude account, which has no credits yet. Adding them takes about a minute:'));
+    var ol = el('ol');
+    ['Press Add credits below to open Claude\'s Billing page.', 'Choose Buy credits and pick an amount — a few dollars goes a long way.', 'Come back here and press “I added credits — try again”.']
+      .forEach(function (t) { ol.appendChild(el('li', null, t)); });
+    card.appendChild(ol);
+    var row = el('div', 'row'), add = addCreditsButton(info.billing_url); add.className = 'btn pulse';
+    var retry = el('button', 'btn', 'I added credits — try again'); retry.type = 'button';
+    retry.onclick = function () {
+      var ta = document.getElementById('oracleTextarea');
+      if (ta && question && typeof window.askOracle === 'function') { ta.value = question; window.askOracle(); } else { location.reload(); }
+    };
+    row.appendChild(add); row.appendChild(retry); card.appendChild(row);
+    card.appendChild(el('small', null, 'These are Claude API credits on platform.claude.com — separate from a Claude chat plan. Credits that come bundled with Max or Team plans can\'t be used here.'));
+    if (bodyEl) { while (bodyEl.firstChild) bodyEl.removeChild(bodyEl.firstChild); bodyEl.appendChild(card); }
+  };
 
   /* ── make the card real ─────────────────────────────────────────────── */
   function personalize(card) {

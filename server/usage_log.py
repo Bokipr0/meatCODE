@@ -1,4 +1,4 @@
-# Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · records the Claude identity, session, question and answer per billed call; last login/use in the snapshot. Prior: NEW — per-user usage log behind the profile pop-out (flag `user_accounts`)
+# Last updated: 2026-11-22 UTC · Claude (Sonnet 5.5) · free-trial policy/state (sessions on our key), billed_to + kind on each row. Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · records the Claude identity, session, question and answer per billed call; last login/use in the snapshot. Prior: NEW — per-user usage log behind the profile pop-out (flag `user_accounts`)
 """What a signed-in individual has used, from requests billed to their own Claude organization.
 
 Metadata only (route, model, token counts, status) — never a question, an answer or source text.
@@ -14,6 +14,36 @@ ROUTE_LABELS = {
 }
 RECENT_LIMIT = 8
 INPUT_LIMIT, OUTPUT_LIMIT = 4000, 20000        # characters kept of a question / an answer
+
+
+def trial_policy(env) -> dict:
+    """Free trial on MeatCODE's own key: this many sessions, each ending after `idle_minutes` of quiet or `answers`
+    answers (whichever first) — so the total is bounded: sessions x answers. Env: TRIAL_SESSIONS, TRIAL_IDLE_MINUTES,
+    TRIAL_ANSWERS_PER_SESSION. Set TRIAL_SESSIONS=0 to switch the trial off."""
+    def num(key, default, lo, hi):
+        try:
+            return max(lo, min(hi, int(env.get(key, default))))
+        except (TypeError, ValueError):
+            return default
+    return {"sessions": num("TRIAL_SESSIONS", 2, 0, 20), "idle_minutes": num("TRIAL_IDLE_MINUTES", 30, 1, 1440),
+            "answers": num("TRIAL_ANSWERS_PER_SESSION", 10, 1, 200)}
+
+
+def trial_state(store, user_id, policy, now=None) -> dict:
+    """Where this person is in the free trial. Raises if the log can't be read (the caller then does NOT use our key)."""
+    now = now or datetime.now(timezone.utc)
+    idle = policy["idle_minutes"] * 60
+    sessions = []                                              # each: [times of trial answers]
+    for t in store.trial_answer_times(user_id):                # ascending
+        if not sessions or (t - sessions[-1][-1]).total_seconds() > idle or len(sessions[-1]) >= policy["answers"]:
+            sessions.append([])
+        sessions[-1].append(t)
+    used = len(sessions)
+    open_session = bool(sessions) and (now - sessions[-1][-1]).total_seconds() <= idle and len(sessions[-1]) < policy["answers"]
+    allowed = open_session or used < policy["sessions"]
+    in_session = len(sessions[-1]) if open_session else 0
+    return {"allowed": allowed, "exhausted": not allowed, "sessions_total": policy["sessions"],
+            "sessions_used": used, "answers_per_session": policy["answers"], "answers_in_session": in_session}
 
 
 def route_label(route: str) -> str:
@@ -42,8 +72,13 @@ class PgUsageStore:
         finally:
             conn.close()
 
+    def trial_answer_times(self, user_id):
+        rows = self._run("SELECT created_at FROM app_usage_log WHERE user_id=%s AND billed_to='trial' AND kind='answer' "
+                         "ORDER BY created_at", (user_id,), "all") or []
+        return [r["created_at"] for r in rows]
+
     def record(self, user_id, route, model, input_tokens, output_tokens, status, user_profile_id=None,
-               connection_id=None, session_ref=None, input_text=None, output_text=None):
+               connection_id=None, session_ref=None, input_text=None, output_text=None, billed_to="user_profile", kind=None):
         """One row per billed call, tied to the Claude user it was billed to; a successful call also stamps the
         connection's last_used_at. Both statements commit together."""
         import psycopg2
@@ -52,14 +87,16 @@ class PgUsageStore:
             with conn.cursor() as cur:
                 cur.execute(
                     "INSERT INTO app_usage_log (user_id, route, model, input_tokens, output_tokens, status, "
-                    "user_profile_id, connection_id, session_ref, input_text, output_text) "
-                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    "user_profile_id, connection_id, session_ref, input_text, output_text, billed_to, kind) "
+                    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                     (user_id, (route or "")[:120], (model or "")[:80] or None, int(input_tokens or 0),
                      int(output_tokens or 0), "error" if status == "error" else "ok", user_profile_id, connection_id,
                      (session_ref or "")[:24] or None, (input_text or "")[:INPUT_LIMIT] or None,
-                     (output_text or "")[:OUTPUT_LIMIT] or None))
+                     (output_text or "")[:OUTPUT_LIMIT] or None, billed_to, kind))
                 if status != "error":
-                    cur.execute("UPDATE claude_connections SET last_used_at=now() WHERE user_id=%s", (user_id,))
+                    # a call billed to the person's own org that succeeded proves they have credit: clear the flag
+                    cur.execute("UPDATE claude_connections SET last_used_at=now()" +
+                                (", needs_credits=FALSE" if billed_to != "trial" else "") + " WHERE user_id=%s", (user_id,))
             conn.commit()
         finally:
             conn.close()
