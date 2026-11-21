@@ -1,4 +1,4 @@
-# Last updated: 2026-11-22 UTC · Claude (Fable 5.2) · auth-server requests send a named User-Agent; refusals log the raw reply + the assertion's non-secret claims. Prior: 2026-11-22 UTC · Claude (Sonnet 5.5) · unbilled trial mode, CreditsRequired + needs_credits flag, billing URL. Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · BilledClient reports token usage to an optional recorder (usage log). Prior: NEW — Claude Platform OAuth "Linked billing" (user pays for their own Claude usage)
+# Last updated: 2026-11-22 UTC · Claude (Fable 5.2) · optional self-issued client assertion (own OIDC issuer: discovery + JWKS) because the OAuth app's audience is fixed and Render's token cannot carry it. Prior: 2026-11-22 UTC · Claude (Fable 5.2) · auth-server requests send a named User-Agent; refusals log the raw reply + the assertion's non-secret claims. Prior: 2026-11-22 UTC · Claude (Sonnet 5.5) · unbilled trial mode, CreditsRequired + needs_credits flag, billing URL. Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · BilledClient reports token usage to an optional recorder (usage log). Prior: NEW — Claude Platform OAuth "Linked billing" (user pays for their own Claude usage)
 """Let a signed-in MeatCODE user link THEIR OWN Claude organization, so Oracle calls they make are billed to them.
 
 Anthropic docs (Beta — endpoints may change): platform.claude.com/docs/en/manage-claude/oauth-apps/organization-billing-connections
@@ -24,6 +24,7 @@ import json
 import os
 import secrets
 import sys
+import time
 import urllib.error
 import urllib.request
 
@@ -84,8 +85,99 @@ def auth_base(env) -> str:
     return (env.get("CLAUDE_AUTH_BASE") or AUTH_BASE_DEFAULT).rstrip("/")
 
 
+# ─── self-issued client assertion (optional) ─────────────────────────────────
+# The OAuth app accepts exactly ONE audience for its client assertion, fixed by Anthropic ("https://auth.claude.com").
+# Render's managed token always carries "api.anthropic.com" and cannot be re-audienced, so on Render the app is
+# authenticated with a JWT this server signs itself: it is its own small OIDC issuer (discovery + JWKS below, served
+# publicly by meatcode_server.py) registered in the Console as a second identity provider. The Render token keeps
+# doing what it is made for — authenticating our back end to the Claude API.
+#   CLAUDE_OAUTH_ISSUER            public issuer URL, must end with OIDC_PATH (e.g. https://<host>/oidc/claude-client)
+#   CLAUDE_OAUTH_SIGNING_KEY_PEM   RSA private key, PEM (SECRET — lives only in the Render dashboard)
+#   CLAUDE_OAUTH_ASSERTION_AUDIENCE / _SUBJECT   optional overrides of the defaults below
+OIDC_PATH = "/oidc/claude-client"
+ASSERTION_AUDIENCE_DEFAULT = "https://auth.claude.com"
+ASSERTION_SUBJECT_DEFAULT = "meatcode-backend"
+ASSERTION_SECONDS = 300
+_key_cache = {}
+
+
+def self_issuer(env) -> str:
+    """The issuer URL when this server signs its own client assertions, else ''."""
+    iss = (env.get("CLAUDE_OAUTH_ISSUER") or "").strip().rstrip("/")
+    return iss if iss.startswith("https://") and iss.endswith(OIDC_PATH) and (env.get("CLAUDE_OAUTH_SIGNING_KEY_PEM") or "").strip() else ""
+
+
+def _b64u(raw: bytes) -> str:
+    return base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
+
+
+def _signing_key(env):
+    """(private_key, public JWK incl. kid). Parsed once per key value; never logged."""
+    pem = (env.get("CLAUDE_OAUTH_SIGNING_KEY_PEM") or "").strip().replace("\\n", "\n")
+    tag = _hash(pem)
+    if tag not in _key_cache:
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        key = serialization.load_pem_private_key(pem.encode("utf-8"), password=None)
+        if not isinstance(key, rsa.RSAPrivateKey) or key.key_size < 2048:
+            raise ValueError("signing key must be RSA, 2048 bits or more")
+        pub = key.public_key().public_numbers()
+        jwk = {"e": _b64u(pub.e.to_bytes((pub.e.bit_length() + 7) // 8, "big")), "kty": "RSA",
+               "n": _b64u(pub.n.to_bytes((pub.n.bit_length() + 7) // 8, "big"))}
+        kid = _b64u(hashlib.sha256(json.dumps(jwk, sort_keys=True, separators=(",", ":")).encode()).digest())  # RFC 7638
+        _key_cache.clear()
+        _key_cache[tag] = (key, {**jwk, "kid": kid, "use": "sig", "alg": "RS256"})
+    return _key_cache[tag]
+
+
+def oidc_discovery(env):
+    """The issuer's discovery document, or None when self-issuing is off."""
+    iss = self_issuer(env)
+    if not iss:
+        return None
+    return {"issuer": iss, "jwks_uri": iss + "/jwks.json", "id_token_signing_alg_values_supported": ["RS256"],
+            "response_types_supported": ["id_token"], "subject_types_supported": ["public"]}
+
+
+def oidc_jwks(env):
+    """Public keys only. None when self-issuing is off or the key cannot be read."""
+    if not self_issuer(env):
+        return None
+    try:
+        return {"keys": [_signing_key(env)[1]]}
+    except Exception as e:
+        sys.stderr.write("[claude-link] signing key unusable: %s\n" % type(e).__name__)
+        return None
+
+
+def _self_assertion_claims(env, now=None) -> dict:
+    now = int(now if now is not None else time.time())
+    return {"iss": self_issuer(env),
+            "sub": (env.get("CLAUDE_OAUTH_ASSERTION_SUBJECT") or ASSERTION_SUBJECT_DEFAULT).strip(),
+            "aud": (env.get("CLAUDE_OAUTH_ASSERTION_AUDIENCE") or ASSERTION_AUDIENCE_DEFAULT).strip(),
+            "iat": now, "nbf": now - 5, "exp": now + ASSERTION_SECONDS, "jti": secrets.token_urlsafe(16)}
+
+
+def _sign_assertion(env) -> str:
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.asymmetric import padding
+    key, jwk = _signing_key(env)
+    head = _b64u(json.dumps({"alg": "RS256", "typ": "JWT", "kid": jwk["kid"]}, separators=(",", ":")).encode())
+    body = _b64u(json.dumps(_self_assertion_claims(env), separators=(",", ":")).encode())
+    sig = key.sign(("%s.%s" % (head, body)).encode("ascii"), padding.PKCS1v15(), hashes.SHA256())
+    return "%s.%s.%s" % (head, body, _b64u(sig))
+
+
 def client_assertion(env) -> str:
-    """Read fresh on every call — Render rotates the file."""
+    """The JWT that authenticates the OAuth app to auth.claude.com. Self-signed (fresh, single use) when
+    CLAUDE_OAUTH_ISSUER + CLAUDE_OAUTH_SIGNING_KEY_PEM are set; otherwise the identity token file, read fresh
+    on every call because Render rotates it."""
+    if self_issuer(env):
+        try:
+            return _sign_assertion(env)
+        except Exception as e:
+            sys.stderr.write("[claude-link] could not sign the client assertion: %s\n" % type(e).__name__)
+            raise LinkError("Claude linking isn't available on this server right now.", 503)
     try:
         with open(token_file(env), "r", encoding="utf-8") as fh:
             jwt = fh.read().strip()
@@ -141,6 +233,13 @@ def _post_json(url, payload, timeout=10):
 def assertion_claims(env) -> str:
     """Non-secret claims of the identity JWT (never the token or its signature), for the refusal log:
     the OAuth app accepts exactly one audience, so `aud` is the first thing to compare with the Console."""
+    if self_issuer(env):
+        try:
+            c = _self_assertion_claims(env)
+            return "self-signed aud=%s iss=%s sub=%s lifetime_s=%s kid=%s" % (
+                c["aud"], c["iss"], c["sub"], ASSERTION_SECONDS, _signing_key(env)[1]["kid"])
+        except Exception as e:
+            return "self-signed, key unreadable (%s)" % type(e).__name__
     try:
         with open(token_file(env), "r", encoding="utf-8") as fh:
             part = fh.read().strip().split(".")[1]

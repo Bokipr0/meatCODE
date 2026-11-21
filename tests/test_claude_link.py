@@ -307,5 +307,67 @@ class AuthServerRequestTest(unittest.TestCase):
         self.assertTrue(cl.assertion_claims({}).startswith("unreadable"))
 
 
+class SelfIssuedAssertionTest(unittest.TestCase):
+    """When the server is its own issuer, the client assertion is one it signs, with the audience the app expects."""
+
+    @classmethod
+    def setUpClass(cls):
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        cls.key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        cls.pem = cls.key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8,
+                                        serialization.NoEncryption()).decode()
+        cls.env = {"CLAUDE_OAUTH_ISSUER": "https://site.test/oidc/claude-client", "CLAUDE_OAUTH_SIGNING_KEY_PEM": cls.pem}
+
+    @staticmethod
+    def _decode(seg):
+        import base64
+        import json
+        return json.loads(base64.urlsafe_b64decode(seg + "=" * (-len(seg) % 4)))
+
+    def test_assertion_is_signed_with_the_published_key_and_carries_the_fixed_audience(self):
+        import base64
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric import padding, rsa
+        head, body, sig = cl.client_assertion(self.env).split(".")
+        jwk = cl.oidc_jwks(self.env)["keys"][0]
+        self.assertEqual(self._decode(head), {"alg": "RS256", "typ": "JWT", "kid": jwk["kid"]})
+        claims = self._decode(body)
+        self.assertEqual((claims["iss"], claims["aud"], claims["sub"]),
+                         ("https://site.test/oidc/claude-client", "https://auth.claude.com", "meatcode-backend"))
+        self.assertEqual(claims["exp"] - claims["iat"], 300)
+        num = lambda v: int.from_bytes(base64.urlsafe_b64decode(v + "=" * (-len(v) % 4)), "big")
+        rsa.RSAPublicNumbers(num(jwk["e"]), num(jwk["n"])).public_key().verify(          # raises if the signature is wrong
+            base64.urlsafe_b64decode(sig + "=" * (-len(sig) % 4)), ("%s.%s" % (head, body)).encode(), padding.PKCS1v15(), hashes.SHA256())
+        self.assertNotEqual(self._decode(cl.client_assertion(self.env).split(".")[1])["jti"], claims["jti"])   # single use
+
+    def test_published_documents_hold_no_private_material(self):
+        import json
+        disc, jwks = cl.oidc_discovery(self.env), cl.oidc_jwks(self.env)
+        self.assertEqual((disc["issuer"], disc["jwks_uri"]),
+                         ("https://site.test/oidc/claude-client", "https://site.test/oidc/claude-client/jwks.json"))
+        self.assertEqual(sorted(jwks["keys"][0]), ["alg", "e", "kid", "kty", "n", "use"])   # no d, p, q, dp, dq, qi
+        self.assertNotIn("PRIVATE", json.dumps([disc, jwks]))
+        self.assertIn("self-signed aud=https://auth.claude.com", cl.assertion_claims(self.env))
+        self.assertNotIn("PRIVATE", cl.assertion_claims(self.env))
+
+    def test_off_unless_both_settings_are_present_and_the_issuer_path_is_ours(self):
+        for env in ({}, {"CLAUDE_OAUTH_ISSUER": self.env["CLAUDE_OAUTH_ISSUER"]}, {"CLAUDE_OAUTH_SIGNING_KEY_PEM": self.pem},
+                    {**self.env, "CLAUDE_OAUTH_ISSUER": "https://site.test/elsewhere"},
+                    {**self.env, "CLAUDE_OAUTH_ISSUER": "http://site.test/oidc/claude-client"}):
+            self.assertEqual(cl.self_issuer(env), "")
+            self.assertIsNone(cl.oidc_discovery(env))
+            self.assertIsNone(cl.oidc_jwks(env))
+        with tempfile.TemporaryDirectory() as tmp:                      # without it, the token file is used as before
+            self.assertEqual(cl.client_assertion(env_for(tmp)), "jwt-1")
+
+    def test_unusable_key_is_a_clean_503_and_publishes_nothing(self):
+        env = {**self.env, "CLAUDE_OAUTH_SIGNING_KEY_PEM": "not a key"}
+        with self.assertRaises(cl.LinkError) as ctx:
+            cl.client_assertion(env)
+        self.assertEqual(ctx.exception.status, 503)
+        self.assertIsNone(cl.oidc_jwks(env))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1178,6 +1178,14 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/app/assets/gfi_logo.png":        # public brand asset: the pre-sign-in pages show it
             SimpleHTTPRequestHandler.do_GET(self)
             return True
+        if path.startswith(claude_link.OIDC_PATH + "/"):
+            # Public by design: Claude's auth server fetches these to verify the client assertions this server signs
+            # (see claude_link.py, "self-issued client assertion"). They contain public keys only.
+            doc = {claude_link.OIDC_PATH + "/.well-known/openid-configuration": claude_link.oidc_discovery,
+                   claude_link.OIDC_PATH + "/jwks.json": claude_link.oidc_jwks}.get(path)
+            out = doc(os.environ) if doc else None
+            self._send_json(out if out else {"error": "not found"}, 200 if out else 404)
+            return True
         pages = {"/welcome": "/app/welcome.html", "/account": "/app/account.html", "/login": "/app/account.html",
                  "/connect": "/app/connect.html"}
         if path in pages:

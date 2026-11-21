@@ -149,6 +149,22 @@ class AccountsServerTests(unittest.TestCase):
         status, body, _ = self.call("GET", "/api/account/me")
         self.assertEqual((status, body["signed_in"], body["signup_mode"]), (200, False, "invite"))
 
+    def test_issuer_documents_are_public_only_when_self_issuing_is_configured(self):
+        base = claude_link.OIDC_PATH
+        for path in (base + "/.well-known/openid-configuration", base + "/jwks.json"):
+            self.assertEqual(self.call("GET", path)[0], 404, path)            # off by default: nothing is published
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        pem = rsa.generate_private_key(public_exponent=65537, key_size=2048).private_bytes(
+            serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()).decode()
+        with patch.dict(os.environ, {"CLAUDE_OAUTH_ISSUER": "https://site.test" + base, "CLAUDE_OAUTH_SIGNING_KEY_PEM": pem}):
+            status, disc, _ = self.call("GET", base + "/.well-known/openid-configuration")     # no password, no cookie
+            self.assertEqual((status, disc["issuer"]), (200, "https://site.test" + base))
+            status, jwks, _ = self.call("GET", base + "/jwks.json")
+            self.assertEqual((status, jwks["keys"][0]["kty"]), (200, "RSA"))
+            self.assertNotIn("d", jwks["keys"][0])
+            self.assertEqual(self.call("GET", base + "/anything-else")[0], 404)
+
     def test_shared_password_team_flow_is_unchanged(self):
         self.assertEqual(self.call("GET", "/app/meatcode_mockup.html")[0], 401)                       # still gated
         self.assertEqual(self.call("GET", "/app/meatcode_mockup.html", headers=BASIC)[0], 200)
