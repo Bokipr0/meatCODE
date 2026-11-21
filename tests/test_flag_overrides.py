@@ -208,6 +208,19 @@ class ReleaseCenterPageTests(unittest.TestCase):
         self.assertIn("live on the dev site now", html)
         self.assertIn("'live':'saved'", html)
 
+    def test_the_page_warns_when_dev_switches_are_not_live(self):
+        html = (Path(__file__).resolve().parents[1] / "app" / "release-center.html").read_text(encoding="utf-8")
+        self.assertIn('id="liveWarn"', html)
+        self.assertIn("Dev switches are NOT live right now", html)
+        self.assertIn("$('#liveWarn').hidden = !(admin && !liveDev)", html)         # only the local cockpit, only when not live
+
+    def test_the_launcher_never_reuses_a_stale_cockpit(self):
+        sh = (Path(__file__).resolve().parents[1] / "Release Center" / "release-center.command").read_text(encoding="utf-8")
+        self.assertIn("'live_dev' in body", sh)                                     # reuse only a cockpit that has live dev switches
+        self.assertIn('grep -q "server/meatcode_server.py"', sh)                     # replace an older one — and only OUR server
+        self.assertLess(sh.index("'live_dev' in body"), sh.index("kill \"$OLD\""))     # check first, then replace, then start
+        self.assertLess(sh.index("kill \"$OLD\""), sh.index("RELEASE_CENTER=1 python3 server/meatcode_server.py"))
+
     def test_the_migration_cannot_hold_a_production_override(self):
         sql = (Path(__file__).resolve().parents[1] / "db" / "migrations" / "0036_feature_flag_overrides.sql").read_text(encoding="utf-8")
         self.assertIn("CHECK (env = 'dev')", sql)

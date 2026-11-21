@@ -21,7 +21,8 @@ if python3 - <<'CHECK_COCKPIT'
 import json,urllib.request
 try:
     with urllib.request.urlopen('http://127.0.0.1:8000/api/flags/all',timeout=2) as response:
-        assert json.load(response).get('admin') is True
+        body=json.load(response)
+        assert body.get('admin') is True and 'live_dev' in body   # an older cockpit (no live dev switches) is NOT reused
 except Exception:
     raise SystemExit(1)
 CHECK_COCKPIT
@@ -29,6 +30,14 @@ then
   echo "The local Release Center is already running. Opening its controls…"
   open "http://localhost:8000/app/release-center.html"
   exit 0
+fi
+
+# Something is still on port 8000 but it is not a current cockpit (e.g. a server started before an update, which would
+# silently save switches to the file only). If it is OUR server, stop it so the latest code runs.
+OLD="$(lsof -nP -iTCP:8000 -sTCP:LISTEN -t 2>/dev/null | head -1)"
+if [ -n "$OLD" ] && ps -o command= -p "$OLD" 2>/dev/null | grep -q "server/meatcode_server.py"; then
+  echo "An older Release Center server was still running. Replacing it so you get the latest version…"
+  kill "$OLD" 2>/dev/null; sleep 2
 fi
 
 echo "Opening the MeatCODE Release Center…"

@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Last updated: 2026-11-22 UTC · Claude (Sonnet 5.5) · DEV switches show 'live' and take effect on the dev site at once. Prior: 2026-10-29 10:49 UTC · Full-Stack · local-admin dashboard entry; saved versus observed production status preserved. -->
+<!-- Last updated: 2026-11-22 UTC · Claude (Sonnet 5.5) · warns when dev switches are not live (stale cockpit / dev database unreachable). Prior: 2026-11-22 UTC · Claude (Sonnet 5.5) · DEV switches show 'live' and take effect on the dev site at once. Prior: 2026-10-29 10:49 UTC · Full-Stack · local-admin dashboard entry; saved versus observed production status preserved. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -72,6 +72,7 @@
     <div class="statuscopy" id="productionCopy" role="status">Checking the deployed build…</div>
   </div>
   <div class="note">For an <b>Analytics</b> button in the platform navigation, use <b>Analytics zone</b>. The older <b>Analytics module</b> switch is a fallback only for installations without an Analytics zone setting. The separate <b>Analytics workspace</b> switch lists its preview in the Dev Area. The workspace still uses illustrative data.</div>
+  <div class="note" id="liveWarn" role="alert" hidden style="border-left:4px solid #C77E5F"><b>Dev switches are NOT live right now.</b> They are saved to this file only, so the dev site will not change until you deploy. Usually an older Release Center server is still running: close it (or run <code>release-center.command</code> again, which now replaces it) — otherwise the dev database is unreachable.</div>
   <div id="flags"><div class="locked">Loading…</div></div>
 
   <div id="historyWrap" style="display:none">
@@ -142,6 +143,7 @@ async function load(){
     checkProduction();
   }
   liveDev = !!data.live_dev;
+  $('#liveWarn').hidden = !(admin && !liveDev);          // only the local cockpit, and only when dev switches can't go live
   const flags = savedFlags = data.flags||{};
   const keys = Object.keys(flags);
   $('#flags').innerHTML = keys.length ? keys.map(k=>{

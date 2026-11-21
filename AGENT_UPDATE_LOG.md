@@ -1,3 +1,11 @@
+## 2026-11-22 05:05 UTC · Claude (Sonnet 5.5) · dev site still redirected to /welcome after Claude login was toggled off: root cause + sync + hardening
+
+Lior: the Claude-login feature (`user_accounts`) is off in the Release Center, yet the dev domain still redirected `/` to `/welcome`.
+- **Root cause:** the toggles had been made on a cockpit server that was started BEFORE the live-switch fix (PID started 21:42; `release-center.command` deliberately reuses a healthy running cockpit, so the earlier "restart" only reopened the page). That old server saved `features.json` only — the new cockpit's log shows no toggle at all — so six dev switches (highlight_inventory, research_reaction_network, ecosystem_module, demo_badge, user_accounts, new_logo) were OFF in the Release Center but ON on the dev site.
+- **Fixed now:** the stale cockpit was stopped and a current one started (`live_dev: true`); the six saved DEV switches were written to `feature_flag_overrides` so the dev site matches the Release Center. Verified live: all six off within 4 s; `GET /` now returns the password challenge (401) instead of 302 -> /welcome; `/welcome`, `/connect`, `/api/account/me` are no longer served. To switch any back on, toggle it in the Release Center (now live).
+- **Hardening:** `release-center.command` reuses a cockpit only if its `/api/flags/all` has `live_dev`, otherwise stops an older server of OURS (command contains `server/meatcode_server.py`) and starts fresh; the page shows a red-bordered "Dev switches are NOT live right now" notice when the local cockpit can't make switches live. Tests: 19 in tests/test_flag_overrides.py pass; full suite green except 2 unrelated tests needing the `cryptography` package (from another commit).
+- Note: a toggle made while live writes are impossible still only saves the file (toast says "Deploy to update staging"); the notice above now makes that state obvious.
+
 ## 2026-11-22 04:20 UTC · Claude (Sonnet 5.5) · Release Center DEV toggles now take effect on the dev site without a deploy
 
 Lior (Release Center screenshot): switching a DEV toggle does not change the feature on the dev domain — fix it.
