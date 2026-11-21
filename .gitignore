@@ -41,3 +41,12 @@ layer_e*.sqlite
 .env.kg
 .env.cloud
 infra/lightrag-cloud/kg_audit.jsonl
+infra/lightrag-cloud/.env*
+!infra/lightrag-cloud/.env.cloud.example
+data/lightrag-cloud/
+render-paste.txt
+seed_*url*.txt
+kg_audit.jsonl
+rag_storage/
+*.tar.gz
+*.tgz
