@@ -1179,6 +1179,7 @@ class Handler(SimpleHTTPRequestHandler):
             user = self._session_user()
             out = {"enabled": True, "signed_in": bool(user), "signup_mode": user_accounts.signup_mode(os.environ),
                    "team": self._basic_ok()}           # shared-password team member: the landing page offers "Open MeatCODE"
+            out["mcp_connector"] = {"url": os.environ.get("MCP_CONNECTOR_URL") or "https://meatcode-mcp.onrender.com/mcp"}   # the Claude connector address
             out["claude_setup"] = {"available": claude_link.configured(os.environ)}     # known to everyone, so /connect can say so up front
             if not out["claude_setup"]["available"] and (os.environ.get("APP_ENV") or "").lower() != "prod":
                 out["claude_setup"]["setup_missing"] = claude_link.missing_env(os.environ)   # names only, never on production

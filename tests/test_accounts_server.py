@@ -332,6 +332,11 @@ class AccountsServerTests(unittest.TestCase):
         self.assertEqual((me["user"]["email"], me["claude"]["status"]), ("dana@example.com", "linked"))      # same profile, same link
         self.assertEqual(self.call("POST", "/api/account/credentials", body, {**cookie, **origin})[0], 409)  # already has an email
 
+    def test_the_page_is_told_the_claude_connector_address(self):
+        self.assertEqual(self.call("GET", "/api/account/me")[1]["mcp_connector"]["url"], "https://meatcode-mcp.onrender.com/mcp")
+        with patch.dict(os.environ, {"MCP_CONNECTOR_URL": "https://example.test/mcp"}):
+            self.assertEqual(self.call("GET", "/api/account/me")[1]["mcp_connector"]["url"], "https://example.test/mcp")
+
     def test_everyone_can_see_whether_claude_linking_is_set_up_and_dev_sees_what_is_missing(self):
         me = self.call("GET", "/api/account/me")[1]
         self.assertEqual(me["claude_setup"], {"available": True})                        # fully configured in this test env
@@ -388,7 +393,10 @@ class AccountsServerTests(unittest.TestCase):
             self.assertNotIn(gone, body)
         for gone in ("What happens next", "You stay in control", "You'll need"):          # one centred column, no side cards
             self.assertNotIn(gone, body)
-        self.assertIn("saved on your profile", body)                                     # the storage notice must stay
+        self.assertIn("saved on your profile", body)                                     # the storage notice must stay (API-organization route)
+        for needle in ("Add custom connector", 'id="mcpUrl"', "Open Claude", 'id="goApi"'):   # the MCP connector is the main route
+            self.assertIn(needle, body)
+        self.assertLess(body.index('id="mcp"'), body.index('id="link"'))                  # …listed before the API-organization route
         for page in ("/connect", "/welcome", "/account"):
             html = self.call("GET", page)[1]
             self.assertNotRegex(html, r"<script[^>]+src=|<link[^>]+href=\"https?://|@import", page)   # self-contained: no third-party loads
