@@ -495,6 +495,8 @@ class AccountsServerTests(unittest.TestCase):
         self.assertIn("/api/account/usage", body)
         self.assertIn("/welcome", body)                                              # logout returns to the landing page
         self.assertNotIn("innerHTML", body)                                          # server strings only via textContent
+        for removed in ("Recent activity", "Manage connection", "Last login", "Questions you ask run", "Press Add credits below"):
+            self.assertNotIn(removed, body)                                          # the pop-out and credits card stay minimal
 
     def test_the_gfi_logo_is_public_but_other_assets_stay_gated(self):
         status, _, hdr = self.call("GET", "/app/assets/gfi_logo.png")

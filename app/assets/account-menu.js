@@ -1,4 +1,4 @@
-/* Last updated: 2026-11-22 UTC · Claude (Sonnet 5.5) · free-trial status and a highlighted Add-credits button in the pop-out; window.mcShowCreditsGate draws the guided Add-credits card in the Oracle. Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · NEW — the sidebar profile card becomes the signed-in user's profile pop-out: Claude connection, usage this month + recent activity, Log out (returns to /welcome). Self-contained; every server string is written with textContent. */
+/* Last updated: 2026-11-22 UTC · Claude (Sonnet 5.5) · minimal: pop-out = name, Claude status, Add credits (only when needed), one usage line, Log out; Add-credits card = one sentence + two buttons. Prior: 2026-11-22 UTC · Claude (Sonnet 5.5) · free-trial status and a highlighted Add-credits button in the pop-out; window.mcShowCreditsGate draws the guided Add-credits card in the Oracle. Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · NEW — the sidebar profile card becomes the signed-in user's profile pop-out: Claude connection, usage this month + recent activity, Log out (returns to /welcome). Self-contained; every server string is written with textContent. */
 (function () {
   'use strict';
   var ME = null, POP = null, OPEN_FOR = null;
@@ -22,14 +22,6 @@
     if (n >= 1e6) return (n / 1e6).toFixed(n >= 1e7 ? 0 : 1) + 'M';
     if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e4 ? 0 : 1) + 'k';
     return String(n);
-  }
-  function ago(iso) {
-    var t = Date.parse(iso); if (isNaN(t)) return '';
-    var s = Math.max(0, (Date.now() - t) / 1000);
-    if (s < 60) return 'just now';
-    if (s < 3600) return Math.floor(s / 60) + ' min ago';
-    if (s < 86400) return Math.floor(s / 3600) + ' h ago';
-    return Math.floor(s / 86400) + ' d ago';
   }
   function initials(name) {
     var p = String(name || '?').trim().split(/\s+/);
@@ -94,69 +86,32 @@
   function fillClaudeExtra(box, u) {
     var t = u.trial;
     if (u.needs_credits) {
-      box.appendChild(el('p', 'warnline', 'Your Claude account has no credits, so answers are paused.'));
-      box.appendChild(addCreditsButton(u.billing_url));
-      box.appendChild(el('p', 'muted', 'Buy credits on Claude, then come back — any amount works.'));
-    } else if (t && t.sessions_total > 0) {
+      box.appendChild(addCreditsButton(u.billing_url));                 // the one highlighted action, no explanation
+    } else if (t && t.sessions_total > 0 && !t.exhausted) {
       var n = Math.min(t.answers_in_session > 0 ? t.sessions_used : t.sessions_used + 1, t.sessions_total);
-      box.appendChild(el('p', 'muted', t.exhausted
-        ? 'Free sessions used. Answers are now billed to your Claude account.'
-        : 'Free trial: session ' + n + ' of ' + t.sessions_total + ' · ' + t.answers_in_session + ' of ' + t.answers_per_session + ' answers used.'));
+      box.appendChild(el('p', 'muted', 'Free trial · session ' + n + ' of ' + t.sessions_total));
     }
   }
   function claudeSection(usageP) {
     var c = (ME && ME.claude) || {}, sec = el('div', 'sec'), t = el('div', 't');
     t.appendChild(el('span', null, 'Claude'));
-    var pill = el('span', 'pill ' + (linked() ? 'ok' : (c.needs_attention ? 'warn' : '')),
-                  linked() ? 'Connected' : (c.needs_attention ? 'Needs attention' : 'Not connected'));
-    t.appendChild(pill); sec.appendChild(t);
-    sec.appendChild(el('p', null, linked()
-      ? 'Questions you ask run on your own Claude organization and are billed to it.'
-      : (c.available === false ? 'Connecting Claude isn\'t switched on for this server yet.'
-         : 'Connect your Claude organization to ask the Oracle.')));
+    t.appendChild(el('span', 'pill ' + (linked() ? 'ok' : (c.needs_attention ? 'warn' : '')),
+                     linked() ? 'Connected' : (c.needs_attention ? 'Needs attention' : 'Not connected')));
+    sec.appendChild(t);
     var extra = el('div'); sec.appendChild(extra);                      // trial status / Add credits, once usage has loaded
     usageP.then(function (r) { if (r.ok && r.json && r.json.available !== false) fillClaudeExtra(extra, r.json); }).catch(function () {});
-    if (linked() || c.available !== false) {
-      var a = el('a', 'btn' + (linked() ? '' : ' primary'), linked() ? 'Manage connection' : 'Connect Claude');
-      a.href = '/connect'; sec.appendChild(a);
-    }
+    if (!linked() && c.available !== false) { var a = el('a', 'btn primary', 'Connect Claude'); a.href = '/connect'; sec.appendChild(a); }
     return sec;
   }
   function usageSection(usageP) {
-    var sec = el('div', 'sec'), t = el('div', 't'), label = el('span', null, 'Usage'), body = el('div');
-    t.appendChild(label); sec.appendChild(t); body.appendChild(el('p', 'muted', 'Loading…')); sec.appendChild(body);
+    var sec = el('div', 'sec'), line = el('p', 'muted');
+    sec.style.display = 'none'; sec.appendChild(line);
     usageP.then(function (r) {
-      body.textContent = '';
-      if (!r.ok || !r.json || r.json.available === false) { body.appendChild(el('p', 'muted', 'Usage isn\'t available yet.')); return; }
+      if (!r.ok || !r.json || r.json.available === false) return;       // no usage table / not signed in: show nothing
       var u = r.json;
-      label.textContent = 'Usage · ' + (u.month_label || 'this month');
-      var stats = el('div', 'stats');
-      [['Requests', u.requests], ['Input tokens', fmt(u.input_tokens)], ['Output tokens', fmt(u.output_tokens)]].forEach(function (x) {
-        var s = el('div', 'stat'); s.appendChild(el('b', null, String(x[1]))); s.appendChild(el('span', null, x[0])); stats.appendChild(s);
-      });
-      body.appendChild(stats);
-      var when = [];
-      if (u.last_login_at) when.push('Last login ' + ago(u.last_login_at));
-      if (u.last_used_at) when.push('Last Claude use ' + ago(u.last_used_at));
-      if (when.length) body.appendChild(el('p', 'muted', when.join(' · ')));
-      if (!u.recent || !u.recent.length) { body.appendChild(el('p', 'muted', 'No activity yet.')); return; }
-      body.appendChild(el('div', 'muted', 'Recent activity'));
-      var ul = el('ul');
-      u.recent.slice(0, 5).forEach(function (it) {
-        var li = el('li', it.status === 'error' ? 'err' : '');
-        li.appendChild(el('span', null, it.label + (it.status === 'error' ? ' (failed)' : '') + ' · ' + fmt((it.input_tokens || 0) + (it.output_tokens || 0)) + ' tok'));
-        li.appendChild(el('small', null, ago(it.at)));
-        if (it.preview) li.appendChild(el('div', 'pv', '\u201c' + it.preview + '\u201d'));   // the person's own question, shortened
-        ul.appendChild(li);
-      });
-      body.appendChild(ul);
-    }).catch(function () { body.textContent = ''; body.appendChild(el('p', 'muted', 'Usage isn\'t available yet.')); });
-    return sec;
-  }
-  function credsHint() {
-    var sec = el('div', 'sec');
-    sec.appendChild(el('p', 'muted', 'Your profile lives in this browser. Add an email and password to sign in from other devices.'));
-    var a = el('a', 'btn', 'Add email & password'); a.href = '/account'; sec.appendChild(a);
+      line.textContent = u.requests ? u.requests + ' request' + (u.requests === 1 ? '' : 's') + ' · ' + fmt((u.input_tokens || 0) + (u.output_tokens || 0)) + ' tokens this month' : 'No usage yet';
+      sec.style.display = '';
+    }).catch(function () {});
     return sec;
   }
   function logoutSection() {
@@ -181,7 +136,6 @@
       p.appendChild(header(initials(ME.user.display_name || '?'), ME.user.display_name || 'You', ME.user.email || 'Signed in with Claude'));
       var usageP = api('/api/account/usage');                         // one request feeds both sections
       p.appendChild(claudeSection(usageP)); p.appendChild(usageSection(usageP));
-      if (ME.user.has_credentials === false) p.appendChild(credsHint());
       p.appendChild(logoutSection());
     } else {
       p.appendChild(header('T', 'Team access', 'Shared password'));
@@ -215,11 +169,7 @@
     injectStyle();
     var card = el('div', 'mc-gate'); card.setAttribute('role', 'alert');
     card.appendChild(el('h4', null, 'Add credits to keep asking'));
-    card.appendChild(el('p', null, 'You\'ve used your free sessions. From here, answers are billed to your own Claude account, which has no credits yet. Adding them takes about a minute:'));
-    var ol = el('ol');
-    ['Press Add credits below to open Claude\'s Billing page.', 'Choose Buy credits and pick an amount — a few dollars goes a long way.', 'Come back here and press “I added credits — try again”.']
-      .forEach(function (t) { ol.appendChild(el('li', null, t)); });
-    card.appendChild(ol);
+    card.appendChild(el('p', null, 'Your free sessions are used. Add credits to your Claude account to continue.'));
     var row = el('div', 'row'), add = addCreditsButton(info.billing_url); add.className = 'btn pulse';
     var retry = el('button', 'btn', 'I added credits — try again'); retry.type = 'button';
     retry.onclick = function () {
@@ -227,7 +177,6 @@
       if (ta && question && typeof window.askOracle === 'function') { ta.value = question; window.askOracle(); } else { location.reload(); }
     };
     row.appendChild(add); row.appendChild(retry); card.appendChild(row);
-    card.appendChild(el('small', null, 'These are Claude API credits on platform.claude.com — separate from a Claude chat plan. Credits that come bundled with Max or Team plans can\'t be used here.'));
     if (bodyEl) { while (bodyEl.firstChild) bodyEl.removeChild(bodyEl.firstChild); bodyEl.appendChild(card); }
   };
 
