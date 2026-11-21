@@ -1,4 +1,4 @@
-# Last updated: 2026-11-22 UTC · Claude (Sonnet 5.5) · unbilled trial mode, CreditsRequired + needs_credits flag, billing URL. Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · BilledClient reports token usage to an optional recorder (usage log). Prior: NEW — Claude Platform OAuth "Linked billing" (user pays for their own Claude usage)
+# Last updated: 2026-11-22 UTC · Claude (Fable 5.2) · auth-server requests send a named User-Agent; refusals log the raw reply + the assertion's non-secret claims. Prior: 2026-11-22 UTC · Claude (Sonnet 5.5) · unbilled trial mode, CreditsRequired + needs_credits flag, billing URL. Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · BilledClient reports token usage to an optional recorder (usage log). Prior: NEW — Claude Platform OAuth "Linked billing" (user pays for their own Claude usage)
 """Let a signed-in MeatCODE user link THEIR OWN Claude organization, so Oracle calls they make are billed to them.
 
 Anthropic docs (Beta — endpoints may change): platform.claude.com/docs/en/manage-claude/oauth-apps/organization-billing-connections
@@ -105,27 +105,62 @@ def _hash(value: str) -> str:
 
 
 # ─── HTTP to auth.claude.com (stdlib; the body never contains a secret we log) ──
+USER_AGENT = "MeatCODE-claude-link/1.0 (+https://github.com/Bokipr0/meatCODE)"
+
+
 def _post_json(url, payload, timeout=10):
+    # A named User-Agent is required: the stdlib default ("Python-urllib/x.y") is refused at the edge with a bare
+    # 403 before the OAuth server ever sees the request (seen on dev 2026-11-21: 403, no JSON, no attempt recorded).
     req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"),
-                                 headers={"content-type": "application/json"}, method="POST")
+                                 headers={"content-type": "application/json", "accept": "application/json",
+                                          "user-agent": USER_AGENT}, method="POST")
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             return resp.status, json.loads(resp.read().decode("utf-8") or "{}")
     except urllib.error.HTTPError as e:
+        raw = b""
         try:
-            body = json.loads(e.read().decode("utf-8") or "{}")
+            raw = e.read() or b""
+            body = json.loads(raw.decode("utf-8") or "{}")
+            if not isinstance(body, dict):
+                body = {}
         except Exception:
             body = {}
+        if not isinstance(body.get("error"), str):
+            # Not the documented {"error", "error_description"} shape (edge block, rate limit, outage): keep what
+            # the server said so the log explains the refusal. The response never echoes our assertion.
+            body["_raw"] = "content-type=%s server=%s body=%s" % (
+                e.headers.get("content-type"), e.headers.get("server"),
+                " ".join(raw.decode("utf-8", "replace").split())[:400])
         return e.code, body
     except Exception as e:                                    # DNS, timeout, TLS …
         sys.stderr.write("[claude-link] request to auth server failed: %s\n" % type(e).__name__)
         raise LinkError("Couldn't reach Claude. Please try again in a moment.", 502)
 
 
-def _log_refusal(step, status, body):
+def assertion_claims(env) -> str:
+    """Non-secret claims of the identity JWT (never the token or its signature), for the refusal log:
+    the OAuth app accepts exactly one audience, so `aud` is the first thing to compare with the Console."""
+    try:
+        with open(token_file(env), "r", encoding="utf-8") as fh:
+            part = fh.read().strip().split(".")[1]
+        c = json.loads(base64.urlsafe_b64decode(part + "=" * (-len(part) % 4)))
+        return "aud=%s iss=%s sub=%s lifetime_s=%s has_jti=%s" % (
+            c.get("aud"), c.get("iss"), c.get("sub"),
+            (c.get("exp") - c.get("iat")) if isinstance(c.get("exp"), int) and isinstance(c.get("iat"), int) else None,
+            "jti" in c)
+    except Exception as e:
+        return "unreadable (%s)" % type(e).__name__
+
+
+def _log_refusal(step, status, body, env=None):
     # error codes are fixed vocabulary; error_description can name a config problem — useful to Lior in the log.
     sys.stderr.write("[claude-link] %s refused: HTTP %s error=%s desc=%s\n" % (
         step, status, str(body.get("error"))[:60], str(body.get("error_description"))[:300]))
+    if body.get("_raw"):
+        sys.stderr.write("[claude-link] %s refusal detail: %s\n" % (step, body["_raw"]))
+    if env is not None:
+        sys.stderr.write("[claude-link] %s client assertion: %s\n" % (step, assertion_claims(env)))
 
 
 # ─── operator client (our back end -> Claude API, via Workload Identity Federation) ──
@@ -380,7 +415,7 @@ def begin_link(store, user, env, op_client=None, op_factory=None) -> str:
         "client_assertion": client_assertion(env),
     })
     if status != 201 or not body.get("request_uri"):
-        _log_refusal("PAR", status, body)
+        _log_refusal("PAR", status, body, env)
         store.set_error(user["id"], "par_refused")
         raise LinkError("Claude didn't accept the linking request. The MeatCODE team has been notified in the server log.", 502)
     from urllib.parse import urlencode
@@ -417,7 +452,7 @@ def finish_link(store, user, params, env) -> str:
     }, timeout=10)
     connection_id = body.get("connection_id") if status == 200 else None
     if not connection_id:
-        _log_refusal("token exchange", status, body)
+        _log_refusal("token exchange", status, body, env)
         store.set_error(user["id"], "exchange_failed")
         return "failed"
     store.mark_linked(user["id"], connection_id)               # the access token in `body` is intentionally dropped
@@ -438,7 +473,7 @@ def unlink(store, user, env) -> None:
         "client_assertion": client_assertion(env),
     })
     if status != 200:
-        _log_refusal("revoke", status, body)
+        _log_refusal("revoke", status, body, env)
         store.mark_revoked(user["id"], "remote_revoke_failed")
         raise LinkError("Disconnected here, but Claude didn't confirm. You can also unlink MeatCODE from the "
                         "Claude Console (Settings → OAuth apps).", 502)

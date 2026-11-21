@@ -254,5 +254,58 @@ class LinkFlowTests(unittest.TestCase):
             cl.unlink(self.store, USER, self.env)                           # would raise IndexError if it called out
 
 
+class AuthServerRequestTest(unittest.TestCase):
+    """The request to Claude's auth host must be identifiable, and a refusal must explain itself in the log."""
+
+    def test_request_names_itself_and_a_non_json_refusal_is_kept_for_the_log(self):
+        import io
+        import urllib.error
+        seen = {}
+
+        def refuse(req, timeout=None):
+            seen["ua"] = req.get_header("User-agent")
+            raise urllib.error.HTTPError(req.full_url, 403, "Forbidden", {"content-type": "text/plain", "server": "edge"},
+                                         io.BytesIO(b"error code: 1010"))
+
+        with patch.object(cl.urllib.request, "urlopen", refuse):
+            status, body = cl._post_json("https://auth.example/v1/oauth/par", {"client_assertion": "SECRET.JWT.SIG"})
+        self.assertEqual(status, 403)
+        self.assertTrue(seen["ua"].startswith("MeatCODE-claude-link/"))     # never the stdlib default
+        self.assertIn("error code: 1010", body["_raw"])
+        self.assertNotIn("SECRET", body["_raw"])
+
+    def test_documented_json_error_is_passed_through_unchanged(self):
+        import io
+        import urllib.error
+
+        def refuse(req, timeout=None):
+            raise urllib.error.HTTPError(req.full_url, 401, "Unauthorized", {"content-type": "application/json"},
+                                         io.BytesIO(b'{"error": "invalid_client", "error_description": "aud"}'))
+
+        with patch.object(cl.urllib.request, "urlopen", refuse):
+            self.assertEqual(cl._post_json("https://auth.example/x", {}),
+                             (401, {"error": "invalid_client", "error_description": "aud"}))
+
+    def test_assertion_claims_show_audience_but_never_the_token(self):
+        import base64
+        import json
+        import os
+        import tempfile
+        claims = {"aud": "api.anthropic.com", "iss": "https://idp", "sub": "svc", "iat": 100, "exp": 400, "jti": "j"}
+        seg = base64.urlsafe_b64encode(json.dumps(claims).encode()).rstrip(b"=").decode()
+        with tempfile.NamedTemporaryFile("w", suffix=".jwt", delete=False) as fh:
+            fh.write("HEADERPART.%s.SIGNATUREPART" % seg)
+        try:
+            out = cl.assertion_claims({"ANTHROPIC_IDENTITY_TOKEN_FILE": fh.name})
+        finally:
+            os.unlink(fh.name)
+        self.assertIn("aud=api.anthropic.com", out)
+        self.assertIn("lifetime_s=300", out)
+        self.assertIn("has_jti=True", out)
+        self.assertNotIn("SIGNATUREPART", out)
+        self.assertNotIn(seg, out)
+        self.assertTrue(cl.assertion_claims({}).startswith("unreadable"))
+
+
 if __name__ == "__main__":
     unittest.main()
