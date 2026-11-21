@@ -256,7 +256,7 @@ class AccountsServerTests(unittest.TestCase):
         for gone in ("Create account", "Create your account", "Bring your own Claude", ">Sign in<"):
             self.assertNotIn(gone, html)
         self.assertIn("MeatCODE is an open-source, free platform", html)
-        self.assertIn("/app/assets/gfi_logo.png", html)
+        self.assertIn("data:image/png;base64,", html)                                   # logo is embedded: works from the server and from file://
         self.assertIn("/connect", html)
 
     def test_the_gfi_logo_is_public_but_other_assets_stay_gated(self):
