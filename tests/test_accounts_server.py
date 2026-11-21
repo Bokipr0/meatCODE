@@ -133,8 +133,10 @@ class AccountsServerTests(unittest.TestCase):
     def test_shared_password_team_flow_is_unchanged(self):
         self.assertEqual(self.call("GET", "/app/meatcode_mockup.html")[0], 401)                       # still gated
         self.assertEqual(self.call("GET", "/app/meatcode_mockup.html", headers=BASIC)[0], 200)
-        self.assertEqual(self.call("GET", "/", headers=BASIC)[0], 302)                                # team goes straight to the product
-        self.assertEqual(self.call("GET", "/", headers=BASIC)[2]["location"], "/app/meatcode_mockup.html")
+        status, _, hdr = self.call("GET", "/", headers=BASIC)                                         # the landing page is the front door for the team too…
+        self.assertEqual((status, hdr["location"]), (302, "/welcome"))
+        self.assertIs(self.call("GET", "/api/account/me", headers=BASIC)[1]["team"], True)             # …where they get an "Open MeatCODE" button
+        self.assertIs(self.call("GET", "/api/account/me")[1]["team"], False)
 
     # ── sign-up / session ───────────────────────────────────────────────────
     def test_signup_session_unlocks_the_site_and_logout_locks_it(self):

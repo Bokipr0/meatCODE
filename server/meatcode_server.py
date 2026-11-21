@@ -1137,10 +1137,8 @@ class Handler(SimpleHTTPRequestHandler):
         """Landing + account pages, GET /api/account/me and the Claude approval callback. These work BEFORE the
         shared-password gate (a new person has no password). Returns True when it answered the request."""
         if path in ("/", ""):
-            if SITE_PASSWORD and not self._authorized():
-                self._redirect("/welcome")           # visitors land on the welcome page, not a browser password box
-                return True
-            return False
+            self._redirect("/welcome")               # the landing page is the front door for EVERYONE (the team has its
+            return True                              # own "Open MeatCODE" button on it) — not only visitors without a login
         if path == "/app/assets/gfi_logo.png":        # public brand asset: the pre-sign-in pages show it
             SimpleHTTPRequestHandler.do_GET(self)
             return True
@@ -1153,7 +1151,8 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/api/account/me":
             users, links = _acct_store()
             user = self._session_user()
-            out = {"enabled": True, "signed_in": bool(user), "signup_mode": user_accounts.signup_mode(os.environ)}
+            out = {"enabled": True, "signed_in": bool(user), "signup_mode": user_accounts.signup_mode(os.environ),
+                   "team": self._basic_ok()}           # shared-password team member: the landing page offers "Open MeatCODE"
             if user:
                 out["user"] = user_accounts.public_user(user)
                 try:
