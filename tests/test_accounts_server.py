@@ -354,6 +354,16 @@ class AccountsServerTests(unittest.TestCase):
         self.assertEqual(status, 503)
         self.assertNotIn("CLAUDE_OAUTH", json.dumps(body))                                           # no config names leak to users
 
+    def test_a_start_that_cannot_work_creates_nothing_and_does_not_use_up_the_throttle(self):
+        before = len(self.users.by_id)
+        with patch.dict(os.environ, {"CLAUDE_OAUTH_CLIENT_ID": ""}):                 # linking not configured on this server
+            for _ in range(user_accounts.THROTTLE.limit + 3):                        # more than the throttle allows
+                status, body, hdr = self.call("POST", "/api/account/claude/start", {}, {"Origin": "http://127.0.0.1:%d" % self.port})
+                self.assertEqual(status, 503)
+                self.assertNotIn("set-cookie", hdr)                                  # no pending session handed out
+        self.assertEqual(len(self.users.by_id), before)                              # no orphan profile either
+        self.assertEqual(self.start_claude()[0], 200)                                # and once configured, the very first start works
+
     def test_callback_links_and_redirects_with_fixed_wording_only(self):
         cookie = self.sign_up()
         self.links.ensure_row(1)

@@ -1243,6 +1243,8 @@ class Handler(SimpleHTTPRequestHandler):
             elif path == "/api/account/logout":
                 code, obj, cookie = user_accounts.op_logout(users, self.headers)
             elif path == "/api/account/claude/start":
+                if not claude_link.configured(os.environ):   # nothing may be created (profile, session, throttle hit) for a start that cannot work
+                    return self._send_json({"error": "Claude linking isn't set up on this server yet."}, 503)
                 user = self._pending_user()           # signed in, or already mid-link
                 if not user:                           # brand-new visitor: Claude-first — no account form needed
                     user, cookie = user_accounts.op_start_claude_profile(users, self._client_ip(), self.headers)
