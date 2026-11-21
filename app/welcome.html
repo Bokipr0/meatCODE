@@ -1,0 +1,101 @@
+<!doctype html>
+<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · NEW landing page (flag `user_accounts`): sign in / create account / bring-your-own-Claude. Self-contained on purpose — it is served before anyone is signed in. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MeatCODE — Open Meaty Flavor &amp; Aroma Initiative</title>
+<style>
+  :root{--bg:#FAF6EF;--surface:#fff;--ink:#1A1A1A;--ink-2:#4A4A4A;--line:#E5DDD0;--teal:#2F7F79;--teal-soft:#4FA59F;--mist:#E0F0EE;--mist-2:#F1F8F7;--sand:#F2EBDA;
+        --font:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--font)}
+  a{color:var(--teal)}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 0}
+  .brand{font-weight:700;font-size:20px;letter-spacing:.2px}
+  .brand span{color:var(--teal-soft)}
+  nav a.btn{margin-left:8px}
+  .btn{display:inline-block;padding:10px 18px;border-radius:999px;border:1.5px solid var(--teal);color:var(--teal);text-decoration:none;font-weight:600;background:transparent;cursor:pointer;font:inherit;font-weight:600}
+  .btn.primary{background:var(--teal);color:#fff}
+  .btn:focus-visible{outline:3px solid var(--tint,#B5DDD8);outline-offset:2px}
+  .hero{padding:44px 0 28px}
+  .eyebrow{color:var(--teal);font-weight:600;font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+  h1{font-size:clamp(30px,5vw,46px);line-height:1.12;margin:10px 0 14px;max-width:18ch}
+  .lede{font-size:18px;color:var(--ink-2);max-width:60ch;margin:0 0 24px}
+  .cta{display:flex;gap:10px;flex-wrap:wrap}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin:30px 0}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .card h3{margin:0 0 6px;font-size:17px}
+  .card p{margin:0;color:var(--ink-2);font-size:15px}
+  .claude{background:var(--mist);border:1px solid #B5DDD8;border-radius:16px;padding:22px;margin:8px 0 36px;display:grid;gap:10px}
+  .claude h2{margin:0;font-size:20px}
+  .claude ul{margin:4px 0 0;padding-left:20px;color:var(--ink-2)}
+  .claude small{color:var(--ink-2)}
+  footer{border-top:1px solid var(--line);padding:20px 0 40px;color:var(--ink-2);font-size:14px;display:flex;gap:14px;flex-wrap:wrap;justify-content:space-between}
+  .off{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">Meat<span>CODE</span></div>
+    <nav>
+      <a class="btn" id="navSignin" href="/account">Sign in</a>
+      <a class="btn primary" id="navCreate" href="/account?tab=signup">Create account</a>
+      <a class="btn primary off" id="navOpen" href="/app/meatcode_mockup.html">Open MeatCODE</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="eyebrow">GFI Israel · Open Meaty Flavor &amp; Aroma Initiative</div>
+      <h1>Engineering meaty flavor, together.</h1>
+      <p class="lede">MeatCODE is a pre-competitive knowledge platform for the alternative-meat sector. It brings the literature,
+        the chemistry and the people working on meaty flavor and aroma into one place.</p>
+      <div class="cta">
+        <a class="btn primary" id="heroCreate" href="/account?tab=signup">Create your account</a>
+        <a class="btn" id="heroSignin" href="/account">Sign in</a>
+        <a class="btn primary off" id="heroOpen" href="/app/meatcode_mockup.html">Open MeatCODE</a>
+      </div>
+    </section>
+
+    <section class="grid" aria-label="What's inside">
+      <div class="card"><h3>Oracle</h3><p>Ask a question and get an answer grounded in a curated literature corpus, with the sources it used.</p></div>
+      <div class="card"><h3>Science</h3><p>Browse the molecular and mechanistic evidence behind process flavor.</p></div>
+      <div class="card"><h3>Ecosystem</h3><p>Find the experts and organizations working on meaty flavor around the world.</p></div>
+    </section>
+
+    <section class="claude" aria-labelledby="bring">
+      <h2 id="bring">Bring your own Claude</h2>
+      <p style="margin:0">Oracle questions can run on <strong>your own Claude organization</strong>, so the usage is billed to you and under your control —
+        you choose a monthly spend limit when you connect, and you can disconnect at any time.</p>
+      <ul>
+        <li>Create a MeatCODE account, then choose <em>Connect your Claude organization</em> on your account page.</li>
+        <li>You approve on Claude's own page — MeatCODE never sees your Claude password.</li>
+        <li>You need the Admin or Billing role in a Claude organization that pays Anthropic directly (API credits or invoice).
+            A Claude chat subscription on its own isn't enough.</li>
+      </ul>
+      <small>Claude linked billing is a beta feature from Anthropic and may change.</small>
+    </section>
+  </main>
+
+  <footer>
+    <span>Owner: Daniel Dikovsky (GFI IL, SciTech) · Built by Lior Teper</span>
+    <a href="/app/meatcode_mockup.html">Team member? Sign in with the shared password</a>
+  </footer>
+</div>
+<script>
+(function(){
+  // If the visitor is already signed in, swap the sign-in buttons for "Open MeatCODE". Any failure leaves the defaults.
+  fetch('/api/account/me',{credentials:'same-origin'}).then(function(r){return r.ok?r.json():null}).then(function(d){
+    if(!d||!d.signed_in)return;
+    ['navSignin','navCreate','heroCreate','heroSignin'].forEach(function(id){document.getElementById(id).classList.add('off')});
+    ['navOpen','heroOpen'].forEach(function(id){document.getElementById(id).classList.remove('off')});
+    var a=document.createElement('a');a.className='btn';a.href='/account';a.textContent='Account';
+    document.getElementById('navOpen').insertAdjacentElement('beforebegin',a);
+  }).catch(function(){});
+})();
+</script>
+</body>
+</html>

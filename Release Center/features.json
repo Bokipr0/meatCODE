@@ -1,7 +1,7 @@
 {
   "_schema": {
     "version": 2,
-    "updated": "2026-10-29",
+    "updated": "2026-11-21",
     "doc": "platform_docs/DEV_AREA.md",
     "about": "Registry of every flagged FEATURE and every dev SCREEN. Backward compatible: the server still reads flags.<key>.dev / .prod, and the app still turns each ON flag into a body class ff-<key>. Everything else here is descriptive metadata rendered by the Dev Area hub.",
     "fields": {
@@ -18,7 +18,7 @@
       "dev": "boolean — ON in the dev environment.",
       "prod": "boolean — ON in production."
     },
-    "last_updated": "2026-10-28 UTC · Full-Stack · add opt-in user testing flag; preserve every existing switch."
+    "last_updated": "2026-11-21 UTC · Claude (Sonnet 5.5) · add user_accounts flag (ships dark); preserve every existing switch."
   },
   "flags": {
     "new_logo": {
@@ -432,6 +432,21 @@
       },
       "note": "Hila's ask (16 Nov demo). Yochai, 19 Nov: on in staging for a demo to Daniel, off in production until he switches it on. Needs ecosystem_module on.",
       "dev": true,
+      "prod": false
+    },
+    "user_accounts": {
+      "label": "Individual accounts + Connect Claude",
+      "description": "Landing page, individual sign-in and a Connect-your-Claude-organization step, so signed-in people's Oracle questions are billed to their own Claude organization.",
+      "kind": "feature",
+      "added": "2026-11-21",
+      "status": "preview",
+      "where": {
+        "screen": "Landing (/welcome) and Account (/account)",
+        "spot": "Root redirect for visitors, /api/account/*, /claude/billing/callback; Oracle billing choice in the ask routes.",
+        "file": "server/user_accounts.py + server/claude_link.py + app/welcome.html + app/account.html"
+      },
+      "note": "Ships dark. Needs migration db/migrations/0031 applied, Render managed OIDC (Pro workspace) and a Claude OAuth app — see platform_docs/CLAUDE_LINKED_BILLING_SETUP.md. Sign-up is invitation-only by default (SIGNUP_MODE / SIGNUP_INVITE_CODE). Signed-in individuals never fall back to the shared Anthropic key.",
+      "dev": false,
       "prod": false
     }
   }

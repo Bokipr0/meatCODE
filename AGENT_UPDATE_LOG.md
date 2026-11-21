@@ -1,3 +1,28 @@
+## 2026-11-21 21:40 UTC · Claude (Sonnet 5.5) · Migration 0031 applied to DEV Neon
+
+Applied `db/migrations/0031_user_accounts_claude_link.sql` to the **dev** database only (host checked against `.env.dev` before running; prod untouched) with `pipeline/apply_sql.py`, `DATABASE_URL` taken from `.env.dev` so the default `.env` (prod) was never used. Created `app_users`, `app_sessions`, `claude_connections` and 5 indexes; none existed before. Then ran the real `PgStore`/`PgLinkStore` SQL once against them with a throwaway user (sign-up, session lookup, login, single-use pending state, link, revoke, logout) — all behaved as the fakes did — and deleted it; all three tables are empty. Flag `user_accounts` is still OFF. Prod migration NOT applied. Next: Render OIDC + Claude OAuth app per `platform_docs/CLAUDE_LINKED_BILLING_SETUP.md`.
+
+## 2026-11-21 21:20 UTC · Claude (Sonnet 5.5) · Individual accounts + "Connect your Claude organization" (built, ships dark)
+
+**Asked by Lior:** check Render first; if it works, link Claude OAuth to it and give the landing page and individual user login a dedicated interface with a "connect with Claude" option, so each person's tokens are used from their own account.
+
+**Render check — result:** Render's managed OIDC supports Anthropic (changelog 2026-07-24) and delivers the identity token via `ANTHROPIC_IDENTITY_TOKEN_FILE`, which is what Anthropic's Linked billing needs for the back end's identity. Requirement: a **Pro (or higher) Render workspace** — the plan of Lior's workspace is not visible from here. Built on that basis. The one thing that could still block it is the OAuth app's *expected client-assertion audience* (see runbook, open risk 1) — only visible in the Claude Console after the app is created.
+
+**What was built (all behind new flag `user_accounts`, OFF in dev and prod):**
+- `db/migrations/0031_user_accounts_claude_link.sql` — `app_users`, `app_sessions`, `claude_connections`. **Not applied.**
+- `server/user_accounts.py` (new) — email+password accounts, scrypt, cookie sessions (token stored only as SHA-256), invite-gated sign-up (`SIGNUP_MODE`/`SIGNUP_INVITE_CODE`, default invitation-only), per-IP + per-email throttle, same-origin check.
+- `server/claude_link.py` (new) — Claude Platform OAuth "Linked billing": user profile in our org → PAR → approval redirect → code exchange → `connection_id`; revoke; `BilledClient` that adds `billing_policy` + profile headers. Stores no Claude token.
+- `server/meatcode_server.py` — `_resolve_llm()` decides who pays on every LLM route (`/api/ask` single+guided+consensus, `/api/graph-oracle/ask`, `/api/ecosystem/intent`, `/api/consensus-demo`): team (Basic Auth) → our key, unchanged; signed-in individual → only their linked org, else `402 connect_claude`, **never our key**. New routes `/welcome`, `/account`, `/login`, `/api/account/{me,signup,login,logout,claude/start,claude/unlink}`, `/claude/billing/callback` are installed by an "accounts layer" block after the Handler class, so `do_GET`/`do_POST`/`_authorized` keep their original bodies (existing AST-extracting tests stay green).
+- `app/welcome.html`, `app/account.html` (new, self-contained) — landing page; sign in / create account; Connect / Disconnect with honest requirements text. `app/meatcode_mockup.html` — one line: a 402 from `/api/ask` shows a clear "connect your Claude organization" message instead of raw JSON.
+- `Release Center/features.json` (flag, dark), `render.yaml` (commented env names), `requirements.txt` (`anthropic>=0.99`), `platform_docs/CLAUDE_LINKED_BILLING_SETUP.md` (runbook: Console/Render steps only Lior can do, decisions, open risks).
+
+**Verified:** 211 Python tests run — all pass except `test_mcp_hosted` (needs the `jwt` package, not installed here; unrelated). 53 are new (`tests/test_user_accounts.py`, `test_claude_link.py`, `test_accounts_server.py`, helper `tests/accounts_fakes.py`), including an end-to-end run of the real Handler over a local HTTP server: landing redirect, pages, sign-up/session, shared-password flow unchanged, flag-off = no new routes, team → our key, individual unlinked → 402 and nothing spent, individual linked → billed to their profile and never our key, revoked → 402, callback fixed-vocabulary redirects. The mockup's 19 inline script blocks parse. Node UI tests `test_oracle_answer`/`test_oracle_evidence` pass; the other `.cjs` tests can't run here (need `playwright`/jsdom, not installed).
+**NOT verified:** anything against the real Anthropic/Render services — the full link round trip, the audience question, `ANTHROPIC_API_KEY` coexisting with federation, the SDK's `user_profiles` fallback. The runbook's step 7 is the first real run.
+
+**Cross-territory note (ROLES.md):** this change spans Full-Stack (`server/`, `render.yaml`, Release Center), Data (`db/` migration) and UI/UX (`app/` two new pages + one line in the mockup) at the PM's explicit request in one session. The migration needs the Data Engineer's/Lior's review before it is applied; the two pages are a first pass for the UI/UX Designer to restyle.
+
+**Next (Lior):** confirm Render workspace is Pro; apply the migration to dev; follow the runbook (Render OIDC → Claude OAuth app → env vars → flip `user_accounts` on dev → `deploy-dev.command` → test as a customer). Decide sign-up policy and custom domain (Anthropic needs a DNS-proven homepage domain to publish the app) before prod.
+
 ## 2026-11-19 10:58 UTC · Yochai (PM) with Claude · Ecosystem cross-links behind flag `ecosystem_crosslinks` → pushed to dev (staging)
 
 Yochai wants to show this to Daniel before anything goes public. Production is promoted almost daily (17 and 18 Nov),

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Last updated: 2026-11-19 10:58 UTC · Yochai (PM) with Claude · /api/ecosystem/bootstrap also returns
+# Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · individual accounts layer (flag user_accounts): landing/account pages, /api/account/*, Claude callback, per-request billing (_resolve_llm) on every LLM route. Prior 2026-11-19 10:58 UTC · Yochai (PM) with Claude · /api/ecosystem/bootstrap also returns
 #   `crosslinks` = flag `ecosystem_crosslinks` for this environment.
 # Prev 2026-11-17 20:26 UTC · Codex · Explicit paper access lookup and complete per-source stance accounting.
 #   `ecosystem_module`): the Ecosystem's people + papers LIVE from Neon via ecosystem.live_people(pg_rows)
@@ -516,6 +516,14 @@ except ImportError:
     research_http = None
     user_research = None
 
+# Individual accounts + "connect your Claude organization" (flag `user_accounts`, off in prod by default).
+# Missing modules degrade to the existing shared-password behaviour — nothing else depends on them.
+try:
+    import user_accounts
+    import claude_link
+except ImportError:
+    user_accounts = claude_link = None
+
 try:
     import research_dashboard
     import research_operations
@@ -577,6 +585,33 @@ def _flag_on(key):
         return bool(load_flags().get(key, {}).get(APP_ENV, False))
     except Exception:
         return False
+
+
+# ─── Individual accounts + Claude linked billing (flag `user_accounts`) ───
+def _accounts_on():
+    """Live only when the flag is on AND the modules and database are present; otherwise the site behaves exactly
+    as before (one shared password, our own API key)."""
+    return bool(user_accounts and claude_link and DATABASE_URL and _flag_on("user_accounts"))
+
+
+_acct_cache = {}
+_acct_lock = threading.Lock()
+
+
+def _acct_store():
+    with _acct_lock:
+        if "users" not in _acct_cache:
+            _acct_cache["users"] = user_accounts.PgStore(DATABASE_URL)
+            _acct_cache["links"] = claude_link.PgLinkStore(DATABASE_URL)
+        return _acct_cache["users"], _acct_cache["links"]
+
+
+def _operator_client():
+    """Our back end's own Claude client (Workload Identity Federation, no key) — built once, it refreshes itself."""
+    with _acct_lock:
+        if "operator" not in _acct_cache:
+            _acct_cache["operator"] = claude_link.operator_client(os.environ)
+        return _acct_cache["operator"]
 
 
 def _maillard_prune():
@@ -769,7 +804,7 @@ def _attach_claims(public_rows):
 
 
 # ─── Consensus classification (agree / oppose / neutral) ─────────────
-def _consensus_classify(rows, answer_text=None):
+def _consensus_classify(rows, answer_text=None, llm=None):
     """ONE small model call that classifies each retrieved source as agree / oppose /
     neutral toward the answer's central claim — the honest "N papers support · M oppose"
     signal. Inputs are only what we actually have: the finished answer (when called from
@@ -816,7 +851,7 @@ def _consensus_classify(rows, answer_text=None):
         "Include every source id listed above exactly once. Be conservative: when a claim is "
         "tangential or you are unsure, use neutral — never force agreement."
     )
-    resp = client.messages.create(
+    resp = (llm or client).messages.create(          # llm = the signed-in user's billed client, when there is one
         model=CONSENSUS_MODEL, max_tokens=CONSENSUS_MAX_TOKENS,
         messages=[{"role": "user", "content": prompt}],
     )
@@ -940,6 +975,24 @@ class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=SERVE_DIR, **kw)
 
+    def _llm_client(self):
+        """The Claude client for THIS request: the per-request one chosen by _resolve_llm (a signed-in individual's
+        BilledClient), else the shared module client — looked up at call time, so it follows any swap of `client`."""
+        return self.__dict__.get("_llm") or client
+
+    def _basic_ok(self):
+        """True only if the request carries the valid shared Basic credentials (installed by the accounts layer
+        at the bottom of this file; with the flag off it is never consulted)."""
+        return False
+
+    def _session_user(self):
+        """The signed-in individual for this request (flag `user_accounts`), else None. Memoised per request."""
+        if not hasattr(self, "_su_memo"):
+            self._su_memo = None
+            if _accounts_on():
+                self._su_memo = user_accounts.current_user(_acct_store()[0], self.headers)
+        return self._su_memo
+
     # ─── shared-password gate ───
     def _authorized(self):
         """True if the gate is off, or the request carries valid Basic creds."""
@@ -954,6 +1007,28 @@ class Handler(SimpleHTTPRequestHandler):
             # constant-time compares avoid leaking length/timing info
             return hmac.compare_digest(user, SITE_USER) and hmac.compare_digest(pw, SITE_PASSWORD)
         return False
+
+    def _resolve_llm(self):
+        """Pick who pays for an LLM call. Returns a client, or None after answering the request itself.
+        Shared-password team (or accounts off): our own client — unchanged. A signed-in individual: ONLY their
+        linked Claude organization; never our key as a fallback."""
+        if not (_accounts_on() and SITE_PASSWORD) or self._basic_ok():
+            return client
+        user = self._session_user()
+        if not user:
+            self.close_connection = True
+            self._send_json({"error": "sign in required"}, 401)
+            return None
+        profile = claude_link.billing_profile_for(_acct_store()[1], user)
+        if not profile:
+            self._send_json({"error": "connect_claude",
+                             "message": "Connect your Claude organization to use this. Open Account → Connect Claude."}, 402)
+            return None
+        try:
+            return claude_link.BilledClient(_operator_client(), profile)
+        except claude_link.LinkError as e:
+            self._send_json({"error": str(e)}, e.status)
+            return None
 
     def _deny(self):
         self.send_response(401)
@@ -994,13 +1069,15 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_response(204); self.end_headers()
 
     # ─── JSON helper ───
-    def _send_json(self, obj, code=200):
+    def _send_json(self, obj, code=200, headers=None):
         body = json.dumps(obj, default=str).encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
-        if urlparse(self.path).path.startswith("/api/research/"):
+        if urlparse(self.path).path.startswith(("/api/research/", "/api/account/")):
             self.send_header("Cache-Control", "no-store")
+        for _k, _v in (headers or {}).items():          # e.g. Set-Cookie for the session
+            self.send_header(_k, _v)
         self.end_headers()
         try:
             self.wfile.write(body)
@@ -1042,6 +1119,101 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_error(404, "Not found")
             return None
         return super().send_head()
+
+    # ─── Individual accounts + Claude link (flag `user_accounts`; see server/user_accounts.py, claude_link.py) ───
+    def _redirect(self, location):
+        self.send_response(302)
+        self.send_header("Location", location)
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+
+    def _client_ip(self):
+        # Behind Render's proxy the real client is in X-Forwarded-For. The header can be spoofed, so the login
+        # throttle is ALSO keyed by email — spoofing the IP never unlocks guessing a given account.
+        fwd = (self.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+        return fwd or (self.client_address[0] if self.client_address else "unknown")
+
+    def _handle_account_get(self, path):
+        """Landing + account pages, GET /api/account/me and the Claude approval callback. These work BEFORE the
+        shared-password gate (a new person has no password). Returns True when it answered the request."""
+        if path in ("/", ""):
+            if SITE_PASSWORD and not self._authorized():
+                self._redirect("/welcome")           # visitors land on the welcome page, not a browser password box
+                return True
+            return False
+        pages = {"/welcome": "/app/welcome.html", "/account": "/app/account.html", "/login": "/app/account.html"}
+        if path in pages:
+            self.path = pages[path]
+            SimpleHTTPRequestHandler.do_GET(self)
+            return True
+        if path == "/api/account/me":
+            users, links = _acct_store()
+            user = self._session_user()
+            out = {"enabled": True, "signed_in": bool(user), "signup_mode": user_accounts.signup_mode(os.environ)}
+            if user:
+                out["user"] = user_accounts.public_user(user)
+                try:
+                    out["claude"] = claude_link.public_status(links, user, os.environ)
+                except Exception as e:
+                    sys.stderr.write("[accounts] claude status failed: %s\n" % type(e).__name__)
+                    out["claude"] = {"available": False, "status": "unknown"}
+            self._send_json(out)
+            return True
+        if path == "/claude/billing/callback":
+            user = self._session_user()
+            if not user:
+                self._redirect("/account?claude=signin")
+                return True
+            try:
+                reason = claude_link.finish_link(_acct_store()[1], user, parse_qs(urlparse(self.path).query), os.environ)
+            except Exception as e:                    # LinkError or a store outage — the page shows fixed text only
+                sys.stderr.write("[claude-link] callback failed: %s\n" % type(e).__name__)
+                reason = "failed"
+            self._redirect("/account?claude=" + (reason if reason in claude_link.CALLBACK_REASONS else "failed"))
+            return True
+        return False
+
+    def _handle_account_post(self, path):
+        """POST /api/account/{signup,login,logout} and /api/account/claude/{start,unlink}. Never a 500."""
+        if not user_accounts.same_origin(self.headers):
+            return self._send_json({"error": "cross-origin request refused"}, 403)
+        if not (self.headers.get("Content-Type") or "").lower().startswith("application/json"):
+            return self._send_json({"error": "expected application/json"}, 415)
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+        except ValueError:
+            length = -1
+        if length < 0 or length > 8192:
+            return self._send_json({"error": "request too large"}, 413)
+        body = self._read_json_body()
+        if not isinstance(body, dict):
+            return self._send_json({"error": "bad JSON"}, 400)
+        users, links = _acct_store()
+        cookie = None
+        try:
+            if path == "/api/account/signup":
+                code, obj, cookie = user_accounts.op_signup(users, body, os.environ, self._client_ip(), self.headers)
+            elif path == "/api/account/login":
+                code, obj, cookie = user_accounts.op_login(users, body, self._client_ip(), self.headers)
+            elif path == "/api/account/logout":
+                code, obj, cookie = user_accounts.op_logout(users, self.headers)
+            elif path in ("/api/account/claude/start", "/api/account/claude/unlink"):
+                user = self._session_user()
+                if not user:
+                    return self._send_json({"error": "sign in required"}, 401)
+                if path.endswith("/start"):
+                    code, obj = 200, {"url": claude_link.begin_link(links, user, os.environ, op_factory=_operator_client)}
+                else:
+                    claude_link.unlink(links, user, os.environ)
+                    code, obj = 200, {"ok": True, "claude": claude_link.public_status(links, user, os.environ)}
+            else:
+                return self._send_json({"error": "not found"}, 404)
+        except claude_link.LinkError as e:
+            return self._send_json({"error": str(e)}, e.status)
+        except Exception as e:
+            sys.stderr.write("[accounts] %s failed: %s %s\n" % (path, type(e).__name__, str(e)[:200]))
+            return self._send_json({"error": "Accounts are temporarily unavailable. Please try again shortly."}, 503)
+        return self._send_json(obj, code, {"Set-Cookie": cookie} if cookie else None)
 
     # ─── GET: /api/* handled here; everything else = static files ───
     def do_GET(self):
@@ -1284,6 +1456,9 @@ class Handler(SimpleHTTPRequestHandler):
                 q = (qs.get("q") or [""])[0].strip()
                 if not q:
                     return self._send_json({"error": "missing ?q="}, 400)
+                llm = self._resolve_llm()          # signed-in individuals pay with their own linked Claude org
+                if llm is None:
+                    return
                 rows, used_fallback = _retrieve_sources(q)
                 out = {
                     "question": q,
@@ -1292,7 +1467,7 @@ class Handler(SimpleHTTPRequestHandler):
                 }
                 if rows:
                     try:
-                        out["consensus"] = _consensus_classify(rows)
+                        out["consensus"] = _consensus_classify(rows, llm=llm)
                     except Exception as e:
                         sys.stderr.write("[oracle] consensus-demo classify failed: %s\n" % str(e)[:300])
                         out["consensus_error"] = "classification unavailable"
@@ -1803,7 +1978,7 @@ class Handler(SimpleHTTPRequestHandler):
 
         # 1) DECIDE — ask one more question, or answer now. Any failure -> answer (never strand the user).
         try:
-            resp = client.messages.create(
+            resp = self._llm_client().messages.create(
                 model=MODEL, max_tokens=500,
                 messages=[{"role": "user", "content": oracle_guided.decision_prompt(history, question, skip)}])
             raw = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
@@ -1836,7 +2011,7 @@ class Handler(SimpleHTTPRequestHandler):
         try:
             answer_parts = []
             presentation = AnswerSections()
-            with client.messages.stream(
+            with self._llm_client().messages.stream(
                 model=MODEL,
                 max_tokens=MAX_TOKENS,
                 system=system_prompt,
@@ -1852,7 +2027,7 @@ class Handler(SimpleHTTPRequestHandler):
                 send_event(event, part)
             if grounded and sources_rows:
                 try:
-                    consensus = _consensus_classify(sources_rows, "".join(answer_parts))
+                    consensus = _consensus_classify(sources_rows, "".join(answer_parts), llm=self._llm_client())
                     send_event("consensus", json.dumps(consensus, default=str))
                 except Exception as e:
                     sys.stderr.write("[oracle-guided] consensus skipped: %s\n" % str(e)[:300])
@@ -1883,8 +2058,11 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._send_json(ecosystem.live_people(pg_rows))
             if method == "POST" and path == "/api/ecosystem/intent":
                 body = self._read_json_body()
+                llm = self._resolve_llm()          # signed-in individuals pay with their own linked Claude org
+                if llm is None:
+                    return
                 def call_model(prompt):
-                    resp = client.messages.create(
+                    resp = llm.messages.create(
                         model=os.environ.get("ECOSYSTEM_INTENT_MODEL", CONSENSUS_MODEL), max_tokens=1800, timeout=35.0,
                         messages=[{"role": "user", "content": prompt}])
                     return "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
@@ -2409,6 +2587,12 @@ class Handler(SimpleHTTPRequestHandler):
         if not question:
             self.send_error(400, "Missing 'question'"); return
 
+        # Who pays for this answer: the shared-password team -> our client (unchanged); a signed-in individual
+        # -> only their linked Claude organization (402 if they haven't connected). Decided BEFORE streaming.
+        self._llm = self._resolve_llm()
+        if self._llm is None:
+            return
+
         # ── Guided Oracle (flag oracle_guided): the elicitation step may ASK one short question before
         #    answering. Flag off, or a client that doesn't send guided:true -> the single-turn path below,
         #    byte-for-byte unchanged. See _handle_guided_ask + server/oracle_guided.py. ──
@@ -2475,7 +2659,7 @@ class Handler(SimpleHTTPRequestHandler):
         try:
             answer_parts = []
             presentation = AnswerSections()
-            with client.messages.stream(
+            with self._llm_client().messages.stream(
                 model=MODEL,
                 max_tokens=MAX_TOKENS,
                 system=system_prompt,
@@ -2499,7 +2683,7 @@ class Handler(SimpleHTTPRequestHandler):
             #    (the current mockup) behave exactly as before.
             if grounded and sources_rows:
                 try:
-                    consensus = _consensus_classify(sources_rows, "".join(answer_parts))
+                    consensus = _consensus_classify(sources_rows, "".join(answer_parts), llm=self._llm_client())
                     send_event("consensus", json.dumps(consensus, default=str))
                 except Exception as e:
                     sys.stderr.write("[oracle] consensus skipped: %s\n" % str(e)[:300])
@@ -2509,6 +2693,41 @@ class Handler(SimpleHTTPRequestHandler):
             # user vendor-neutral product language — never name the model provider.
             sys.stderr.write("[oracle] answer error: %s\n" % str(e)[:300])
             send_event("error", "The MeatCODE Oracle is unavailable right now. Please try again in a moment.")
+
+
+# ─── Individual accounts layer (flag `user_accounts`) ────────────────
+# Installed AFTER the Handler class on purpose: with the flag off (or the modules missing) every method below
+# behaves byte-for-byte as before, and do_GET / do_POST / _authorized keep their original bodies. The layer only
+# adds (1) the landing/account pages + account API ahead of the shared-password gate, and (2) "a signed-in
+# individual counts as authorized" — while _resolve_llm() makes sure they never spend OUR Claude key.
+if user_accounts is not None and claude_link is not None:
+    _shared_gate = Handler._authorized          # the original shared-password check
+    _plain_do_GET = Handler.do_GET
+    _plain_do_POST = Handler.do_POST
+
+    def _basic_ok(self):
+        return bool(SITE_PASSWORD) and _shared_gate(self)
+
+    def _authorized_or_session(self):
+        if _shared_gate(self):
+            return True
+        return _accounts_on() and self._session_user() is not None
+
+    def _do_GET_with_accounts(self):
+        if _accounts_on() and self._handle_account_get(urlparse(self.path).path):
+            return                                  # landing / account pages, /api/account/me, Claude callback
+        return _plain_do_GET(self)
+
+    def _do_POST_with_accounts(self):
+        path = urlparse(self.path).path
+        if _accounts_on() and path.startswith("/api/account/"):
+            return self._handle_account_post(path)  # sign-up / login / logout / Claude link — self-authenticating
+        return _plain_do_POST(self)
+
+    Handler._basic_ok = _basic_ok
+    Handler._authorized = _authorized_or_session
+    Handler.do_GET = _do_GET_with_accounts
+    Handler.do_POST = _do_POST_with_accounts
 
 
 # ─── Run it ──────────────────────────────────────────────────────────

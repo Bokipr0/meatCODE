@@ -1,3 +1,6 @@
+## 2026-11-21 21:20 UTC · Claude (Sonnet 5.5) · Individual accounts + Connect Claude built, flag `user_accounts` OFF
+Landing (`/welcome`), account page (`/account`) and per-person Claude billing (Claude Platform OAuth "Linked billing", Beta) are in the repo but **dark**: migration `0031` applied to dev Neon only (21 Nov; prod not applied), no Render/Claude config yet, flag off in dev and prod. When on: team (shared password) still uses our key; a signed-in individual is billed to their own linked Claude org or gets `402 connect_claude` — never our key. Tested against fakes (53 new tests incl. an end-to-end local-server run); **nothing verified against real Anthropic/Render**. Blockers/decisions are in `platform_docs/CLAUDE_LINKED_BILLING_SETUP.md`: Render Pro workspace (managed OIDC), the OAuth app's client-assertion audience vs Render's token, `ANTHROPIC_API_KEY` alongside federation, custom domain for publishing the app, sign-up policy (default invitation-only), privacy wording (linked requests run under our org's retention terms).
+
 ## 2026-11-19 10:58 UTC · Yochai (PM) with Claude · Ecosystem cross-links on staging behind flag `ecosystem_crosslinks` (dev ON / prod OFF)
 
 **In flight:** waiting on Yochai's staging check and a demo to Daniel. Production stays off until Yochai flips

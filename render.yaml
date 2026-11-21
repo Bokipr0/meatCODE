@@ -1,3 +1,4 @@
+# Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · documented the (commented-out) env vars for individual accounts + Claude linked billing.
 # Render Blueprint — one-click always-on deploy of the MeatCODE Oracle.
 # In Render:  New +  →  Blueprint  →  connect the Bokipr0/meatCODE repo  →  it reads this file.
 # Then paste your two secret values when prompted. Every push to the branch auto-redeploys.
@@ -36,6 +37,27 @@ services:
       # MAILLARD_MODE=http and uncomment the MAILLARD_URL block underneath it.
       - key: MAILLARD_MODE
         value: mock
+      # ── Individual accounts + "Connect your Claude organization" (flag: user_accounts, ships OFF) ──
+      # Nothing here is needed until you follow platform_docs/CLAUDE_LINKED_BILLING_SETUP.md. They are listed so the
+      # names are in one place; set them in the Render dashboard (sync:false = never in the repo). Render's managed OIDC
+      # needs a PRO workspace; the four ANTHROPIC_* IDs + ANTHROPIC_IDENTITY_TOKEN_FILE come from its Anthropic setup
+      # (do NOT set ANTHROPIC_IDENTITY_TOKEN_FILE yourself — Render sets it on deploy).
+      # - key: SIGNUP_MODE                  # invite (default) | open | closed
+      #   value: invite
+      # - key: SIGNUP_INVITE_CODE
+      #   sync: false
+      # - key: CLAUDE_OAUTH_CLIENT_ID       # public client id of the Claude OAuth app
+      #   sync: false
+      # - key: CLAUDE_OAUTH_REDIRECT_URI    # https://<this service's host>/claude/billing/callback
+      #   sync: false
+      # - key: ANTHROPIC_FEDERATION_RULE_ID
+      #   sync: false
+      # - key: ANTHROPIC_ORGANIZATION_ID
+      #   sync: false
+      # - key: ANTHROPIC_SERVICE_ACCOUNT_ID
+      #   sync: false
+      # - key: ANTHROPIC_WORKSPACE_ID
+      #   sync: false
       # - key: MAILLARD_URL          # ← uncomment together with the maillard-sim service below
       #   fromService:
       #     type: pweb

@@ -1,0 +1,204 @@
+<!doctype html>
+<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · NEW account page (flag `user_accounts`): sign in / create account, then "Connect your Claude organization". Self-contained; every server string is written with textContent (never innerHTML). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MeatCODE — Account</title>
+<style>
+  :root{--bg:#FAF6EF;--surface:#fff;--ink:#1A1A1A;--ink-2:#4A4A4A;--line:#E5DDD0;--teal:#2F7F79;--mist:#E0F0EE;--coral:#A8573A;--coral-bg:#F8E9E2;--ok-bg:#E3F3E8;--ok:#1E6B3A;
+        --font:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--font)}
+  a{color:var(--teal)}
+  .wrap{max-width:560px;margin:0 auto;padding:0 20px 60px}
+  header{display:flex;justify-content:space-between;align-items:center;padding:18px 0}
+  .brand{font-weight:700;font-size:20px;text-decoration:none;color:var(--ink)}
+  .brand span{color:#4FA59F}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:16px}
+  h1{font-size:26px;margin:6px 0 14px}
+  h2{font-size:18px;margin:0 0 8px}
+  p{margin:0 0 10px;color:var(--ink-2)}
+  label{display:block;font-weight:600;font-size:14px;margin:12px 0 4px}
+  input{width:100%;padding:11px 12px;border:1.5px solid #D2C8B5;border-radius:10px;font:inherit;background:#fff;color:var(--ink)}
+  input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #B5DDD8;outline-offset:2px}
+  .tabs{display:flex;gap:6px;margin-bottom:6px}
+  .tab{flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font:inherit;font-weight:600;cursor:pointer;color:var(--ink-2)}
+  .tab[aria-selected=true]{border-color:var(--teal);color:var(--teal);background:var(--mist)}
+  .btn{display:inline-block;padding:11px 18px;border-radius:999px;border:1.5px solid var(--teal);color:var(--teal);background:transparent;text-decoration:none;font:inherit;font-weight:600;cursor:pointer}
+  .btn.primary{background:var(--teal);color:#fff}
+  .btn.danger{border-color:var(--coral);color:var(--coral)}
+  .btn[disabled]{opacity:.55;cursor:not-allowed}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .msg{padding:10px 12px;border-radius:10px;margin:12px 0 0;font-size:15px}
+  .msg.err{background:var(--coral-bg);color:var(--coral)}
+  .msg.ok{background:var(--ok-bg);color:var(--ok)}
+  .pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:13px;font-weight:600;background:#EEE;color:#444}
+  .pill.linked{background:var(--ok-bg);color:var(--ok)}
+  .pill.warn{background:var(--coral-bg);color:var(--coral)}
+  ul{margin:6px 0 0;padding-left:20px;color:var(--ink-2)}
+  small{color:var(--ink-2)}
+  .hide{display:none!important}
+  code{background:#F2EBDA;padding:1px 5px;border-radius:5px;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/welcome">Meat<span>CODE</span></a>
+    <a href="/welcome" class="btn">Home</a>
+  </header>
+
+  <div id="banner" class="msg hide" role="status"></div>
+  <div id="loading" class="card">Loading…</div>
+  <div id="disabled" class="card hide"><h1>Accounts aren't switched on</h1><p>Individual accounts aren't available on this server yet. Team members can use the shared password.</p>
+    <a class="btn primary" href="/app/meatcode_mockup.html">Open MeatCODE</a></div>
+
+  <!-- signed out -->
+  <section id="auth" class="card hide" aria-labelledby="authTitle">
+    <h1 id="authTitle">Welcome</h1>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tabSignin" aria-selected="true" aria-controls="formSignin">Sign in</button>
+      <button class="tab" role="tab" id="tabSignup" aria-selected="false" aria-controls="formSignup">Create account</button>
+    </div>
+    <form id="formSignin" autocomplete="on">
+      <label for="siEmail">Email</label><input id="siEmail" type="email" autocomplete="email" required>
+      <label for="siPass">Password</label><input id="siPass" type="password" autocomplete="current-password" required>
+      <div class="row"><button class="btn primary" type="submit" id="siGo">Sign in</button></div>
+    </form>
+    <form id="formSignup" class="hide" autocomplete="on">
+      <p id="signupClosed" class="hide">Sign-up is closed right now. Ask the MeatCODE team for access.</p>
+      <div id="signupFields">
+        <label for="suName">Name <small>(optional)</small></label><input id="suName" type="text" autocomplete="name" maxlength="80">
+        <label for="suEmail">Email</label><input id="suEmail" type="email" autocomplete="email" required>
+        <label for="suPass">Password <small>(at least 10 characters)</small></label><input id="suPass" type="password" autocomplete="new-password" minlength="10" required>
+        <div id="inviteWrap"><label for="suInvite">Invitation code</label><input id="suInvite" type="text" autocomplete="off" spellcheck="false"></div>
+        <div class="row"><button class="btn primary" type="submit" id="suGo">Create account</button></div>
+      </div>
+    </form>
+    <div id="authErr" class="msg err hide" role="alert"></div>
+  </section>
+
+  <!-- signed in -->
+  <section id="home" class="hide">
+    <div class="card">
+      <h1 id="hello">Hello</h1>
+      <p id="who"></p>
+      <div class="row"><a class="btn primary" href="/app/meatcode_mockup.html">Open MeatCODE</a><button class="btn" id="signout" type="button">Sign out</button></div>
+    </div>
+
+    <div class="card" aria-labelledby="claudeTitle">
+      <h2 id="claudeTitle">Your Claude organization <span id="claudePill" class="pill">Not connected</span></h2>
+      <p id="claudeLead">Connect your own Claude organization and Oracle questions you ask are billed to you, under the spend limit you choose.</p>
+      <ul id="claudeReqs">
+        <li>You need the <strong>Admin or Billing</strong> role in a Claude organization that pays Anthropic directly (API credits or invoice). A Claude chat subscription on its own isn't enough.</li>
+        <li>You'll approve on Claude's own page and set a monthly spend limit there. MeatCODE never sees your Claude password.</li>
+        <li>You can disconnect here, or from the Claude Console, at any time.</li>
+      </ul>
+      <div id="claudeUnavailable" class="msg err hide">Connecting Claude isn't switched on for this server yet.<div id="claudeMissing"></div></div>
+      <div class="row">
+        <button class="btn primary" id="connect" type="button">Connect your Claude organization</button>
+        <button class="btn danger hide" id="disconnect" type="button">Disconnect</button>
+      </div>
+      <div id="claudeErr" class="msg err hide" role="alert"></div>
+      <p style="margin-top:12px"><small>Linked billing is a beta feature from Anthropic and may change. Connected means linked — Claude can still decline a request if the organization has no credit or has reached its limit.</small></p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var BANNERS={linked:['ok','Your Claude organization is connected.'],
+    denied:['err','Connecting was cancelled — nothing was changed.'],
+    expired:['err','That connection attempt expired. Please try again.'],
+    failed:['err','Claude couldn\'t complete the connection. Please try again, or contact the MeatCODE team.'],
+    signin:['err','Please sign in first, then connect your Claude organization.']};
+
+  function show(id,on){$(id).classList.toggle('hide',!on)}
+  function say(id,text){var el=$(id);el.textContent=text||'';el.classList.toggle('hide',!text)}
+  function api(path,body){
+    return fetch(path,{method:body===undefined?'GET':'POST',credentials:'same-origin',
+      headers:body===undefined?{}:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)})
+      .then(function(r){return r.json().catch(function(){return {}}).then(function(j){return {ok:r.ok,status:r.status,json:j}})});
+  }
+
+  function tab(which){
+    var up=which==='signup';
+    $('tabSignin').setAttribute('aria-selected',String(!up));$('tabSignup').setAttribute('aria-selected',String(up));
+    show('formSignin',!up);show('formSignup',up);say('authErr','');
+  }
+  $('tabSignin').onclick=function(){tab('signin')};$('tabSignup').onclick=function(){tab('signup')};
+
+  function render(me){
+    show('loading',false);
+    if(!me||!me.enabled){show('disabled',true);return}
+    if(!me.signed_in){
+      show('auth',true);show('home',false);
+      var mode=me.signup_mode;
+      show('signupFields',mode!=='closed');show('signupClosed',mode==='closed');show('inviteWrap',mode==='invite');
+      $('suInvite').required=(mode==='invite');
+      tab(new URLSearchParams(location.search).get('tab')==='signup'?'signup':'signin');
+      return;
+    }
+    show('auth',false);show('home',true);
+    $('hello').textContent='Hello, '+me.user.display_name;
+    $('who').textContent=me.user.email;
+    var c=me.claude||{},st=c.status||'unlinked',linked=(st==='linked');
+    var pill=$('claudePill');
+    pill.textContent=linked?'Connected':(c.needs_attention?'Needs attention':'Not connected');
+    pill.className='pill'+(linked?' linked':(c.needs_attention?' warn':''));
+    $('claudeLead').textContent=linked
+      ? 'Oracle questions you ask now run on your Claude organization and are billed to it. You can disconnect at any time.'
+      : 'Connect your own Claude organization and Oracle questions you ask are billed to you, under the spend limit you choose.';
+    show('claudeReqs',!linked);
+    show('connect',!linked&&c.available!==false);show('disconnect',linked||c.needs_attention===true);
+    show('claudeUnavailable',c.available===false);
+    var miss=$('claudeMissing');miss.textContent='';
+    if(c.available===false&&c.setup_missing&&c.setup_missing.length){
+      miss.textContent='Team note — still to configure: '+c.setup_missing.join(', ');
+    }
+  }
+
+  function refresh(){return api('/api/account/me').then(function(r){render(r.ok?r.json:{enabled:false})}).catch(function(){render({enabled:false})})}
+
+  $('formSignin').onsubmit=function(e){
+    e.preventDefault();say('authErr','');$('siGo').disabled=true;
+    api('/api/account/login',{email:$('siEmail').value,password:$('siPass').value}).then(function(r){
+      $('siGo').disabled=false;if(r.ok){refresh()}else{say('authErr',r.json.error||'Sign-in failed.')}
+    }).catch(function(){$('siGo').disabled=false;say('authErr','Network problem. Please try again.')});
+  };
+  $('formSignup').onsubmit=function(e){
+    e.preventDefault();say('authErr','');$('suGo').disabled=true;
+    api('/api/account/signup',{display_name:$('suName').value,email:$('suEmail').value,password:$('suPass').value,invite_code:$('suInvite').value}).then(function(r){
+      $('suGo').disabled=false;if(r.ok){refresh()}else{say('authErr',r.json.error||'Couldn\'t create the account.')}
+    }).catch(function(){$('suGo').disabled=false;say('authErr','Network problem. Please try again.')});
+  };
+  $('signout').onclick=function(){api('/api/account/logout',{}).then(refresh)};
+
+  $('connect').onclick=function(){
+    say('claudeErr','');$('connect').disabled=true;
+    api('/api/account/claude/start',{}).then(function(r){
+      if(r.ok&&r.json.url){location.href=r.json.url;return}      // Claude's approval page; it returns to /claude/billing/callback
+      $('connect').disabled=false;say('claudeErr',r.json.error||'Couldn\'t start connecting. Please try again.');
+    }).catch(function(){$('connect').disabled=false;say('claudeErr','Network problem. Please try again.')});
+  };
+  $('disconnect').onclick=function(){
+    if(!confirm('Disconnect your Claude organization from MeatCODE? Oracle questions will stop until you connect again.'))return;
+    say('claudeErr','');$('disconnect').disabled=true;
+    api('/api/account/claude/unlink',{}).then(function(r){
+      $('disconnect').disabled=false;
+      if(!r.ok)say('claudeErr',r.json.error||'Couldn\'t disconnect. Please try again.');
+      refresh();
+    }).catch(function(){$('disconnect').disabled=false;say('claudeErr','Network problem. Please try again.')});
+  };
+
+  // Result of the Claude approval step (?claude=…): fixed text only, then clean the URL.
+  var q=new URLSearchParams(location.search).get('claude');
+  if(q&&BANNERS[q]){var b=$('banner');b.className='msg '+BANNERS[q][0];b.textContent=BANNERS[q][1];}
+  if(q){try{history.replaceState(null,'','/account')}catch(_){}}
+  refresh();
+})();
+</script>
+</body>
+</html>
