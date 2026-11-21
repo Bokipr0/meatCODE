@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · NEW dedicated "Connect your Claude organization" screen (flag `user_accounts`). Uses Anthropic's official Link button (platform.claude.com/docs/en/manage-claude/oauth-apps/branding-samples). Self-contained; server strings only via textContent. -->
+<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · header uses the GFI Israel + MeatCODE lockup. Prior: NEW dedicated "Connect your Claude organization" screen (flag `user_accounts`). Uses Anthropic's official Link button (platform.claude.com/docs/en/manage-claude/oauth-apps/branding-samples). Self-contained; server strings only via textContent. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -70,12 +70,17 @@
   .fine{font-size:13px;color:var(--ink-2);margin-top:14px}
   .success .tickbig{display:grid;place-items:center;width:64px;height:64px;border-radius:50%;background:var(--ok-bg);color:var(--ok);font-size:32px;margin:0 auto 12px}
   .hide{display:none!important}
+  .lockup{display:flex;align-items:center;gap:16px;text-decoration:none;color:#21595A}
+  .lockup img{height:40px;width:auto;display:block}
+  .lockup .bar{width:1px;height:32px;background:#D2C8B5}
+  .lockup .mc{font-weight:700;font-size:24px;letter-spacing:.2px}
+  @media (max-width:560px){.lockup img{height:32px}.lockup .mc{font-size:20px}.lockup{gap:12px}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <a class="brand" href="/welcome">Meat<span>CODE</span></a>
+    <a class="lockup" href="/welcome" aria-label="GFI Israel — MeatCODE"><img src="/app/assets/gfi_logo.png" alt="GFI Israel" width="95" height="40"><span class="bar" aria-hidden="true"></span><span class="mc">MeatCODE</span></a>
     <span class="nav"><a href="/account" id="navAccount" class="hide">Account</a><a href="/welcome">Home</a></span>
   </header>
 

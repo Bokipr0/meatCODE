@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · sign-in now continues to /connect (?next= whitelisted); Connect button opens the dedicated screen. Prior: NEW account page (flag `user_accounts`): sign in / create account, then "Connect your Claude organization". Self-contained; every server string is written with textContent (never innerHTML). -->
+<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · header uses the GFI Israel + MeatCODE lockup. Prior: sign-in now continues to /connect (?next= whitelisted); Connect button opens the dedicated screen. Prior: NEW account page (flag `user_accounts`): sign in / create account, then "Connect your Claude organization". Self-contained; every server string is written with textContent (never innerHTML). -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -40,12 +40,17 @@
   small{color:var(--ink-2)}
   .hide{display:none!important}
   code{background:#F2EBDA;padding:1px 5px;border-radius:5px;font-size:13px}
+  .lockup{display:flex;align-items:center;gap:16px;text-decoration:none;color:#21595A}
+  .lockup img{height:40px;width:auto;display:block}
+  .lockup .bar{width:1px;height:32px;background:#D2C8B5}
+  .lockup .mc{font-weight:700;font-size:24px;letter-spacing:.2px}
+  @media (max-width:560px){.lockup img{height:32px}.lockup .mc{font-size:20px}.lockup{gap:12px}}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <a class="brand" href="/welcome">Meat<span>CODE</span></a>
+    <a class="lockup" href="/welcome" aria-label="GFI Israel — MeatCODE"><img src="/app/assets/gfi_logo.png" alt="GFI Israel" width="95" height="40"><span class="bar" aria-hidden="true"></span><span class="mc">MeatCODE</span></a>
     <a href="/welcome" class="btn">Home</a>
   </header>
 

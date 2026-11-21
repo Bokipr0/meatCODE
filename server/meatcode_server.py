@@ -1141,6 +1141,9 @@ class Handler(SimpleHTTPRequestHandler):
                 self._redirect("/welcome")           # visitors land on the welcome page, not a browser password box
                 return True
             return False
+        if path == "/app/assets/gfi_logo.png":        # public brand asset: the pre-sign-in pages show it
+            SimpleHTTPRequestHandler.do_GET(self)
+            return True
         pages = {"/welcome": "/app/welcome.html", "/account": "/app/account.html", "/login": "/app/account.html",
                  "/connect": "/app/connect.html"}
         if path in pages:

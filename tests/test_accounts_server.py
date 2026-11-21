@@ -249,6 +249,21 @@ class AccountsServerTests(unittest.TestCase):
             self.assertNotRegex(html, r"<script[^>]+src=|<link[^>]+href=\"https?://|@import", page)   # self-contained: no third-party loads
         self.assertIn("/connect", self.call("GET", "/welcome")[1])                                  # the landing page leads into it
 
+    def test_landing_has_one_button_the_gfi_lockup_and_the_new_copy(self):
+        html = self.call("GET", "/welcome")[1]
+        self.assertEqual(html.count('class="btn primary"'), 2)                       # nav + hero: the same single action
+        self.assertEqual(html.count(">Connect Claude<"), 2)
+        for gone in ("Create account", "Create your account", "Bring your own Claude", ">Sign in<"):
+            self.assertNotIn(gone, html)
+        self.assertIn("MeatCODE is an open-source, free platform", html)
+        self.assertIn("/app/assets/gfi_logo.png", html)
+        self.assertIn("/connect", html)
+
+    def test_the_gfi_logo_is_public_but_other_assets_stay_gated(self):
+        status, _, hdr = self.call("GET", "/app/assets/gfi_logo.png")
+        self.assertEqual((status, hdr["content-type"]), (200, "image/png"))
+        self.assertEqual(self.call("GET", "/app/assets/oracle-answer.js")[0], 401)
+
     def test_callback_without_a_session_goes_to_sign_in(self):
         status, _, hdr = self.call("GET", "/claude/billing/callback?state=x&code=y")
         self.assertEqual((status, hdr["location"]), (302, "/account?claude=signin&next=/connect"))
