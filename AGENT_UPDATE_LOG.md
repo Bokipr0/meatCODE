@@ -1,3 +1,7 @@
+## 2026-11-21 23:55 UTC · Claude (Sonnet 5.5) · "Home" link removed from /connect and /account headers
+
+Per Lior's screenshot: removed the top-right "Home" link from `/connect` (and, for consistency, the "Home" button from `/account`). Both headers keep the GFI Israel + MeatCODE lockup, which still links to `/welcome`; `/connect` keeps its "Account" link for signed-in people. Tests: 207 pass.
+
 ## 2026-11-21 23:40 UTC · Claude (Sonnet 5.5) · Claude-first onboarding: one Claude button, then your name (no account form)
 
 Lior (screenshot of `/connect` on meatcode.onrender.com): instead of "Create account / I already have one", just a connect-to-Claude button; after Claude, the person writes their name to tie it to the Claude connection. Built:
