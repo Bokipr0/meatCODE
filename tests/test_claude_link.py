@@ -91,12 +91,16 @@ class BillingTests(unittest.TestCase):
 
     def test_billed_client_adds_billing_to_create_and_stream_and_keeps_caller_extras(self):
         seen = []
+        class Manager:                                     # the SDK's stream() is a context manager
+            def __enter__(self): return "STREAM"
+            def __exit__(self, *a): return False
         base = SimpleNamespace(messages=SimpleNamespace(create=lambda **kw: seen.append(("create", kw)) or "R",
-                                                        stream=lambda **kw: seen.append(("stream", kw)) or "S"))
+                                                        stream=lambda **kw: seen.append(("stream", kw)) or Manager()))
         billed = cl.BilledClient(base, "uprof_9")
         mine = {"extra_headers": {"x-mine": "1", "anthropic-user-profile-id": "uprof_EVIL"}, "extra_body": {"k": 1}}
         self.assertEqual(billed.messages.create(model="m", max_tokens=5, **mine), "R")
-        self.assertEqual(billed.messages.stream(model="m"), "S")
+        with billed.messages.stream(model="m") as stream:
+            self.assertEqual(stream, "STREAM")             # callers get the SDK's own stream object
         (_, c), (_, s) = seen
         self.assertEqual(c["model"], "m")
         self.assertEqual(c["extra_headers"]["x-mine"], "1")

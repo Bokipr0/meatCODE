@@ -79,3 +79,24 @@ class MemoryLinkStore:
 
     def set_error(self, user_id, code):
         self.rows[user_id]["last_error"] = code
+
+
+class MemoryUsageStore:
+    """Same interface as usage_log.PgUsageStore."""
+
+    def __init__(self):
+        self.rows = []
+
+    def record(self, user_id, route, model, input_tokens, output_tokens, status):
+        self.rows.append({"user_id": user_id, "route": route, "model": model, "input_tokens": input_tokens,
+                          "output_tokens": output_tokens, "status": status, "created_at": time.time()})
+
+    def month_totals(self, user_id):
+        mine = [r for r in self.rows if r["user_id"] == user_id]
+        return {"requests": len(mine), "input_tokens": sum(r["input_tokens"] for r in mine),
+                "output_tokens": sum(r["output_tokens"] for r in mine)}
+
+    def recent(self, user_id, limit=8):
+        import datetime
+        mine = [r for r in reversed(self.rows) if r["user_id"] == user_id][:limit]
+        return [{**r, "created_at": datetime.datetime.fromtimestamp(r["created_at"], datetime.timezone.utc)} for r in mine]

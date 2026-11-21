@@ -1,4 +1,4 @@
-# Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · NEW — Claude Platform OAuth "Linked billing" (user pays for their own Claude usage)
+# Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · BilledClient reports token usage to an optional recorder (usage log). Prior: NEW — Claude Platform OAuth "Linked billing" (user pays for their own Claude usage)
 """Let a signed-in MeatCODE user link THEIR OWN Claude organization, so Oracle calls they make are billed to them.
 
 Anthropic docs (Beta — endpoints may change): platform.claude.com/docs/en/manage-claude/oauth-apps/organization-billing-connections
@@ -145,10 +145,13 @@ def billing_kwargs(user_profile_id: str) -> dict:
 
 class BilledClient:
     """Duck-types the slice of the Anthropic client MeatCODE uses (`.messages.create` / `.messages.stream`)
-    and adds the billing arguments to every call. Hand it to code that expects `client`."""
+    and adds the billing arguments to every call. Hand it to code that expects `client`.
 
-    def __init__(self, base_client, user_profile_id):
-        self._base, self._extra = base_client, billing_kwargs(user_profile_id)
+    `recorder(model, input_tokens, output_tokens, status)` — optional — is called once per call with the token
+    counts the API reported (metadata only). It is best-effort: a failing recorder never affects the request."""
+
+    def __init__(self, base_client, user_profile_id, recorder=None):
+        self._base, self._extra, self._rec = base_client, billing_kwargs(user_profile_id), recorder
         self.messages = self._Messages(self)
 
     def _with_billing(self, kw):
@@ -158,15 +161,53 @@ class BilledClient:
         out["extra_body"] = {**(kw.get("extra_body") or {}), **self._extra["extra_body"]}
         return out
 
+    def _record(self, model, input_tokens, output_tokens, status):
+        if not self._rec:
+            return
+        try:
+            self._rec(model, int(input_tokens or 0), int(output_tokens or 0), status)
+        except Exception as e:                                   # never let logging break an answer
+            sys.stderr.write("[claude-link] usage log failed: %s\n" % type(e).__name__)
+
     class _Messages:
         def __init__(self, outer):
             self._o = outer
 
         def create(self, **kw):
-            return self._o._base.messages.create(**self._o._with_billing(kw))
+            o = self._o
+            try:
+                resp = o._base.messages.create(**o._with_billing(kw))
+            except Exception:
+                o._record(kw.get("model"), 0, 0, "error")
+                raise
+            usage = getattr(resp, "usage", None)
+            o._record(kw.get("model"), getattr(usage, "input_tokens", 0), getattr(usage, "output_tokens", 0), "ok")
+            return resp
 
         def stream(self, **kw):
-            return self._o._base.messages.stream(**self._o._with_billing(kw))
+            o = self._o
+            return _RecordedStream(o, kw.get("model"), o._base.messages.stream(**o._with_billing(kw)))
+
+
+class _RecordedStream:
+    """Wraps the SDK's stream context manager: behaves identically, and reports token usage when it closes."""
+
+    def __init__(self, outer, model, manager):
+        self._outer, self._model, self._manager, self._stream = outer, model, manager, None
+
+    def __enter__(self):
+        self._stream = self._manager.__enter__()
+        return self._stream
+
+    def __exit__(self, exc_type, exc, tb):
+        input_tokens = output_tokens = 0
+        try:
+            usage = getattr(getattr(self._stream, "current_message_snapshot", None), "usage", None)
+            input_tokens, output_tokens = getattr(usage, "input_tokens", 0) or 0, getattr(usage, "output_tokens", 0) or 0
+        except Exception:
+            pass
+        self._outer._record(self._model, input_tokens, output_tokens, "error" if exc_type else "ok")
+        return self._manager.__exit__(exc_type, exc, tb)
 
 
 # ─── Postgres store for the connection row ──────────────────────────────────

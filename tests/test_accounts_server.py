@@ -20,7 +20,7 @@ with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "local-fixture-not-a-key", "DA
     import meatcode_server as server
 import claude_link
 import user_accounts
-from accounts_fakes import MemoryLinkStore, MemoryStore
+from accounts_fakes import MemoryLinkStore, MemoryStore, MemoryUsageStore
 
 BASIC = {"Authorization": "Basic " + base64.b64encode(b"meatcode:team-pw").decode()}
 JSON_H = {"Content-Type": "application/json"}
@@ -44,6 +44,7 @@ def fake_claude(label, log):
     """A fake Anthropic client that records which 'account' answered and with what kwargs."""
     class Stream:
         text_stream = iter("Hello from " + label)
+        current_message_snapshot = SimpleNamespace(usage=SimpleNamespace(input_tokens=11, output_tokens=22))
         def __enter__(self): return self
         def __exit__(self, *a): return False
     def stream(**kw):
@@ -51,14 +52,14 @@ def fake_claude(label, log):
         return Stream()
     def create(**kw):
         log.append((label, kw))
-        return SimpleNamespace(content=[SimpleNamespace(type="text", text="{}")])
+        return SimpleNamespace(content=[SimpleNamespace(type="text", text="{}")], usage=SimpleNamespace(input_tokens=3, output_tokens=4))
     return SimpleNamespace(messages=SimpleNamespace(stream=stream, create=create))
 
 
 class AccountsServerTests(unittest.TestCase):
     def setUp(self):
         user_accounts.THROTTLE.reset(*list(user_accounts.THROTTLE._hits))
-        self.users, self.links, self.calls = MemoryStore(), MemoryLinkStore(), []
+        self.users, self.links, self.calls, self.usage = MemoryStore(), MemoryLinkStore(), [], MemoryUsageStore()
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         token = os.path.join(tmp.name, "token")
@@ -67,6 +68,7 @@ class AccountsServerTests(unittest.TestCase):
         patches = [
             patch.object(server, "_accounts_on", lambda: True),
             patch.object(server, "_acct_store", lambda: (self.users, self.links)),
+            patch.object(server, "_usage_store", lambda: self.usage),
             patch.object(server, "SITE_PASSWORD", "team-pw"),
             patch.object(server, "client", fake_claude("OUR-KEY", self.calls)),
             patch.object(server, "_operator_client", lambda: fake_claude("OPERATOR", self.calls)),
@@ -191,6 +193,30 @@ class AccountsServerTests(unittest.TestCase):
             self.assertEqual(kw["extra_headers"]["anthropic-user-profile-id"], "uprof_ME")
             self.assertEqual(kw["extra_body"]["billing_policy"]["bill_to"], "user_profile")
 
+    def test_billed_requests_are_logged_to_the_users_own_profile_and_nothing_else_is(self):
+        cookie = self.sign_up()
+        self.links.ensure_row(1)
+        self.links.rows[1].update(status="linked", connection_id="ocon_1", user_profile_id="uprof_ME")
+        self.assertEqual(self.ask(cookie)[0], 200)
+        self.assertEqual([(r["user_id"], r["route"], r["input_tokens"], r["output_tokens"], r["status"]) for r in self.usage.rows],
+                         [(1, "/api/ask", 11, 22, "ok")])
+        self.assertEqual(self.ask(BASIC)[0], 200)                                    # team traffic is not attributed to anyone
+        self.assertEqual(len(self.usage.rows), 1)
+
+    def test_usage_endpoint_is_private_per_user_and_degrades_quietly(self):
+        self.assertEqual(self.call("GET", "/api/account/usage")[0], 401)
+        cookie = self.sign_up("a@example.com")
+        self.usage.record(1, "/api/ask", "m", 100, 50, "ok")
+        self.usage.record(2, "/api/ask", "m", 9999, 9999, "ok")                      # someone else's usage
+        status, body, _ = self.call("GET", "/api/account/usage", headers=cookie)
+        self.assertEqual(status, 200)
+        self.assertEqual((body["available"], body["requests"], body["input_tokens"], body["output_tokens"]), (True, 1, 100, 50))
+        self.assertEqual([x["label"] for x in body["recent"]], ["Oracle answer"])
+        self.assertRegex(body["recent"][0]["at"], r"^\d{4}-\d\d-\d\dT")              # ISO, parseable in every browser
+        self.assertNotIn("question", json.dumps(body).lower())                       # metadata only
+        with patch.object(server, "_usage_store", lambda: (_ for _ in ()).throw(RuntimeError("table missing"))):
+            self.assertEqual(self.call("GET", "/api/account/usage", headers=cookie)[1], {"available": False})
+
     def test_a_revoked_link_stops_billing_immediately(self):
         cookie = self.sign_up()
         self.links.ensure_row(1)
@@ -260,8 +286,17 @@ class AccountsServerTests(unittest.TestCase):
         for gone in ("Create account", "Create your account", "Bring your own Claude", ">Sign in<"):
             self.assertNotIn(gone, html)
         self.assertIn("MeatCODE is an open-source, free platform", html)
+        self.assertNotIn("d.team", html)                                             # no shared-password shortcut on the landing page
         self.assertIn("data:image/png;base64,", html)                                   # logo is embedded: works from the server and from file://
         self.assertIn("/connect", html)
+
+    def test_profile_menu_script_is_served_to_signed_in_people_only(self):
+        self.assertEqual(self.call("GET", "/app/assets/account-menu.js")[0], 401)
+        status, body, _ = self.call("GET", "/app/assets/account-menu.js", headers=self.sign_up())
+        self.assertEqual(status, 200)
+        self.assertIn("/api/account/usage", body)
+        self.assertIn("/welcome", body)                                              # logout returns to the landing page
+        self.assertNotIn("innerHTML", body)                                          # server strings only via textContent
 
     def test_the_gfi_logo_is_public_but_other_assets_stay_gated(self):
         status, _, hdr = self.call("GET", "/app/assets/gfi_logo.png")

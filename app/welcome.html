@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · footer and the top-right button removed — the hero "Connect Claude" is the only button. Prior: shared-password team members see "Open MeatCODE" instead of Connect Claude. Prior: GFI logo embedded (data URI) so the page also renders when opened as a file. Prior: landing: GFI Israel + MeatCODE lockup, ONE button ("Connect Claude" -> /connect), no create-account buttons, the explainer box removed, "open-source, free platform" copy. Self-contained apart from the public GFI logo. -->
+<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · the button is "Open MeatCODE" only for a signed-in individual who has linked Claude (no shared-password shortcut). Prior: footer and the top-right button removed — the hero "Connect Claude" is the only button. Prior: shared-password team members see "Open MeatCODE" instead of Connect Claude. Prior: GFI logo embedded (data URI) so the page also renders when opened as a file. Prior: landing: GFI Israel + MeatCODE lockup, ONE button ("Connect Claude" -> /connect), no create-account buttons, the explainer box removed, "open-source, free platform" copy. Self-contained apart from the public GFI logo. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -70,7 +70,7 @@
   fetch('/api/account/me',{credentials:'same-origin'}).then(function(r){return r.ok?r.json():null}).then(function(d){
     if(!d)return;
     if(d.signed_in)document.getElementById('navAccount').classList.remove('off');
-    if(d.team||(d.signed_in&&d.claude&&d.claude.status==='linked')){
+    if(d.signed_in&&d.claude&&d.claude.status==='linked'){
       ['heroMain'].forEach(function(id){var a=document.getElementById(id);a.textContent='Open MeatCODE';a.href='/app/meatcode_mockup.html'});
     }
   }).catch(function(){});

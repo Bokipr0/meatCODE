@@ -24,7 +24,7 @@ it does not identify a person. Identity is the MeatCODE email + password account
 ## One-time setup (in this order — dev service first)
 1. **Decide / check** (you): Render workspace is **Pro or higher** (managed OIDC requires it). You are Admin of the Claude
    organization that will own the app (MeatCODE's org — this is the org whose rate limits, model access and data retention apply to linked users' requests).
-2. **Apply the migration to dev Neon:** `db/migrations/0031_user_accounts_claude_link.sql` (idempotent; three new tables, nothing existing touched).
+2. **Apply the migrations to dev Neon:** `db/migrations/0031_user_accounts_claude_link.sql` (accounts, sessions, Claude connections) and `0032_usage_log.sql` (per-user usage log). Both idempotent and additive, nothing existing touched. *(Both are applied to dev as of 2026-11-21.)*
 3. **Render → Claude API identity (Render docs, "Anthropic" tab):**
    - Console → *Service accounts* → create one with the **Developer** role.
    - Console → *Workload identity federation* → *Issuers* → Custom OIDC, issuer `https://oidc.render.com/<WORKSPACE_ID>` (starts `tea-`), JWKS = OIDC discovery.
@@ -63,3 +63,11 @@ it does not identify a person. Identity is the MeatCODE email + password account
 - Profiles are named `MeatCODE user <id>` — no email or name is sent to Anthropic.
 - Throttle state is per process (Render runs one instance); the IP comes from `X-Forwarded-For` and can be spoofed, which is why the per-email limit exists.
 - A double-click on *Connect* the first time can create one orphan profile in our Claude org (the DB keeps one). Harmless; archive from the Console.
+
+## Profile pop-out and usage log
+In the product, the sidebar profile card becomes the signed-in person's profile (`app/assets/account-menu.js`): click it for their Claude
+connection (Connected / Not connected, link to `/connect`), **usage this month** (requests, input/output tokens) with the **last few
+requests**, and **Log out**, which returns to `/welcome`. Shared-password team members get the same card with a short "shared access" note
+and a *Use your own Claude* button. The log (`app_usage_log`, migration 0032) holds **metadata only** — route, model, token counts, ok/error —
+never a question or an answer, and only for requests billed to the person's own Claude organization. If the table is missing the pop-out
+says "Usage isn't available yet" instead of failing.

@@ -190,7 +190,7 @@
       $('suGo').disabled=false;if(r.ok){afterAuth()}else{say('authErr',r.json.error||'Couldn\'t create the account.')}
     }).catch(function(){$('suGo').disabled=false;say('authErr','Network problem. Please try again.')});
   };
-  $('signout').onclick=function(){api('/api/account/logout',{}).then(refresh)};
+  $('signout').onclick=function(){var go=function(){location.href='/welcome'};api('/api/account/logout',{}).then(go).catch(go)};   // signing out returns to the landing page
 
   $('connect').onclick=function(){location.href='/connect'};   // the dedicated Claude screen
   $('disconnect').onclick=function(){

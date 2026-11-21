@@ -521,8 +521,9 @@ except ImportError:
 try:
     import user_accounts
     import claude_link
+    import usage_log
 except ImportError:
-    user_accounts = claude_link = None
+    user_accounts = claude_link = usage_log = None
 
 try:
     import research_dashboard
@@ -612,6 +613,14 @@ def _operator_client():
         if "operator" not in _acct_cache:
             _acct_cache["operator"] = claude_link.operator_client(os.environ)
         return _acct_cache["operator"]
+
+
+def _usage_store():
+    """Per-user usage log (metadata only) behind the profile pop-out."""
+    with _acct_lock:
+        if "usage" not in _acct_cache:
+            _acct_cache["usage"] = usage_log.PgUsageStore(DATABASE_URL)
+        return _acct_cache["usage"]
 
 
 def _maillard_prune():
@@ -1025,7 +1034,10 @@ class Handler(SimpleHTTPRequestHandler):
                              "message": "Connect your Claude organization to use this. Open Account → Connect Claude."}, 402)
             return None
         try:
-            return claude_link.BilledClient(_operator_client(), profile)
+            route, uid, usage = urlparse(self.path).path, user["id"], _usage_store()
+            return claude_link.BilledClient(
+                _operator_client(), profile,
+                recorder=lambda model, i, o, status: usage.record(uid, route, model, i, o, status))   # best-effort log
         except claude_link.LinkError as e:
             self._send_json({"error": str(e)}, e.status)
             return None
@@ -1161,6 +1173,17 @@ class Handler(SimpleHTTPRequestHandler):
                     sys.stderr.write("[accounts] claude status failed: %s\n" % type(e).__name__)
                     out["claude"] = {"available": False, "status": "unknown"}
             self._send_json(out)
+            return True
+        if path == "/api/account/usage":
+            user = self._session_user()
+            if not user:
+                self._send_json({"error": "sign in required"}, 401)
+                return True
+            try:
+                self._send_json({"available": True, **usage_log.snapshot(_usage_store(), user["id"])})
+            except Exception as e:                    # e.g. migration 0032 not applied yet — the pop-out says so, nothing breaks
+                sys.stderr.write("[accounts] usage unavailable: %s\n" % type(e).__name__)
+                self._send_json({"available": False})
             return True
         if path == "/claude/billing/callback":
             user = self._session_user()
