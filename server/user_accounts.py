@@ -1,4 +1,4 @@
-# Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · NEW — individual user accounts (signup / login / sessions) for the `user_accounts` flag
+# Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · Claude-first profiles (start with the Claude link; name + optional credentials afterwards; pending sessions are not sign-ins). Prior: NEW — individual user accounts (signup / login / sessions) for the `user_accounts` flag
 """Individual MeatCODE user accounts.
 
 Why this exists: the site is gated by ONE shared password (SITE_PASSWORD, HTTP Basic). To let each person
@@ -152,7 +152,12 @@ def _hash_token(token: str) -> str:
 
 
 def public_user(u) -> dict:
-    return {"id": u["id"], "email": u["email"], "display_name": u.get("display_name") or u["email"].split("@")[0]}
+    email = u.get("email")
+    name = u.get("display_name") or (email.split("@")[0] if email else "")
+    claude_only = bool(u.get("claude_only"))
+    return {"id": u["id"], "email": email, "display_name": name, "claude_only": claude_only,
+            "has_credentials": bool(email),                          # can sign in with email + password
+            "needs_name": claude_only and not (u.get("display_name") or "").strip()}
 
 
 # ─── operations: each returns (http_status, payload, set_cookie_or_None) ────
@@ -203,8 +208,10 @@ def op_logout(store, headers):
     return 200, {"ok": True}, cookie_header("", headers, clear=True)
 
 
-def current_user(store, headers):
-    """The signed-in user for this request, or None. Never raises: a store outage reads as 'signed out'."""
+def current_user(store, headers, allow_pending=False):
+    """The signed-in user for this request, or None. Never raises: a store outage reads as 'signed out'.
+    A *pending* session (handed out when Claude linking starts, before it completes) is NOT a sign-in: it is
+    only returned when the caller explicitly allows it, to finish the link."""
     token = session_token_from_headers(headers)
     if not token:
         return None
@@ -212,7 +219,52 @@ def current_user(store, headers):
         u = store.session_user(_hash_token(token))
     except Exception:
         return None
-    return u if u and not u.get("disabled") else None
+    if not u or u.get("disabled"):
+        return None
+    if u.get("pending") and not allow_pending:
+        return None
+    return u
+
+
+# ─── Claude-first accounts: start with the Claude link, add a name (and optionally credentials) afterwards ───
+def op_start_claude_profile(store, ip, headers):
+    """First click on 'Link your Claude organization' from a visitor with no session: create an unnamed,
+    credential-less profile and a PENDING session so the browser can finish the approval. Grants no access.
+    Returns (user, set_cookie) or (None, None) when this IP is starting too many."""
+    if THROTTLE.blocked("start:" + ip):
+        return None, None
+    THROTTLE.fail("start:" + ip)                                  # every anonymous start counts, success or not
+    try:
+        store.purge_stale_provisional()
+    except Exception:
+        pass
+    user = store.create_claude_user()
+    token = secrets.token_urlsafe(32)
+    store.create_session(_hash_token(token), user["id"], 1, headers.get("User-Agent", "")[:200], pending=True)
+    return user, cookie_header(token, headers)
+
+
+def op_set_name(store, user, body):
+    name = " ".join(str(body.get("display_name") or "").split())      # collapse whitespace/newlines
+    if len(name) < 2 or len(name) > 80 or any(ord(c) < 32 for c in name):
+        return 400, {"error": "Enter a name between 2 and 80 characters."}
+    store.set_display_name(user["id"], name)
+    return 200, {"ok": True, "display_name": name}
+
+
+def op_set_credentials(store, user, body):
+    """A Claude-only profile can add email + password so it can sign in from another device."""
+    if user.get("email"):
+        return 409, {"error": "This profile already has an email."}
+    email = normalize_email(body.get("email"))
+    password = body.get("password") or ""
+    if not email:
+        return 400, {"error": "Enter a valid email address."}
+    if not isinstance(password, str) or len(password) < MIN_PASSWORD or len(password) > MAX_PASSWORD:
+        return 400, {"error": "Use a password of at least %d characters." % MIN_PASSWORD}
+    if store.get_user_by_email(email) or not store.set_credentials(user["id"], email, hash_password(password)):
+        return 409, {"error": "That email is already used by another account."}
+    return 200, {"ok": True, "email": email}
 
 
 # ─── Postgres store ──────────────────────────────────────────────────────────
@@ -248,16 +300,44 @@ class PgStore:
         return self._run("INSERT INTO app_users (email, password_hash, display_name) VALUES (%s,%s,%s) "
                          "RETURNING id, email, display_name, disabled", (email, password_hash, display_name), "one")
 
+    def create_claude_user(self):
+        return self._run("INSERT INTO app_users (claude_only) VALUES (TRUE) "
+                         "RETURNING id, email, display_name, disabled, claude_only", (), "one")
+
+    def set_display_name(self, user_id, name):
+        self._run("UPDATE app_users SET display_name=%s WHERE id=%s", (name, user_id))
+
+    def set_credentials(self, user_id, email, password_hash):
+        """False when the email is taken (unique index) — never raises for that."""
+        import psycopg2
+        try:
+            self._run("UPDATE app_users SET email=%s, password_hash=%s WHERE id=%s AND email IS NULL",
+                      (email, password_hash, user_id))
+            return True
+        except psycopg2.errors.UniqueViolation:
+            return False
+
+    def activate_sessions(self, user_id):
+        """The Claude link completed: this person's pending session becomes a real one."""
+        self._run("UPDATE app_sessions SET pending=FALSE, expires_at = now() + (%s || ' days')::interval "
+                  "WHERE user_id=%s AND pending", (str(SESSION_DAYS), user_id))
+
+    def purge_stale_provisional(self):
+        """Claude-only profiles that never finished linking (abandoned clicks) are removed after a day."""
+        self._run("DELETE FROM app_users u WHERE u.claude_only AND u.created_at < now() - interval '1 day' "
+                  "AND NOT EXISTS (SELECT 1 FROM claude_connections c WHERE c.user_id=u.id AND c.status='linked')")
+
     def touch_login(self, user_id):
         self._run("UPDATE app_users SET last_login_at=now() WHERE id=%s", (user_id,))
 
-    def create_session(self, token_hash, user_id, days, user_agent):
+    def create_session(self, token_hash, user_id, days, user_agent, pending=False):
         self._run("DELETE FROM app_sessions WHERE expires_at < now()")
-        self._run("INSERT INTO app_sessions (token_hash, user_id, expires_at, user_agent) "
-                  "VALUES (%s,%s, now() + (%s || ' days')::interval, %s)", (token_hash, user_id, str(days), user_agent))
+        self._run("INSERT INTO app_sessions (token_hash, user_id, expires_at, user_agent, pending) "
+                  "VALUES (%s,%s, now() + (%s || ' days')::interval, %s, %s)",
+                  (token_hash, user_id, str(days), user_agent, bool(pending)))
 
     def session_user(self, token_hash):
-        return self._run("SELECT u.id, u.email, u.display_name, u.disabled FROM app_sessions s "
+        return self._run("SELECT u.id, u.email, u.display_name, u.disabled, u.claude_only, s.pending FROM app_sessions s "
                          "JOIN app_users u ON u.id = s.user_id WHERE s.token_hash=%s AND s.expires_at > now()",
                          (token_hash,), "one")
 

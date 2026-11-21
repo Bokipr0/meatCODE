@@ -118,6 +118,12 @@
     }).catch(function () { body.textContent = ''; body.appendChild(el('p', 'muted', 'Usage isn\'t available yet.')); });
     return sec;
   }
+  function credsHint() {
+    var sec = el('div', 'sec');
+    sec.appendChild(el('p', 'muted', 'Your profile lives in this browser. Add an email and password to sign in from other devices.'));
+    var a = el('a', 'btn', 'Add email & password'); a.href = '/account'; sec.appendChild(a);
+    return sec;
+  }
   function logoutSection() {
     var sec = el('div', 'sec'), b = el('button', 'btn out', 'Log out'); b.type = 'button';
     b.onclick = function () {
@@ -137,8 +143,10 @@
   function build() {
     var p = el('div'); p.id = 'mc-acct-pop'; p.setAttribute('role', 'dialog'); p.setAttribute('aria-label', 'Your profile'); p.tabIndex = -1;
     if (ME.signed_in) {
-      p.appendChild(header(initials(ME.user.display_name), ME.user.display_name, ME.user.email));
-      p.appendChild(claudeSection()); p.appendChild(usageSection()); p.appendChild(logoutSection());
+      p.appendChild(header(initials(ME.user.display_name || '?'), ME.user.display_name || 'You', ME.user.email || 'Signed in with Claude'));
+      p.appendChild(claudeSection()); p.appendChild(usageSection());
+      if (ME.user.has_credentials === false) p.appendChild(credsHint());
+      p.appendChild(logoutSection());
     } else {
       p.appendChild(header('T', 'Team access', 'Shared password'));
       p.appendChild(teamSection());
@@ -172,10 +180,10 @@
     card.setAttribute('aria-haspopup', 'dialog'); card.setAttribute('aria-expanded', 'false'); card.title = 'Your profile';
     if (!ME.signed_in) return;                               // team: card keeps its demo text, only the pop-out is added
     var set = function (sel, text) { var n = $(sel, card); if (n) n.textContent = text; };
-    set('.user-name', ME.user.display_name); set('.user-role', ME.user.email);
+    set('.user-name', ME.user.display_name || 'You'); set('.user-role', ME.user.email || 'Signed in with Claude');
     set('.user-org', linked() ? 'Claude connected' : 'Claude not connected');
     var av = $('.user-avatar', card);
-    if (av) { while (av.firstChild) av.removeChild(av.firstChild); av.appendChild(el('span', 'mc-acct-initials', initials(ME.user.display_name))); }
+    if (av) { while (av.firstChild) av.removeChild(av.firstChild); av.appendChild(el('span', 'mc-acct-initials', initials(ME.user.display_name || '?'))); }
   }
 
   function start() {

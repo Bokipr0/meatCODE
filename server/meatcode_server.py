@@ -1003,6 +1003,15 @@ class Handler(SimpleHTTPRequestHandler):
         return self._su_memo
 
     # ─── shared-password gate ───
+    def _pending_user(self):
+        """The person for this request even if their Claude link has not completed yet (pending session). Used ONLY
+        to finish linking; it never counts as authorization."""
+        if not hasattr(self, "_pu_memo"):
+            self._pu_memo = None
+            if _accounts_on():
+                self._pu_memo = user_accounts.current_user(_acct_store()[0], self.headers, allow_pending=True)
+        return self._pu_memo
+
     def _authorized(self):
         """True if the gate is off, or the request carries valid Basic creds."""
         if not SITE_PASSWORD:
@@ -1186,12 +1195,14 @@ class Handler(SimpleHTTPRequestHandler):
                 self._send_json({"available": False})
             return True
         if path == "/claude/billing/callback":
-            user = self._session_user()
+            user = self._pending_user()               # a person mid-link (pending session) or a signed-in one
             if not user:
-                self._redirect("/account?claude=signin&next=/connect")
+                self._redirect("/connect?claude=expired")  # cookie lost / blocked: start again from the Claude screen
                 return True
             try:
                 reason = claude_link.finish_link(_acct_store()[1], user, parse_qs(urlparse(self.path).query), os.environ)
+                if reason == "linked":
+                    _acct_store()[0].activate_sessions(user["id"])   # only now does the session grant access
             except Exception as e:                    # LinkError or a store outage — the page shows fixed text only
                 sys.stderr.write("[claude-link] callback failed: %s\n" % type(e).__name__)
                 reason = "failed"
@@ -1223,15 +1234,25 @@ class Handler(SimpleHTTPRequestHandler):
                 code, obj, cookie = user_accounts.op_login(users, body, self._client_ip(), self.headers)
             elif path == "/api/account/logout":
                 code, obj, cookie = user_accounts.op_logout(users, self.headers)
-            elif path in ("/api/account/claude/start", "/api/account/claude/unlink"):
+            elif path == "/api/account/claude/start":
+                user = self._pending_user()           # signed in, or already mid-link
+                if not user:                           # brand-new visitor: Claude-first — no account form needed
+                    user, cookie = user_accounts.op_start_claude_profile(users, self._client_ip(), self.headers)
+                    if not user:
+                        return self._send_json({"error": "Too many attempts. Try again in a few minutes."}, 429)
+                code, obj = 200, {"url": claude_link.begin_link(links, user, os.environ, op_factory=_operator_client)}
+            elif path in ("/api/account/profile", "/api/account/credentials"):
+                user = self._session_user()           # a real session only (the Claude link has completed)
+                if not user:
+                    return self._send_json({"error": "sign in required"}, 401)
+                fn = user_accounts.op_set_name if path.endswith("/profile") else user_accounts.op_set_credentials
+                code, obj = fn(users, user, body)
+            elif path == "/api/account/claude/unlink":
                 user = self._session_user()
                 if not user:
                     return self._send_json({"error": "sign in required"}, 401)
-                if path.endswith("/start"):
-                    code, obj = 200, {"url": claude_link.begin_link(links, user, os.environ, op_factory=_operator_client)}
-                else:
-                    claude_link.unlink(links, user, os.environ)
-                    code, obj = 200, {"ok": True, "claude": claude_link.public_status(links, user, os.environ)}
+                claude_link.unlink(links, user, os.environ)
+                code, obj = 200, {"ok": True, "claude": claude_link.public_status(links, user, os.environ)}
             else:
                 return self._send_json({"error": "not found"}, 404)
         except claude_link.LinkError as e:

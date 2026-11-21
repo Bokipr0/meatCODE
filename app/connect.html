@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · GFI logo embedded (data URI) so the page also renders when opened as a file. Prior: header uses the GFI Israel + MeatCODE lockup. Prior: NEW dedicated "Connect your Claude organization" screen (flag `user_accounts`). Uses Anthropic's official Link button (platform.claude.com/docs/en/manage-claude/oauth-apps/branding-samples). Self-contained; server strings only via textContent. -->
+<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · Claude-first: no account form on this screen — the Claude button is the way in, then a name step. Prior: GFI logo embedded (data URI) so the page also renders when opened as a file. Prior: header uses the GFI Israel + MeatCODE lockup. Prior: NEW dedicated "Connect your Claude organization" screen (flag `user_accounts`). Uses Anthropic's official Link button (platform.claude.com/docs/en/manage-claude/oauth-apps/branding-samples). Self-contained; server strings only via textContent. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -85,8 +85,8 @@
   </header>
 
   <ol class="steps" aria-label="Progress">
-    <li id="s1"><span class="n">1</span>Account</li>
-    <li id="s2"><span class="n">2</span>Link Claude</li>
+    <li id="s1"><span class="n">1</span>Link Claude</li>
+    <li id="s2"><span class="n">2</span>Your name</li>
     <li id="s3"><span class="n">3</span>Ask the Oracle</li>
   </ol>
 
@@ -95,15 +95,6 @@
 
   <div id="off" class="card hide"><h1>Not switched on yet</h1><p>Individual accounts aren't available on this server yet. Team members can use the shared password.</p>
     <a class="btn primary" href="/app/meatcode_mockup.html">Open MeatCODE</a></div>
-
-  <!-- step 1: account first -->
-  <div id="needAccount" class="card hero hide">
-    <div class="pair"><div class="chip"><b>M</b></div><div class="link"></div><div class="chip" aria-hidden="true">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30" height="30"><path fill="#D97757" d="M11.376 24L10.776 23.544L10.44 22.8L10.776 21.312L11.16 19.392L11.472 17.856L11.76 15.96L11.928 15.336L11.904 15.288L11.784 15.312L10.344 17.28L8.16 20.232L6.432 22.056L6.024 22.224L5.304 21.864L5.376 21.192L5.784 20.616L8.16 17.568L9.6 15.672L10.536 14.592L10.512 14.448H10.464L4.128 18.576L3 18.72L2.496 18.264L2.568 17.52L2.808 17.28L4.704 15.96L9.432 13.32L9.504 13.08L9.432 12.96H9.192L8.4 12.912L5.712 12.84L3.384 12.744L1.104 12.624L0.528 12.504L0 11.784L0.048 11.424L0.528 11.112L1.224 11.16L2.736 11.28L5.016 11.424L6.672 11.52L9.12 11.784H9.504L9.552 11.616L9.432 11.52L9.336 11.424L6.96 9.84L4.416 8.16L3.072 7.176L2.352 6.672L1.992 6.216L1.848 5.208L2.496 4.488L3.384 4.56L3.6 4.608L4.488 5.304L6.384 6.768L8.88 8.616L9.24 8.904L9.408 8.808V8.736L9.24 8.472L7.896 6.024L6.456 3.528L5.808 2.496L5.64 1.872C5.576 1.656 5.544 1.416 5.544 1.152L6.288 0.144001L6.696 0L7.704 0.144001L8.112 0.504001L8.736 1.92L9.72 4.152L11.28 7.176L11.736 8.088L11.976 8.904L12.072 9.168H12.24V9.024L12.36 7.296L12.6 5.208L12.84 2.52L12.912 1.752L13.296 0.840001L14.04 0.360001L14.616 0.624001L15.096 1.32L15.024 1.752L14.76 3.6L14.184 6.504L13.824 8.472H14.04L14.28 8.208L15.264 6.912L16.92 4.848L17.64 4.032L18.504 3.12L19.056 2.688H20.088L20.832 3.816L20.496 4.992L19.44 6.336L18.552 7.464L17.28 9.168L16.512 10.536L16.584 10.632H16.752L19.608 10.008L21.168 9.744L22.992 9.432L23.832 9.816L23.928 10.2L23.592 11.016L21.624 11.496L19.32 11.952L15.888 12.768L15.84 12.792L15.888 12.864L17.424 13.008L18.096 13.056H19.728L22.752 13.272L23.544 13.8L24 14.424L23.928 14.928L22.704 15.528L21.072 15.144L17.232 14.232L15.936 13.92H15.744V14.016L16.848 15.096L18.84 16.896L21.36 19.224L21.48 19.8L21.168 20.28L20.832 20.232L18.624 18.552L17.76 17.808L15.84 16.2H15.72V16.368L16.152 17.016L18.504 20.544L18.624 21.624L18.456 21.96L17.832 22.176L17.184 22.056L15.792 20.136L14.376 17.952L13.224 16.008L13.104 16.104L12.408 23.352L12.096 23.712L11.376 24Z"/></svg></div></div>
-    <h1>First, create your MeatCODE account</h1>
-    <p class="lede">Your account is how MeatCODE knows whose Claude organization to bill. It takes a minute.</p>
-    <div class="row"><a class="btn primary" href="/account?tab=signup&next=/connect">Create account</a><a class="btn" href="/account?next=/connect">I already have one</a></div>
-  </div>
 
   <!-- step 2: the dedicated Claude screen -->
   <div id="link" class="stage hide">
@@ -124,6 +115,7 @@
       <div id="unavailable" class="msg err hide">Linking Claude isn't switched on for this server yet.<div id="missing" class="fine"></div></div>
       <div id="linkErr" class="msg err hide" role="alert"></div>
       <p class="fine">You'll go to Claude to approve, then come straight back here. Anthropic's linked billing is a beta feature and may change.</p>
+      <p class="fine">Signed up with an email before? <a href="/account">Sign in</a></p>
     </div>
 
     <div>
@@ -148,6 +140,20 @@
     </div>
   </div>
 
+  <!-- step 2: name the profile (Claude doesn't tell us who you are) -->
+  <div id="nameStep" class="card hero hide">
+    <div class="pair"><div class="chip" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30" height="30"><path fill="#2F7F79" d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0 2c-4.2 0-7.5 2.2-7.5 5v1.5h15V19c0-2.8-3.3-5-7.5-5Z"/></svg></div></div>
+    <h1>Your Claude organization is linked</h1>
+    <p class="lede">One last thing: what should we call you? Claude doesn't share who you are, so this is the name on your MeatCODE profile and its usage log.</p>
+    <form id="nameForm" style="max-width:340px;margin:0 auto;text-align:left">
+      <label for="nameInput" style="display:block;font-weight:600;font-size:14px;margin:0 0 4px">Your name</label>
+      <input id="nameInput" type="text" maxlength="80" minlength="2" autocomplete="name" required
+             style="width:100%;padding:11px 12px;border:1.5px solid #D2C8B5;border-radius:10px;font:inherit;background:#fff;color:#141413">
+      <div class="row"><button class="btn primary" type="submit" id="nameBtn">Save and continue</button></div>
+    </form>
+    <div id="nameErr" class="msg err hide" role="alert"></div>
+  </div>
+
   <!-- step 3: done -->
   <div id="done" class="card hero success hide">
     <div class="tickbig" aria-hidden="true">✓</div>
@@ -155,6 +161,7 @@
     <p class="lede">Oracle questions you ask now run on your Claude organization. "Linked" means connected — Claude can still decline a request if the organization has no credit or has reached your limit.</p>
     <div class="row"><a class="btn primary" href="/app/meatcode_mockup.html">Open MeatCODE</a><button class="btn quiet" id="unlink" type="button">Unlink</button></div>
     <div id="doneErr" class="msg err hide" role="alert"></div>
+    <div id="credsHint" class="need hide" style="text-align:left"><strong>Use another device later?</strong> Your profile lives in this browser. Add an email and password on your <a href="/account">account page</a> so you can sign in from anywhere.</div>
   </div>
 </div>
 
@@ -175,13 +182,15 @@
     [1,2,3].forEach(function(i){var li=$('s'+i);li.className=i<n?'done':(i===n?'now':'')});
   }
   function render(me){
-    show('loading',false);['off','needAccount','link','done'].forEach(function(i){show(i,false)});
+    show('loading',false);['off','link','nameStep','done'].forEach(function(i){show(i,false)});
     if(!me||!me.enabled){steps(1);show('off',true);return}
-    if(!me.signed_in){steps(1);show('needAccount',true);return}
-    show('navAccount',true);
+    if(me.signed_in)show('navAccount',true);
     var c=me.claude||{};
-    if(c.status==='linked'){steps(4);$('s3').className='done';show('done',true);return}
-    steps(2);show('link',true);
+    if(me.signed_in&&c.status==='linked'){
+      if(me.user&&me.user.needs_name){steps(2);show('nameStep',true);try{$('nameInput').focus()}catch(_){}return}
+      steps(4);show('done',true);show('credsHint',!!(me.user&&me.user.has_credentials===false));return
+    }
+    steps(1);show('link',true);                                       // new visitors start here: no account form
     var unavailable=(c.available===false);
     show('linkForm',!unavailable);show('unavailable',unavailable);
     $('missing').textContent=(unavailable&&c.setup_missing&&c.setup_missing.length)?('Team note — still to configure: '+c.setup_missing.join(', ')):'';
@@ -194,6 +203,13 @@
       if(r.ok&&r.json.url){location.href=r.json.url;return}          // Claude's approval page; it returns to /claude/billing/callback
       $('linkBtn').disabled=false;say('linkErr',r.json.error||'Couldn\'t start linking. Please try again.');
     }).catch(function(){$('linkBtn').disabled=false;say('linkErr','Network problem. Please try again.')});
+  };
+  $('nameForm').onsubmit=function(e){
+    e.preventDefault();say('nameErr','');$('nameBtn').disabled=true;
+    api('/api/account/profile',{display_name:$('nameInput').value}).then(function(r){
+      $('nameBtn').disabled=false;
+      if(r.ok){refresh()}else{say('nameErr',r.json.error||'Couldn\'t save your name. Please try again.')}
+    }).catch(function(){$('nameBtn').disabled=false;say('nameErr','Network problem. Please try again.')});
   };
   $('unlink').onclick=function(){
     if(!confirm('Unlink your Claude organization from MeatCODE? Oracle questions will stop until you link again.'))return;

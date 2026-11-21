@@ -133,6 +133,61 @@ class AccountFlowTests(unittest.TestCase):
         self.assertIsNone(ua.current_user(Broken(), {"Cookie": "mc_session=abc"}))
 
 
+class ClaudeFirstTests(unittest.TestCase):
+    def setUp(self):
+        ua.THROTTLE.reset(*list(ua.THROTTLE._hits))
+        self.store = MemoryStore()
+
+    def start(self, ip="1.1.1.1"):
+        return ua.op_start_claude_profile(self.store, ip, HTTPS)
+
+    def test_start_creates_a_credentialless_profile_and_a_pending_session(self):
+        user, cookie = self.start()
+        self.assertTrue(user["claude_only"])
+        self.assertIsNone(user["email"])
+        self.assertEqual(self.store.purged, 1)                                    # stale abandoned profiles are swept
+        headers = {"Cookie": cookie.split(";")[0]}
+        self.assertIsNone(ua.current_user(self.store, headers))                   # a pending session is NOT a sign-in
+        self.assertEqual(ua.current_user(self.store, headers, allow_pending=True)["id"], user["id"])
+        self.store.activate_sessions(user["id"])
+        self.assertEqual(ua.current_user(self.store, headers)["id"], user["id"])  # …until the Claude link completes
+
+    def test_anonymous_starts_are_throttled_per_ip(self):
+        for _ in range(ua.THROTTLE.limit):
+            self.assertIsNotNone(self.start("5.5.5.5")[0])
+        self.assertEqual(self.start("5.5.5.5"), (None, None))
+        self.assertIsNotNone(self.start("6.6.6.6")[0])                            # another visitor is unaffected
+
+    def test_public_user_for_a_claude_only_profile(self):
+        u = {"id": 1, "email": None, "display_name": None, "claude_only": True}
+        self.assertEqual(ua.public_user(u), {"id": 1, "email": None, "display_name": "", "claude_only": True,
+                                             "has_credentials": False, "needs_name": True})
+        self.assertFalse(ua.public_user({**u, "display_name": "Dana"})["needs_name"])
+        self.assertEqual(ua.public_user({"id": 2, "email": "dana.l@example.com", "display_name": None})["display_name"], "dana.l")
+
+    def test_set_name_validation(self):
+        user = self.start()[0]
+        for bad in ("", " ", "x", "y" * 81, "bad\x07name", None):
+            self.assertEqual(ua.op_set_name(self.store, user, {"display_name": bad})[0], 400, repr(bad))
+        code, obj = ua.op_set_name(self.store, user, {"display_name": "  Dana \n  Levi "})
+        self.assertEqual((code, obj["display_name"]), (200, "Dana Levi"))         # whitespace collapsed
+
+    def test_adding_credentials_enables_email_sign_in_and_rejects_taken_emails(self):
+        user = self.start()[0]
+        self.assertEqual(ua.op_set_credentials(self.store, user, {"email": "bad", "password": GOOD})[0], 400)
+        self.assertEqual(ua.op_set_credentials(self.store, user, {"email": "d@example.com", "password": "short"})[0], 400)
+        self.assertEqual(ua.op_set_credentials(self.store, user, {"email": "d@example.com", "password": GOOD})[0], 200)
+        self.assertEqual(ua.op_login(self.store, {"email": "d@example.com", "password": GOOD}, "ip", H)[0], 200)
+        other = self.start("2.2.2.2")[0]
+        self.assertEqual(ua.op_set_credentials(self.store, other, {"email": "D@example.com", "password": GOOD})[0], 409)   # taken
+        self.assertEqual(ua.op_set_credentials(self.store, {**user, "email": "d@example.com"}, {"email": "z@example.com", "password": GOOD})[0], 409)
+
+    def test_a_claude_only_profile_cannot_sign_in_with_a_password_it_does_not_have(self):
+        user = self.start()[0]
+        self.assertEqual(ua.op_login(self.store, {"email": "anything@example.com", "password": GOOD}, "ip", H)[0], 401)
+        self.assertFalse(ua.verify_password(GOOD, None))
+
+
 class RequestHelperTests(unittest.TestCase):
     def test_same_origin(self):
         ok = ua.same_origin

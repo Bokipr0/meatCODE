@@ -6,33 +6,59 @@ class MemoryStore:
     """Same interface as user_accounts.PgStore."""
 
     def __init__(self):
-        self.users, self.sessions, self._next = {}, {}, 1
+        self.users, self.by_id, self.sessions, self._next, self.purged = {}, {}, {}, 1, 0
 
     def get_user_by_email(self, email):
         u = self.users.get(email.lower())
         return dict(u) if u else None
 
-    def create_user(self, email, password_hash, display_name):
-        u = {"id": self._next, "email": email.lower(), "password_hash": password_hash,
-             "display_name": display_name, "disabled": False}
+    def _new(self, **kw):
+        u = {"id": self._next, "email": None, "password_hash": None, "display_name": None, "disabled": False, "claude_only": False}
+        u.update(kw)
         self._next += 1
+        self.by_id[u["id"]] = u
+        return u
+
+    def create_user(self, email, password_hash, display_name):
+        u = self._new(email=email.lower(), password_hash=password_hash, display_name=display_name)
         self.users[email.lower()] = u
         return {k: v for k, v in u.items() if k != "password_hash"}
+
+    def create_claude_user(self):
+        u = self._new(claude_only=True)
+        return {k: v for k, v in u.items() if k != "password_hash"}
+
+    def set_display_name(self, user_id, name):
+        self.by_id[user_id]["display_name"] = name
+
+    def set_credentials(self, user_id, email, password_hash):
+        u = self.by_id[user_id]
+        if email.lower() in self.users or u["email"]:
+            return False
+        u.update(email=email.lower(), password_hash=password_hash)
+        self.users[email.lower()] = u
+        return True
+
+    def activate_sessions(self, user_id):
+        for s in self.sessions.values():
+            if s["user_id"] == user_id:
+                s["pending"] = False
+
+    def purge_stale_provisional(self):
+        self.purged += 1
 
     def touch_login(self, user_id):
         pass
 
-    def create_session(self, token_hash, user_id, days, user_agent):
-        self.sessions[token_hash] = {"user_id": user_id, "expires": time.time() + days * 86400}
+    def create_session(self, token_hash, user_id, days, user_agent, pending=False):
+        self.sessions[token_hash] = {"user_id": user_id, "expires": time.time() + days * 86400, "pending": bool(pending)}
 
     def session_user(self, token_hash):
         s = self.sessions.get(token_hash)
         if not s or s["expires"] < time.time():
             return None
-        for u in self.users.values():
-            if u["id"] == s["user_id"]:
-                return {k: v for k, v in u.items() if k != "password_hash"}
-        return None
+        u = self.by_id.get(s["user_id"])
+        return {**{k: v for k, v in u.items() if k != "password_hash"}, "pending": s["pending"]} if u else None
 
     def delete_session(self, token_hash):
         self.sessions.pop(token_hash, None)

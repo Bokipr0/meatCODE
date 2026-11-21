@@ -232,18 +232,85 @@ class AccountsServerTests(unittest.TestCase):
         self.assertEqual(self.calls, [])
 
     # ── Claude link endpoints ───────────────────────────────────────────────
-    def test_start_requires_sign_in_then_returns_the_approval_url(self):
-        origin = {"Origin": "http://127.0.0.1:%d" % self.port}
-        self.assertEqual(self.call("POST", "/api/account/claude/start", {}, origin)[0], 401)
-        cookie = {**self.sign_up(), **origin}
+    def start_claude(self, headers=None):
+        """POST /api/account/claude/start with Anthropic and our operator client faked out."""
         class Op:
             user_profiles = SimpleNamespace(create=lambda **kw: SimpleNamespace(id="uprof_1"))
         with patch.object(server, "_operator_client", lambda: Op()), \
              patch.object(claude_link, "client_assertion", lambda env: "jwt"), \
              patch.object(claude_link, "_post_json", lambda url, payload, timeout=10: (201, {"request_uri": "urn:req:1"})):
-            status, body, _ = self.call("POST", "/api/account/claude/start", {}, cookie)
+            return self.call("POST", "/api/account/claude/start", {}, {"Origin": "http://127.0.0.1:%d" % self.port, **(headers or {})})
+
+    def finish_claude(self, cookie, state="st-1", **query):
+        """Pretend Claude's approval page sent the browser back (code exchange faked)."""
+        uid = next(u["id"] for u in self.users.by_id.values() if u["claude_only"])
+        self.links.ensure_row(uid)
+        self.links.rows[uid].update(user_profile_id="uprof_%d" % uid)
+        self.links.set_pending(uid, claude_link._hash(state), "v" * 64)
+        qs = "state=%s&" % state + "&".join("%s=%s" % kv for kv in query.items())
+        with patch.object(claude_link, "client_assertion", lambda env: "jwt"), \
+             patch.object(claude_link, "_post_json", lambda url, payload, timeout=10: (200, {"connection_id": "ocon_9"})):
+            return self.call("GET", "/claude/billing/callback?" + qs, headers=cookie)
+
+    def test_signed_in_email_user_can_start_linking_too(self):
+        status, body, _ = self.start_claude(self.sign_up())
         self.assertEqual(status, 200, body)
         self.assertTrue(body["url"].startswith("https://auth.claude.com/oauth/authorize?"))
+
+    # ── Claude-first: the Claude button is the way in ───────────────────────
+    def test_new_visitor_starts_with_claude_and_no_account_but_gets_no_access_yet(self):
+        status, body, hdr = self.start_claude()
+        self.assertEqual(status, 200, body)
+        self.assertTrue(body["url"].startswith("https://auth.claude.com/oauth/authorize?"))
+        cookie = {"Cookie": hdr["set-cookie"].split(";")[0]}
+        self.assertEqual([(u["claude_only"], u["email"]) for u in self.users.by_id.values()], [(True, None)])
+        self.assertEqual(self.call("GET", "/app/meatcode_mockup.html", headers=cookie)[0], 401)       # pending is not a sign-in
+        self.assertEqual(self.call("POST", "/api/account/profile", {"display_name": "Dana"}, {**cookie, "Origin": "http://127.0.0.1:%d" % self.port})[0], 401)
+        me = self.call("GET", "/api/account/me", headers=cookie)[1]
+        self.assertIs(me["signed_in"], False)
+
+    def test_completing_the_link_grants_access_then_asks_for_a_name(self):
+        origin = {"Origin": "http://127.0.0.1:%d" % self.port}
+        cookie = {"Cookie": self.start_claude()[2]["set-cookie"].split(";")[0]}
+        status, _, hdr = self.finish_claude(cookie, code="abc")
+        self.assertEqual((status, hdr["location"]), (302, "/connect?claude=linked"))
+        self.assertEqual(self.call("GET", "/app/meatcode_mockup.html", headers=cookie)[0], 200)      # now the session counts
+        me = self.call("GET", "/api/account/me", headers=cookie)[1]
+        self.assertEqual((me["signed_in"], me["claude"]["status"], me["user"]["needs_name"], me["user"]["has_credentials"]),
+                         (True, "linked", True, False))
+        self.assertEqual(self.call("POST", "/api/account/profile", {"display_name": "x"}, {**cookie, **origin})[0], 400)
+        status, body, _ = self.call("POST", "/api/account/profile", {"display_name": "Dana Levi"}, {**cookie, **origin})
+        self.assertEqual((status, body["display_name"]), (200, "Dana Levi"))
+        me = self.call("GET", "/api/account/me", headers=cookie)[1]
+        self.assertEqual((me["user"]["display_name"], me["user"]["needs_name"]), ("Dana Levi", False))
+
+    def test_a_declined_link_leaves_the_visitor_signed_out(self):
+        cookie = {"Cookie": self.start_claude()[2]["set-cookie"].split(";")[0]}
+        status, _, hdr = self.finish_claude(cookie, error="access_denied")
+        self.assertEqual(hdr["location"], "/connect?claude=denied")
+        self.assertEqual(self.call("GET", "/app/meatcode_mockup.html", headers=cookie)[0], 401)
+
+    def test_anonymous_starts_are_throttled(self):
+        for _ in range(user_accounts.THROTTLE.limit):
+            self.assertEqual(self.start_claude()[0], 200)
+        self.assertEqual(self.start_claude()[0], 429)
+
+    def test_a_claude_only_profile_can_add_credentials_for_other_devices(self):
+        origin = {"Origin": "http://127.0.0.1:%d" % self.port}
+        cookie = {"Cookie": self.start_claude()[2]["set-cookie"].split(";")[0]}
+        self.finish_claude(cookie, code="abc")
+        body = {"email": "dana@example.com", "password": "correct horse battery"}
+        self.assertEqual(self.call("POST", "/api/account/credentials", body, origin)[0], 401)                # needs a real session
+        self.assertEqual(self.call("POST", "/api/account/credentials", body, {**cookie, **origin})[0], 200)
+        status, _, hdr = self.call("POST", "/api/account/login", body, origin)                               # a different device
+        self.assertEqual(status, 200)
+        me = self.call("GET", "/api/account/me", headers={"Cookie": hdr["set-cookie"].split(";")[0]})[1]
+        self.assertEqual((me["user"]["email"], me["claude"]["status"]), ("dana@example.com", "linked"))      # same profile, same link
+        self.assertEqual(self.call("POST", "/api/account/credentials", body, {**cookie, **origin})[0], 409)  # already has an email
+
+    def test_callback_after_the_cookie_was_lost_restarts_from_the_claude_screen(self):
+        status, _, hdr = self.call("GET", "/claude/billing/callback?state=x&code=y")
+        self.assertEqual((status, hdr["location"]), (302, "/connect?claude=expired"))
 
     def test_start_when_not_configured_is_a_clean_503(self):
         origin = {"Origin": "http://127.0.0.1:%d" % self.port}
@@ -270,8 +337,11 @@ class AccountsServerTests(unittest.TestCase):
     def test_connect_screen_uses_the_official_claude_button_and_loads_nothing_external(self):
         status, body, _ = self.call("GET", "/connect")
         self.assertEqual(status, 200)
-        for needle in ('class="claude-button', "Link your Claude organization", "#D97757", "/api/account/claude/start", "/api/account/me"):
+        for needle in ('class="claude-button', "Link your Claude organization", "#D97757", "/api/account/claude/start", "/api/account/me",
+                       "Your name", "/api/account/profile"):
             self.assertIn(needle, body)
+        for gone in ("Create account", "I already have one", "needAccount"):             # Claude is the way in: no account form here
+            self.assertNotIn(gone, body)
         for page in ("/connect", "/welcome", "/account"):
             html = self.call("GET", page)[1]
             self.assertNotRegex(html, r"<script[^>]+src=|<link[^>]+href=\"https?://|@import", page)   # self-contained: no third-party loads
@@ -303,9 +373,6 @@ class AccountsServerTests(unittest.TestCase):
         self.assertEqual((status, hdr["content-type"]), (200, "image/png"))
         self.assertEqual(self.call("GET", "/app/assets/oracle-answer.js")[0], 401)
 
-    def test_callback_without_a_session_goes_to_sign_in(self):
-        status, _, hdr = self.call("GET", "/claude/billing/callback?state=x&code=y")
-        self.assertEqual((status, hdr["location"]), (302, "/account?claude=signin&next=/connect"))
 
 
 class FlagOffTests(unittest.TestCase):

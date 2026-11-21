@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · GFI logo embedded (data URI) so the page also renders when opened as a file. Prior: header uses the GFI Israel + MeatCODE lockup. Prior: sign-in now continues to /connect (?next= whitelisted); Connect button opens the dedicated screen. Prior: NEW account page (flag `user_accounts`): sign in / create account, then "Connect your Claude organization". Self-contained; every server string is written with textContent (never innerHTML). -->
+<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · signed-in view handles Claude-only profiles (no email) and offers adding email + password. Prior: GFI logo embedded (data URI) so the page also renders when opened as a file. Prior: header uses the GFI Israel + MeatCODE lockup. Prior: sign-in now continues to /connect (?next= whitelisted); Connect button opens the dedicated screen. Prior: NEW account page (flag `user_accounts`): sign in / create account, then "Connect your Claude organization". Self-contained; every server string is written with textContent (never innerHTML). -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -108,6 +108,16 @@
       <div id="claudeErr" class="msg err hide" role="alert"></div>
       <p style="margin-top:12px"><small>Linked billing is a beta feature from Anthropic and may change. Connected means linked — Claude can still decline a request if the organization has no credit or has reached its limit.</small></p>
     </div>
+    <div class="card hide" id="credsCard" aria-labelledby="credsTitle">
+      <h2 id="credsTitle">Sign in from other devices</h2>
+      <p>You joined with Claude, so your profile lives in this browser. Add an email and password to reach it from anywhere.</p>
+      <form id="credsForm" autocomplete="on">
+        <label for="crEmail">Email</label><input id="crEmail" type="email" autocomplete="email" required>
+        <label for="crPass">Password <small>(at least 10 characters)</small></label><input id="crPass" type="password" autocomplete="new-password" minlength="10" required>
+        <div class="row"><button class="btn primary" type="submit" id="crGo">Save</button></div>
+      </form>
+      <div id="credsMsg" class="msg hide" role="status"></div>
+    </div>
   </section>
 </div>
 
@@ -147,8 +157,9 @@
       return;
     }
     show('auth',false);show('home',true);
-    $('hello').textContent='Hello, '+me.user.display_name;
-    $('who').textContent=me.user.email;
+    $('hello').textContent='Hello, '+(me.user.display_name||'there');
+    $('who').textContent=me.user.email||'Signed in with Claude';
+    show('credsCard',me.user.has_credentials===false);
     var c=me.claude||{},st=c.status||'unlinked',linked=(st==='linked');
     var pill=$('claudePill');
     pill.textContent=linked?'Connected':(c.needs_attention?'Needs attention':'Not connected');
@@ -189,6 +200,13 @@
     api('/api/account/signup',{display_name:$('suName').value,email:$('suEmail').value,password:$('suPass').value,invite_code:$('suInvite').value}).then(function(r){
       $('suGo').disabled=false;if(r.ok){afterAuth()}else{say('authErr',r.json.error||'Couldn\'t create the account.')}
     }).catch(function(){$('suGo').disabled=false;say('authErr','Network problem. Please try again.')});
+  };
+  $('credsForm').onsubmit=function(e){
+    e.preventDefault();$('crGo').disabled=true;var m=$('credsMsg');m.classList.add('hide');
+    api('/api/account/credentials',{email:$('crEmail').value,password:$('crPass').value}).then(function(r){
+      $('crGo').disabled=false;m.textContent=r.ok?'Saved — you can now sign in with this email from any device.':(r.json.error||'Couldn\'t save. Please try again.');
+      m.className='msg '+(r.ok?'ok':'err');if(r.ok)refresh();
+    }).catch(function(){$('crGo').disabled=false;m.textContent='Network problem. Please try again.';m.className='msg err'});
   };
   $('signout').onclick=function(){var go=function(){location.href='/welcome'};api('/api/account/logout',{}).then(go).catch(go)};   // signing out returns to the landing page
 

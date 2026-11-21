@@ -24,7 +24,7 @@ it does not identify a person. Identity is the MeatCODE email + password account
 ## One-time setup (in this order — dev service first)
 1. **Decide / check** (you): Render workspace is **Pro or higher** (managed OIDC requires it). You are Admin of the Claude
    organization that will own the app (MeatCODE's org — this is the org whose rate limits, model access and data retention apply to linked users' requests).
-2. **Apply the migrations to dev Neon:** `db/migrations/0031_user_accounts_claude_link.sql` (accounts, sessions, Claude connections) and `0032_usage_log.sql` (per-user usage log). Both idempotent and additive, nothing existing touched. *(Both are applied to dev as of 2026-11-21.)*
+2. **Apply the migrations to dev Neon:** `db/migrations/0031_user_accounts_claude_link.sql` (accounts, sessions, Claude connections) `0032_usage_log.sql` (per-user usage log) and `0033_claude_first_accounts.sql` (profiles that start with Claude, no email/password). All idempotent and additive, nothing existing touched. *(All three are applied to dev as of 2026-11-21.)*
 3. **Render → Claude API identity (Render docs, "Anthropic" tab):**
    - Console → *Service accounts* → create one with the **Developer** role.
    - Console → *Workload identity federation* → *Issuers* → Custom OIDC, issuer `https://oidc.render.com/<WORKSPACE_ID>` (starts `tea-`), JWKS = OIDC discovery.
@@ -41,7 +41,8 @@ it does not identify a person. Identity is the MeatCODE email + password account
 
 ## Before production (decisions for you / Daniel)
 - **Publish the OAuth app.** Unless your org has invoiced billing, Anthropic requires a **DNS TXT proof of the app's homepage domain** and reviews the app. An `onrender.com` address can't be DNS-proven → production needs a **custom domain** on the Render service (redirect URI + homepage on that domain).
-- **Sign-up policy.** Default is invitation-only. `open` would let anyone create an account and **read the same corpus API as the team** (signed-in individuals count as authorized, same as shared-password users). Their LLM spend is theirs, but the data exposure is a product call.
+- **Sign-up policy.** The email/password sign-up is invitation-only by default — but **the Claude-first path is not behind the invitation code**: anyone who completes the Claude approval (an Admin/Billing user of a paying Claude organization) gets in. While the OAuth app is "Test users only" that is just your test list; once published it is any such person. Decide before publishing whether that is acceptable or whether to add an invitation step before linking can start.
+- **Email sign-up (secondary).** Default is invitation-only. `open` would let anyone create an account and **read the same corpus API as the team** (signed-in individuals count as authorized, same as shared-password users). Their LLM spend is theirs, but the data exposure is a product call.
 - **Privacy wording.** Linked requests run **in MeatCODE's Claude organization**: *our* data-retention terms apply, and the customer's own ZDR / BAA / CMEK arrangements do not. Don't link anyone who needs HIPAA/FERPA/CMEK coverage. Say so on the account page if this goes public.
 - **Support.** Anthropic hosts the approval page and the spend-cap / unlink page; every other question from linked users comes to us.
 
@@ -71,3 +72,9 @@ requests**, and **Log out**, which returns to `/welcome`. Shared-password team m
 and a *Use your own Claude* button. The log (`app_usage_log`, migration 0032) holds **metadata only** — route, model, token counts, ok/error —
 never a question or an answer, and only for requests billed to the person's own Claude organization. If the table is missing the pop-out
 says "Usage isn't available yet" instead of failing.
+
+## Claude-first onboarding (no account form)
+A new visitor clicks **Connect Claude** on the landing page → `/connect` → **Link your Claude organization**. Behind the click the server creates an *unnamed, credential-less profile* and a **pending session** and sends the browser to Claude. A pending session is **not a sign-in**: the site, the API and every LLM route stay closed until Claude reports the link as approved; only then is the session activated. After approval a "what should we call you?" step stores the display name (Claude shares no identity, so the person types it) and the profile + usage log are theirs.
+- **Other devices:** the profile lives in the browser's session. The person can add an email + password on `/account` ("Sign in from other devices") — without it, a lost cookie means a lost profile, and Claude will not let the same organization link a second profile (one organization ↔ one profile).
+- **Abandoned clicks:** unfinished Claude-only profiles are deleted after a day. Each click that gets as far as Claude also creates one *user profile in our Claude organization*, which is **not** deleted with it — archive stragglers in the Console now and then. Anonymous starts are throttled (8 per IP per 15 min).
+- Existing email accounts still sign in at `/account` and can link from `/connect` as before.
