@@ -1,4 +1,4 @@
-/* Last updated: 2026-11-22 UTC · Claude (Sonnet 5.5) · minimal: pop-out = name, Claude status, Add credits (only when needed), one usage line, Log out; Add-credits card = one sentence + two buttons. Prior: 2026-11-22 UTC · Claude (Sonnet 5.5) · free-trial status and a highlighted Add-credits button in the pop-out; window.mcShowCreditsGate draws the guided Add-credits card in the Oracle. Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · NEW — the sidebar profile card becomes the signed-in user's profile pop-out: Claude connection, usage this month + recent activity, Log out (returns to /welcome). Self-contained; every server string is written with textContent. */
+/* Last updated: 2026-11-22 UTC · Claude (Fable 5.2) · team pop-out shows the card's own profile (name, role, organisation); 'Use your own Claude' opens in a new tab so the page stays. Prior: 2026-11-22 UTC · Claude (Sonnet 5.5) · minimal: pop-out = name, Claude status, Add credits (only when needed), one usage line, Log out; Add-credits card = one sentence + two buttons. Prior: 2026-11-22 UTC · Claude (Sonnet 5.5) · free-trial status and a highlighted Add-credits button in the pop-out; window.mcShowCreditsGate draws the guided Add-credits card in the Oracle. Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · NEW — the sidebar profile card becomes the signed-in user's profile pop-out: Claude connection, usage this month + recent activity, Log out (returns to /welcome). Self-contained; every server string is written with textContent. */
 (function () {
   'use strict';
   var ME = null, POP = null, OPEN_FOR = null;
@@ -126,11 +126,11 @@
   function teamSection() {
     var sec = el('div', 'sec'), t = el('div', 't');
     t.appendChild(el('span', null, 'Access')); t.appendChild(el('span', 'pill', 'Shared password')); sec.appendChild(t);
-    sec.appendChild(el('p', null, 'You\'re using the shared team password, so questions run on MeatCODE\'s own Claude account and aren\'t logged to a personal profile.'));
-    var a = el('a', 'btn primary', 'Use your own Claude'); a.href = '/connect'; sec.appendChild(a);
+    sec.appendChild(el('p', null, 'Signed in with the team password. Questions run on MeatCODE\'s Claude account and aren\'t saved to a personal profile.'));
+    var a = el('a', 'btn', 'Use your own Claude'); a.href = '/connect'; a.target = '_blank'; a.rel = 'noopener'; sec.appendChild(a);   // new tab: the page you are on stays put
     return sec;
   }
-  function build() {
+  function build(card) {
     var p = el('div'); p.id = 'mc-acct-pop'; p.setAttribute('role', 'dialog'); p.setAttribute('aria-label', 'Your profile'); p.tabIndex = -1;
     if (ME.signed_in) {
       p.appendChild(header(initials(ME.user.display_name || '?'), ME.user.display_name || 'You', ME.user.email || 'Signed in with Claude'));
@@ -138,7 +138,10 @@
       p.appendChild(claudeSection(usageP)); p.appendChild(usageSection(usageP));
       p.appendChild(logoutSection());
     } else {
-      p.appendChild(header('T', 'Team access', 'Shared password'));
+      // Team access has no personal account: show the profile this card carries, then how access works.
+      var txt = function (sel) { var n = card && $(sel, card); return n ? (n.textContent || '').trim() : ''; };
+      var nm = txt('.user-name') || 'Team access';
+      p.appendChild(header(nm === 'Team access' ? 'T' : initials(nm), nm, [txt('.user-role'), txt('.user-org')].filter(Boolean).join(' · ') || 'Shared password'));
       p.appendChild(teamSection());
     }
     return p;
@@ -157,7 +160,7 @@
     if (card) { card.setAttribute('aria-expanded', 'false'); try { card.focus({ preventScroll: true }); } catch (_) {} }
   }
   function open(card) {
-    close(); POP = build(); document.body.appendChild(POP); OPEN_FOR = card;
+    close(); POP = build(card); document.body.appendChild(POP); OPEN_FOR = card;
     card.setAttribute('aria-expanded', 'true'); place(card); POP.focus({ preventScroll: true });
     // usage loads after first paint and can change the height: re-place once it settles
     setTimeout(function () { if (POP && OPEN_FOR === card) place(card); }, 400);

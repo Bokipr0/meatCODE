@@ -1,4 +1,4 @@
-/* Last updated: 2026-11-21 · Claude (Haiku 5.5) · the "Graph Oracle" top-banner chip is now gated by the graph_oracle feature
+/* Last updated: 2026-11-22 · Claude (Fable 5.2) · chip click no longer hijacked to #oracle by the shell's label router. Prior 2026-11-21 · Claude (Haiku 5.5) · the "Graph Oracle" top-banner chip is now gated by the graph_oracle feature
    switch (body.ff-graph_oracle, set by the /api/flags pass) instead of the backend status probe. Turning the switch on adds the chip
    to every topbar (after Science/Ecosystem/Oracle); turning it off removes it. Clicking opens the in-app #graphoracle scene.
    Prior 2026-11-21 · Claude (Sonnet 5.5) · Graph Oracle as a platform module, chip only when /api/graph-oracle/status was ready.
@@ -19,7 +19,7 @@
       chip.dataset.modChip = 'graphoracle';
       chip.title = 'Knowledge Graph Oracle';
       chip.innerHTML = ICON + 'Graph Oracle';
-      chip.addEventListener('click', () => { location.hash = '#graphoracle'; });
+      chip.addEventListener('click', event => { event.stopPropagation(); location.hash = '#graphoracle'; });   // keep the shell's label router ("oracle" in the label) from overriding this
       const chips = Array.from(row.querySelectorAll('.domain'));
       const last = ['Ecosystem', 'Science', 'Oracle']
         .map(label => chips.find(d => (d.textContent || '').trim() === label))

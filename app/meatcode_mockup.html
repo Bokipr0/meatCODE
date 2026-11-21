@@ -8588,6 +8588,7 @@ window.rebuildExpertList = function () {};
   document.addEventListener('click', function (e) {
     var el = e.target.closest && e.target.closest('.domain, [class*="card"], [data-goto]');
     if (!el) return;
+    if (el.closest('.user-card, [data-mod-chip]')) return;   /* 2026-11-22 · profile card and module chips own their clicks: the label match sent "Graph Oracle" to #oracle and a profile reading "Researcher" to #research */
     var dest = destFor(el);
     if (!dest) return;
     e.preventDefault();
