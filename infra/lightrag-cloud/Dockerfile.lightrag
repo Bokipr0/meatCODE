@@ -1,0 +1,14 @@
+# Last updated: 2026-11-21 21:34 UTC · Claude (Sonnet 5.5) · LightRAG 1.5.7 image
+# LightRAG 1.5.7 API + WebUI - same version as the frozen local baseline.
+FROM python:3.12-slim
+ARG LIGHTRAG_VERSION=1.5.7
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir "lightrag-hku[api]==${LIGHTRAG_VERSION}" "asyncpg>=0.31,<1" "pgvector>=0.4.2,<1"
+WORKDIR /app
+COPY entrypoint-lightrag.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENV HOST=0.0.0.0 PORT=9621 WORKING_DIR=/app/data/rag_storage INPUT_DIR=/app/data/inputs
+EXPOSE 9621
+HEALTHCHECK --interval=30s --timeout=5s --start-period=120s CMD curl -fs http://localhost:9621/health || exit 1
+ENTRYPOINT ["/entrypoint.sh"]

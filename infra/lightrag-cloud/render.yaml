@@ -1,0 +1,52 @@
+# Last updated: 2026-11-21 21:34 UTC · Claude (Sonnet 5.5) · LightRAG sandbox blueprint, standard plans
+# Separate Blueprint for the LightRAG sandbox. NOT merged into the root render.yaml so
+# production (meatcode-oracle) deploys are unaffected. Create via Render Dashboard ->
+# New -> Blueprint -> this repo -> "Blueprint file path" = infra/lightrag-cloud/render.yaml
+# Sizes are starting points: adjust after `kgctl measure` (graph vectors load into RAM).
+services:
+  - type: pserv                         # private: reachable only on Render's internal network
+    name: meatcode-lightrag-ollama
+    runtime: docker
+    dockerfilePath: infra/lightrag-cloud/Dockerfile.ollama
+    dockerContext: infra/lightrag-cloud
+    plan: standard                      # 2 GB; bge-m3 + 8k context
+    region: frankfurt
+    disk: {name: ollama-models, mountPath: /data, sizeGB: 5}
+  - type: web
+    name: meatcode-lightrag
+    runtime: docker
+    dockerfilePath: infra/lightrag-cloud/Dockerfile.lightrag
+    dockerContext: infra/lightrag-cloud
+    plan: standard
+    region: frankfurt
+    healthCheckPath: /health
+    disk: {name: lightrag-data, mountPath: /app/data, sizeGB: 10}
+    envVars:
+      - {key: LIGHTRAG_API_KEY, sync: false}        # >=32 chars; entrypoint refuses to start otherwise
+      - {key: LLM_BINDING_API_KEY, sync: false}     # Anthropic key
+      - {key: KEYWORD_LLM_BINDING_API_KEY, sync: false}
+      - {key: SEED_ARCHIVE_URL, sync: false}        # presigned URL of baseline rag_storage.tar.gz (first boot only)
+      - {key: SEED_ARCHIVE_SHA256, sync: false}     # b55a2e38e766bbfe0f3a5295342766ce2796be758d9256c18f2dd65fabe6d38a
+      - {key: LLM_BINDING, value: openai}
+      - {key: LLM_BINDING_HOST, value: "https://api.anthropic.com/v1/"}
+      - {key: LLM_MODEL, value: claude-sonnet-4-6}
+      - {key: EXTRACT_LLM_BINDING, value: openai}
+      - {key: EXTRACT_LLM_BINDING_HOST, value: "https://api.anthropic.com/v1/"}
+      - {key: EXTRACT_LLM_MODEL, value: claude-sonnet-4-6}
+      - {key: QUERY_LLM_BINDING, value: openai}
+      - {key: QUERY_LLM_BINDING_HOST, value: "https://api.anthropic.com/v1/"}
+      - {key: QUERY_LLM_MODEL, value: claude-sonnet-4-6}
+      - {key: KEYWORD_LLM_BINDING, value: openai}
+      - {key: KEYWORD_LLM_BINDING_HOST, value: "https://api.anthropic.com/v1/"}
+      - {key: KEYWORD_LLM_MODEL, value: claude-sonnet-4-6}
+      - {key: KEYWORD_LLM_TIMEOUT, value: "180"}
+      - {key: EMBEDDING_BINDING, value: ollama}
+      - {key: EMBEDDING_BINDING_HOST, value: "http://meatcode-lightrag-ollama:11434"}
+      - {key: EMBEDDING_MODEL, value: "bge-m3:latest"}
+      - {key: EMBEDDING_DIM, value: "1024"}
+      - {key: OLLAMA_EMBEDDING_NUM_CTX, value: "8192"}
+      - {key: EMBEDDING_TIMEOUT, value: "300"}
+      - {key: EMBEDDING_BATCH_NUM, value: "8"}
+      - {key: EMBEDDING_FUNC_MAX_ASYNC, value: "2"}
+      - {key: MAX_ASYNC, value: "2"}
+      - {key: MAX_GRAPH_NODES, value: "20000"}       # default 1000 silently truncates graph export/map

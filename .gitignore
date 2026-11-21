@@ -38,3 +38,6 @@ Thumbs.db
 *.sqlite
 *.db
 layer_e*.sqlite
+.env.kg
+.env.cloud
+infra/lightrag-cloud/kg_audit.jsonl

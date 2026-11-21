@@ -1,0 +1,9 @@
+# Last updated: 2026-11-21 21:34 UTC · Claude (Sonnet 5.5) · private bge-m3 image
+# Private embedding service: the SAME model/dimension as the baseline (bge-m3, 1024).
+ARG OLLAMA_TAG=latest
+FROM ollama/ollama:${OLLAMA_TAG}
+COPY entrypoint-ollama.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENV OLLAMA_HOST=0.0.0.0:11434 OLLAMA_MODELS=/data/models OLLAMA_KEEP_ALIVE=-1
+EXPOSE 11434
+ENTRYPOINT ["/entrypoint.sh"]
