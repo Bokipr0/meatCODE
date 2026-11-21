@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · NEW landing page (flag `user_accounts`): sign in / create account / bring-your-own-Claude. Self-contained on purpose — it is served before anyone is signed in. -->
+<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · CTAs now lead into the dedicated /connect screen. Prior: NEW landing page (flag `user_accounts`): sign in / create account / bring-your-own-Claude. Self-contained on purpose — it is served before anyone is signed in. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -41,8 +41,8 @@
   <header>
     <div class="brand">Meat<span>CODE</span></div>
     <nav>
-      <a class="btn" id="navSignin" href="/account">Sign in</a>
-      <a class="btn primary" id="navCreate" href="/account?tab=signup">Create account</a>
+      <a class="btn" id="navSignin" href="/account?next=/connect">Sign in</a>
+      <a class="btn primary" id="navCreate" href="/account?tab=signup&next=/connect">Create account</a>
       <a class="btn primary off" id="navOpen" href="/app/meatcode_mockup.html">Open MeatCODE</a>
     </nav>
   </header>
@@ -54,8 +54,9 @@
       <p class="lede">MeatCODE is a pre-competitive knowledge platform for the alternative-meat sector. It brings the literature,
         the chemistry and the people working on meaty flavor and aroma into one place.</p>
       <div class="cta">
-        <a class="btn primary" id="heroCreate" href="/account?tab=signup">Create your account</a>
-        <a class="btn" id="heroSignin" href="/account">Sign in</a>
+        <a class="btn primary" id="heroCreate" href="/account?tab=signup&next=/connect">Create your account</a>
+        <a class="btn" id="heroSignin" href="/account?next=/connect">Sign in</a>
+        <a class="btn primary off" id="heroConnect" href="/connect">Link your Claude organization</a>
         <a class="btn primary off" id="heroOpen" href="/app/meatcode_mockup.html">Open MeatCODE</a>
       </div>
     </section>
@@ -76,7 +77,7 @@
         <li>You need the Admin or Billing role in a Claude organization that pays Anthropic directly (API credits or invoice).
             A Claude chat subscription on its own isn't enough.</li>
       </ul>
-      <small>Claude linked billing is a beta feature from Anthropic and may change.</small>
+      <small>Claude linked billing is a beta feature from Anthropic and may change. <a href="/connect">See how connecting works →</a></small>
     </section>
   </main>
 
@@ -94,6 +95,8 @@
     ['navOpen','heroOpen'].forEach(function(id){document.getElementById(id).classList.remove('off')});
     var a=document.createElement('a');a.className='btn';a.href='/account';a.textContent='Account';
     document.getElementById('navOpen').insertAdjacentElement('beforebegin',a);
+    // signed in but Claude not linked yet: lead with the Claude screen
+    if(!(d.claude&&d.claude.status==='linked')){document.getElementById('heroConnect').classList.remove('off');document.getElementById('heroOpen').classList.remove('primary')}
   }).catch(function(){});
 })();
 </script>

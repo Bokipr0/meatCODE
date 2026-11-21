@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · NEW account page (flag `user_accounts`): sign in / create account, then "Connect your Claude organization". Self-contained; every server string is written with textContent (never innerHTML). -->
+<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · sign-in now continues to /connect (?next= whitelisted); Connect button opens the dedicated screen. Prior: NEW account page (flag `user_accounts`): sign in / create account, then "Connect your Claude organization". Self-contained; every server string is written with textContent (never innerHTML). -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -160,29 +160,34 @@
     }
   }
 
+  // After signing in or creating an account: go where ?next= says (own pages only), else on to the Claude screen
+  // unless the organization is already linked.
+  var NEXT_OK={'/connect':1,'/app/meatcode_mockup.html':1};
+  function afterAuth(){
+    var next=new URLSearchParams(location.search).get('next');
+    if(next&&NEXT_OK[next]){location.href=next;return}
+    api('/api/account/me').then(function(r){
+      var linked=r.ok&&r.json.claude&&r.json.claude.status==='linked';
+      location.href=linked?'/app/meatcode_mockup.html':'/connect';
+    }).catch(function(){refresh()});
+  }
   function refresh(){return api('/api/account/me').then(function(r){render(r.ok?r.json:{enabled:false})}).catch(function(){render({enabled:false})})}
 
   $('formSignin').onsubmit=function(e){
     e.preventDefault();say('authErr','');$('siGo').disabled=true;
     api('/api/account/login',{email:$('siEmail').value,password:$('siPass').value}).then(function(r){
-      $('siGo').disabled=false;if(r.ok){refresh()}else{say('authErr',r.json.error||'Sign-in failed.')}
+      $('siGo').disabled=false;if(r.ok){afterAuth()}else{say('authErr',r.json.error||'Sign-in failed.')}
     }).catch(function(){$('siGo').disabled=false;say('authErr','Network problem. Please try again.')});
   };
   $('formSignup').onsubmit=function(e){
     e.preventDefault();say('authErr','');$('suGo').disabled=true;
     api('/api/account/signup',{display_name:$('suName').value,email:$('suEmail').value,password:$('suPass').value,invite_code:$('suInvite').value}).then(function(r){
-      $('suGo').disabled=false;if(r.ok){refresh()}else{say('authErr',r.json.error||'Couldn\'t create the account.')}
+      $('suGo').disabled=false;if(r.ok){afterAuth()}else{say('authErr',r.json.error||'Couldn\'t create the account.')}
     }).catch(function(){$('suGo').disabled=false;say('authErr','Network problem. Please try again.')});
   };
   $('signout').onclick=function(){api('/api/account/logout',{}).then(refresh)};
 
-  $('connect').onclick=function(){
-    say('claudeErr','');$('connect').disabled=true;
-    api('/api/account/claude/start',{}).then(function(r){
-      if(r.ok&&r.json.url){location.href=r.json.url;return}      // Claude's approval page; it returns to /claude/billing/callback
-      $('connect').disabled=false;say('claudeErr',r.json.error||'Couldn\'t start connecting. Please try again.');
-    }).catch(function(){$('connect').disabled=false;say('claudeErr','Network problem. Please try again.')});
-  };
+  $('connect').onclick=function(){location.href='/connect'};   // the dedicated Claude screen
   $('disconnect').onclick=function(){
     if(!confirm('Disconnect your Claude organization from MeatCODE? Oracle questions will stop until you connect again.'))return;
     say('claudeErr','');$('disconnect').disabled=true;

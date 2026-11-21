@@ -6011,7 +6011,7 @@ function askOracle() {
     // browser sign-in, not a broken Oracle — say so plainly instead of a raw HTTP error.
     if (res.status === 401) { throw new Error('SESSION_EXPIRED'); }
     // 2026-11-21 · flag user_accounts: a signed-in individual who hasn't connected their own Claude organization gets a 402.
-    if (res.status === 402) { throw new Error('To ask the Oracle, connect your own Claude organization first: open /account and choose "Connect your Claude organization".'); }
+    if (res.status === 402) { throw new Error('To ask the Oracle, link your own Claude organization first: open /connect and choose "Link your Claude organization".'); }
     if (!res.ok) { return res.text().then(function (t) { throw new Error(t || ('HTTP ' + res.status)); }); }
     return streamSSE(res, researchTurn);
   }).catch(function (e) {

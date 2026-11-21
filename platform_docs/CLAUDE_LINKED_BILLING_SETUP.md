@@ -1,8 +1,7 @@
 <!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · NEW — runbook for individual accounts + "Connect your Claude organization" (flag user_accounts) -->
 # Individual accounts + "Connect your Claude organization" — setup runbook
 
-**What it is.** A landing page (`/welcome`), an account page (`/account`: sign in / create account / **Connect your
-Claude organization**), and per-person billing: when a signed-in individual asks the Oracle, the request is billed to
+**What it is.** A landing page (`/welcome`), an account page (`/account`: sign in / create account), a dedicated **Link your Claude organization** screen (`/connect`, Anthropic's official button) and per-person billing: when a signed-in individual asks the Oracle, the request is billed to
 *their own* Claude organization through Anthropic's **Claude Platform OAuth → Linked billing** (Beta).
 Docs: <https://platform.claude.com/docs/en/manage-claude/oauth-apps/overview> ·
 <https://platform.claude.com/docs/en/manage-claude/oauth-apps/organization-billing-connections> ·
@@ -16,7 +15,7 @@ Render side: <https://render.com/docs/oidc>.
 |---|---|---|
 | Team (shared password) | Basic Auth, as today | **Our** `ANTHROPIC_API_KEY` — unchanged |
 | Individual, signed in, **connected** | Email + password session | **Their** Claude organization (`billing_policy.bill_to = user_profile`) |
-| Individual, signed in, **not connected** | Email + password session | Nobody — the Oracle answers `402 connect_claude` and the UI points to `/account`. **Never our key.** |
+| Individual, signed in, **not connected** | Email + password session | Nobody — the Oracle answers `402 connect_claude` and the UI points to `/connect`. **Never our key.** |
 
 Covered routes: `/api/ask` (single + guided + consensus), `/api/graph-oracle/ask`, `/api/ecosystem/intent`, `/api/consensus-demo`.
 Linking is **not** a "sign in with Claude": Anthropic's flow authorizes *billing* for an organization (approver must be Admin/Billing),
@@ -37,7 +36,7 @@ it does not identify a person. Identity is the MeatCODE email + password account
    - *Permissions* tab → Billing → `billing:attribution`.
    - Status starts as **Test users only**: add the people who will test. Publishing is a separate step (below).
 5. **Render env (dev):** `CLAUDE_OAUTH_CLIENT_ID`, `CLAUDE_OAUTH_REDIRECT_URI` (exactly the registered URI), `SIGNUP_MODE=invite`, `SIGNUP_INVITE_CODE=<a code you choose>`. (Names are also listed, commented out, in `render.yaml`.)
-6. **Release Center:** turn `user_accounts` ON for dev, `deploy-dev.command`. Open `/account` — the page lists anything still unconfigured (dev only).
+6. **Release Center:** turn `user_accounts` ON for dev, `deploy-dev.command`. Open `/connect` — the page lists anything still unconfigured (dev only).
 7. **Test as a customer:** create an account with the invite code → *Connect your Claude organization* → approve as a Console user with Admin/Billing who is on the Test-users list → Console → *User profiles* shows the profile **Linked** → ask the Oracle → confirm the usage lands on that organization → *Disconnect* → Oracle answers 402 again.
 
 ## Before production (decisions for you / Daniel)

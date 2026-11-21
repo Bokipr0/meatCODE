@@ -1141,7 +1141,8 @@ class Handler(SimpleHTTPRequestHandler):
                 self._redirect("/welcome")           # visitors land on the welcome page, not a browser password box
                 return True
             return False
-        pages = {"/welcome": "/app/welcome.html", "/account": "/app/account.html", "/login": "/app/account.html"}
+        pages = {"/welcome": "/app/welcome.html", "/account": "/app/account.html", "/login": "/app/account.html",
+                 "/connect": "/app/connect.html"}
         if path in pages:
             self.path = pages[path]
             SimpleHTTPRequestHandler.do_GET(self)
@@ -1162,14 +1163,14 @@ class Handler(SimpleHTTPRequestHandler):
         if path == "/claude/billing/callback":
             user = self._session_user()
             if not user:
-                self._redirect("/account?claude=signin")
+                self._redirect("/account?claude=signin&next=/connect")
                 return True
             try:
                 reason = claude_link.finish_link(_acct_store()[1], user, parse_qs(urlparse(self.path).query), os.environ)
             except Exception as e:                    # LinkError or a store outage — the page shows fixed text only
                 sys.stderr.write("[claude-link] callback failed: %s\n" % type(e).__name__)
                 reason = "failed"
-            self._redirect("/account?claude=" + (reason if reason in claude_link.CALLBACK_REASONS else "failed"))
+            self._redirect("/connect?claude=" + (reason if reason in claude_link.CALLBACK_REASONS else "failed"))
             return True
         return False
 

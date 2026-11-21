@@ -441,12 +441,12 @@
       "added": "2026-11-21",
       "status": "preview",
       "where": {
-        "screen": "Landing (/welcome) and Account (/account)",
+        "screen": "Landing (/welcome), Connect Claude (/connect) and Account (/account)",
         "spot": "Root redirect for visitors, /api/account/*, /claude/billing/callback; Oracle billing choice in the ask routes.",
         "file": "server/user_accounts.py + server/claude_link.py + app/welcome.html + app/account.html"
       },
       "note": "Ships dark. Needs migration db/migrations/0031 applied, Render managed OIDC (Pro workspace) and a Claude OAuth app — see platform_docs/CLAUDE_LINKED_BILLING_SETUP.md. Sign-up is invitation-only by default (SIGNUP_MODE / SIGNUP_INVITE_CODE). Signed-in individuals never fall back to the shared Anthropic key.",
-      "dev": false,
+      "dev": true,
       "prod": false
     }
   }

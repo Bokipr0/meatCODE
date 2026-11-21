@@ -122,10 +122,10 @@ class AccountsServerTests(unittest.TestCase):
     def test_visitors_land_on_welcome_and_pages_need_no_password(self):
         status, _, hdr = self.call("GET", "/")
         self.assertEqual((status, hdr["location"]), (302, "/welcome"))
-        for path in ("/welcome", "/account", "/login"):
+        for path in ("/welcome", "/account", "/login", "/connect"):
             status, body, hdr = self.call("GET", path)
             self.assertEqual(status, 200, path)
-            self.assertIn("<title>MeatCODE", body)
+            self.assertRegex(body, r"<title>[^<]*MeatCODE")
             self.assertIn("no-cache", hdr.get("cache-control", ""))
         status, body, _ = self.call("GET", "/api/account/me")
         self.assertEqual((status, body["signed_in"], body["signup_mode"]), (200, False, "invite"))
@@ -233,15 +233,25 @@ class AccountsServerTests(unittest.TestCase):
         with patch.object(claude_link, "client_assertion", lambda env: "jwt"), \
              patch.object(claude_link, "_post_json", lambda url, payload, timeout=10: (200, {"connection_id": "ocon_9"})):
             status, _, hdr = self.call("GET", "/claude/billing/callback?state=st-1&code=abc", headers=cookie)
-        self.assertEqual((status, hdr["location"]), (302, "/account?claude=linked"))
+        self.assertEqual((status, hdr["location"]), (302, "/connect?claude=linked"))
         self.assertEqual(self.links.rows[1]["status"], "linked")
         # a hostile callback can't make the page say anything: reasons are a fixed vocabulary
         status, _, hdr = self.call("GET", "/claude/billing/callback?state=zzz&error=<script>alert(1)</script>", headers=cookie)
-        self.assertEqual(hdr["location"], "/account?claude=expired")
+        self.assertEqual(hdr["location"], "/connect?claude=expired")
+
+    def test_connect_screen_uses_the_official_claude_button_and_loads_nothing_external(self):
+        status, body, _ = self.call("GET", "/connect")
+        self.assertEqual(status, 200)
+        for needle in ('class="claude-button', "Link your Claude organization", "#D97757", "/api/account/claude/start", "/api/account/me"):
+            self.assertIn(needle, body)
+        for page in ("/connect", "/welcome", "/account"):
+            html = self.call("GET", page)[1]
+            self.assertNotRegex(html, r"<script[^>]+src=|<link[^>]+href=\"https?://|@import", page)   # self-contained: no third-party loads
+        self.assertIn("/connect", self.call("GET", "/welcome")[1])                                  # the landing page leads into it
 
     def test_callback_without_a_session_goes_to_sign_in(self):
         status, _, hdr = self.call("GET", "/claude/billing/callback?state=x&code=y")
-        self.assertEqual((status, hdr["location"]), (302, "/account?claude=signin"))
+        self.assertEqual((status, hdr["location"]), (302, "/account?claude=signin&next=/connect"))
 
 
 class FlagOffTests(unittest.TestCase):
@@ -266,9 +276,9 @@ class FlagOffTests(unittest.TestCase):
                 httpd.shutdown()
                 httpd.server_close()
 
-    def test_registry_ships_the_flag_dark(self):
+    def test_registry_flag_is_dev_only(self):
         flag = json.loads(Path("Release Center/features.json").read_text())["flags"]["user_accounts"]
-        self.assertEqual((flag["dev"], flag["prod"]), (False, False))
+        self.assertEqual((flag["dev"], flag["prod"]), (True, False))      # staging only; production stays off until Lior flips it
 
 
 if __name__ == "__main__":

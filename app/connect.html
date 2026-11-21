@@ -1,0 +1,207 @@
+<!doctype html>
+<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · NEW dedicated "Connect your Claude organization" screen (flag `user_accounts`). Uses Anthropic's official Link button (platform.claude.com/docs/en/manage-claude/oauth-apps/branding-samples). Self-contained; server strings only via textContent. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connect Claude — MeatCODE</title>
+<style>
+  :root{--bg:#FAF9F5;--surface:#fff;--ink:#141413;--ink-2:#55544F;--line:#E8E6DC;--teal:#2F7F79;--claude:#D97757;--mist:#E0F0EE;--sand:#F5F4ED;--ok:#1E6B3A;--ok-bg:#E3F3E8;--err:#A8573A;--err-bg:#F8E9E2;
+        --font:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 var(--font)}
+  a{color:var(--teal)}
+  .wrap{max-width:980px;margin:0 auto;padding:0 20px 64px}
+  header{display:flex;align-items:center;justify-content:space-between;padding:18px 0}
+  .brand{font-weight:700;font-size:20px;text-decoration:none;color:var(--ink)}
+  .brand span{color:#4FA59F}
+  .nav a{margin-left:14px;font-size:15px}
+
+  /* progress */
+  ol.steps{list-style:none;display:flex;gap:8px;padding:0;margin:8px 0 26px;flex-wrap:wrap}
+  ol.steps li{display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;border:1.5px solid var(--line);background:#fff;color:var(--ink-2);font-size:14px;font-weight:600}
+  ol.steps li .n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--sand);font-size:12px}
+  ol.steps li.done{border-color:#BFE0C9;background:var(--ok-bg);color:var(--ok)}
+  ol.steps li.done .n{background:var(--ok);color:#fff}
+  ol.steps li.now{border-color:var(--claude);color:var(--ink);background:#fff;box-shadow:0 0 0 3px rgba(217,119,87,.15)}
+  ol.steps li.now .n{background:var(--claude);color:#fff}
+
+  .stage{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start}
+  @media (max-width:780px){.stage{grid-template-columns:1fr}}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:24px}
+  .hero{text-align:center;padding:34px 26px}
+  .pair{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:14px}
+  .pair .chip{display:grid;place-items:center;width:62px;height:62px;border-radius:16px;border:1px solid var(--line);background:var(--sand)}
+  .pair .chip b{font-size:15px;color:var(--teal)}
+  .pair .link{width:34px;height:2px;background:repeating-linear-gradient(90deg,var(--claude) 0 6px,transparent 6px 10px)}
+  h1{font-size:clamp(24px,4vw,32px);line-height:1.15;margin:0 0 8px}
+  h2{font-size:17px;margin:0 0 8px}
+  p{margin:0 0 10px;color:var(--ink-2)}
+  .lede{font-size:17px;max-width:44ch;margin:0 auto 20px}
+  ul.plain{margin:6px 0 0;padding-left:20px;color:var(--ink-2)}
+  ul.plain li{margin:4px 0}
+  .tick{list-style:none;padding:0;margin:0}
+  .tick li{position:relative;padding-left:26px;margin:9px 0;color:var(--ink-2)}
+  .tick li:before{content:"";position:absolute;left:0;top:7px;width:14px;height:8px;border-left:2.5px solid var(--teal);border-bottom:2.5px solid var(--teal);transform:rotate(-45deg) scale(.9)}
+  .need{background:var(--sand);border-radius:12px;padding:14px 16px;margin-top:14px;color:var(--ink-2);font-size:15px}
+  .need strong{color:var(--ink)}
+
+  /* Anthropic's official "Link your Claude organization" button (branding-samples) */
+  .claude-button{--claude-button-fill:#FFFFFF;--claude-button-fill-hover:#F5F4ED;--claude-button-text:#141413;--claude-button-border:#87867F;
+    display:inline-flex;align-items:center;justify-content:center;gap:calc(10em / 14);box-sizing:border-box;min-height:calc(40em / 14);padding:calc(8em / 14) calc(12em / 14);
+    border:1px solid var(--claude-button-border);border-radius:calc(8em / 14);background:var(--claude-button-fill);
+    font:500 0.875rem/1.4286 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:0.875rem;letter-spacing:normal;text-transform:none;cursor:pointer}
+  .claude-button.big{font-size:1.0625rem}
+  .claude-button,.claude-button:link,.claude-button:visited,.claude-button:hover,.claude-button:focus,.claude-button:active{color:var(--claude-button-text);text-decoration:none}
+  .claude-button:hover{background:var(--claude-button-fill-hover)}
+  .claude-button:focus-visible{outline:2px solid var(--claude-button-text);outline-offset:2px;box-shadow:0 0 0 2px var(--claude-button-fill)}
+  .claude-button[disabled]{opacity:.6;cursor:progress}
+  .claude-button svg{flex:none;width:calc(20em / 14);height:calc(20em / 14)}
+  .claude-button path{fill:#D97757;stroke:none}
+
+  .btn{display:inline-block;padding:11px 20px;border-radius:999px;border:1.5px solid var(--teal);color:var(--teal);background:transparent;text-decoration:none;font:inherit;font-weight:600;cursor:pointer}
+  .btn.primary{background:var(--teal);color:#fff}
+  .btn.quiet{border-color:var(--line);color:var(--ink-2)}
+  .btn:focus-visible{outline:3px solid #B5DDD8;outline-offset:2px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+  .msg{padding:11px 14px;border-radius:12px;margin:14px 0 0;font-size:15px;text-align:left}
+  .msg.err{background:var(--err-bg);color:var(--err)}
+  .msg.ok{background:var(--ok-bg);color:var(--ok)}
+  .fine{font-size:13px;color:var(--ink-2);margin-top:14px}
+  .success .tickbig{display:grid;place-items:center;width:64px;height:64px;border-radius:50%;background:var(--ok-bg);color:var(--ok);font-size:32px;margin:0 auto 12px}
+  .hide{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="brand" href="/welcome">Meat<span>CODE</span></a>
+    <span class="nav"><a href="/account" id="navAccount" class="hide">Account</a><a href="/welcome">Home</a></span>
+  </header>
+
+  <ol class="steps" aria-label="Progress">
+    <li id="s1"><span class="n">1</span>Account</li>
+    <li id="s2"><span class="n">2</span>Link Claude</li>
+    <li id="s3"><span class="n">3</span>Ask the Oracle</li>
+  </ol>
+
+  <div id="banner" class="msg hide" role="status"></div>
+  <div id="loading" class="card">Loading…</div>
+
+  <div id="off" class="card hide"><h1>Not switched on yet</h1><p>Individual accounts aren't available on this server yet. Team members can use the shared password.</p>
+    <a class="btn primary" href="/app/meatcode_mockup.html">Open MeatCODE</a></div>
+
+  <!-- step 1: account first -->
+  <div id="needAccount" class="card hero hide">
+    <div class="pair"><div class="chip"><b>M</b></div><div class="link"></div><div class="chip" aria-hidden="true">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30" height="30"><path fill="#D97757" d="M11.376 24L10.776 23.544L10.44 22.8L10.776 21.312L11.16 19.392L11.472 17.856L11.76 15.96L11.928 15.336L11.904 15.288L11.784 15.312L10.344 17.28L8.16 20.232L6.432 22.056L6.024 22.224L5.304 21.864L5.376 21.192L5.784 20.616L8.16 17.568L9.6 15.672L10.536 14.592L10.512 14.448H10.464L4.128 18.576L3 18.72L2.496 18.264L2.568 17.52L2.808 17.28L4.704 15.96L9.432 13.32L9.504 13.08L9.432 12.96H9.192L8.4 12.912L5.712 12.84L3.384 12.744L1.104 12.624L0.528 12.504L0 11.784L0.048 11.424L0.528 11.112L1.224 11.16L2.736 11.28L5.016 11.424L6.672 11.52L9.12 11.784H9.504L9.552 11.616L9.432 11.52L9.336 11.424L6.96 9.84L4.416 8.16L3.072 7.176L2.352 6.672L1.992 6.216L1.848 5.208L2.496 4.488L3.384 4.56L3.6 4.608L4.488 5.304L6.384 6.768L8.88 8.616L9.24 8.904L9.408 8.808V8.736L9.24 8.472L7.896 6.024L6.456 3.528L5.808 2.496L5.64 1.872C5.576 1.656 5.544 1.416 5.544 1.152L6.288 0.144001L6.696 0L7.704 0.144001L8.112 0.504001L8.736 1.92L9.72 4.152L11.28 7.176L11.736 8.088L11.976 8.904L12.072 9.168H12.24V9.024L12.36 7.296L12.6 5.208L12.84 2.52L12.912 1.752L13.296 0.840001L14.04 0.360001L14.616 0.624001L15.096 1.32L15.024 1.752L14.76 3.6L14.184 6.504L13.824 8.472H14.04L14.28 8.208L15.264 6.912L16.92 4.848L17.64 4.032L18.504 3.12L19.056 2.688H20.088L20.832 3.816L20.496 4.992L19.44 6.336L18.552 7.464L17.28 9.168L16.512 10.536L16.584 10.632H16.752L19.608 10.008L21.168 9.744L22.992 9.432L23.832 9.816L23.928 10.2L23.592 11.016L21.624 11.496L19.32 11.952L15.888 12.768L15.84 12.792L15.888 12.864L17.424 13.008L18.096 13.056H19.728L22.752 13.272L23.544 13.8L24 14.424L23.928 14.928L22.704 15.528L21.072 15.144L17.232 14.232L15.936 13.92H15.744V14.016L16.848 15.096L18.84 16.896L21.36 19.224L21.48 19.8L21.168 20.28L20.832 20.232L18.624 18.552L17.76 17.808L15.84 16.2H15.72V16.368L16.152 17.016L18.504 20.544L18.624 21.624L18.456 21.96L17.832 22.176L17.184 22.056L15.792 20.136L14.376 17.952L13.224 16.008L13.104 16.104L12.408 23.352L12.096 23.712L11.376 24Z"/></svg></div></div>
+    <h1>First, create your MeatCODE account</h1>
+    <p class="lede">Your account is how MeatCODE knows whose Claude organization to bill. It takes a minute.</p>
+    <div class="row"><a class="btn primary" href="/account?tab=signup&next=/connect">Create account</a><a class="btn" href="/account?next=/connect">I already have one</a></div>
+  </div>
+
+  <!-- step 2: the dedicated Claude screen -->
+  <div id="link" class="stage hide">
+    <div class="card hero">
+      <div class="pair">
+        <div class="chip"><b>M</b></div><div class="link"></div>
+        <div class="chip" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="34" height="34"><path fill="#D97757" d="M11.376 24L10.776 23.544L10.44 22.8L10.776 21.312L11.16 19.392L11.472 17.856L11.76 15.96L11.928 15.336L11.904 15.288L11.784 15.312L10.344 17.28L8.16 20.232L6.432 22.056L6.024 22.224L5.304 21.864L5.376 21.192L5.784 20.616L8.16 17.568L9.6 15.672L10.536 14.592L10.512 14.448H10.464L4.128 18.576L3 18.72L2.496 18.264L2.568 17.52L2.808 17.28L4.704 15.96L9.432 13.32L9.504 13.08L9.432 12.96H9.192L8.4 12.912L5.712 12.84L3.384 12.744L1.104 12.624L0.528 12.504L0 11.784L0.048 11.424L0.528 11.112L1.224 11.16L2.736 11.28L5.016 11.424L6.672 11.52L9.12 11.784H9.504L9.552 11.616L9.432 11.52L9.336 11.424L6.96 9.84L4.416 8.16L3.072 7.176L2.352 6.672L1.992 6.216L1.848 5.208L2.496 4.488L3.384 4.56L3.6 4.608L4.488 5.304L6.384 6.768L8.88 8.616L9.24 8.904L9.408 8.808V8.736L9.24 8.472L7.896 6.024L6.456 3.528L5.808 2.496L5.64 1.872C5.576 1.656 5.544 1.416 5.544 1.152L6.288 0.144001L6.696 0L7.704 0.144001L8.112 0.504001L8.736 1.92L9.72 4.152L11.28 7.176L11.736 8.088L11.976 8.904L12.072 9.168H12.24V9.024L12.36 7.296L12.6 5.208L12.84 2.52L12.912 1.752L13.296 0.840001L14.04 0.360001L14.616 0.624001L15.096 1.32L15.024 1.752L14.76 3.6L14.184 6.504L13.824 8.472H14.04L14.28 8.208L15.264 6.912L16.92 4.848L17.64 4.032L18.504 3.12L19.056 2.688H20.088L20.832 3.816L20.496 4.992L19.44 6.336L18.552 7.464L17.28 9.168L16.512 10.536L16.584 10.632H16.752L19.608 10.008L21.168 9.744L22.992 9.432L23.832 9.816L23.928 10.2L23.592 11.016L21.624 11.496L19.32 11.952L15.888 12.768L15.84 12.792L15.888 12.864L17.424 13.008L18.096 13.056H19.728L22.752 13.272L23.544 13.8L24 14.424L23.928 14.928L22.704 15.528L21.072 15.144L17.232 14.232L15.936 13.92H15.744V14.016L16.848 15.096L18.84 16.896L21.36 19.224L21.48 19.8L21.168 20.28L20.832 20.232L18.624 18.552L17.76 17.808L15.84 16.2H15.72V16.368L16.152 17.016L18.504 20.544L18.624 21.624L18.456 21.96L17.832 22.176L17.184 22.056L15.792 20.136L14.376 17.952L13.224 16.008L13.104 16.104L12.408 23.352L12.096 23.712L11.376 24Z"/></svg></div>
+      </div>
+      <h1>Use your own Claude</h1>
+      <p class="lede">Link your Claude organization and the Oracle questions <strong>you</strong> ask are billed to it, under a monthly limit you set.</p>
+
+      <form id="linkForm">
+        <button type="submit" class="claude-button big" id="linkBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="#D97757" d="M11.376 24L10.776 23.544L10.44 22.8L10.776 21.312L11.16 19.392L11.472 17.856L11.76 15.96L11.928 15.336L11.904 15.288L11.784 15.312L10.344 17.28L8.16 20.232L6.432 22.056L6.024 22.224L5.304 21.864L5.376 21.192L5.784 20.616L8.16 17.568L9.6 15.672L10.536 14.592L10.512 14.448H10.464L4.128 18.576L3 18.72L2.496 18.264L2.568 17.52L2.808 17.28L4.704 15.96L9.432 13.32L9.504 13.08L9.432 12.96H9.192L8.4 12.912L5.712 12.84L3.384 12.744L1.104 12.624L0.528 12.504L0 11.784L0.048 11.424L0.528 11.112L1.224 11.16L2.736 11.28L5.016 11.424L6.672 11.52L9.12 11.784H9.504L9.552 11.616L9.432 11.52L9.336 11.424L6.96 9.84L4.416 8.16L3.072 7.176L2.352 6.672L1.992 6.216L1.848 5.208L2.496 4.488L3.384 4.56L3.6 4.608L4.488 5.304L6.384 6.768L8.88 8.616L9.24 8.904L9.408 8.808V8.736L9.24 8.472L7.896 6.024L6.456 3.528L5.808 2.496L5.64 1.872C5.576 1.656 5.544 1.416 5.544 1.152L6.288 0.144001L6.696 0L7.704 0.144001L8.112 0.504001L8.736 1.92L9.72 4.152L11.28 7.176L11.736 8.088L11.976 8.904L12.072 9.168H12.24V9.024L12.36 7.296L12.6 5.208L12.84 2.52L12.912 1.752L13.296 0.840001L14.04 0.360001L14.616 0.624001L15.096 1.32L15.024 1.752L14.76 3.6L14.184 6.504L13.824 8.472H14.04L14.28 8.208L15.264 6.912L16.92 4.848L17.64 4.032L18.504 3.12L19.056 2.688H20.088L20.832 3.816L20.496 4.992L19.44 6.336L18.552 7.464L17.28 9.168L16.512 10.536L16.584 10.632H16.752L19.608 10.008L21.168 9.744L22.992 9.432L23.832 9.816L23.928 10.2L23.592 11.016L21.624 11.496L19.32 11.952L15.888 12.768L15.84 12.792L15.888 12.864L17.424 13.008L18.096 13.056H19.728L22.752 13.272L23.544 13.8L24 14.424L23.928 14.928L22.704 15.528L21.072 15.144L17.232 14.232L15.936 13.92H15.744V14.016L16.848 15.096L18.84 16.896L21.36 19.224L21.48 19.8L21.168 20.28L20.832 20.232L18.624 18.552L17.76 17.808L15.84 16.2H15.72V16.368L16.152 17.016L18.504 20.544L18.624 21.624L18.456 21.96L17.832 22.176L17.184 22.056L15.792 20.136L14.376 17.952L13.224 16.008L13.104 16.104L12.408 23.352L12.096 23.712L11.376 24Z"/></svg>
+          Link your Claude organization
+        </button>
+      </form>
+      <div id="unavailable" class="msg err hide">Linking Claude isn't switched on for this server yet.<div id="missing" class="fine"></div></div>
+      <div id="linkErr" class="msg err hide" role="alert"></div>
+      <p class="fine">You'll go to Claude to approve, then come straight back here. Anthropic's linked billing is a beta feature and may change.</p>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>What happens next</h2>
+        <ul class="tick">
+          <li>You sign in to Claude and pick the organization to link.</li>
+          <li>You set a monthly spend limit on Claude's own page.</li>
+          <li>You land back in MeatCODE, ready to ask the Oracle.</li>
+        </ul>
+        <div class="need"><strong>You'll need</strong> the Admin or Billing role in a Claude organization that pays Anthropic directly (API credits or an invoice). A Claude chat subscription on its own isn't enough.
+          No organization yet? <a href="https://platform.claude.com" target="_blank" rel="noopener noreferrer">Create one at platform.claude.com</a>.</div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <h2>You stay in control</h2>
+        <ul class="plain">
+          <li>MeatCODE bills only the Oracle requests <em>you</em> make, and never receives your Claude password.</li>
+          <li>Unlink any time here or in the Claude Console; billing stops immediately.</li>
+          <li>Good to know: these requests run in MeatCODE's Claude organization, so its data-retention terms apply rather than yours.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- step 3: done -->
+  <div id="done" class="card hero success hide">
+    <div class="tickbig" aria-hidden="true">✓</div>
+    <h1>Your Claude organization is linked</h1>
+    <p class="lede">Oracle questions you ask now run on your Claude organization. "Linked" means connected — Claude can still decline a request if the organization has no credit or has reached your limit.</p>
+    <div class="row"><a class="btn primary" href="/app/meatcode_mockup.html">Open MeatCODE</a><button class="btn quiet" id="unlink" type="button">Unlink</button></div>
+    <div id="doneErr" class="msg err hide" role="alert"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var BANNERS={linked:['ok','Connected — your Claude organization is linked.'],
+    denied:['err','Linking was cancelled — nothing was changed.'],
+    expired:['err','That attempt expired. Please try again.'],
+    failed:['err','Claude couldn\'t complete the link. Please try again, or contact the MeatCODE team.']};
+  function show(id,on){$(id).classList.toggle('hide',!on)}
+  function say(id,t){var e=$(id);e.textContent=t||'';e.classList.toggle('hide',!t)}
+  function api(path,body){
+    return fetch(path,{method:body===undefined?'GET':'POST',credentials:'same-origin',headers:body===undefined?{}:{'Content-Type':'application/json'},
+      body:body===undefined?undefined:JSON.stringify(body)}).then(function(r){return r.json().catch(function(){return {}}).then(function(j){return {ok:r.ok,json:j}})});
+  }
+  function steps(n){ // n = current step (1..3); 4 = all done
+    [1,2,3].forEach(function(i){var li=$('s'+i);li.className=i<n?'done':(i===n?'now':'')});
+  }
+  function render(me){
+    show('loading',false);['off','needAccount','link','done'].forEach(function(i){show(i,false)});
+    if(!me||!me.enabled){steps(1);show('off',true);return}
+    if(!me.signed_in){steps(1);show('needAccount',true);return}
+    show('navAccount',true);
+    var c=me.claude||{};
+    if(c.status==='linked'){steps(4);$('s3').className='done';show('done',true);return}
+    steps(2);show('link',true);
+    var unavailable=(c.available===false);
+    show('linkForm',!unavailable);show('unavailable',unavailable);
+    $('missing').textContent=(unavailable&&c.setup_missing&&c.setup_missing.length)?('Team note — still to configure: '+c.setup_missing.join(', ')):'';
+  }
+  function refresh(){return api('/api/account/me').then(function(r){render(r.ok?r.json:{enabled:false})}).catch(function(){render({enabled:false})})}
+
+  $('linkForm').onsubmit=function(e){
+    e.preventDefault();say('linkErr','');$('linkBtn').disabled=true;
+    api('/api/account/claude/start',{}).then(function(r){
+      if(r.ok&&r.json.url){location.href=r.json.url;return}          // Claude's approval page; it returns to /claude/billing/callback
+      $('linkBtn').disabled=false;say('linkErr',r.json.error||'Couldn\'t start linking. Please try again.');
+    }).catch(function(){$('linkBtn').disabled=false;say('linkErr','Network problem. Please try again.')});
+  };
+  $('unlink').onclick=function(){
+    if(!confirm('Unlink your Claude organization from MeatCODE? Oracle questions will stop until you link again.'))return;
+    say('doneErr','');$('unlink').disabled=true;
+    api('/api/account/claude/unlink',{}).then(function(r){$('unlink').disabled=false;if(!r.ok)say('doneErr',r.json.error||'Couldn\'t unlink. Please try again.');refresh()})
+      .catch(function(){$('unlink').disabled=false;say('doneErr','Network problem. Please try again.')});
+  };
+
+  var q=new URLSearchParams(location.search).get('claude');   // result of Claude's approval step: fixed text only
+  if(q&&BANNERS[q]){var b=$('banner');b.className='msg '+BANNERS[q][0];b.textContent=BANNERS[q][1]}
+  if(q){try{history.replaceState(null,'','/connect')}catch(_){}}
+  refresh();
+})();
+</script>
+</body>
+</html>
