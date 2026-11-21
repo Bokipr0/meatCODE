@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · discloses that questions and answers are saved on the person's profile. Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · Home link removed from the header. Prior: Claude-first: no account form on this screen — the Claude button is the way in, then a name step. Prior: GFI logo embedded (data URI) so the page also renders when opened as a file. Prior: header uses the GFI Israel + MeatCODE lockup. Prior: NEW dedicated "Connect your Claude organization" screen (flag `user_accounts`). Uses Anthropic's official Link button (platform.claude.com/docs/en/manage-claude/oauth-apps/branding-samples). Self-contained; server strings only via textContent. -->
+<!-- Last updated: 2026-11-21 UTC · Claude (Sonnet 5.5) · slimmed: one centred column (button + two short notes), side cards removed; says up front when Claude linking isn't configured. Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · discloses that questions and answers are saved on the person's profile. Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · Home link removed from the header. Prior: Claude-first: no account form on this screen — the Claude button is the way in, then a name step. Prior: GFI logo embedded (data URI) so the page also renders when opened as a file. Prior: header uses the GFI Israel + MeatCODE lockup. Prior: NEW dedicated "Connect your Claude organization" screen (flag `user_accounts`). Uses Anthropic's official Link button (platform.claude.com/docs/en/manage-claude/oauth-apps/branding-samples). Self-contained; server strings only via textContent. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -26,8 +26,7 @@
   ol.steps li.now{border-color:var(--claude);color:var(--ink);background:#fff;box-shadow:0 0 0 3px rgba(217,119,87,.15)}
   ol.steps li.now .n{background:var(--claude);color:#fff}
 
-  .stage{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start}
-  @media (max-width:780px){.stage{grid-template-columns:1fr}}
+  .stage{max-width:560px;margin:4vh auto 0}
   .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:24px}
   .hero{text-align:center;padding:34px 26px}
   .pair{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:14px}
@@ -114,31 +113,11 @@
       </form>
       <div id="unavailable" class="msg err hide">Linking Claude isn't switched on for this server yet.<div id="missing" class="fine"></div></div>
       <div id="linkErr" class="msg err hide" role="alert"></div>
-      <p class="fine">You'll go to Claude to approve, then come straight back here. Anthropic's linked billing is a beta feature and may change.</p>
+      <p class="fine">You'll approve on Claude, then come straight back. Needs the Admin or Billing role in a Claude organization with API billing.</p>
+      <p class="fine">Your questions and the Oracle's answers are saved on your profile with your usage, so every use is traceable to you.</p>
       <p class="fine">Signed up with an email before? <a href="/account">Sign in</a></p>
     </div>
 
-    <div>
-      <div class="card">
-        <h2>What happens next</h2>
-        <ul class="tick">
-          <li>You sign in to Claude and pick the organization to link.</li>
-          <li>You set a monthly spend limit on Claude's own page.</li>
-          <li>You land back in MeatCODE, ready to ask the Oracle.</li>
-        </ul>
-        <div class="need"><strong>You'll need</strong> the Admin or Billing role in a Claude organization that pays Anthropic directly (API credits or an invoice). A Claude chat subscription on its own isn't enough.
-          No organization yet? <a href="https://platform.claude.com" target="_blank" rel="noopener noreferrer">Create one at platform.claude.com</a>.</div>
-      </div>
-      <div class="card" style="margin-top:14px">
-        <h2>You stay in control</h2>
-        <ul class="plain">
-          <li>MeatCODE bills only the Oracle requests <em>you</em> make, and never receives your Claude password.</li>
-          <li>Unlink any time here or in the Claude Console; billing stops immediately.</li>
-          <li>MeatCODE saves the questions you ask and the Oracle's answers on your profile, with token counts and times, so every use is traceable to you.</li>
-          <li>Good to know: these requests run in MeatCODE's Claude organization, so its data-retention terms apply rather than yours.</li>
-        </ul>
-      </div>
-    </div>
   </div>
 
   <!-- step 2: name the profile (Claude doesn't tell us who you are) -->
@@ -192,9 +171,10 @@
       steps(4);show('done',true);show('credsHint',!!(me.user&&me.user.has_credentials===false));return
     }
     steps(1);show('link',true);                                       // new visitors start here: no account form
-    var unavailable=(c.available===false);
+    var setup=me.claude_setup||{},unavailable=(c.available===false)||(setup.available===false);
+    var miss=setup.setup_missing||c.setup_missing||[];
     show('linkForm',!unavailable);show('unavailable',unavailable);
-    $('missing').textContent=(unavailable&&c.setup_missing&&c.setup_missing.length)?('Team note — still to configure: '+c.setup_missing.join(', ')):'';
+    $('missing').textContent=(unavailable&&miss.length)?('Team note — still to configure: '+miss.join(', ')):'';
   }
   function refresh(){return api('/api/account/me').then(function(r){render(r.ok?r.json:{enabled:false})}).catch(function(){render({enabled:false})})}
 

@@ -1,3 +1,10 @@
+## 2026-11-22 00:40 UTC · Claude (Sonnet 5.5) · /connect slimmed to one centred column; says up front when Claude linking isn't configured
+
+Lior (two screenshots of /connect on the dev site): remove unnecessary info and centre the link button; "add Claude linking" (the screen showed "Claude linking isn't set up on this server yet").
+- **Layout:** removed the "What happens next" / "You'll need" / "You stay in control" cards. One centred card remains: the official Link button plus two short lines — the Admin/Billing + API-billing requirement, and the notice that questions and answers are saved on the person's profile (kept on purpose: it is the disclosure for the storage change). A test now guards that the notice stays.
+- **Linking itself is configuration, not code:** the dev server has none of the Claude settings (`CLAUDE_OAUTH_CLIENT_ID`, `CLAUDE_OAUTH_REDIRECT_URI`, the four `ANTHROPIC_*` federation ids, Render's `ANTHROPIC_IDENTITY_TOKEN_FILE`), and the OAuth app / federation rule can only be created in the Claude Console and Render dashboard by an admin. Nothing was set from here. What changed: `/api/account/me` now returns `claude_setup` to everyone (`available`, and on non-prod servers the NAMES of what is missing), so a signed-out visitor sees "Linking Claude isn't switched on for this server yet" with the missing list instead of clicking into an error; production never names config.
+- Tests: 212 pass (new: slim layout + notice kept, setup status for visitors, dev lists missing names, prod does not). Rendered both states in headless Chrome. Pushed to `dev`.
+
 ## 2026-11-22 00:10 UTC · Claude (Sonnet 5.5) · Each billed answer is tied to that Claude user; last login + last use kept in Neon
 
 Lior: make sure the Claude credentials are kept in Neon as user credentials with last login + last use, so each answer and use session with its input is connected to that specific Claude user.

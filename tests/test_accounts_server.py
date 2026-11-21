@@ -332,6 +332,16 @@ class AccountsServerTests(unittest.TestCase):
         self.assertEqual((me["user"]["email"], me["claude"]["status"]), ("dana@example.com", "linked"))      # same profile, same link
         self.assertEqual(self.call("POST", "/api/account/credentials", body, {**cookie, **origin})[0], 409)  # already has an email
 
+    def test_everyone_can_see_whether_claude_linking_is_set_up_and_dev_sees_what_is_missing(self):
+        me = self.call("GET", "/api/account/me")[1]
+        self.assertEqual(me["claude_setup"], {"available": True})                        # fully configured in this test env
+        with patch.dict(os.environ, {"CLAUDE_OAUTH_CLIENT_ID": ""}):
+            setup = self.call("GET", "/api/account/me")[1]["claude_setup"]               # a signed-out visitor, APP_ENV=dev
+            self.assertEqual(setup["available"], False)
+            self.assertEqual(setup["setup_missing"], ["CLAUDE_OAUTH_CLIENT_ID"])
+            with patch.dict(os.environ, {"APP_ENV": "prod"}):
+                self.assertEqual(self.call("GET", "/api/account/me")[1]["claude_setup"], {"available": False})   # never names config in prod
+
     def test_callback_after_the_cookie_was_lost_restarts_from_the_claude_screen(self):
         status, _, hdr = self.call("GET", "/claude/billing/callback?state=x&code=y")
         self.assertEqual((status, hdr["location"]), (302, "/connect?claude=expired"))
@@ -366,6 +376,9 @@ class AccountsServerTests(unittest.TestCase):
             self.assertIn(needle, body)
         for gone in ("Create account", "I already have one", "needAccount"):             # Claude is the way in: no account form here
             self.assertNotIn(gone, body)
+        for gone in ("What happens next", "You stay in control", "You'll need"):          # one centred column, no side cards
+            self.assertNotIn(gone, body)
+        self.assertIn("saved on your profile", body)                                     # the storage notice must stay
         for page in ("/connect", "/welcome", "/account"):
             html = self.call("GET", page)[1]
             self.assertNotRegex(html, r"<script[^>]+src=|<link[^>]+href=\"https?://|@import", page)   # self-contained: no third-party loads
