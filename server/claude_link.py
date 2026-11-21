@@ -161,11 +161,12 @@ class BilledClient:
         out["extra_body"] = {**(kw.get("extra_body") or {}), **self._extra["extra_body"]}
         return out
 
-    def _record(self, model, input_tokens, output_tokens, status):
+    def _record(self, model, input_tokens, output_tokens, status, input_text=None, output_text=None):
         if not self._rec:
             return
         try:
-            self._rec(model, int(input_tokens or 0), int(output_tokens or 0), status)
+            self._rec(model, int(input_tokens or 0), int(output_tokens or 0), status,
+                      input_text=input_text, output_text=output_text)
         except Exception as e:                                   # never let logging break an answer
             sys.stderr.write("[claude-link] usage log failed: %s\n" % type(e).__name__)
 
@@ -186,14 +187,30 @@ class BilledClient:
 
         def stream(self, **kw):
             o = self._o
-            return _RecordedStream(o, kw.get("model"), o._base.messages.stream(**o._with_billing(kw)))
+            return _RecordedStream(o, kw.get("model"), o._base.messages.stream(**o._with_billing(kw)),
+                                   _last_user_text(kw.get("messages")))
+
+
+def _last_user_text(messages):
+    """The person's input to an answer call: the text of the last user message (None if it can't be read)."""
+    try:
+        for m in reversed(messages or []):
+            if m.get("role") == "user":
+                content = m.get("content")
+                if isinstance(content, str):
+                    return content
+                return "".join(b.get("text", "") for b in content if isinstance(b, dict) and b.get("type") == "text") or None
+    except Exception:
+        pass
+    return None
 
 
 class _RecordedStream:
-    """Wraps the SDK's stream context manager: behaves identically, and reports token usage when it closes."""
+    """Wraps the SDK's stream context manager: behaves identically, and when it closes reports the token usage plus
+    the input and the answer text (answer calls only — helper `create` calls log counts, never text)."""
 
-    def __init__(self, outer, model, manager):
-        self._outer, self._model, self._manager, self._stream = outer, model, manager, None
+    def __init__(self, outer, model, manager, input_text=None):
+        self._outer, self._model, self._manager, self._stream, self._input = outer, model, manager, None, input_text
 
     def __enter__(self):
         self._stream = self._manager.__enter__()
@@ -206,7 +223,15 @@ class _RecordedStream:
             input_tokens, output_tokens = getattr(usage, "input_tokens", 0) or 0, getattr(usage, "output_tokens", 0) or 0
         except Exception:
             pass
-        self._outer._record(self._model, input_tokens, output_tokens, "error" if exc_type else "ok")
+        output_text = None
+        if not exc_type:
+            try:
+                final = self._stream.get_final_message()          # the stream is already consumed: returns at once
+                output_text = "".join(getattr(b, "text", "") for b in final.content if getattr(b, "type", "") == "text") or None
+            except Exception:
+                pass
+        self._outer._record(self._model, input_tokens, output_tokens, "error" if exc_type else "ok",
+                            input_text=self._input, output_text=output_text)
         return self._manager.__exit__(exc_type, exc, tb)
 
 

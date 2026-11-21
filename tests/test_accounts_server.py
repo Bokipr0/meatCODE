@@ -45,6 +45,7 @@ def fake_claude(label, log):
     class Stream:
         text_stream = iter("Hello from " + label)
         current_message_snapshot = SimpleNamespace(usage=SimpleNamespace(input_tokens=11, output_tokens=22))
+        def get_final_message(self): return SimpleNamespace(content=[SimpleNamespace(type="text", text="Hello from " + label)])
         def __enter__(self): return self
         def __exit__(self, *a): return False
     def stream(**kw):
@@ -59,7 +60,8 @@ def fake_claude(label, log):
 class AccountsServerTests(unittest.TestCase):
     def setUp(self):
         user_accounts.THROTTLE.reset(*list(user_accounts.THROTTLE._hits))
-        self.users, self.links, self.calls, self.usage = MemoryStore(), MemoryLinkStore(), [], MemoryUsageStore()
+        self.users, self.links, self.calls = MemoryStore(), MemoryLinkStore(), []
+        self.usage = MemoryUsageStore(self.users)
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         token = os.path.join(tmp.name, "token")
@@ -200,6 +202,13 @@ class AccountsServerTests(unittest.TestCase):
         self.assertEqual(self.ask(cookie)[0], 200)
         self.assertEqual([(r["user_id"], r["route"], r["input_tokens"], r["output_tokens"], r["status"]) for r in self.usage.rows],
                          [(1, "/api/ask", 11, 22, "ok")])
+        row = self.usage.rows[0]                                                     # tied to THAT Claude user, their session, their input and the answer
+        self.assertEqual((row["user_profile_id"], row["connection_id"]), ("uprof_ME", "ocon_1"))
+        self.assertEqual(row["session_ref"], user_accounts.session_ref({"Cookie": cookie["Cookie"]}))
+        self.assertEqual(len(row["session_ref"]), 12)
+        self.assertNotIn(cookie["Cookie"].split("=", 1)[1], str(row))                # never the cookie itself
+        self.assertEqual((row["input_text"], row["output_text"]), ("What makes meaty flavour?", "Hello from OPERATOR"))
+        self.assertIn(1, self.usage.last_used)                                       # last Claude use stamped for that person
         self.assertEqual(self.ask(BASIC)[0], 200)                                    # team traffic is not attributed to anyone
         self.assertEqual(len(self.usage.rows), 1)
 
@@ -213,7 +222,9 @@ class AccountsServerTests(unittest.TestCase):
         self.assertEqual((body["available"], body["requests"], body["input_tokens"], body["output_tokens"]), (True, 1, 100, 50))
         self.assertEqual([x["label"] for x in body["recent"]], ["Oracle answer"])
         self.assertRegex(body["recent"][0]["at"], r"^\d{4}-\d\d-\d\dT")              # ISO, parseable in every browser
-        self.assertNotIn("question", json.dumps(body).lower())                       # metadata only
+        for private in ("input_text", "output_text"):                                # the log keeps text; the endpoint never returns the answer
+            self.assertNotIn(private, json.dumps(body))
+        self.assertIn("last_used_at", body)
         with patch.object(server, "_usage_store", lambda: (_ for _ in ()).throw(RuntimeError("table missing"))):
             self.assertEqual(self.call("GET", "/api/account/usage", headers=cookie)[1], {"available": False})
 
@@ -283,6 +294,19 @@ class AccountsServerTests(unittest.TestCase):
         self.assertEqual((status, body["display_name"]), (200, "Dana Levi"))
         me = self.call("GET", "/api/account/me", headers=cookie)[1]
         self.assertEqual((me["user"]["display_name"], me["user"]["needs_name"]), ("Dana Levi", False))
+
+    def test_the_claude_link_completing_is_recorded_as_a_login_and_shown_with_last_use(self):
+        origin = {"Origin": "http://127.0.0.1:%d" % self.port}
+        cookie = {"Cookie": self.start_claude()[2]["set-cookie"].split(";")[0]}
+        uid = next(iter(self.users.by_id))
+        self.assertNotIn("last_login_at", self.users.by_id[uid])
+        self.finish_claude(cookie, code="abc")
+        self.assertIn("last_login_at", self.users.by_id[uid])                        # activation = login time, stored on the user
+        self.assertEqual(self.ask(cookie)[0], 200)                                   # a real answer on the linked org…
+        body = self.call("GET", "/api/account/usage", headers=cookie)[1]
+        self.assertTrue(body["last_login_at"] and body["last_used_at"])               # …so both times are now on the profile
+        self.assertEqual(body["recent"][0]["preview"], "What makes meaty flavour?")
+        self.call("POST", "/api/account/login", {"email": "none@example.com", "password": "x"}, origin)   # (smoke: login path unaffected)
 
     def test_a_declined_link_leaves_the_visitor_signed_out(self):
         cookie = {"Cookie": self.start_claude()[2]["set-cookie"].split(";")[0]}

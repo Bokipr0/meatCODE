@@ -60,6 +60,7 @@
       '#mc-acct-pop .stat{background:#F5F4ED;border-radius:10px;padding:8px 6px;text-align:center}' +
       '#mc-acct-pop .stat b{display:block;font-size:17px}#mc-acct-pop .stat span{font-size:11px;color:#55544F}' +
       '#mc-acct-pop ul{list-style:none;margin:6px 0 0;padding:0}#mc-acct-pop li{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed #EFEBE0;font-size:13px}' +
+      '#mc-acct-pop li{flex-wrap:wrap}#mc-acct-pop li .pv{flex-basis:100%;color:#6B6A64;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
       '#mc-acct-pop li:last-child{border-bottom:0}#mc-acct-pop li small{color:#6B6A64;white-space:nowrap}#mc-acct-pop li.err span{color:#A8573A}' +
       '#mc-acct-pop .btn{display:inline-block;padding:8px 16px;border-radius:999px;border:1.5px solid #2F7F79;color:#2F7F79;background:transparent;text-decoration:none;font:inherit;font-weight:600;cursor:pointer}' +
       '#mc-acct-pop .btn.primary{background:#2F7F79;color:#fff}#mc-acct-pop .btn.out{width:100%;border-color:#D2C8B5;color:#4A4A4A;text-align:center}' +
@@ -105,6 +106,10 @@
         var s = el('div', 'stat'); s.appendChild(el('b', null, String(x[1]))); s.appendChild(el('span', null, x[0])); stats.appendChild(s);
       });
       body.appendChild(stats);
+      var when = [];
+      if (u.last_login_at) when.push('Last login ' + ago(u.last_login_at));
+      if (u.last_used_at) when.push('Last Claude use ' + ago(u.last_used_at));
+      if (when.length) body.appendChild(el('p', 'muted', when.join(' · ')));
       if (!u.recent || !u.recent.length) { body.appendChild(el('p', 'muted', 'No activity yet.')); return; }
       body.appendChild(el('div', 'muted', 'Recent activity'));
       var ul = el('ul');
@@ -112,6 +117,7 @@
         var li = el('li', it.status === 'error' ? 'err' : '');
         li.appendChild(el('span', null, it.label + (it.status === 'error' ? ' (failed)' : '') + ' · ' + fmt((it.input_tokens || 0) + (it.output_tokens || 0)) + ' tok'));
         li.appendChild(el('small', null, ago(it.at)));
+        if (it.preview) li.appendChild(el('div', 'pv', '\u201c' + it.preview + '\u201d'));   // the person's own question, shortened
         ul.appendChild(li);
       });
       body.appendChild(ul);

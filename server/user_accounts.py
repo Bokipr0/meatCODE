@@ -135,6 +135,13 @@ def session_token_from_headers(headers) -> str:
     return ""
 
 
+def session_ref(headers) -> str:
+    """Short, non-reversible id of this login session (first 12 hex of its stored hash). Lets the usage log group a
+    person's requests by session without ever storing the cookie."""
+    token = session_token_from_headers(headers)
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()[:12] if token else ""
+
+
 def _is_https(headers) -> bool:
     return (headers.get("X-Forwarded-Proto") or "").split(",")[0].strip().lower() == "https"
 
@@ -318,9 +325,10 @@ class PgStore:
             return False
 
     def activate_sessions(self, user_id):
-        """The Claude link completed: this person's pending session becomes a real one."""
+        """The Claude link completed: this person's pending session becomes a real one — and counts as a login."""
         self._run("UPDATE app_sessions SET pending=FALSE, expires_at = now() + (%s || ' days')::interval "
                   "WHERE user_id=%s AND pending", (str(SESSION_DAYS), user_id))
+        self._run("UPDATE app_users SET last_login_at=now() WHERE id=%s", (user_id,))
 
     def purge_stale_provisional(self):
         """Claude-only profiles that never finished linking (abandoned clicks) are removed after a day."""

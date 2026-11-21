@@ -43,12 +43,13 @@ class MemoryStore:
         for s in self.sessions.values():
             if s["user_id"] == user_id:
                 s["pending"] = False
+        self.by_id[user_id]["last_login_at"] = time.time()                       # the Claude link completing counts as a login
 
     def purge_stale_provisional(self):
         self.purged += 1
 
     def touch_login(self, user_id):
-        pass
+        self.by_id[user_id]["last_login_at"] = time.time()
 
     def create_session(self, token_hash, user_id, days, user_agent, pending=False):
         self.sessions[token_hash] = {"user_id": user_id, "expires": time.time() + days * 86400, "pending": bool(pending)}
@@ -108,14 +109,22 @@ class MemoryLinkStore:
 
 
 class MemoryUsageStore:
-    """Same interface as usage_log.PgUsageStore."""
+    """Same interface as usage_log.PgUsageStore. `users` (a MemoryStore) supplies last_login_at like the SQL join does."""
 
-    def __init__(self):
-        self.rows = []
+    def __init__(self, users=None):
+        self.rows, self.last_used, self.users = [], {}, users
 
-    def record(self, user_id, route, model, input_tokens, output_tokens, status):
+    def record(self, user_id, route, model, input_tokens, output_tokens, status, **extra):
         self.rows.append({"user_id": user_id, "route": route, "model": model, "input_tokens": input_tokens,
-                          "output_tokens": output_tokens, "status": status, "created_at": time.time()})
+                          "output_tokens": output_tokens, "status": status, "created_at": time.time(), **extra})
+        if status != "error":
+            self.last_used[user_id] = time.time()
+
+    def last_times(self, user_id):
+        import datetime
+        ts = lambda v: datetime.datetime.fromtimestamp(v, datetime.timezone.utc) if v else None
+        login = self.users.by_id.get(user_id, {}).get("last_login_at") if self.users else None
+        return {"last_login_at": ts(login), "last_used_at": ts(self.last_used.get(user_id))}
 
     def month_totals(self, user_id):
         mine = [r for r in self.rows if r["user_id"] == user_id]

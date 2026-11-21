@@ -1044,9 +1044,14 @@ class Handler(SimpleHTTPRequestHandler):
             return None
         try:
             route, uid, usage = urlparse(self.path).path, user["id"], _usage_store()
+            link = _acct_store()[1].get(uid) or {}
+            # every logged call carries the Claude identity it was billed to (as of now) and the login session it ran in
+            who = {"user_profile_id": profile, "connection_id": link.get("connection_id"),
+                   "session_ref": user_accounts.session_ref(self.headers)}
             return claude_link.BilledClient(
                 _operator_client(), profile,
-                recorder=lambda model, i, o, status: usage.record(uid, route, model, i, o, status))   # best-effort log
+                recorder=lambda model, i, o, status, input_text=None, output_text=None:
+                    usage.record(uid, route, model, i, o, status, input_text=input_text, output_text=output_text, **who))   # best-effort
         except claude_link.LinkError as e:
             self._send_json({"error": str(e)}, e.status)
             return None

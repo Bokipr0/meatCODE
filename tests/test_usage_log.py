@@ -14,7 +14,8 @@ from accounts_fakes import MemoryUsageStore
 def base(usage=(5, 7), fail=False):
     class Manager:
         def __init__(self): self.exited = None
-        def __enter__(self): return SimpleNamespace(current_message_snapshot=SimpleNamespace(usage=SimpleNamespace(input_tokens=usage[0], output_tokens=usage[1])))
+        def __enter__(self): return SimpleNamespace(current_message_snapshot=SimpleNamespace(usage=SimpleNamespace(input_tokens=usage[0], output_tokens=usage[1])),
+                                                    get_final_message=lambda: SimpleNamespace(content=[SimpleNamespace(type="text", text="The ANSWER."), SimpleNamespace(type="tool_use")]))
         def __exit__(self, *a): self.exited = a; return False
     def create(**kw):
         if fail: raise RuntimeError("api down")
@@ -26,7 +27,8 @@ def base(usage=(5, 7), fail=False):
 class RecorderTests(unittest.TestCase):
     def setUp(self):
         self.seen = []
-        self.rec = lambda model, i, o, status: self.seen.append((model, i, o, status))
+        self.texts = []
+        self.rec = lambda model, i, o, status, **kw: (self.seen.append((model, i, o, status)), self.texts.append(kw))
 
     def test_create_reports_the_tokens_the_api_returned(self):
         b, _ = base((5, 7))
@@ -54,11 +56,34 @@ class RecorderTests(unittest.TestCase):
         self.assertEqual(self.seen, [("m4", 0, 0, "error")])
 
     def test_a_broken_recorder_never_breaks_an_answer(self):
-        def bad(*a): raise OSError("db down")
+        def bad(*a, **kw): raise OSError("db down")
         b, _ = base()
         self.assertIsNotNone(cl.BilledClient(b, "uprof_1", recorder=bad).messages.create(model="m"))
         with cl.BilledClient(b, "uprof_1", recorder=bad).messages.stream(model="m"):
             pass
+
+    def test_answers_log_the_input_and_the_answer_text_but_helper_calls_do_not(self):
+        b, _ = base((5, 7))
+        client = cl.BilledClient(b, "uprof_1", recorder=self.rec)
+        with client.messages.stream(model="m", system="SYSTEM WITH SOURCES", messages=[
+                {"role": "user", "content": "first"}, {"role": "assistant", "content": "reply"},
+                {"role": "user", "content": "What makes umami?"}]):
+            pass
+        self.assertEqual(self.texts[-1], {"input_text": "What makes umami?", "output_text": "The ANSWER."})     # last user message only
+        self.assertNotIn("SOURCES", str(self.texts))                                                          # never the system prompt
+        client.messages.create(model="m", messages=[{"role": "user", "content": "HELPER PROMPT WITH CLAIMS"}])
+        self.assertEqual(self.texts[-1], {"input_text": None, "output_text": None})                           # counts only
+
+    def test_block_style_user_content_and_a_failed_stream_are_handled(self):
+        b, _ = base()
+        client = cl.BilledClient(b, "uprof_1", recorder=self.rec)
+        with client.messages.stream(model="m", messages=[{"role": "user", "content": [{"type": "text", "text": "part one "}, {"type": "text", "text": "part two"}]}]):
+            pass
+        self.assertEqual(self.texts[-1]["input_text"], "part one part two")
+        with self.assertRaises(ValueError):
+            with client.messages.stream(model="m", messages=[{"role": "user", "content": "q"}]):
+                raise ValueError("boom")
+        self.assertEqual((self.seen[-1][3], self.texts[-1]["output_text"]), ("error", None))                  # no answer text on failure
 
     def test_no_recorder_is_fine(self):
         b, _ = base()
@@ -66,6 +91,16 @@ class RecorderTests(unittest.TestCase):
 
 
 class SnapshotTests(unittest.TestCase):
+    def test_snapshot_has_last_times_and_a_short_preview_but_never_the_answer(self):
+        st = MemoryUsageStore()
+        st.record(1, "/api/ask", "m", 10, 5, "ok", input_text="  What   makes\n umami " + "x" * 200, output_text="SECRET ANSWER TEXT")
+        snap = usage_log.snapshot(st, 1)
+        self.assertRegex(snap["last_used_at"], r"^\d{4}-\d\d-\d\dT")
+        self.assertIsNone(snap["last_login_at"])
+        self.assertTrue(snap["recent"][0]["preview"].startswith("What makes umami x"))
+        self.assertLessEqual(len(snap["recent"][0]["preview"]), 90)
+        self.assertNotIn("SECRET ANSWER TEXT", str(snap))
+
     def test_snapshot_totals_recent_and_labels(self):
         st = MemoryUsageStore()
         st.record(1, "/api/ask", "m", 100, 40, "ok")
