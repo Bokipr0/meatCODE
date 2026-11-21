@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<!-- Last updated: 2026-11-21 23:55 UTC · Claude (Opus 5.5) · MeatCODE KG intake upload page (no secrets embedded) -->
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MeatCODE · KG intake</title>
+<style>
+body{font:15px/1.6 -apple-system,system-ui,sans-serif;max-width:640px;margin:40px auto;padding:0 20px;color:#1f2b2a}
+h1{font-size:20px;font-weight:600;color:#0f5f58}label{display:block;margin:14px 0 4px;font-weight:600}
+input,select{width:100%;padding:8px;border:1px solid #c9d3d1;border-radius:6px;font:inherit;box-sizing:border-box}
+button{margin-top:18px;padding:9px 18px;border:0;border-radius:6px;background:#0f5f58;color:#fff;font:inherit;cursor:pointer}
+.note{font-size:13px;color:#5b6b69}#log{margin-top:18px;white-space:pre-wrap;font:13px ui-monospace,monospace}
+.err{color:#a32d2d}.ok{color:#0f6e56}
+</style></head><body>
+<h1>MeatCODE knowledge-graph intake</h1>
+<p class="note">Only open-access or rights-cleared papers. Each PDF is parsed by GROBID, checked for DOI, duplicates and overlap, then added to the candidate graph one at a time. Papers without a reliable DOI are held for review.</p>
+<label for="key">Intake key</label><input id="key" type="password" autocomplete="off">
+<label for="who">Your name</label><input id="who" maxlength="80">
+<label for="rights">Rights</label>
+<select id="rights"><option value="">Choose…</option><option value="open_access">Open access (e.g. CC-BY)</option><option value="rights_cleared">Rights cleared (permission on file)</option></select>
+<label for="ev">Licence or permission source</label><input id="ev" maxlength="500" placeholder="e.g. CC-BY 4.0 — https://doi.org/…">
+<label for="files">PDF files</label><input id="files" type="file" accept="application/pdf" multiple>
+<button id="go">Upload</button> <button id="st" type="button">Status</button>
+<div id="log"></div>
+<script>
+const $=id=>document.getElementById(id);try{$('key').value=sessionStorage.getItem('ik')||''}catch(e){}
+function line(t,c){const d=document.createElement('div');d.textContent=t;if(c)d.className=c;$('log').prepend(d)}
+$('go').onclick=async()=>{const k=$('key').value.trim(),r=$('rights').value,e=$('ev').value.trim(),fs=[...$('files').files];
+ if(k.length<32)return line('Enter the intake key.','err');if(!r)return line('Choose the rights basis.','err');
+ if(e.length<5)return line('Give the licence or permission source.','err');if(!fs.length)return line('Choose at least one PDF.','err');
+ try{sessionStorage.setItem('ik',k)}catch(_){}
+ for(const f of fs){try{const res=await fetch('/api/upload',{method:'PUT',body:f,headers:{'X-Intake-Key':k,'X-Rights':r,'X-Rights-Evidence':e,'X-Uploader':$('who').value.trim(),'X-Filename':f.name,'Content-Type':'application/pdf'}});
+  const j=await res.json().catch(()=>({}));line(f.name+': '+(j.status||j.error||res.status),res.ok?'ok':'err')}catch(err){line(f.name+': upload failed','err')}}};
+$('st').onclick=async()=>{const res=await fetch('/api/status',{headers:{'X-Intake-Key':$('key').value.trim()}});const j=await res.json().catch(()=>({}));
+ line(res.ok?JSON.stringify(j,null,1):(j.error||res.status),res.ok?'':'err')};
+</script></body></html>
