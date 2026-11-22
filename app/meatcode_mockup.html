@@ -6107,6 +6107,28 @@ function streamSSE(res, researchTurn) {
   var sourceRows  = [];
   var citedIds    = {};   // id -> source object, for modal lookup
 
+  // Tell the process-map side panel (app/assets/oracle-process-map.js) that THIS turn's answer is complete — once.
+  // The question is captured here: askOracle's local `q` is not in scope in this function (that mistake shipped in
+  // 3b396cc and silently disabled the panel), and mcOracleActiveQuestion may already belong to a later turn.
+  var askedQuestion = (typeof mcOracleActiveQuestion === 'string') ? mcOracleActiveQuestion : '';
+  // With the guided Oracle the last message is often just a parameter ("Pea", "Not sure"). The map needs the whole
+  // request, so prepend the user turns of this exchange: everything since the previous answer.
+  try {
+    var hist = (typeof mcOracleHistory === 'function') ? mcOracleHistory() : [], lead = [];
+    for (var hi = hist.length - 1; hi >= 0; hi--) {
+      if (hist[hi].role === 'assistant' && hist[hi].kind !== 'ask') break;
+      if (hist[hi].role === 'user') lead.unshift(hist[hi].content);
+    }
+    if (askedQuestion && lead.length) askedQuestion = lead.concat([askedQuestion]).join(' — ').slice(0, 2000);
+  } catch (e) {}
+  var answerNotified = false;
+  function mcNotifyAnswerDone() {
+    if (answerNotified || !askedQuestion || !fullText) return;
+    answerNotified = true;
+    try { document.dispatchEvent(new CustomEvent('mc:oracle-answer-done', { detail: { question: askedQuestion } })); }
+    catch (e) { if (window.console) console.warn('[process-map] answer event failed', e); }
+  }
+
   var reader  = res.body.getReader();
   var decoder = new TextDecoder();
   var buffer  = '';
@@ -6115,6 +6137,7 @@ function streamSSE(res, researchTurn) {
     if (chunk.done) {
       if (window.MCResearch) window.MCResearch.interruptOracle(researchTurn); // no-op after an explicit done/error
       if (!askedTurn) finalizeAnswer(fullText, bodyEl, followsEl, citedIds, relatedEl, turnRec, briefEnd);
+      if (!askedTurn) mcNotifyAnswerDone();          // stream closed without an explicit `done` block
       return;
     }
     buffer += decoder.decode(chunk.value, { stream: true });
@@ -6180,8 +6203,7 @@ function streamSSE(res, researchTurn) {
       } else if (event === 'done') {
         if (window.MCResearch) window.MCResearch.completeOracle(researchTurn);
         if (!askedTurn) finalizeAnswer(fullText, bodyEl, followsEl, citedIds, relatedEl, turnRec, briefEnd);
-        // Process-map side panel (app/assets/oracle-process-map.js) listens for this; no-op when it is not loaded.
-        if (!askedTurn) { try { document.dispatchEvent(new CustomEvent('mc:oracle-answer-done', { detail: { question: q } })); } catch (e) {} }
+        if (!askedTurn) mcNotifyAnswerDone();
       } else if (event === 'error') {
         if (window.MCResearch) window.MCResearch.failOracle(researchTurn, 'model_unavailable');
         setOracleError(data);
