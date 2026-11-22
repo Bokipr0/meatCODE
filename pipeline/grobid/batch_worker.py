@@ -1,4 +1,4 @@
-# Last updated: 2026-11-21 21:34 UTC · Claude (Sonnet 5.5) · hosted LightRAG target: https+key validation, unreviewed-document guard, hosted preflight
+# Last updated: 2026-11-22 11:55 UTC · Claude (Fable 5.2) · INGEST_CONTINUE_ON_FAILURE=1 (cloud intake): a failed or unclear paper no longer pauses the queue; GROBID 5xx/timeout retries are capped · 2026-11-21 Sonnet 5.5 · hosted LightRAG target: https+key validation, unreviewed-document guard, hosted preflight
 """Local PDF inbox -> GROBID -> guarded LightRAG candidate ingestion.
 
 Run once with ``python3 pipeline/grobid/batch_worker.py --once`` or keep polling
@@ -128,6 +128,21 @@ def connect_ledger(path: Path) -> sqlite3.Connection:
     connection.execute("CREATE INDEX IF NOT EXISTS papers_doi ON papers(paper_doi)")
     connection.commit()
     return connection
+
+
+def continue_on_failure() -> bool:
+    """Cloud intake policy (Lior, 2026-11-22): one bad paper must not stop the queue. Off by default (local runs)."""
+    return os.environ.get("INGEST_CONTINUE_ON_FAILURE") == "1"
+
+
+MAX_PARSE_ATTEMPTS = 3
+
+
+def bump_attempts(connection: sqlite3.Connection, pdf_hash: str) -> int:
+    connection.execute("CREATE TABLE IF NOT EXISTS attempts (pdf_sha256 TEXT PRIMARY KEY, n INTEGER NOT NULL)")
+    connection.execute("INSERT INTO attempts VALUES(?,1) ON CONFLICT(pdf_sha256) DO UPDATE SET n=n+1", (pdf_hash,))
+    connection.commit()
+    return connection.execute("SELECT n FROM attempts WHERE pdf_sha256=?", (pdf_hash,)).fetchone()[0]
 
 
 def record(connection: sqlite3.Connection, pdf_hash: str, pdf_path: Path,
@@ -321,11 +336,20 @@ def process_pdf(path: Path, inbox: Path, output: Path, graph: Path,
         body_shingles = shingles(body)
     except urllib.error.HTTPError as error:
         status = "retry_wait" if error.code in {429, 500, 502, 503, 504} else "failed"
-        record(connection, pdf_hash, path, status,
-               reason=f"GROBID HTTP {error.code}")
+        reason = f"GROBID HTTP {error.code}"
+        if status == "retry_wait" and continue_on_failure() and bump_attempts(connection, pdf_hash) >= MAX_PARSE_ATTEMPTS:
+            status, reason = "failed", f"{reason} on {MAX_PARSE_ATTEMPTS} attempts; skipped so the queue can continue"
+        record(connection, pdf_hash, path, status, reason=reason)
         print(f"{status}: {path.name}")
         return
     except (urllib.error.URLError, TimeoutError) as error:
+        # A timeout is about THIS paper (GROBID answered the health check); an unreachable service is not.
+        timed_out = isinstance(error, TimeoutError) or isinstance(getattr(error, "reason", None), TimeoutError)
+        if timed_out and continue_on_failure() and bump_attempts(connection, pdf_hash) >= MAX_PARSE_ATTEMPTS:
+            record(connection, pdf_hash, path, "failed",
+                   reason=f"GROBID timed out on {MAX_PARSE_ATTEMPTS} attempts; skipped so the queue can continue")
+            print(f"failed to parse (timeouts): {path.name}")
+            return
         record(connection, pdf_hash, path, "retry_wait",
                reason=f"GROBID temporarily unreachable: {type(error).__name__}")
         print(f"waiting for GROBID: {path.name}")
@@ -404,12 +428,12 @@ def run_once(args: argparse.Namespace, connection: sqlite3.Connection) -> None:
         print('ingestion paused by user or outside the scheduled window')
         return
     poll_submitted(connection, args.lightrag_url, args.api_key)
-    if connection.execute(
+    if not continue_on_failure() and connection.execute(
         "SELECT 1 FROM papers WHERE status='failed' AND track_id IS NOT NULL LIMIT 1"
     ).fetchone():
         print("ingestion paused: a LightRAG extraction failed; repair and reprocess it first")
         return
-    if connection.execute(
+    if not continue_on_failure() and connection.execute(
         "SELECT 1 FROM papers WHERE status='submission_unknown' LIMIT 1"
     ).fetchone():
         print("ingestion paused: a submission outcome needs manual reconciliation")
@@ -450,8 +474,9 @@ def run_once(args: argparse.Namespace, connection: sqlite3.Connection) -> None:
     for path in pdfs:
         process_pdf(path, args.inbox, args.output, args.graph,
                     connection, args.lightrag_url, args.api_key, args.min_age)
+        blocking = "('submitted','reprocessing','retry_wait')" if continue_on_failure() else "('submitted','submission_unknown','retry_wait')"
         if connection.execute(
-            "SELECT 1 FROM papers WHERE status IN ('submitted','submission_unknown','retry_wait') LIMIT 1"
+            f"SELECT 1 FROM papers WHERE status IN {blocking} LIMIT 1"
         ).fetchone():
             # Keep extraction one paper at a time. The next pass sees a final
             # result before another remote model request is submitted.

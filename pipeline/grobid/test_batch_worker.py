@@ -1,4 +1,4 @@
-# Last updated: 2026-11-21 21:34 UTC · Claude (Sonnet 5.5) · hosted-target checks added (28 grobid tests pass)
+# Last updated: 2026-11-22 11:55 UTC · Claude (Fable 5.2) · continue-on-failure mode + retry cap tests · 2026-11-21 Sonnet 5.5 · hosted-target checks added (28 grobid tests pass)
 """Regression checks for paper-level, pre-graph deduplication."""
 
 from pathlib import Path
@@ -180,6 +180,54 @@ class BatchWorkerTests(unittest.TestCase):
         self.assertEqual(self.status(second), "duplicate")
         self.assertEqual(parse.call_count, 2)
         self.assertEqual(request.call_count, 1)
+
+    def _hosted_args(self):
+        return type("A", (), dict(lightrag_url="https://h.example", api_key="k" * 40, inbox=self.inbox,
+                                  output=self.output, graph=self.graph, min_age=0))()
+
+    def _run_once_with(self, args, process):
+        health = {"configuration": {}}
+        class R:
+            status = 200
+            def __enter__(s): return s
+            def __exit__(s, *a): pass
+            def read(s): return b"true"
+        with patch.object(worker.ingestion_control, "paused", return_value=False), \
+             patch.object(worker, "poll_submitted"), \
+             patch.object(worker.urllib.request, "urlopen", return_value=R()), \
+             patch.object(worker, "api_json", return_value=health), \
+             patch.object(worker, "check_runtime_reasoning"), \
+             patch.object(worker, "hosted_unreviewed", return_value=[]), \
+             patch.object(worker, "process_pdf", side_effect=process) as called:
+            worker.run_once(args, self.ledger)
+        return called
+
+    def test_failed_or_unclear_paper_pauses_queue_by_default_but_not_in_continue_mode(self):
+        bad, good = self.pdf("a-bad.pdf", "bad"), self.pdf("b-good.pdf", "good")
+        worker.record(self.ledger, "h-failed", bad, "failed", track_id="t1", reason="LightRAG reported failed")
+        worker.record(self.ledger, "h-unknown", bad, "submission_unknown")
+        self.assertEqual(self._run_once_with(self._hosted_args(), lambda *a: None).call_count, 0)
+        with patch.dict(os.environ, {"INGEST_CONTINUE_ON_FAILURE": "1"}):
+            called = self._run_once_with(self._hosted_args(), lambda *a: None)
+        self.assertEqual(called.call_count, 2)   # both inbox files are visited; nothing pauses the pass
+
+    def test_repeated_grobid_errors_are_capped_in_continue_mode(self):
+        pdf = self.pdf("always-500.pdf", "x")
+        err = urllib.error.HTTPError("http://g", 500, "boom", {}, None)
+        with patch.object(worker.core, "parse_pdf", side_effect=err), patch.dict(os.environ, {"INGEST_CONTINUE_ON_FAILURE": "1"}):
+            for expected in ("retry_wait", "retry_wait", "failed"):
+                worker.process_pdf(pdf, self.inbox, self.output, self.graph, self.ledger, "http://localhost:9621", None, 0)
+                self.assertEqual(self.status(pdf), expected)
+        slow = self.pdf("always-slow.pdf", "y")
+        with patch.object(worker.core, "parse_pdf", side_effect=TimeoutError), patch.dict(os.environ, {"INGEST_CONTINUE_ON_FAILURE": "1"}):
+            for expected in ("retry_wait", "retry_wait", "failed"):
+                worker.process_pdf(slow, self.inbox, self.output, self.graph, self.ledger, "http://localhost:9621", None, 0)
+                self.assertEqual(self.status(slow), expected)
+        down = self.pdf("grobid-down.pdf", "z")   # service unreachable is not this paper's fault: never capped
+        with patch.object(worker.core, "parse_pdf", side_effect=urllib.error.URLError("refused")), patch.dict(os.environ, {"INGEST_CONTINUE_ON_FAILURE": "1"}):
+            for _ in range(5):
+                worker.process_pdf(down, self.inbox, self.output, self.graph, self.ledger, "http://localhost:9621", None, 0)
+        self.assertEqual(self.status(down), "retry_wait")
 
     def test_claim_failure_blocks_graph_submission(self):
         pdf = self.pdf('claim-failure.pdf', 'claim failure bytes')
