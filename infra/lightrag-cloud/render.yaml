@@ -61,7 +61,7 @@ services:
     plan: pro                           # 2 CPU / 4 GB (legacy name; Render maps it to 2c-4g)
     region: frankfurt
     envVars:
-      - {key: JAVA_OPTS, value: "-Xmx3g"}          # image default -Xmx4g would leave no room for the DL models
+      - {key: JAVA_OPTS, value: "-Xmx2g"}          # 4 GB instance ran out of memory at -Xmx3g on 2026-11-22; leave ~2 GB for the DL models
   - type: web
     name: meatcode-kg-intake
     runtime: docker
@@ -81,4 +81,5 @@ services:
       - {key: SEED_ARCHIVE_URL, sync: false}        # one-time: overlap inventory (kv_store_full_docs.json only)
       - {key: SEED_ARCHIVE_SHA256, value: b55a2e38e766bbfe0f3a5295342766ce2796be758d9256c18f2dd65fabe6d38a}
       - {key: GROBID_URL, value: "http://meatcode-grobid:8070"}
+      - {key: INGEST_CONTINUE_ON_FAILURE, value: "1"}   # a failed/unclear paper is skipped, not a queue stop (2026-11-22)
       - {key: LIGHTRAG_URL, value: "https://meatcode-lightrag.onrender.com"}
