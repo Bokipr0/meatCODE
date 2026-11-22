@@ -101,7 +101,7 @@
         if (!map) { note.textContent = shown ? 'No new map for that question — showing the last one.' : 'The knowledge graph has no process map for this question.'; return; }
         shown = map; title.textContent = map.title || 'Process map';
         note.textContent = 'From the knowledge graph. Select a step, or a component for a short description.';
-        window.MCProcessMap.render(body, map, {});          // no "in chat" links: the Oracle conversation is left alone
+        window.MCProcessMap.render(body, map, {});          // the panel never writes into the Oracle conversation
       })
       .catch(() => { if (mine === serial) note.textContent = 'The process map is unavailable right now.'; });
   }

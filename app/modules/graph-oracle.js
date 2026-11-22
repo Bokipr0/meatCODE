@@ -1,4 +1,4 @@
-/* Last updated: 2026-11-22 UTC · Claude (Fable 5.2) · guided question before the answer (tap a value / skip); rail drawn by the shared process-map.js (toggle a step, info card for a component — no chat flooding). Prior: 2026-11-21 22:42 UTC · Claude (Opus 5.5) · status line names the graph source (hosted LightRAG sandbox vs local) and flags a truncated read · prev 2026-11-17 · Codex · map snapshots, graph feedback and contextual forks. */
+/* Last updated: 2026-11-22 UTC · Claude (Fable 5.2) · the rail never writes into the conversation: no 'in chat' links; earlier maps open in the rail. Prior: 2026-11-22 UTC · Claude (Fable 5.2) · guided question before the answer (tap a value / skip); rail drawn by the shared process-map.js (toggle a step, info card for a component — no chat flooding). Prior: 2026-11-21 22:42 UTC · Claude (Opus 5.5) · status line names the graph source (hosted LightRAG sandbox vs local) and flags a truncated read · prev 2026-11-17 · Codex · map snapshots, graph feedback and contextual forks. */
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
@@ -6,7 +6,7 @@
   const storeKey = 'mc_graph_oracle_v1';
   let session = sessionStorage.getItem('mc_graph_session');
   if (!session) { session = crypto.randomUUID(); sessionStorage.setItem('mc_graph_session', session); }
-  let chats = [], activeId, busy = false, forkMap = null, feedbackRequest = null;
+  let chats = [], activeId, busy = false, forkMap = null, feedbackRequest = null, viewing = null;
   // Session-scoped storage keeps maps tied to their server session capability.
   try { chats = JSON.parse(sessionStorage.getItem(storeKey) || '[]'); } catch (_) {}
   function button(text, fn, className) {
@@ -20,11 +20,13 @@
   }
   function current() { return chats.find(c => c.id === activeId); }
   function currentMap() { return current()?.maps.at(-1) || current()?.context || null; }
+  // The map drawn in the rail: the newest one, unless the person opened an earlier map of this conversation.
+  function railMap() { const chat = current(); return (chat && viewing && chat.maps.find(m => m.id === viewing)) || currentMap(); }
   function save() { try { sessionStorage.setItem(storeKey, JSON.stringify(chats)); } catch (_) { $('requestStatus').textContent = 'Browser storage is full. Keep this page open to retain this conversation.'; } }
   function newChat(context) {
     if (busy) return;
     const chat = { id: crypto.randomUUID(), title: context ? context.title : 'New exploration', messages: [], maps: [], context: context || null };
-    chats.push(chat); activeId = chat.id; save(); render();
+    chats.push(chat); activeId = chat.id; viewing = null; save(); render();
   }
   function sourceDetails(node) {
     const el = document.createElement('details'); el.className = 'source-record';
@@ -94,31 +96,31 @@
   }
   function fork(map) { if (busy) return; forkMap = map; $('forkTitle').textContent = map.title; $('forkQuestion').value = ''; $('forkDialog').showModal(); }
   function renderRail() {
-    const map = currentMap(); $('stages').replaceChildren(); $('previousMaps').replaceChildren();
-    $('mapEmpty').hidden = !!map; $('mapTools').hidden = !map;
+    const map = railMap(), latest = currentMap(); $('stages').replaceChildren(); $('previousMaps').replaceChildren();
+    $('mapEmpty').hidden = !!map; $('mapTools').hidden = !map || (latest && map.id !== latest.id);   // refine/feedback act on the current map only
     $('mapTitle').textContent = map?.title || 'Start with an ingredient';
     if (map) {
       // Shared rail (process-map.js): a step toggles blue, a component opens a short info card in the rail.
-      // Nothing is written into the conversation unless the person asks for it through the card's links.
-      window.MCProcessMap.render($('stages'), map, {
-        onStageDetails: stage => explore(map, stage),
-        onEntityDetails: (stage, id) => explore(map, stage, id)
-      });
+      // The rail follows the conversation but never writes into it.
+      window.MCProcessMap.render($('stages'), map, {});
       $('revision').textContent = 'Graph ' + map.graph_version.slice(0,8) + ' · feedback revision ' + map.feedback_revision;
     }
-    const previous = current().maps.slice(0,-1).reverse();
+    if (map && latest && map.id !== latest.id) {                       // looking at an earlier map: one click back
+      $('stages').prepend(button('← Back to the current map', () => { viewing = null; renderRail(); }, 'rail-back'));
+    }
+    const previous = current().maps.filter(m => !map || m.id !== map.id).reverse();
     previous.forEach(old => {
       const details = document.createElement('details'); details.className = 'previous-map';
       details.append(text('summary', old.title));
       details.append(text('p', old.question, 'hint'));
-      details.append(button('View diagram', () => explore(old, old.focus)));
+      details.append(button('Show in this panel', () => { viewing = old.id; renderRail(); }));
       details.append(button('Ask in a new chat', () => fork(old))); $('previousMaps').append(details);
     });
   }
   function render() {
     $('chatList').replaceChildren();
     chats.slice().reverse().forEach(c => {
-      const b = button(c.title, () => { if (busy) return; activeId=c.id; render(); });
+      const b = button(c.title, () => { if (busy) return; activeId=c.id; viewing=null; render(); });
       if(c.id===activeId)b.setAttribute('aria-current','true'); $('chatList').append(b);
     });
     renderMessages(); renderRail();
@@ -142,7 +144,7 @@
         return;
       }
       chat.messages.push({kind:'answer',text:result.answer,evidence:result.evidence,map:result.map});
-      if(result.map)chat.maps.push(result.map);
+      if(result.map){chat.maps.push(result.map);viewing=null;}
       if(action==='feedback'){refreshStatus();feedbackRequest=null;$('feedback').value='';$('feedbackForm').hidden=true;}
       $('requestStatus').textContent=result.map ? 'Answer and process map ready.' : 'Answer ready. No ingredient map was created.';
     } catch(e){ $('requestStatus').textContent=e.message; }

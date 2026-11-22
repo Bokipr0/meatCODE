@@ -26,7 +26,7 @@
     return text;
   }
 
-  function infoCard(node, stage, options, close) {
+  function infoCard(node, stage, close) {
     const card = el('div', 'pm-card');
     card.setAttribute('role', 'note');
     const head = el('div', 'pm-card-head');
@@ -41,17 +41,11 @@
     card.append(el('p', 'pm-card-text', shortDescription(node.description)));
     const chunks = (node.source_ids || []).length;
     card.append(el('p', 'pm-card-kind', chunks ? chunks + ' evidence chunk' + (chunks === 1 ? '' : 's') + ' in the graph' : 'No evidence chunk listed'));
-    if (options.onEntityDetails) {
-      const more = el('button', 'pm-link', 'Show evidence in chat');
-      more.type = 'button';
-      more.addEventListener('click', () => options.onEntityDetails(stage, node.id));
-      card.append(more);
-    }
     return card;
   }
 
-  /* render(host, map, options) — options.onStageDetails(stage) / options.onEntityDetails(stage, id) are optional:
-     when given, the rail offers a link that writes the full connections / evidence into the conversation on request. */
+  /* render(host, map) — the rail is read-only towards the conversation: selecting a step or a component changes
+     only the rail (2026-11-22: the "Show … in chat" links were removed at Lior's request). */
   function render(host, map, options) {
     options = options || {};
     host.replaceChildren();
@@ -88,13 +82,7 @@
       if (!ids.length) parts.append(el('span', 'pm-empty', 'No supported component'));
       group.append(parts);
       const open = ids.includes(state.entity) ? (map.nodes || []).find(n => n.id === state.entity) : null;
-      if (open) group.append(infoCard(open, stage, options, () => { state.entity = null; again(); }));
-      if (state.stage === stage && ids.length && options.onStageDetails) {
-        const link = el('button', 'pm-link', 'Show connections in chat');
-        link.type = 'button';
-        link.addEventListener('click', () => options.onStageDetails(stage));
-        group.append(link);
-      }
+      if (open) group.append(infoCard(open, stage, () => { state.entity = null; again(); }));
       host.append(group);
       if (index < STAGES.length - 1) host.append(el('div', 'pm-arrow', '↓'));
     });

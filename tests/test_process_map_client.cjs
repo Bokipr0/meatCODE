@@ -61,12 +61,8 @@ chip('Beta').click();
 assert.strictEqual(byClass(host, 'pm-card').length, 0);                 // same chip again closes it
 assert.strictEqual(chatWrites, 0);                                      // none of the above wrote into the conversation
 
-chip('Alpha').click();
-byClass(host, 'pm-link').forEach(link => link.click());                 // only the explicit links do
-assert.strictEqual(chatWrites, 2);
-
-const quiet = node('div');                                              // classic Oracle panel: no "in chat" links at all
-PM.render(quiet, { ...map, id: 'm2' }, {});
-byClass(quiet, 'pm-chip')[0].click();
-assert.strictEqual(byClass(quiet, 'pm-link').length, 0);
+chip('Alpha').click();                                                  // the rail has no way to write into the chat
+assert.strictEqual(byClass(host, 'pm-link').length, 0);
+assert.strictEqual(all(host, n => /in chat/i.test(n.textContent)).length, 0);
+assert.strictEqual(chatWrites, 0);
 console.log('process-map client: ok');

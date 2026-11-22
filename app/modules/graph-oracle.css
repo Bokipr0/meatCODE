@@ -4,3 +4,5 @@
 html.mc-embed .workspace{height:100vh}
 /* 2026-11-22 · guided question card */
 .message.ask{border-color:var(--wine-tint);background:var(--surface)}.ask-options{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.ask-options .chip{margin:0}.ask-options .chip.skip{border-style:dashed;color:var(--ink-dim)}
+/* 2026-11-22 · earlier map shown in the rail */
+.rail-back{display:block;width:100%;margin:0 0 12px;font-size:12px;padding:7px 10px;border-radius:10px}
