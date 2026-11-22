@@ -61,3 +61,29 @@ class RemoteTests(unittest.TestCase):
                 self.assertFalse(g.dispatch('status', {}, '', None)['ready'])
         self.assertEqual(SEEN, [])
 if __name__ == '__main__': unittest.main()
+
+
+class ExplorerUrlTests(unittest.TestCase):
+    """The address behind the page's "Open the full knowledge graph" button (2026-11-22)."""
+
+    def url(self, **env):
+        import graph_oracle as module
+        clean = {k: v for k, v in os.environ.items() if not k.startswith('KG_ORACLE_')}
+        with patch.dict(os.environ, {**clean, **env}, clear=True):
+            return module.explorer_url()
+
+    def test_hosted_graph_points_at_its_own_viewer_without_any_secret(self):
+        out = self.url(KG_ORACLE_REMOTE_URL='https://graph.example.org/', KG_ORACLE_REMOTE_API_KEY='k' * 40)
+        self.assertEqual(out, 'https://graph.example.org/webui/')
+        self.assertNotIn('k' * 40, out)
+
+    def test_explicit_address_wins(self):
+        self.assertEqual(self.url(KG_ORACLE_REMOTE_URL='https://graph.example.org', KG_ORACLE_EXPLORER_URL='https://kg.example.org/view'),
+                         'https://kg.example.org/view')
+
+    def test_nothing_unsafe_or_local_is_ever_offered(self):
+        self.assertIsNone(self.url())                                                     # local graph file: no button
+        for bad in ('http://graph.example.org', 'https://user:pw@graph.example.org', 'https://graph.example.org/?key=1',
+                    'javascript:alert(1)', 'http://127.0.0.1:9621'):
+            self.assertIsNone(self.url(KG_ORACLE_EXPLORER_URL=bad), bad)
+        self.assertIsNone(self.url(KG_ORACLE_REMOTE_URL='http://127.0.0.1:9621'))         # loopback sandbox: nothing public to open

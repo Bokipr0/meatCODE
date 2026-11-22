@@ -6,3 +6,5 @@ html.mc-embed .workspace{height:100vh}
 .message.ask{border-color:var(--wine-tint);background:var(--surface)}.ask-options{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.ask-options .chip{margin:0}.ask-options .chip.skip{border-style:dashed;color:var(--ink-dim)}
 /* 2026-11-22 · earlier map shown in the rail */
 .rail-back{display:block;width:100%;margin:0 0 12px;font-size:12px;padding:7px 10px;border-radius:10px}
+/* 2026-11-22 · link to the graph's own viewer, beside the node/connection counts */
+.explorer-link{display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:8px 14px;border:1px solid var(--wine);border-radius:22px;background:white;color:var(--wine-deep);font-size:13px;font-weight:700;text-decoration:none}.explorer-link:hover{background:var(--wine-mist)}.explorer-link[hidden]{display:none}

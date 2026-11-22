@@ -1,4 +1,4 @@
-# Last updated: 2026-11-22 UTC · Claude (Fable 5.2) · guided elicitation before answering (reuses oracle_guided: ask one question or answer; the brief steers retrieval and the answer). Prior: 2026-11-22 UTC · Claude (Fable 5.2) · model call no longer passes `temperature` (SDK 2.x TypeError -> "unavailable"); unexpected failures are logged. Prior: 2026-11-21 22:40 UTC · Claude (Opus 5.5) · hosted LightRAG source (KG_ORACLE_REMOTE_URL + KEY) via authenticated /graphs, TTL cache, truncation surfaced · prev 2026-11-18 · Codex · native feedback writer and provenance isolation.
+# Last updated: 2026-11-22 UTC · Claude (Fable 5.2) · status carries explorer_url (the graph's own viewer) for the "Open the full knowledge graph" button. Prior: 2026-11-22 UTC · Claude (Fable 5.2) · guided elicitation before answering (reuses oracle_guided: ask one question or answer; the brief steers retrieval and the answer). Prior: 2026-11-22 UTC · Claude (Fable 5.2) · model call no longer passes `temperature` (SDK 2.x TypeError -> "unavailable"); unexpected failures are logged. Prior: 2026-11-21 22:40 UTC · Claude (Opus 5.5) · hosted LightRAG source (KG_ORACLE_REMOTE_URL + KEY) via authenticated /graphs, TTL cache, truncation surfaced · prev 2026-11-18 · Codex · native feedback writer and provenance isolation.
 """Graph-only Oracle. Feedback augments a provenance-labelled graph overlay.
 
 Two graph sources (read-only):
@@ -64,6 +64,27 @@ def configuration():
     if state == web_root or web_root in state.parents:
         raise RuntimeError('Graph session storage must be outside the website directory.')
     return path, state
+
+
+def explorer_url():
+    """Public address of the graph's own viewer, for the "Open the full knowledge graph" button — or None.
+    KG_ORACLE_EXPLORER_URL wins; otherwise a hosted LightRAG serves its viewer at <server>/webui/. Only a plain
+    https address is ever returned: no credentials, query or fragment, and never the API key (the viewer asks the
+    visitor to sign in itself)."""
+    explicit = os.environ.get('KG_ORACLE_EXPLORER_URL', '').strip()
+    candidate = explicit
+    if not candidate:
+        base = os.environ.get('KG_ORACLE_REMOTE_URL', '').strip()
+        candidate = base.rstrip('/') + '/webui/' if base else ''
+    if not candidate:
+        return None
+    try:
+        parsed = urlsplit(candidate)
+    except ValueError:
+        return None
+    if parsed.scheme != 'https' or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment:
+        return None
+    return candidate
 
 
 def source_label():
@@ -318,7 +339,7 @@ def dispatch(action, body, session, call_model):
                 revision = state['revision']
             return dict(ready=True, nodes=len(data['nodes']), connections=len(data['edges']),
                 graph_version=data['version'], feedback_revision=revision,
-                source=source_label(), graph_truncated=bool(data.get('truncated')),
+                source=source_label(), explorer_url=explorer_url(), graph_truncated=bool(data.get('truncated')),
                 feedback_target=('provenance_overlay_only' if source_label() == 'hosted_lightrag_graph'
                                  else 'native_lightrag_and_provenance_overlay'),
                 lightrag_index_sync=bool(os.environ.get('KG_ORACLE_LIGHTRAG_URL')),

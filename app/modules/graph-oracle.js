@@ -1,4 +1,4 @@
-/* Last updated: 2026-11-22 UTC · Claude (Fable 5.2) · the rail never writes into the conversation: no 'in chat' links; earlier maps open in the rail. Prior: 2026-11-22 UTC · Claude (Fable 5.2) · guided question before the answer (tap a value / skip); rail drawn by the shared process-map.js (toggle a step, info card for a component — no chat flooding). Prior: 2026-11-21 22:42 UTC · Claude (Opus 5.5) · status line names the graph source (hosted LightRAG sandbox vs local) and flags a truncated read · prev 2026-11-17 · Codex · map snapshots, graph feedback and contextual forks. */
+/* Last updated: 2026-11-22 UTC · Claude (Fable 5.2) · 'Open the full knowledge graph' button beside the graph's node/connection counts (address from /status). Prior: 2026-11-22 UTC · Claude (Fable 5.2) · the rail never writes into the conversation: no 'in chat' links; earlier maps open in the rail. Prior: 2026-11-22 UTC · Claude (Fable 5.2) · guided question before the answer (tap a value / skip); rail drawn by the shared process-map.js (toggle a step, info card for a component — no chat flooding). Prior: 2026-11-21 22:42 UTC · Claude (Opus 5.5) · status line names the graph source (hosted LightRAG sandbox vs local) and flags a truncated read · prev 2026-11-17 · Codex · map snapshots, graph feedback and contextual forks. */
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
@@ -178,10 +178,14 @@
     return fetch('/api/graph-oracle/status',{credentials:'same-origin'}).then(r=>r.json()).then(s=>{
     const message=s.ready ? s.nodes.toLocaleString()+' entities · '+s.connections.toLocaleString()+' connections · '+(s.source==='hosted_lightrag_graph'?'hosted LightRAG sandbox':'local LightRAG graph')+(s.graph_truncated?' · PARTIAL (graph read was truncated)':'') : s.message || 'Graph service unavailable.';
     $('connection').textContent=message;$('graphStatus').textContent=message;
+    // Button to the graph's own viewer (opens in a new tab). Only an https address supplied by the server is used.
+    const link=$('graphExplorer'), target=s.ready && typeof s.explorer_url==='string' && /^https:\/\//.test(s.explorer_url) ? s.explorer_url : '';
+    if(target){ link.href=target; link.title='Opens '+new URL(target).host+' in a new tab'; }
+    link.hidden=!target;
     const sync=s.feedback_sync;
     $('syncStatus').textContent=sync ? sync.message+' '+sync.synced+' contributions synchronized'+(sync.pending ? ', '+sync.pending+' pending.' : '.') : 'Feedback connection unavailable.';
     if(!s.ready){$('ask').disabled=true;$('requestStatus').textContent='Connect the graph before asking a question.';}
-  }).catch(()=>{$('connection').textContent='Graph service unavailable.';$('ask').disabled=true;});
+  }).catch(()=>{$('connection').textContent='Graph service unavailable.';$('graphExplorer').hidden=true;$('ask').disabled=true;});
   }
   refreshStatus();
   setInterval(() => { if (!document.hidden && !busy) refreshStatus(); }, 15000);
