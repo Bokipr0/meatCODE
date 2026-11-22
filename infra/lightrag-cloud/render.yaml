@@ -71,7 +71,10 @@ services:
     healthCheckPath: /health
     disk: {name: kg-intake-data, mountPath: /data, sizeGB: 2}
     envVars:
-      - {key: INTAKE_API_KEY, sync: false}          # >=32 chars; give to people allowed to upload
+      - {key: INTAKE_USER, sync: false}             # people sign in with the MeatCODE site username + password
+      - {key: INTAKE_PASSWORD, sync: false}
+      - {key: INTAKE_API_KEY, sync: false}          # optional machine credential for scripts; not given to people
+      - {key: INTAKE_MAX_UPLOADS_PER_HOUR, value: "600"}
       - {key: LIGHTRAG_API_KEY, sync: false}        # same value as meatcode-lightrag LIGHTRAG_API_KEY
       - {key: ANTHROPIC_API_KEY, sync: false}       # claim extraction (claims.py)
       - {key: SEED_ARCHIVE_URL, sync: false}        # one-time: overlap inventory (kv_store_full_docs.json only)

@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-# Last updated: 2026-11-21 23:55 UTC · Claude (Opus 5.5) · cloud KG intake: keyed upload page + rights gate + supervised GROBID batch worker
+# Last updated: 2026-11-22 04:10 UTC · Claude (Fable 5.2) · people sign in with a username + password (HTTP Basic, same pair as the MeatCODE site); the key is an optional machine credential; status lists recent papers · prev 2026-11-21 Opus 5.5 · keyed upload page + rights gate + supervised worker
 """MeatCODE cloud KG intake (Render).
 
-PDF upload (intake key + open-access / rights-cleared declaration) -> disk inbox -> the existing
+PDF upload (username + password sign-in, open-access / rights-cleared declaration) -> disk inbox -> the existing
 guarded worker (pipeline/grobid/batch_worker.py: GROBID parse, DOI/hash/overlap checks, ledger,
 claim extraction, one paper at a time) -> hosted LightRAG. Nothing here writes to Neon or
 promotes canonical knowledge. Never logs or returns secrets.
 """
 from __future__ import annotations
 
+import base64
 import hashlib
 import hmac
 import json
@@ -19,6 +20,7 @@ import subprocess
 import sys
 import threading
 import time
+import urllib.parse
 from collections import deque
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -46,8 +48,50 @@ def audit(**event) -> None:
 
 
 def key_ok(given: str | None) -> bool:
+    """Optional machine credential (scripts). People use the username + password below."""
     expected = os.environ.get("INTAKE_API_KEY", "")
     return len(expected) >= 32 and bool(given) and hmac.compare_digest(given.encode(), expected.encode())
+
+
+_fails: dict[str, deque] = {}
+LOCK_AFTER, LOCK_WINDOW = 10, 900          # 10 wrong passwords per address -> refused for 15 minutes
+
+
+def client_ip(handler) -> str:
+    return (handler.headers.get("X-Forwarded-For") or handler.client_address[0]).split(",")[0].strip()[:64]
+
+
+def locked(ip: str) -> bool:
+    t = time.time()
+    with _lock:
+        q = _fails.get(ip)
+        while q and t - q[0] > LOCK_WINDOW:
+            q.popleft()
+        return bool(q) and len(q) >= LOCK_AFTER
+
+
+def signed_in(handler) -> str | None:
+    """Name of the authenticated caller, or None. Never logs credentials."""
+    if key_ok(handler.headers.get("X-Intake-Key")):
+        return "machine"
+    user, password = os.environ.get("INTAKE_USER", ""), os.environ.get("INTAKE_PASSWORD", "")
+    header = handler.headers.get("Authorization") or ""
+    if not user or len(password) < 6 or not header.startswith("Basic "):
+        return None
+    ip = client_ip(handler)
+    if locked(ip):
+        return None
+    try:
+        given_user, _, given_password = base64.b64decode(header[6:], validate=True).decode("utf-8").partition(":")
+    except (ValueError, UnicodeDecodeError):
+        return None
+    ok = hmac.compare_digest(given_user.encode(), user.encode()) & hmac.compare_digest(given_password.encode(), password.encode())
+    if not ok:
+        with _lock:
+            _fails.setdefault(ip, deque()).append(time.time())
+        audit(action="refused", reason="bad_password")
+        return None
+    return given_user
 
 
 def safe_name(name: str) -> str:
@@ -68,7 +112,7 @@ def rate_ok() -> bool:
 
 def ledger_status() -> dict:
     path = BATCH / "papers.sqlite"
-    counts, attention = {}, []
+    counts, attention, recent = {}, [], []
     if path.exists():
         con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
         try:
@@ -76,10 +120,13 @@ def ledger_status() -> dict:
             attention = [{"file": Path(p).name, "status": s, "reason": r} for p, s, r in con.execute(
                 "SELECT pdf_path,status,reason FROM papers WHERE status IN "
                 "('review_required','submission_unknown','retry_wait','failed') ORDER BY updated_at DESC LIMIT 50")]
+            recent = [{"file": Path(p).name, "status": st, "doi": d, "note": r, "updated": u} for p, st, d, r, u in con.execute(
+                "SELECT pdf_path,status,paper_doi,reason,updated_at FROM papers ORDER BY updated_at DESC LIMIT 40")]
         finally:
             con.close()
     queued = sorted(p.name for p in INBOX.glob("*.pdf")) if INBOX.exists() else []
-    return {"ledger": counts, "attention": attention, "inbox_files": len(queued),
+    return {"ledger": counts, "attention": attention, "recent": recent, "inbox_files": len(queued),
+            "graph_url": os.environ.get("LIGHTRAG_URL", "").rstrip("/") + "/webui/",
             "worker": WORKER_STATE.copy(), "paused": (BATCH / "pause.json").exists()}
 
 
@@ -98,7 +145,20 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):  # path only; never headers
         sys.stderr.write("%s %s\n" % (self.command, self.path.split("?")[0]))
 
+    def _challenge(self):
+        if locked(client_ip(self)):
+            return self._json(429, {"error": "Too many wrong passwords. Try again in 15 minutes."})
+        data = b'{"error": "Sign in required"}'
+        self.send_response(401)
+        self.send_header("WWW-Authenticate", 'Basic realm="MeatCODE knowledge-graph intake", charset="UTF-8"')
+        self.send_header("Content-Type", "application/json"); self.send_header("Content-Length", str(len(data)))
+        self.end_headers(); self.wfile.write(data)
+
     def do_GET(self):
+        if self.path == "/health":
+            return self._json(200, {"status": "ok"})
+        if not signed_in(self):
+            return self._challenge()
         if self.path in ("/", "/index.html"):
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -106,11 +166,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(PAGE)))
             self.end_headers()
             self.wfile.write(PAGE)
-        elif self.path == "/health":
-            self._json(200, {"status": "ok"})
         elif self.path == "/api/status":
-            if not key_ok(self.headers.get("X-Intake-Key")):
-                return self._json(403, {"error": "Intake key required"})
             self._json(200, ledger_status())
         else:
             self._json(404, {"error": "Not found"})
@@ -118,13 +174,13 @@ class Handler(BaseHTTPRequestHandler):
     def do_PUT(self):
         if self.path != "/api/upload":
             return self._json(404, {"error": "Not found"})
-        if not key_ok(self.headers.get("X-Intake-Key")):
-            audit(action="refused", reason="bad_key")
-            return self._json(403, {"error": "Intake key required"})
+        who = signed_in(self)
+        if not who:
+            return self._challenge()
         rights = (self.headers.get("X-Rights") or "").strip()
         evidence = (self.headers.get("X-Rights-Evidence") or "").strip()
-        uploader = (self.headers.get("X-Uploader") or "").strip()[:80]
-        name = safe_name(self.headers.get("X-Filename") or "")
+        uploader = ((self.headers.get("X-Uploader") or "").strip()[:80] or who)
+        name = safe_name(urllib.parse.unquote(self.headers.get("X-Filename") or ""))
         if rights not in RIGHTS or not 5 <= len(evidence) <= 500:
             audit(action="refused", reason="rights", rights=rights[:40], file=name, uploader=uploader)
             return self._json(400, {"error": "Only open-access or rights-cleared papers are accepted. "

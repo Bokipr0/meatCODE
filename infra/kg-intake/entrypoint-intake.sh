@@ -1,9 +1,10 @@
 #!/bin/sh
-# Last updated: 2026-11-21 23:55 UTC · Claude (Opus 5.5) · fail-closed start + one-time overlap inventory seed (kv_store_full_docs.json only)
+# Last updated: 2026-11-22 04:15 UTC · Claude (Fable 5.2) · requires the username/password pair; key optional · prev 2026-11-21 Opus 5.5 · fail-closed start + one-time overlap inventory seed (kv_store_full_docs.json only)
 set -eu
-for v in INTAKE_API_KEY LIGHTRAG_API_KEY; do
-  eval "val=\${$v:-}"; [ "${#val}" -ge 32 ] || { echo "FATAL: $v missing or shorter than 32 chars" >&2; exit 1; }
-done
+: "${LIGHTRAG_API_KEY:=}" "${INTAKE_PASSWORD:=}"
+[ "${#LIGHTRAG_API_KEY}" -ge 32 ] || { echo "FATAL: LIGHTRAG_API_KEY missing or shorter than 32 chars" >&2; exit 1; }
+# People sign in with INTAKE_USER + INTAKE_PASSWORD (the MeatCODE site pair). INTAKE_API_KEY is an optional machine credential.
+[ -n "${INTAKE_USER:-}" ] && [ "${#INTAKE_PASSWORD}" -ge 6 ] || { echo "FATAL: INTAKE_USER and INTAKE_PASSWORD (6+ chars) are required" >&2; exit 1; }
 [ -n "${ANTHROPIC_API_KEY:-}" ] || { echo "FATAL: ANTHROPIC_API_KEY required (claim extraction)" >&2; exit 1; }
 INV=/data/graph/kv_store_full_docs.json
 mkdir -p /data/graph

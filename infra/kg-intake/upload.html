@@ -1,34 +1,46 @@
 <!DOCTYPE html>
-<!-- Last updated: 2026-11-21 23:55 UTC · Claude (Opus 5.5) · MeatCODE KG intake upload page (no secrets embedded) -->
+<!-- Last updated: 2026-11-22 04:15 UTC · Claude (Fable 5.2) · sign-in is the browser's username/password prompt (no key field); live table of each paper's progress into the graph -->
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MeatCODE · KG intake</title>
 <style>
-body{font:15px/1.6 -apple-system,system-ui,sans-serif;max-width:640px;margin:40px auto;padding:0 20px;color:#1f2b2a}
-h1{font-size:20px;font-weight:600;color:#0f5f58}label{display:block;margin:14px 0 4px;font-weight:600}
+body{font:15px/1.6 -apple-system,system-ui,sans-serif;max-width:760px;margin:40px auto;padding:0 20px;color:#1f2b2a}
+h1{font-size:20px;font-weight:600;color:#0f5f58}h2{font-size:16px;font-weight:600;margin:28px 0 6px}label{display:block;margin:14px 0 4px;font-weight:600}
 input,select{width:100%;padding:8px;border:1px solid #c9d3d1;border-radius:6px;font:inherit;box-sizing:border-box}
 button{margin-top:18px;padding:9px 18px;border:0;border-radius:6px;background:#0f5f58;color:#fff;font:inherit;cursor:pointer}
-.note{font-size:13px;color:#5b6b69}#log{margin-top:18px;white-space:pre-wrap;font:13px ui-monospace,monospace}
-.err{color:#a32d2d}.ok{color:#0f6e56}
+.note{font-size:13px;color:#5b6b69}#log{margin-top:14px;white-space:pre-wrap;font:13px ui-monospace,monospace}
+.err{color:#a32d2d}.ok{color:#0f6e56}table{width:100%;border-collapse:collapse;font-size:13px}td,th{text-align:left;padding:5px 6px;border-bottom:1px solid #e3e9e8;vertical-align:top}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;background:#eef2f1}.pill.processed{background:#e1f5ee;color:#085041}.pill.hold{background:#faeeda;color:#633806}.pill.failed{background:#fcebeb;color:#791f1f}
+a{color:#0f5f58}
 </style></head><body>
 <h1>MeatCODE knowledge-graph intake</h1>
-<p class="note">Only open-access or rights-cleared papers. Each PDF is parsed by GROBID, checked for DOI, duplicates and overlap, then added to the candidate graph one at a time. Papers without a reliable DOI are held for review.</p>
-<label for="key">Intake key</label><input id="key" type="password" autocomplete="off">
+<p class="note">Only open-access or rights-cleared papers. Each PDF is parsed by GROBID, checked for DOI, duplicates and overlap, then added to the knowledge graph one at a time. Papers without a reliable DOI are held for review.</p>
 <label for="who">Your name</label><input id="who" maxlength="80">
 <label for="rights">Rights</label>
 <select id="rights"><option value="">Choose…</option><option value="open_access">Open access (e.g. CC-BY)</option><option value="rights_cleared">Rights cleared (permission on file)</option></select>
 <label for="ev">Licence or permission source</label><input id="ev" maxlength="500" placeholder="e.g. CC-BY 4.0 — https://doi.org/…">
-<label for="files">PDF files</label><input id="files" type="file" accept="application/pdf" multiple>
-<button id="go">Upload</button> <button id="st" type="button">Status</button>
+<label for="files">PDF files (select as many as you like)</label><input id="files" type="file" accept="application/pdf" multiple>
+<button id="go">Upload</button>
 <div id="log"></div>
+<h2>Progress into the graph</h2>
+<p class="note" id="sum">Loading…</p>
+<p class="note">When a paper shows <span class="pill processed">processed</span>, its entities and connections are in the graph: <a id="graph" href="#" target="_blank" rel="noopener">open the knowledge graph</a> and press its refresh button.</p>
+<table><thead><tr><th>File</th><th>Status</th><th>DOI / note</th><th>Updated (UTC)</th></tr></thead><tbody id="rows"></tbody></table>
 <script>
-const $=id=>document.getElementById(id);try{$('key').value=sessionStorage.getItem('ik')||''}catch(e){}
+const $=id=>document.getElementById(id);
 function line(t,c){const d=document.createElement('div');d.textContent=t;if(c)d.className=c;$('log').prepend(d)}
-$('go').onclick=async()=>{const k=$('key').value.trim(),r=$('rights').value,e=$('ev').value.trim(),fs=[...$('files').files];
- if(k.length<32)return line('Enter the intake key.','err');if(!r)return line('Choose the rights basis.','err');
- if(e.length<5)return line('Give the licence or permission source.','err');if(!fs.length)return line('Choose at least one PDF.','err');
- try{sessionStorage.setItem('ik',k)}catch(_){}
- for(const f of fs){try{const res=await fetch('/api/upload',{method:'PUT',body:f,headers:{'X-Intake-Key':k,'X-Rights':r,'X-Rights-Evidence':e,'X-Uploader':$('who').value.trim(),'X-Filename':f.name,'Content-Type':'application/pdf'}});
-  const j=await res.json().catch(()=>({}));line(f.name+': '+(j.status||j.error||res.status),res.ok?'ok':'err')}catch(err){line(f.name+': upload failed','err')}}};
-$('st').onclick=async()=>{const res=await fetch('/api/status',{headers:{'X-Intake-Key':$('key').value.trim()}});const j=await res.json().catch(()=>({}));
- line(res.ok?JSON.stringify(j,null,1):(j.error||res.status),res.ok?'':'err')};
+const LABEL={extracting_claims:'reading',submitted:'building graph',submission_unknown:'check needed',retry_wait:'waiting to retry',review_required:'held for review'};
+function cls(s){return s==='processed'?'processed':(s==='failed'||s==='submission_unknown')?'failed':(s==='review_required'||s==='duplicate')?'hold':''}
+async function status(){try{const r=await fetch('/api/status');if(!r.ok)return;const j=await r.json();
+ const L=j.ledger||{};$('sum').textContent='Waiting or in progress: '+j.inbox_files+' file(s) received · '+Object.keys(L).map(k=>(LABEL[k]||k)+' '+L[k]).join(' · ')+(j.paused?' · PAUSED':'')+(j.worker&&!j.worker.running?' · worker restarting':'');
+ if(j.graph_url)$('graph').href=j.graph_url;const tb=$('rows');tb.textContent='';
+ (j.recent||[]).forEach(p=>{const tr=document.createElement('tr');[p.file,null,(p.doi||'')+(p.note?(p.doi?' — ':'')+p.note:''),p.updated||''].forEach((v,i)=>{const td=document.createElement('td');
+  if(i===1){const s=document.createElement('span');s.className='pill '+cls(p.status);s.textContent=LABEL[p.status]||p.status;td.appendChild(s)}else td.textContent=v;tr.appendChild(td)});tb.appendChild(tr)});
+ }catch(e){}}
+$('go').onclick=async()=>{const r=$('rights').value,e=$('ev').value.trim(),fs=[...$('files').files];
+ if(!r)return line('Choose the rights basis.','err');if(e.length<5)return line('Give the licence or permission source.','err');if(!fs.length)return line('Choose at least one PDF.','err');
+ $('go').disabled=true;
+ for(const f of fs){try{const res=await fetch('/api/upload',{method:'PUT',body:f,headers:{'X-Rights':r,'X-Rights-Evidence':e,'X-Uploader':$('who').value.trim(),'X-Filename':encodeURIComponent(f.name).slice(0,200),'Content-Type':'application/pdf'}});
+  const j=await res.json().catch(()=>({}));line(f.name+': '+(j.status||j.error||res.status),res.ok?'ok':'err');if(res.status===429){line('Hourly limit reached; the remaining files were not sent.','err');break}}catch(err){line(f.name+': upload failed','err')}}
+ $('go').disabled=false;status()};
+status();setInterval(status,20000);
 </script></body></html>

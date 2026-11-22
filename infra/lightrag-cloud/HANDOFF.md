@@ -1,4 +1,4 @@
-_Last updated: 2026-11-21 21:58 UTC · Claude (Opus 5.5) · §0 update: Neon branch + bucket live, push/upload script ready · prev 21:34 Sonnet 5.5_
+_Last updated: 2026-11-22 02:40 UTC · Claude (Fable 5.2) · SUPERSEDED: everything below is the 21 Nov pre-deployment brief; several scripts it names were deleted after use. Current state: README.md in this folder._
 
 ## 0. UPDATE 21:58 UTC (supersedes §4 rows for Neon/seed)
 - Neon `kg-lightrag` = `br-crimson-fog-alm2s63w` (parent dev `br-orange-fog-alnxovak`, project `holy-mode-78356834`); init_kg.sql applied (role NOLOGIN). Private bucket `lightrag-seed`, key `baseline-20261121/rag_storage.tar.gz` (upload pending).
