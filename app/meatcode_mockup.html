@@ -69,6 +69,11 @@ body:not(.ff-inventory) .mc-toolbench-btn { display:none !important; }
 .mc-dashboard-btn{text-decoration:none;order:20;}
 /* Release Center is authoritative; hidden until its current-environment flag loads. */
 body:not(.ff-live_testing_dashboard) .mc-dashboard-btn{display:none!important;}
+/* 2026-11-22 · Lior: no Dashboard button on the DEV site (body class set by environment-badge.js from /api/version).
+   The dashboard itself is unchanged there and still opens at /research-dashboard; other environments keep the button rule above. */
+body.mc-development-site .mc-dashboard-btn{display:none!important;}
+/* Flag `denver`: an explicit OFF in the Release Center hides the companion and his note tab. */
+body.mc-denver-off #mcDenver,body.mc-denver-off #oracleDenverPeek{display:none!important;}
 /* ── Feature flag: highlight_inventory — draw attention to the Inventory button ── */
 body.ff-highlight_inventory .mc-toolbench-btn{ box-shadow:0 0 0 2px var(--brass,#b5651d); background:rgba(181,101,29,.12); }
 /* GFI co-brand: lift the logo before everything and make it the visual anchor */
@@ -9413,6 +9418,8 @@ function mcRenderOracleAsk(raw, turnRec) {
         Object.keys(flags||{}).forEach(function(k){
           if(flags[k]) document.body.classList.add('ff-'+k);
         });
+        // Denver is on unless the registry explicitly switches him off (older registries have no `denver` entry).
+        if (flags && flags.denver === false) document.body.classList.add('mc-denver-off');
         document.body.classList.add('mc-flags-ready');
         window.dispatchEvent(new Event('mc:flags-ready'));
       })

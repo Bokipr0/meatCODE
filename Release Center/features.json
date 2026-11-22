@@ -106,7 +106,7 @@
         "file": "app/meatcode_mockup.html + server/meatcode_server.py"
       },
       "note": "Set dev:true / prod:false deliberately, same as Dev Area — Lior asked for this to be reachable on staging only for now. To ship it to prod: flip this flag's prod to true here (or in the Release Center admin page), then run promote-to-prod.command. The two download endpoints stay behind the normal site password either way — the flag only controls whether the BUTTON is visible, not whether the endpoints respond.",
-      "dev": true,
+      "dev": false,
       "prod": false
     },
     "papers_browser": {
@@ -466,6 +466,21 @@
       "note": "Not gated by these switches: availability depends on KG_ORACLE_GRAPH_PATH (a local LightRAG GraphML export, no Neon retrieval), which is configured locally only; staging and production report not ready. Run locally via Release Center/demo-graph-oracle.command. Feedback is stored as unverified, provenance-labelled graph overlay nodes.",
       "dev": true,
       "prod": false
+    },
+    "denver": {
+      "label": "Denver (Oracle companion)",
+      "description": "The pixel companion at the right edge of the Oracle screen and his note box. Switch OFF to hide Denver and the fallback note tab; the notes people already left are untouched.",
+      "kind": "feature",
+      "added": "2026-11-22",
+      "status": "live",
+      "where": {
+        "screen": "Oracle",
+        "spot": "Right edge of the Oracle screen — <denver-companion id=\"mcDenver\"> and the #oracleDenverPeek note tab.",
+        "file": "app/meatcode_mockup.html + app/assets/denver/oracle-companion.js"
+      },
+      "note": "Only an explicit OFF hides Denver (a registry without this entry keeps him visible). Reload the page after switching.",
+      "dev": true,
+      "prod": true
     }
   }
 }
