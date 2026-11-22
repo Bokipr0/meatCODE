@@ -112,7 +112,9 @@ class PageTests(unittest.TestCase):
                         "Open deliverables for the 31 Aug demo", "Living technical status", "Every promoted snapshot, newest-first",
                         "Production data only", "Saves to features.json"):
             self.assertNotIn(removed, PAGE)
-        self.assertEqual(len(re.findall(r'<section class="section"', PAGE)), 6)       # the sections themselves are all still there
+        ids = re.findall(r'<section class="section" id="([^"]+)"', PAGE)
+        for section in ("research-operations", "features", "screens", "documents", "flows", "versions"):
+            self.assertIn(section, ids)                                              # the sections themselves are all still there
 
     def test_row_location_and_notes_are_collapsed_not_deleted(self):
         self.assertIn("<details class=\"more\"><summary>Details</summary>", PAGE)
