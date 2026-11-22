@@ -474,9 +474,14 @@ def run_once(args: argparse.Namespace, connection: sqlite3.Connection) -> None:
     for path in pdfs:
         process_pdf(path, args.inbox, args.output, args.graph,
                     connection, args.lightrag_url, args.api_key, args.min_age)
-        blocking = "('submitted','reprocessing','retry_wait')" if continue_on_failure() else "('submitted','submission_unknown','retry_wait')"
+        # Stop the pass when LightRAG is busy with a paper, or when THIS paper has to be retried.
+        # (Checking for any retry_wait row here deadlocked the queue on 2026-11-22: an already-finished
+        # file sorted first, the check saw another file's retry_wait, and the pass ended before reaching it.)
+        blocking = "('submitted','reprocessing')" if continue_on_failure() else "('submitted','submission_unknown')"
         if connection.execute(
             f"SELECT 1 FROM papers WHERE status IN {blocking} LIMIT 1"
+        ).fetchone() or connection.execute(
+            "SELECT 1 FROM papers WHERE status='retry_wait' AND pdf_path=? LIMIT 1", (str(path),)
         ).fetchone():
             # Keep extraction one paper at a time. The next pass sees a final
             # result before another remote model request is submitted.

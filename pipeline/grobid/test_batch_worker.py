@@ -211,6 +211,15 @@ class BatchWorkerTests(unittest.TestCase):
             called = self._run_once_with(self._hosted_args(), lambda *a: None)
         self.assertEqual(called.call_count, 2)   # both inbox files are visited; nothing pauses the pass
 
+    def test_retry_wait_file_is_reached_even_when_finished_files_sort_first(self):
+        done, waiting = self.pdf("a-done.pdf", "done"), self.pdf("b-waiting.pdf", "waiting")
+        worker.record(self.ledger, "h-done", done, "processed")
+        worker.record(self.ledger, "h-wait", waiting, "retry_wait", reason="GROBID temporarily unreachable: URLError")
+        for env in ({}, {"INGEST_CONTINUE_ON_FAILURE": "1"}):
+            with patch.dict(os.environ, env):
+                called = self._run_once_with(self._hosted_args(), lambda *a: None)
+            self.assertEqual([c.args[0].name for c in called.call_args_list], ["a-done.pdf", "b-waiting.pdf"])
+
     def test_repeated_grobid_errors_are_capped_in_continue_mode(self):
         pdf = self.pdf("always-500.pdf", "x")
         err = urllib.error.HTTPError("http://g", 500, "boom", {}, None)
