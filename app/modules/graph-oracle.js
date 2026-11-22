@@ -1,4 +1,4 @@
-/* Last updated: 2026-11-21 22:42 UTC · Claude (Opus 5.5) · status line names the graph source (hosted LightRAG sandbox vs local) and flags a truncated read · prev 2026-11-17 · Codex · map snapshots, graph feedback and contextual forks. */
+/* Last updated: 2026-11-22 UTC · Claude (Fable 5.2) · guided question before the answer (tap a value / skip); rail drawn by the shared process-map.js (toggle a step, info card for a component — no chat flooding). Prior: 2026-11-21 22:42 UTC · Claude (Opus 5.5) · status line names the graph source (hosted LightRAG sandbox vs local) and flags a truncated read · prev 2026-11-17 · Codex · map snapshots, graph feedback and contextual forks. */
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
@@ -72,6 +72,18 @@
       const box = card(entry.kind === 'user' ? 'You' : 'Graph Oracle');
       if (entry.kind === 'user') box.classList.add('user');
       box.append(text('p', entry.text));
+      if (entry.kind === 'ask') {                      // guided question: tap a typical value, type your own, or skip
+        box.classList.add('ask');
+        if (entry.why) box.append(text('p', entry.why, 'hint'));
+        if (entry === current().messages.at(-1)) {     // only the open question is answerable
+          const row = document.createElement('div'); row.className = 'ask-options';
+          (entry.options || []).forEach(option => row.append(button(option, () => ask(option), 'chip')));
+          row.append(button('Not sure', () => ask('Not sure'), 'chip'));
+          row.append(button('Skip questions — answer now', () => ask(entry.question || 'Answer now', true), 'chip skip'));
+          box.append(row);
+        }
+        $('messages').append(box); return;
+      }
       if (entry.evidence?.length) {
         const details = document.createElement('details'); details.append(text('summary', 'Graph evidence · ' + entry.evidence.length + ' records'));
         entry.evidence.forEach(n => details.append(sourceDetails(n))); box.append(details);
@@ -86,14 +98,11 @@
     $('mapEmpty').hidden = !!map; $('mapTools').hidden = !map;
     $('mapTitle').textContent = map?.title || 'Start with an ingredient';
     if (map) {
-      stages.forEach((stage, index) => {
-        const group = document.createElement('div'); group.className = 'stage' + (stage === map.focus ? ' active' : '');
-        group.append(button(stage, () => explore(map, stage)));
-        const components = document.createElement('div'); components.className = 'components';
-        (map.stages[stage] || []).forEach(id => components.append(button(map.nodes.find(n => n.id === id)?.name || id, () => explore(map, stage, id))));
-        if (!components.childNodes.length) components.append(text('span', 'No supported component', 'empty'));
-        group.append(components); $('stages').append(group);
-        if (index < stages.length - 1) $('stages').append(text('div', '↓', 'arrow'));
+      // Shared rail (process-map.js): a step toggles blue, a component opens a short info card in the rail.
+      // Nothing is written into the conversation unless the person asks for it through the card's links.
+      window.MCProcessMap.render($('stages'), map, {
+        onStageDetails: stage => explore(map, stage),
+        onEntityDetails: (stage, id) => explore(map, stage, id)
       });
       $('revision').textContent = 'Graph ' + map.graph_version.slice(0,8) + ' · feedback revision ' + map.feedback_revision;
     }
@@ -127,6 +136,11 @@
     render(); $('requestStatus').textContent='Reading graph evidence and building your answer…';
     try {
       const result=await request(action,body);
+      if(result.ask){
+        chat.messages.push({kind:'ask',text:result.ask.question,options:result.ask.options,why:result.ask.why,question:body.question});
+        $('requestStatus').textContent='One short question first, so the graph is searched for the right thing.';
+        return;
+      }
       chat.messages.push({kind:'answer',text:result.answer,evidence:result.evidence,map:result.map});
       if(result.map)chat.maps.push(result.map);
       if(action==='feedback'){refreshStatus();feedbackRequest=null;$('feedback').value='';$('feedbackForm').hidden=true;}
@@ -134,7 +148,18 @@
     } catch(e){ $('requestStatus').textContent=e.message; }
     finally { busy=false; $('ask').disabled=false;$('revise').disabled=false;$('newChat').disabled=false;save();render(); }
   }
-  $('questionForm').addEventListener('submit',e=>{e.preventDefault();const q=$('question').value.trim();if(!q||busy)return;const map=currentMap();$('question').value='';run('ask',{question:q,map_id:map?.id},q);});
+  // The conversation so far, in the shape the guided step reads (same contract as the classic Oracle's /api/ask).
+  function history() {
+    return current().messages.filter(m => m.kind === 'user' || m.kind === 'ask' || m.kind === 'answer').slice(-24).map(m =>
+      m.kind === 'user' ? {role:'user', content:String(m.text||'').slice(0,4000)}
+                        : {role:'assistant', kind:m.kind, content:String(m.text||'').slice(0,4000)});
+  }
+  function ask(q, skip) {
+    if (!q || busy) return;
+    const map = currentMap(), past = history();          // history BEFORE this turn is added by run()
+    run('ask', {question:q, map_id:map?.id, guided:true, history:past, skip:!!skip}, skip ? 'Skip questions — answer now' : q);
+  }
+  $('questionForm').addEventListener('submit',e=>{e.preventDefault();const q=$('question').value.trim();if(!q||busy)return;$('question').value='';ask(q);});
   $('newChat').addEventListener('click',()=>newChat());
   $('mapHelpful').addEventListener('click', () => {
     const map = currentMap();
@@ -145,7 +170,7 @@
   $('feedbackForm').addEventListener('submit',e=>{e.preventDefault();const map=currentMap(),comment=$('feedback').value.trim();if(!map||!comment||busy)return;feedbackRequest ||= crypto.randomUUID();run('feedback',{map_id:map.id,comment,request_id:feedbackRequest},'Refine this map: '+comment);});
   $('feedback').addEventListener('input',()=>{feedbackRequest=null;});
   $('forkCancel').addEventListener('click',()=>$('forkDialog').close());
-  $('forkForm').addEventListener('submit',e=>{e.preventDefault();const q=$('forkQuestion').value.trim();if(!q)return;const context=forkMap;$('forkDialog').close();newChat(context);run('ask',{question:q,map_id:context.id},q);});
+  $('forkForm').addEventListener('submit',e=>{e.preventDefault();const q=$('forkQuestion').value.trim();if(!q)return;const context=forkMap;$('forkDialog').close();newChat(context);run('ask',{question:q,map_id:context.id,guided:true,history:[]},q);});
   if(chats.length){activeId=chats.at(-1).id;render();}else newChat();
   function refreshStatus() {
     return fetch('/api/graph-oracle/status',{credentials:'same-origin'}).then(r=>r.json()).then(s=>{

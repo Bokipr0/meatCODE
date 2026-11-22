@@ -1,4 +1,4 @@
-# Last updated: 2026-11-22 UTC · Claude (Fable 5.2) · model call no longer passes `temperature` (SDK 2.x TypeError -> "unavailable"); unexpected failures are logged. Prior: 2026-11-21 22:40 UTC · Claude (Opus 5.5) · hosted LightRAG source (KG_ORACLE_REMOTE_URL + KEY) via authenticated /graphs, TTL cache, truncation surfaced · prev 2026-11-18 · Codex · native feedback writer and provenance isolation.
+# Last updated: 2026-11-22 UTC · Claude (Fable 5.2) · guided elicitation before answering (reuses oracle_guided: ask one question or answer; the brief steers retrieval and the answer). Prior: 2026-11-22 UTC · Claude (Fable 5.2) · model call no longer passes `temperature` (SDK 2.x TypeError -> "unavailable"); unexpected failures are logged. Prior: 2026-11-21 22:40 UTC · Claude (Opus 5.5) · hosted LightRAG source (KG_ORACLE_REMOTE_URL + KEY) via authenticated /graphs, TTL cache, truncation surfaced · prev 2026-11-18 · Codex · native feedback writer and provenance isolation.
 """Graph-only Oracle. Feedback augments a provenance-labelled graph overlay.
 
 Two graph sources (read-only):
@@ -22,6 +22,10 @@ from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 import xml.etree.ElementTree as ET
 import graph_feedback_sync
+try:                                   # the classic Oracle's elicitation step (prompt + parsing only)
+    import oracle_guided
+except Exception:                      # module missing: the graph Oracle simply answers without asking first
+    oracle_guided = None
 
 STAGES = ['Precursors', 'Reactions', 'Volatiles', 'Descriptors', 'Methods']
 LOCK = threading.RLock()
@@ -226,13 +230,25 @@ def parse_model(value):
     return result
 
 
-def build(question, owner, call_model, prior=None, correction=None):
+def brief_of(decision):
+    """What the guided questions established, in the shape the answer prompt and the retrieval use."""
+    if not decision:
+        return None
+    params = [dict(name=p['name'], value=p.get('value'), status=p.get('status'))
+              for p in decision.get('params') or [] if isinstance(p, dict) and p.get('name')]
+    return dict(question_type=decision.get('intent') or 'UNCLEAR', parameters=params)
+
+
+def build(question, owner, call_model, prior=None, correction=None, brief=None, retrieval=None):
     data = graph()
     with LOCK:
         state = state_read()
         feedback = list(state['feedback'])
         revision = state['revision']
-    selected = select(question + (' ' + prior['question'] if prior else ''), data, feedback)
+    # Retrieval text: the question, the earlier user turns (their parameters) and the values the guided questions
+    # established — so the graph records fetched are the ones the brief is about, not only the last message.
+    known = ' '.join(str(p['value']) for p in (brief or {}).get('parameters', []) if p.get('value'))
+    selected = select(' '.join(filter(None, [retrieval or question, known, prior['question'] if prior else ''])), data, feedback)
     if not selected['nodes']:
         return dict(answer='This graph has no matching evidence for that question. Try an ingredient or process present in the connected graph.', map=None, source='knowledge_graph_only')
     model_graph = dict(selected)
@@ -254,7 +270,11 @@ greetings and other noningredient/nonprocess questions. Ingredient questions act
 the map automatically. same_process means the prior process is being explored further.
 Do not infer causal direction from an undirected edge. Explain limits of extracted evidence.
 No invented entities, IDs or scientific relationships. If evidence is missing, say so.
-''' + json.dumps(dict(question=question, prior_map=prior_context, requested_revision=correction, graph=model_graph),ensure_ascii=False)
+When a brief is supplied it states what the user wants: the question type and the parameters
+MeatCODE's guided questions gathered. Answer for that brief and prefer the records that match its
+parameters. Name the parameters the graph has no record for. Never fill an open or missing
+parameter from memory or with a default.
+''' + json.dumps(dict(question=question, brief=brief, prior_map=prior_context, requested_revision=correction, graph=model_graph),ensure_ascii=False)
     result = parse_model(call_model(prompt))
     answer = str(result.get('answer','')).strip()[:16000]
     if not answer:
@@ -339,7 +359,28 @@ def dispatch(action, body, session, call_model):
         question=body.get('question')
         if not isinstance(question,str) or not 1 <= len(question.strip()) <= 2000:
             raise ValueError('Enter a question of up to 2,000 characters.')
-        return build(question.strip(),owner,call_model,prior)
+        question = question.strip()
+        decision = history = None
+        if body.get('guided') is True and oracle_guided:
+            # Elicitation, as in the classic Oracle: one small call decides whether to ASK for the single most
+            # important missing parameter (max 3 per conversation) or to answer now. Never blocks on a failure.
+            history = oracle_guided.clean_history(body.get('history'))
+            skip = body.get('skip') is True
+            try:
+                raw = '' if skip else call_model(oracle_guided.decision_prompt(history, question, skip))
+                decision = oracle_guided.parse_decision(raw, history, skip)
+            except Exception as exc:
+                sys.stderr.write('[graph-oracle] guided step skipped: %s\n' % type(exc).__name__)
+                decision = None
+            if decision and decision['action'] in ('ask', 'clarify') and decision['question']:
+                return dict(ask=dict(question=decision['question'], options=decision['options'], why=decision['why'],
+                                     intent=decision['intent'], params=decision['params']),
+                            answer=None, map=None, source='knowledge_graph_only')
+        result = build(question, owner, call_model, prior, brief=brief_of(decision),
+                       retrieval=oracle_guided.retrieval_query(history, question) if history is not None else None)
+        if decision:
+            result['brief'] = brief_of(decision)
+        return result
     raise ValueError('Unknown graph Oracle action.')
 
 

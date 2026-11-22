@@ -6180,6 +6180,8 @@ function streamSSE(res, researchTurn) {
       } else if (event === 'done') {
         if (window.MCResearch) window.MCResearch.completeOracle(researchTurn);
         if (!askedTurn) finalizeAnswer(fullText, bodyEl, followsEl, citedIds, relatedEl, turnRec, briefEnd);
+        // Process-map side panel (app/assets/oracle-process-map.js) listens for this; no-op when it is not loaded.
+        if (!askedTurn) { try { document.dispatchEvent(new CustomEvent('mc:oracle-answer-done', { detail: { question: q } })); } catch (e) {} }
       } else if (event === 'error') {
         if (window.MCResearch) window.MCResearch.failOracle(researchTurn, 'model_unavailable');
         setOracleError(data);
@@ -10255,6 +10257,7 @@ body:not(.ff-analytics) a[href="/analytics"] {display:none!important}
 <script src="/app/assets/environment-badge.js" defer></script>
 <script src="/app/assets/oracle-appearance.js" defer></script>
 <script src="/app/assets/graph-oracle-nav.js" defer></script>
+<script src="/app/assets/oracle-process-map.js" defer></script>
 <script src="/app/assets/account-menu.js" defer></script>
 </body>
 </html>

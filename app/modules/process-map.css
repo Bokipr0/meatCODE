@@ -1,0 +1,23 @@
+/* Last updated: 2026-11-22 UTC · Claude (Fable 5.2) · NEW — styles of the shared process-map rail (process-map.js).
+   Selected step / component use a blue that reads as "toggled on", distinct from the teal used for navigation. */
+.pm-root{--pm-blue:#2563EB;--pm-blue-deep:#1D4ED8;--pm-blue-mist:#E4EDFD;font-family:var(--round,inherit)}
+.pm-stage{text-align:center;position:relative}
+.pm-root button{font:inherit;cursor:pointer}
+.pm-step{width:100%;min-height:49px;border-radius:50%;font-size:13px;padding:12px 10px;background:var(--surface-2,#F7F0E0);color:var(--wine-deep,#015A56);border:1px solid var(--line-strong,#D2C8B5);transition:background .12s,color .12s,border-color .12s}
+.pm-step:hover{background:var(--pm-blue-mist);border-color:var(--pm-blue)}
+.pm-stage.selected>.pm-step,.pm-stage.selected>.pm-step:hover{background:var(--pm-blue);border-color:var(--pm-blue);color:#fff;font-weight:700;box-shadow:0 3px 10px rgba(37,99,235,.28)}
+.pm-step:focus-visible,.pm-chip:focus-visible,.pm-link:focus-visible,.pm-card-close:focus-visible{outline:3px solid var(--brass,#C77E5F);outline-offset:3px}
+.pm-parts{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;padding:7px 0}
+.pm-chip{font-size:11px;padding:5px 9px;max-width:100%;overflow-wrap:anywhere;border-radius:22px;background:#fff;color:var(--wine-deep,#015A56);border:1px solid var(--line-strong,#D2C8B5)}
+.pm-chip:hover{background:var(--pm-blue-mist);border-color:var(--pm-blue)}
+.pm-chip.selected,.pm-chip.selected:hover{background:var(--pm-blue-mist);border-color:var(--pm-blue);color:var(--pm-blue-deep);font-weight:700}
+.pm-empty{font-size:11px;color:var(--ink-faint,#8A8A8A);padding:6px}
+.pm-arrow{text-align:center;font-size:18px;color:var(--wine-soft,#4FA59F);padding:0 0 5px}
+.pm-card{text-align:left;background:#fff;border:1px solid var(--pm-blue);border-left-width:4px;border-radius:12px;padding:10px 12px;margin:4px 0 8px;box-shadow:0 4px 14px rgba(37,99,235,.10)}
+.pm-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.pm-card-head strong{font-size:13px;line-height:1.35;color:var(--ink,#1A1A1A);overflow-wrap:anywhere}
+.pm-card-close{border:0;background:transparent;color:var(--ink-dim,#4A4A4A);font-size:16px;line-height:1;padding:0 2px;border-radius:6px}
+.pm-card-kind{font-size:10.5px;letter-spacing:.03em;color:var(--ink-faint,#8A8A8A);margin:3px 0}
+.pm-card-text{font-size:12px;line-height:1.5;color:var(--ink,#1A1A1A);margin:6px 0}
+.pm-link{border:0;background:transparent;color:var(--pm-blue-deep);font-size:11.5px;padding:3px 0;text-decoration:underline;text-underline-offset:2px}
+.pm-stage>.pm-link{display:block;margin:0 auto 6px}
