@@ -176,7 +176,7 @@
   if(chats.length){activeId=chats.at(-1).id;render();}else newChat();
   function refreshStatus() {
     return fetch('/api/graph-oracle/status',{credentials:'same-origin'}).then(r=>r.json()).then(s=>{
-    const message=s.ready ? s.nodes.toLocaleString()+' entities · '+s.connections.toLocaleString()+' connections · '+(s.source==='hosted_lightrag_graph'?'hosted LightRAG sandbox':'local LightRAG graph')+(s.graph_truncated?' · PARTIAL (graph read was truncated)':'') : s.message || 'Graph service unavailable.';
+    const message=s.ready ? s.nodes.toLocaleString()+' entities · '+s.connections.toLocaleString()+' connections · '+(s.source==='hosted_lightrag_graph'?'hosted LightRAG sandbox':'local LightRAG graph')+(s.retrieval==='lightrag_query'?' · search by meaning':'')+(s.graph_truncated?' · PARTIAL (graph read was truncated)':'') : s.message || 'Graph service unavailable.';
     $('connection').textContent=message;$('graphStatus').textContent=message;
     // Button to the graph's own viewer (opens in a new tab). Only an https address supplied by the server is used.
     const link=$('graphExplorer'), target=s.ready && typeof s.explorer_url==='string' && /^https:\/\//.test(s.explorer_url) ? s.explorer_url : '';

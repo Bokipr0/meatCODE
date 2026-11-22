@@ -22,7 +22,15 @@ class H(BaseHTTPRequestHandler):
             self.send_response(403); self.end_headers(); return
         body = json.dumps(PAYLOAD).encode(); self.send_response(200)
         self.send_header('Content-Type', 'application/json'); self.end_headers(); self.wfile.write(body)
+    def do_POST(self):
+        body = self.rfile.read(int(self.headers.get('Content-Length', '0')))
+        SEEN.append((self.path, self.headers.get('X-API-Key'), json.loads(body)))
+        if QUERY['data'] is None or self.headers.get('X-API-Key') != KEY:
+            self.send_response(500); self.end_headers(); return
+        out = json.dumps({'status': 'success', 'data': QUERY['data']}).encode(); self.send_response(200)
+        self.send_header('Content-Type', 'application/json'); self.end_headers(); self.wfile.write(out)
     def log_message(self, *a): pass
+QUERY = {'data': None}
 class RemoteTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -51,6 +59,30 @@ class RemoteTests(unittest.TestCase):
                                       'stages': {'Precursors': ['Ingredient', 'Invented'], 'Reactions': ['Reaction']}, 'relation_ids': ['Ingredient-Reaction']})
         m = g.dispatch('ask', {'question': 'ingredient'}, session, model)['map']
         self.assertEqual(m['stages']['Precursors'], ['Ingredient']); self.assertEqual(m['source'], 'hosted_lightrag_graph')
+    def test_ask_retrieves_through_lightrag_and_keeps_passages_server_side(self):
+        QUERY['data'] = {'entities': [{'entity_name': 'Reaction'}, {'entity_name': 'Not in graph'}],
+                         'relationships': [{'src_id': 'Reaction', 'tgt_id': 'Ingredient'}],
+                         'chunks': [{'content': 'PASSAGE-TEXT about browning', 'file_path': '/x/paperA.pdf'}]}
+        prompts = []
+        def model(p):
+            prompts.append(p)
+            return json.dumps({'answer': 'ok [Reaction]', 'ingredient_question': True, 'focus': 'Reactions', 'title': 't',
+                               'stages': {'Precursors': ['Ingredient'], 'Reactions': ['Reaction']}, 'relation_ids': ['Ingredient-Reaction']})
+        try:
+            out = g.dispatch('ask', {'question': 'zzzz qqqq'}, 'tester-session-capability-0123456789', model)   # no keyword match
+        finally:
+            QUERY['data'] = None
+        self.assertEqual(out['retrieval'], 'lightrag_query'); self.assertEqual(len(out['map']['edges']), 1)
+        self.assertEqual(sorted(n['id'] for n in out['evidence']), ['Ingredient', 'Reaction'])
+        self.assertIn('PASSAGE-TEXT', prompts[-1]); self.assertNotIn('PASSAGE-TEXT', json.dumps(out))
+        post = [s for s in SEEN if s[0] == '/query/data'][0]
+        self.assertEqual(post[1], KEY); self.assertEqual(post[2]['query'], 'zzzz qqqq'); self.assertFalse(post[2]['enable_rerank'])
+    def test_retrieval_fault_falls_back_to_keywords(self):
+        model = lambda p: json.dumps({'answer': 'ok', 'ingredient_question': False, 'stages': {}})
+        out = g.dispatch('ask', {'question': 'ingredient'}, 'tester-session-capability-0123456789', model)   # POST answers 500
+        self.assertEqual(out['retrieval'], 'keyword'); self.assertEqual(g.dispatch('status', {}, '', None)['retrieval'], 'lightrag_query')
+        with patch.dict(os.environ, {'KG_ORACLE_REMOTE_QUERY': '0'}):
+            self.assertEqual(g.dispatch('status', {}, '', None)['retrieval'], 'keyword')
     def test_wrong_key_is_a_clear_error(self):
         with patch.dict(os.environ, {'KG_ORACLE_REMOTE_API_KEY': 'x' * 40}):
             s = g.dispatch('status', {}, '', None)
