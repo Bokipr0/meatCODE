@@ -1,3 +1,11 @@
+## 2026-11-22 05:40 UTC · Claude (Sonnet 5.5) · Dev Area: big version + last-update title, newest-first lists, trimmed text
+
+Lior (Dev Area screenshot): newest feature at the top, sorted newest to oldest; remove unnecessary description text; a big bold title on the main page showing the current version and the last update by date and time.
+- **Big title** (`app/dev/index.html`): "CURRENT VERSION / Version <7-char commit>" in very large bold type, then "Last update <weekday, date, time, zone>" in large bold (browser-local time). Data: open `GET /api/version`, which now also returns `build_time` — the newest source/doc file time under the repo (`_newest_file_time`; skips .git, node_modules, data, outputs, vendor…). On Render that is when this version was checked out/deployed (stable across free-plan sleep/wake, unlike `server_started_utc`); locally it is your last edit. It is a deploy time, not the git commit time (Render doesn't expose that).
+- **Order:** Features and Screens each sort by date added (newest first), then date updated, then "registered later = newer" for same-day entries; unknown dates last. Verified against the real registry in headless Chrome (16 features + 13 screens match an independent expected order; newest: Denver 2026-11-22, user_accounts 11-21, ecosystem_crosslinks 11-19 … new_logo 07-23).
+- **Text trimmed:** removed the intro paragraph, all six section hints, the two "How this works"/screens footers, the card paragraphs (docs, versions, research ops) and the research fine print, the add-form note; the read-only banner is one short line. Each row keeps name, badges, date, key, a one-line description and the dev/prod switches; the location/destination/⚠ notes are folded behind a collapsed "Details" (kept, not deleted).
+- Tests: tests/test_dev_area.py (11: build-time rules incl. excluded folders, /api/version field, the page's own sort function run in node with ties/unknown dates, big-title slots, removed strings, Details kept). Suite green except 2 unrelated tests needing the `cryptography` package.
+
 ## 2026-11-22 05:05 UTC · Claude (Sonnet 5.5) · dev site still redirected to /welcome after Claude login was toggled off: root cause + sync + hardening
 
 Lior: the Claude-login feature (`user_accounts`) is off in the Release Center, yet the dev domain still redirected `/` to `/welcome`.

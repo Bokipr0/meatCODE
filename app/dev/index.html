@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Last updated: 2026-11-22 UTC · Claude (Sonnet 5.5) · big version + last-update title, features/screens newest first, explanatory text trimmed (row details collapsed). -->
 <!-- Last updated: 2026-10-29 · Codex UI/UX · private production research dashboard entry in the Dev Area; existing registry controls preserved. -->
 <!-- Last updated: 2026-10-29 · Codex · dashboard navigation, existing dev login and operations-first layout. -->
 <html lang="en">
@@ -51,8 +52,14 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
 .env-chip { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
 
 .wrap { max-width: 1080px; margin: 0 auto; padding: 34px 26px 70px; }
-.hero h1 { font-size: 26px; color: var(--wine-deep); margin-bottom: 6px; }
-.hero p { color: var(--ink-dim); font-size: 14px; max-width: 640px; margin-bottom: 34px; }
+.hero { margin-bottom: 34px; }
+.hero .ver-kicker { font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--wine-soft); }
+.hero h1.ver-title { font-size: clamp(40px, 7vw, 76px); font-weight: 800; line-height: 1.02; letter-spacing: -.02em; color: var(--wine-deep); margin: 4px 0 12px; }
+.hero .ver-update { font-size: clamp(20px, 3.4vw, 32px); font-weight: 800; color: var(--ink); line-height: 1.2; }
+.hero .ver-update span { color: var(--ink-faint); font-weight: 700; margin-right: 12px; }
+.more { margin-top: 8px; }
+.more summary { font-size: 11.5px; color: var(--ink-faint); cursor: pointer; width: max-content; }
+.more[open] summary { color: var(--wine-deep); }
 
 .section { margin-bottom: 40px; }
 .section-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
@@ -144,36 +151,27 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
 <header class="dev-topbar">
   <a class="back-link" href="/app/meatcode_mockup.html">&larr; MeatCODE <span class="dev-badge" style="margin-left:8px" title="Developer settings">DEV</span></a>
   <div class="brand-name">Dev Area</div>
-  <span class="env-chip" id="envChip">internal workbench · not user-facing</span>
+  <span class="env-chip" id="envChip">internal</span>
 </header>
 
 <div class="wrap">
   <div class="hero">
-    <h1>Lior&rsquo;s internal workbench</h1>
-    <p>Feature flags, work-in-progress screens, key documents and user-flow maps. Everything here is internal &mdash; the product surface stays in the mockup.</p>
+    <div class="ver-kicker">Current version</div>
+    <h1 class="ver-title" id="verTitle">Version &hellip;</h1>
+    <div class="ver-update"><span>Last update</span><b id="verUpdate">&hellip;</b></div>
   </div>
 
   <section class="section" id="research-operations" hidden>
-    <div class="section-head"><h2>Research operations</h2><span class="hint">production activity, viewed privately from development</span></div>
-    <div class="grid"><a class="card" href="/research-dashboard?environment=prod"><h3>Live production testing</h3><p>Shared Oracle conversations, submitted inputs, journey timers and recorded failures. Open the private dashboard using your existing development-site login; no additional admin token is needed.</p><span class="path">Production data only · no development/local collection · read-only checks</span></a></div>
+    <div class="section-head"><h2>Research operations</h2></div>
+    <div class="grid"><a class="card" href="/research-dashboard?environment=prod"><h3>Live production testing</h3></a></div>
   </section>
 
   <!-- ─── 1 · Features (registry) ─── -->
   <section class="section" id="features">
-    <div class="section-head"><h2>Features</h2><span class="hint">the registry &mdash; what it is · when it was added · where it lives · on/off</span></div>
+    <div class="section-head"><h2>Features</h2></div>
     <div class="flags-card">
       <div id="roBanner" class="ro-banner" hidden></div>
       <div id="featuresBody" class="flags-fallback">Loading the registry&hellip;</div>
-      <div class="flags-foot" id="howItWorks">
-        <b>How this works.</b> Each row is one registered thing. Flipping <b>Dev</b> or <b>Prod</b> writes
-        straight into <code>Release Center/features.json</code>; the server turns every ON flag into a
-        <code>ff-&lt;key&gt;</code> class on <code>&lt;body&gt;</code>, which is what the app reacts to.
-        The change reaches the dev site on your next <b>deploy-dev</b>, and production only after
-        <b>promote-to-prod</b>. Writes work on your Mac only &mdash; see
-        <a href="/platform_docs/DEV_AREA.md">DEV_AREA.md</a> and
-        <a href="/platform_docs/RELEASE_CENTER.md">RELEASE_CENTER.md</a>
-        (full cockpit: <a href="/app/release-center.html">release-center.html</a>).
-      </div>
     </div>
 
     <details class="addbox" id="addBox">
@@ -193,47 +191,41 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
       </div>
       <div class="addrow">
         <button class="btn" id="afSave" type="button">Register it</button>
-        <span class="addnote" id="afNote">Saves to features.json (dev ON / prod OFF). Local cockpit only.</span>
+        <span class="addnote" id="afNote"></span>
       </div>
     </details>
   </section>
 
   <!-- ─── 2 · Screens (registry) ─── -->
   <section class="section" id="screens">
-    <div class="section-head"><h2>Screens</h2><span class="hint">every dev screen &mdash; with its own toggle, destination and date</span></div>
+    <div class="section-head"><h2>Screens</h2></div>
     <div class="flags-card">
       <div id="screensBody" class="flags-fallback">Loading screens&hellip;</div>
-      <div class="flags-foot">
-        A screen registered here gets the same <code>ff-&lt;key&gt;</code> switch as any feature.
-        Its <b>destination</b> is where it lands in the product once the switch is ON &mdash; that is a
-        per-screen decision, edited in <code>features.json</code> or through the form above.
-        Rows greyed out are OFF for this environment.
-      </div>
     </div>
   </section>
 
   <!-- ─── 3 · Documents ─── -->
   <section class="section" id="documents">
-    <div class="section-head"><h2>Documents</h2><span class="hint">key repo docs (raw markdown)</span></div>
+    <div class="section-head"><h2>Documents</h2></div>
     <div class="grid">
       <a class="card doc" href="/platform_docs/RELEASE_CENTER.md">
         <h3>Release Center</h3>
-        <p>Feature flags, deploy-dev / promote / rollback &mdash; how releases work.</p>
+        
         <span class="path">/platform_docs/RELEASE_CENTER.md</span>
       </a>
       <a class="card doc" href="/platform_docs/TWO_ENVIRONMENT_WORKFLOW.md">
         <h3>Two-Environment Workflow</h3>
-        <p>How dev and prod are kept separate, and how changes travel between them.</p>
+        
         <span class="path">/platform_docs/TWO_ENVIRONMENT_WORKFLOW.md</span>
       </a>
       <a class="card doc" href="/MVP_BOARD.md">
         <h3>MVP Board</h3>
-        <p>Open deliverables for the 31 Aug demo &mdash; lanes, owners, critical path.</p>
+        
         <span class="path">/MVP_BOARD.md</span>
       </a>
       <a class="card doc" href="/PROJECT_STATE.md">
         <h3>Project State</h3>
-        <p>Living technical status: done, in-flight, decisions, next.</p>
+        
         <span class="path">/PROJECT_STATE.md</span>
       </a>
     </div>
@@ -241,7 +233,7 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
 
   <!-- ─── 4 · User screen flow ─── -->
   <section class="section" id="flows">
-    <div class="section-head"><h2>User screen flow</h2><span class="hint">the six core cross-screen journeys</span></div>
+    <div class="section-head"><h2>User screen flow</h2></div>
     <div class="flows">
       <div class="flow"><span class="flow-node">Oracle</span><span class="flow-arrow"></span><span class="flow-node data">Raw data</span><span class="flow-label">F1 · answer &rarr; evidence</span></div>
       <div class="flow"><span class="flow-node">Oracle</span><span class="flow-arrow"></span><span class="flow-node data">Data Comparison</span><span class="flow-label">F2 · answer &rarr; compare</span></div>
@@ -254,11 +246,11 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
 
   <!-- ─── 5 · Versions ─── -->
   <section class="section" id="versions">
-    <div class="section-head"><h2>Versions</h2><span class="hint">promoted prod snapshots · live from /api/release/history</span></div>
+    <div class="section-head"><h2>Versions</h2></div>
     <div class="grid">
       <a class="card" href="/app/dev/versions.html">
         <h3>Production version history</h3>
-        <p>Every promoted snapshot, newest-first, with the live one marked. Rollback buttons are active on the local cockpit only &mdash; read-only on the hosted dev site.</p>
+        
         <span class="path">/app/dev/versions.html</span>
       </a>
     </div>
@@ -266,6 +258,22 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
 </div>
 
 <div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* Big title: which version is running and when it was last updated (GET /api/version is open). */
+(function () {
+  var title = document.getElementById('verTitle'), upd = document.getElementById('verUpdate');
+  fetch('/api/version', { credentials: 'same-origin' })
+    .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(function (v) {
+      var c = String(v.commit || '');
+      title.textContent = 'Version ' + (c && c !== 'local' ? c.slice(0, 7) : 'local');
+      var t = v.build_time ? new Date(v.build_time) : null;
+      upd.textContent = t && !isNaN(t) ? t.toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' }) : 'unknown';
+    })
+    .catch(function () { title.textContent = 'Version unavailable'; upd.textContent = 'unknown'; });
+})();
+</script>
 
 <script>
 /* Dev Area registry.
@@ -327,8 +335,8 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
             '<span class="flag-key">' + esc(key) + '</span>' +
           '</div>' +
           (f.description ? '<div class="flag-desc">' + esc(f.description) + '</div>' : '') +
-          '<div class="meta">' + meta + '</div>' +
-          (f.note ? '<div class="flag-note">⚠ ' + esc(f.note) + '</div>' : '') +
+          '<details class="more"><summary>Details</summary><div class="meta">' + meta + '</div>' +
+          (f.note ? '<div class="flag-note">⚠ ' + esc(f.note) + '</div>' : '') + '</details>' +
         '</div>' +
         '<div class="toggles">' +
           toggleHTML(key, 'dev', !!f.dev) +
@@ -344,11 +352,26 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
         (STATE.admin ? '' : ' disabled') + '></button></span>';
   }
 
+  // Newest first: by the date added, then the date updated; same-day entries keep "registered later = newer".
+  function dateKey(s) { var t = Date.parse(s); return isNaN(t) ? -Infinity : t; }
+  function newestFirst(keys, flags) {
+    var order = {};
+    Object.keys(flags).forEach(function (k, i) { order[k] = i; });
+    return keys.slice().sort(function (a, b) {
+      var fa = flags[a] || {}, fb = flags[b] || {};
+      var d = dateKey(fb.added) - dateKey(fa.added);
+      if (d && !isNaN(d)) return d;
+      var u = dateKey(fb.updated) - dateKey(fa.updated);
+      if (u && !isNaN(u)) return u;
+      return order[b] - order[a];
+    });
+  }
+
   function render() {
     var flags = STATE.flags || {};
     var keys = Object.keys(flags);
-    var feats = keys.filter(function (k) { return (flags[k] || {}).kind !== 'screen'; });
-    var scrs  = keys.filter(function (k) { return (flags[k] || {}).kind === 'screen'; });
+    var feats = newestFirst(keys.filter(function (k) { return (flags[k] || {}).kind !== 'screen'; }), flags);
+    var scrs  = newestFirst(keys.filter(function (k) { return (flags[k] || {}).kind === 'screen'; }), flags);
 
     featuresBody.className = feats.length ? '' : 'flags-fallback';
     featuresBody.innerHTML = feats.length
@@ -362,10 +385,9 @@ body { font-family: var(--round); background: var(--bg); color: var(--ink); min-
 
     if (!STATE.admin) {
       roBanner.hidden = false;
-      roBanner.innerHTML = '<b>Read-only here</b> — flip features on your Mac ' +
-        '(<code>release-center.command</code>, or press <b>H</b> inside the dev app), then <code>deploy-dev</code>.';
+      roBanner.innerHTML = '<b>Read-only here</b> — switches change in the Release Center.';
       afSave.disabled = true;
-      afNote.textContent = 'Registering a new entry writes features.json — that runs on your Mac only.';
+      afNote.textContent = 'Local Release Center only.';
     } else {
       roBanner.hidden = true;
       afSave.disabled = false;

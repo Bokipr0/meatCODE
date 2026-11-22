@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Last updated: 2026-11-22 UTC · Claude (Sonnet 5.5) · live DEV feature switches (feature_flag_overrides): a Release Center dev toggle takes effect on the dev site without a redeploy. Prior: 2026-11-22 UTC · Claude (Sonnet 5.5) · free trial sessions on our key, then the person's own Claude credits; credits_required event + usage trial/needs_credits. Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · individual accounts layer (flag user_accounts): landing/account pages, /api/account/*, Claude callback, per-request billing (_resolve_llm) on every LLM route. Prior 2026-11-19 10:58 UTC · Yochai (PM) with Claude · /api/ecosystem/bootstrap also returns
+# Last updated: 2026-11-22 UTC · Claude (Sonnet 5.5) · /api/version also reports build_time (newest file time) for the Dev Area's last-update title. Prior: 2026-11-22 UTC · Claude (Sonnet 5.5) · live DEV feature switches (feature_flag_overrides): a Release Center dev toggle takes effect on the dev site without a redeploy. Prior: 2026-11-22 UTC · Claude (Sonnet 5.5) · free trial sessions on our key, then the person's own Claude credits; credits_required event + usage trial/needs_credits. Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · individual accounts layer (flag user_accounts): landing/account pages, /api/account/*, Claude callback, per-request billing (_resolve_llm) on every LLM route. Prior 2026-11-19 10:58 UTC · Yochai (PM) with Claude · /api/ecosystem/bootstrap also returns
 #   `crosslinks` = flag `ecosystem_crosslinks` for this environment.
 # Prev 2026-11-17 20:26 UTC · Codex · Explicit paper access lookup and complete per-source stance accounting.
 #   `ecosystem_module`): the Ecosystem's people + papers LIVE from Neon via ecosystem.live_people(pg_rows)
@@ -1051,6 +1051,34 @@ BUILD_BRANCH  = os.environ.get("RENDER_GIT_BRANCH", "")
 BUILD_SERVICE = os.environ.get("RENDER_SERVICE_NAME", "local")
 STARTED_AT    = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
 
+# "Last update" shown in the Dev Area: the newest source/doc file under the repo. On Render that is when this version was
+# checked out (i.e. deployed) — stable across free-plan sleep/wake, unlike the server start time; locally it is your last edit.
+_BUILD_TIME_SKIP = {".git", "node_modules", "__pycache__", "data", "outputs", "output", "tmp", ".telemetry", ".pytest_cache", "vendor"}
+_BUILD_TIME_EXT = {".py", ".html", ".js", ".css", ".json", ".md", ".sql", ".txt", ".yaml", ".yml", ".command", ".svg"}
+
+
+def _newest_file_time(root):
+    """UTC ISO time of the newest source/doc file under `root` (None if nothing can be read)."""
+    newest, seen = 0.0, 0
+    try:
+        for dirpath, dirnames, filenames in os.walk(root):
+            dirnames[:] = [d for d in dirnames if d not in _BUILD_TIME_SKIP]
+            for name in filenames:
+                seen += 1
+                if os.path.splitext(name)[1].lower() in _BUILD_TIME_EXT:
+                    try:
+                        newest = max(newest, os.path.getmtime(os.path.join(dirpath, name)))
+                    except OSError:
+                        pass
+            if seen > 30000:                                   # a runaway tree must never slow start-up
+                break
+    except Exception:
+        pass
+    return datetime.datetime.fromtimestamp(newest, datetime.timezone.utc).isoformat(timespec="seconds") if newest else None
+
+
+BUILD_TIME = _newest_file_time(REPO_ROOT)
+
 
 class Handler(SimpleHTTPRequestHandler):
     # Serve static files from the folder this script lives in
@@ -1548,6 +1576,7 @@ class Handler(SimpleHTTPRequestHandler):
                 "commit_full": BUILD_COMMIT,
                 "branch": (BUILD_BRANCH or "local"),
                 "server_started_utc": STARTED_AT,
+                "build_time": BUILD_TIME,        # when this version's files were last changed (deploy time on Render)
                 "model": MODEL,
                 "password_gate": bool(SITE_PASSWORD),
                 "feature_flags": {key: bool(value.get(APP_ENV, False))
