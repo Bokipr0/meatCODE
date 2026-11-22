@@ -27,10 +27,10 @@ a{color:#0f5f58}
 <script>
 const $=id=>document.getElementById(id);
 function line(t,c){const d=document.createElement('div');d.textContent=t;if(c)d.className=c;$('log').prepend(d)}
-const LABEL={extracting_claims:'reading',submitted:'building graph',submission_unknown:'check needed',retry_wait:'waiting to retry',review_required:'held for review'};
+const LABEL={waiting:'waiting',extracting_claims:'reading',submitted:'building graph',submission_unknown:'check needed',retry_wait:'waiting to retry',review_required:'held for review'};
 function cls(s){return s==='processed'?'processed':(s==='failed'||s==='submission_unknown')?'failed':(s==='review_required'||s==='duplicate')?'hold':''}
 async function status(){try{const r=await fetch('/api/status');if(!r.ok)return;const j=await r.json();
- const L=j.ledger||{};$('sum').textContent='Waiting or in progress: '+j.inbox_files+' file(s) received · '+Object.keys(L).map(k=>(LABEL[k]||k)+' '+L[k]).join(' · ')+(j.paused?' · PAUSED':'')+(j.worker&&!j.worker.running?' · worker restarting':'');
+ const L=j.ledger||{};$('sum').textContent='Received: '+j.inbox_files+' file(s). The first status appears after a few minutes of parsing · '+Object.keys(L).map(k=>(LABEL[k]||k)+' '+L[k]).join(' · ')+(j.paused?' · PAUSED':'')+(j.worker&&!j.worker.running?' · worker restarting':'');
  if(j.graph_url)$('graph').href=j.graph_url;const tb=$('rows');tb.textContent='';
  (j.recent||[]).forEach(p=>{const tr=document.createElement('tr');[p.file,null,(p.doi||'')+(p.note?(p.doi?' — ':'')+p.note:''),p.updated||''].forEach((v,i)=>{const td=document.createElement('td');
   if(i===1){const s=document.createElement('span');s.className='pill '+cls(p.status);s.textContent=LABEL[p.status]||p.status;td.appendChild(s)}else td.textContent=v;tr.appendChild(td)});tb.appendChild(tr)});

@@ -1,4 +1,4 @@
-# Last updated: 2026-11-21 23:58 UTC · Claude (Opus 5.5) · + cloud GROBID (4 GB, full 0.8.2 image, private) + KG intake (keyed upload, rights gate, guarded worker) · prev 21:34 Sonnet 5.5 · LightRAG sandbox blueprint, standard plans
+# Last updated: 2026-11-22 11:10 UTC · Claude (Fable 5.2) · embeddings moved from the 1-CPU Ollama service to a hosted bge-m3 API (same vectors) · 2026-11-21 23:58 Opus 5.5 · + cloud GROBID (4 GB, full 0.8.2 image, private) + KG intake (keyed upload, rights gate, guarded worker) · prev 21:34 Sonnet 5.5 · LightRAG sandbox blueprint, standard plans
 # Separate Blueprint for the LightRAG sandbox. NOT merged into the root render.yaml so
 # production (meatcode-oracle) deploys are unaffected. Create via Render Dashboard ->
 # New -> Blueprint -> this repo -> "Blueprint file path" = infra/lightrag-cloud/render.yaml
@@ -40,14 +40,15 @@ services:
       - {key: KEYWORD_LLM_BINDING_HOST, value: "https://api.anthropic.com/v1/"}
       - {key: KEYWORD_LLM_MODEL, value: claude-sonnet-4-6}
       - {key: KEYWORD_LLM_TIMEOUT, value: "180"}
-      - {key: EMBEDDING_BINDING, value: ollama}
-      - {key: EMBEDDING_BINDING_HOST, value: "http://meatcode-lightrag-ollama:11434"}
-      - {key: EMBEDDING_MODEL, value: "bge-m3:latest"}
+      - {key: EMBEDDING_BINDING, value: openai}           # hosted bge-m3 (DeepInfra, OpenAI-compatible); vectors verified identical to the Ollama ones 2026-11-22
+      - {key: EMBEDDING_BINDING_API_KEY, sync: false}
+      - {key: EMBEDDING_BINDING_HOST, value: "https://api.deepinfra.com/v1/openai"}
+      - {key: EMBEDDING_MODEL, value: "BAAI/bge-m3"}
       - {key: EMBEDDING_DIM, value: "1024"}
       - {key: OLLAMA_EMBEDDING_NUM_CTX, value: "8192"}
-      - {key: EMBEDDING_TIMEOUT, value: "300"}
-      - {key: EMBEDDING_BATCH_NUM, value: "8"}
-      - {key: EMBEDDING_FUNC_MAX_ASYNC, value: "2"}
+      - {key: EMBEDDING_TIMEOUT, value: "120"}
+      - {key: EMBEDDING_BATCH_NUM, value: "32"}
+      - {key: EMBEDDING_FUNC_MAX_ASYNC, value: "4"}
       - {key: MAX_ASYNC, value: "2"}
       - {key: MAX_GRAPH_NODES, value: "20000"}       # default 1000 silently truncates graph export/map
 

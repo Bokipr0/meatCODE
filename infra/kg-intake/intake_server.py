@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Last updated: 2026-11-22 05:05 UTC · Claude (Fable 5.2) · licence/permission note made optional (field removed from the page) · 04:10 · people sign in with a username + password (HTTP Basic, same pair as the MeatCODE site); the key is an optional machine credential; status lists recent papers · prev 2026-11-21 Opus 5.5 · keyed upload page + rights gate + supervised worker
+# Last updated: 2026-11-22 05:45 UTC · Claude (Fable 5.2) · status lists received files as 'waiting' before their first ledger row · 05:05 · licence/permission note made optional (field removed from the page) · 04:10 · people sign in with a username + password (HTTP Basic, same pair as the MeatCODE site); the key is an optional machine credential; status lists recent papers · prev 2026-11-21 Opus 5.5 · keyed upload page + rights gate + supervised worker
 """MeatCODE cloud KG intake (Render).
 
 PDF upload (username + password sign-in, open-access / rights-cleared declaration) -> disk inbox -> the existing
@@ -112,7 +112,7 @@ def rate_ok() -> bool:
 
 def ledger_status() -> dict:
     path = BATCH / "papers.sqlite"
-    counts, attention, recent = {}, [], []
+    counts, attention, recent, ledger_files = {}, [], [], set()
     if path.exists():
         con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
         try:
@@ -120,11 +120,17 @@ def ledger_status() -> dict:
             attention = [{"file": Path(p).name, "status": s, "reason": r} for p, s, r in con.execute(
                 "SELECT pdf_path,status,reason FROM papers WHERE status IN "
                 "('review_required','submission_unknown','retry_wait','failed') ORDER BY updated_at DESC LIMIT 50")]
+            ledger_files = {Path(r[0]).name for r in con.execute("SELECT pdf_path FROM papers")}
             recent = [{"file": Path(p).name, "status": st, "doi": d, "note": r, "updated": u} for p, st, d, r, u in con.execute(
                 "SELECT pdf_path,status,paper_doi,reason,updated_at FROM papers ORDER BY updated_at DESC LIMIT 40")]
         finally:
             con.close()
     queued = sorted(p.name for p in INBOX.glob("*.pdf")) if INBOX.exists() else []
+    # Files received but not yet in the ledger (GROBID + claim extraction take minutes before the first ledger row).
+    seen = {r["file"] for r in recent}
+    waiting = [{"file": n, "status": "waiting", "doi": None, "note": "received; parsing starts in turn", "updated": ""}
+               for n in queued if n not in seen and n not in ledger_files]
+    recent = waiting[:40] + recent
     return {"ledger": counts, "attention": attention, "recent": recent, "inbox_files": len(queued),
             "graph_url": os.environ.get("LIGHTRAG_URL", "").rstrip("/") + "/webui/",
             "worker": WORKER_STATE.copy(), "paused": (BATCH / "pause.json").exists()}

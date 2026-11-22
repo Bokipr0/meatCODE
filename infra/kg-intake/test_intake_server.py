@@ -62,5 +62,6 @@ class IntakeTests(unittest.TestCase):
         con = sqlite3.connect(s.BATCH / "papers.sqlite"); con.execute("CREATE TABLE IF NOT EXISTS papers (pdf_sha256 TEXT, pdf_path TEXT, paper_doi TEXT, status TEXT, reason TEXT, updated_at TEXT)")
         con.execute("INSERT INTO papers VALUES ('h','/data/inbox/x.pdf','10.1/x','review_required','No DOI','t')"); con.commit(); con.close()
         _, j, _ = self.req("GET", "/api/status", Authorization=basic())
-        self.assertEqual(j["ledger"]["review_required"], 1); self.assertEqual(j["attention"][0]["file"], "x.pdf"); self.assertEqual(j["recent"][0]["doi"], "10.1/x")
+        self.assertTrue(any(r["status"] == "waiting" for r in j["recent"]) or not list(s.INBOX.glob("*.pdf")))
+        self.assertEqual(j["ledger"]["review_required"], 1); self.assertEqual(j["attention"][0]["file"], "x.pdf"); self.assertIn("10.1/x", [r["doi"] for r in j["recent"]])
 if __name__ == "__main__": unittest.main()

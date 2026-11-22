@@ -14,7 +14,7 @@ echo "$files" | grep -E '(^|/)\.env($|\.)|^data/|\.tar\.gz$|\.tgz$|rag_storage|r
 re='X-Amz-Signature=|nak_live_|sk-ant-[A-Za-z0-9_-]{20,}|rnd_[A-Za-z0-9]{20,}|napi_[A-Za-z0-9]{20,}'
 live=$(mktemp); trap 'rm -f "$live"' EXIT
 ER="${CHECK_PRIVATE_ENV_ROOT:-.}"   # where the real .env files live (a temp worktree has none)
-for f in "$ER/infra/lightrag-cloud/.env.kg" "$ER/infra/lightrag-cloud/.env.intake" "$ER/infra/lightrag-cloud/.env.cloud" "$ER/.env" "$ER/.env.dev"; do
+for f in "$ER/infra/lightrag-cloud/.env.kg" "$ER/infra/lightrag-cloud/.env.intake" "$ER/infra/lightrag-cloud/.env.embed" "$ER/infra/lightrag-cloud/.env.cloud" "$ER/.env" "$ER/.env.dev"; do
   [ -f "$f" ] && grep -E '^[A-Z_]*(KEY|SECRET|PASSWORD|TOKEN|DATABASE_URL[A-Z_]*)=' "$f" | cut -d= -f2- | awk 'length($0)>=20' >> "$live"
 done
 while IFS= read -r f; do [ -f "$f" ] || continue
