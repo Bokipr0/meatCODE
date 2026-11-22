@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Last updated: 2026-11-22 04:10 UTC · Claude (Fable 5.2) · people sign in with a username + password (HTTP Basic, same pair as the MeatCODE site); the key is an optional machine credential; status lists recent papers · prev 2026-11-21 Opus 5.5 · keyed upload page + rights gate + supervised worker
+# Last updated: 2026-11-22 05:05 UTC · Claude (Fable 5.2) · licence/permission note made optional (field removed from the page) · 04:10 · people sign in with a username + password (HTTP Basic, same pair as the MeatCODE site); the key is an optional machine credential; status lists recent papers · prev 2026-11-21 Opus 5.5 · keyed upload page + rights gate + supervised worker
 """MeatCODE cloud KG intake (Render).
 
 PDF upload (username + password sign-in, open-access / rights-cleared declaration) -> disk inbox -> the existing
@@ -181,10 +181,9 @@ class Handler(BaseHTTPRequestHandler):
         evidence = (self.headers.get("X-Rights-Evidence") or "").strip()
         uploader = ((self.headers.get("X-Uploader") or "").strip()[:80] or who)
         name = safe_name(urllib.parse.unquote(self.headers.get("X-Filename") or ""))
-        if rights not in RIGHTS or not 5 <= len(evidence) <= 500:
+        if rights not in RIGHTS or len(evidence) > 500:      # the licence/permission note is optional (2026-11-22, Lior)
             audit(action="refused", reason="rights", rights=rights[:40], file=name, uploader=uploader)
-            return self._json(400, {"error": "Only open-access or rights-cleared papers are accepted. "
-                                             "Declare which, with the licence or permission source."})
+            return self._json(400, {"error": "Only open-access or rights-cleared papers are accepted. Choose which applies."})
         try:
             length = int(self.headers.get("Content-Length", "0"))
         except ValueError:

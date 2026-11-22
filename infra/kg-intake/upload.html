@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Last updated: 2026-11-22 04:15 UTC · Claude (Fable 5.2) · sign-in is the browser's username/password prompt (no key field); live table of each paper's progress into the graph -->
+<!-- Last updated: 2026-11-22 05:05 UTC · Claude (Fable 5.2) · licence/permission field removed · 04:15 · sign-in is the browser's username/password prompt (no key field); live table of each paper's progress into the graph -->
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MeatCODE · KG intake</title>
 <style>
@@ -17,7 +17,6 @@ a{color:#0f5f58}
 <label for="who">Your name</label><input id="who" maxlength="80">
 <label for="rights">Rights</label>
 <select id="rights"><option value="">Choose…</option><option value="open_access">Open access (e.g. CC-BY)</option><option value="rights_cleared">Rights cleared (permission on file)</option></select>
-<label for="ev">Licence or permission source</label><input id="ev" maxlength="500" placeholder="e.g. CC-BY 4.0 — https://doi.org/…">
 <label for="files">PDF files (select as many as you like)</label><input id="files" type="file" accept="application/pdf" multiple>
 <button id="go">Upload</button>
 <div id="log"></div>
@@ -36,10 +35,10 @@ async function status(){try{const r=await fetch('/api/status');if(!r.ok)return;c
  (j.recent||[]).forEach(p=>{const tr=document.createElement('tr');[p.file,null,(p.doi||'')+(p.note?(p.doi?' — ':'')+p.note:''),p.updated||''].forEach((v,i)=>{const td=document.createElement('td');
   if(i===1){const s=document.createElement('span');s.className='pill '+cls(p.status);s.textContent=LABEL[p.status]||p.status;td.appendChild(s)}else td.textContent=v;tr.appendChild(td)});tb.appendChild(tr)});
  }catch(e){}}
-$('go').onclick=async()=>{const r=$('rights').value,e=$('ev').value.trim(),fs=[...$('files').files];
- if(!r)return line('Choose the rights basis.','err');if(e.length<5)return line('Give the licence or permission source.','err');if(!fs.length)return line('Choose at least one PDF.','err');
+$('go').onclick=async()=>{const r=$('rights').value,fs=[...$('files').files];
+ if(!r)return line('Choose the rights basis.','err');if(!fs.length)return line('Choose at least one PDF.','err');
  $('go').disabled=true;
- for(const f of fs){try{const res=await fetch('/api/upload',{method:'PUT',body:f,headers:{'X-Rights':r,'X-Rights-Evidence':e,'X-Uploader':$('who').value.trim(),'X-Filename':encodeURIComponent(f.name).slice(0,200),'Content-Type':'application/pdf'}});
+ for(const f of fs){try{const res=await fetch('/api/upload',{method:'PUT',body:f,headers:{'X-Rights':r,'X-Uploader':$('who').value.trim(),'X-Filename':encodeURIComponent(f.name).slice(0,200),'Content-Type':'application/pdf'}});
   const j=await res.json().catch(()=>({}));line(f.name+': '+(j.status||j.error||res.status),res.ok?'ok':'err');if(res.status===429){line('Hourly limit reached; the remaining files were not sent.','err');break}}catch(err){line(f.name+': upload failed','err')}}
  $('go').disabled=false;status()};
 status();setInterval(status,20000);

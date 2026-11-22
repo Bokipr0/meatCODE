@@ -44,9 +44,11 @@ class IntakeTests(unittest.TestCase):
         self.assertEqual(self.req("GET", "/api/status", **{"X-Intake-Key": "x" * 40})[0], 401)
     def test_rights_gate(self):
         before = len(list(s.INBOX.glob("*.pdf")))
-        for r, ev in (("publisher", "x" * 10), ("", "x" * 10), ("open_access", "")):
+        for r, ev in (("publisher", "x" * 10), ("", "x" * 10), ("open_access", "x" * 501)):
             self.assertEqual(self.up(rights=r, ev=ev)[0], 400)
         self.assertEqual(self.audit()[-1]["reason"], "rights"); self.assertEqual(len(list(s.INBOX.glob("*.pdf"))), before)
+    def test_licence_note_is_optional(self):
+        self.assertEqual(self.up(body=PDF + b"no-note", ev="")[0], 202)
     def test_not_pdf_and_too_big(self):
         self.assertEqual(self.up(body=b"hello world")[0], 400)
         self.assertEqual(self.up(body=b"%PDF-" + b"0" * (1024 * 1024 + 10))[0], 413)
