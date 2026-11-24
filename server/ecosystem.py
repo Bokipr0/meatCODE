@@ -1,4 +1,6 @@
-# Last updated: 2026-10-25 20:25 UTC · Yochai (PM) with Claude · LIVE people + papers from Neon (live_people):
+# Last updated: 2026-11-24 UTC · Yochai (PM) with Claude · directory(): every person in
+#   ecosystem_module.directory_people (GET /api/ecosystem/directory, flag ecosystem_directory). Public fields only.
+# Prev 2026-10-25 20:25 UTC · Yochai (PM) with Claude · LIVE people + papers from Neon (live_people):
 #   the 8 Oct snapshot's rule re-run as SELECT-only SQL on every request (10-min cache). Verified against Neon
 #   via the read-only connector: 155 people / 109 papers = the snapshot's 153 / 108 plus 2 accented names it
 #   had missed (José M. Lorenzo, Igor Tomašević). Prev 2026-10-25 19:05 UTC · NEW server helpers for the
@@ -311,4 +313,56 @@ def live_people(pg_rows):
             "people": people, "papers": papers}
     with _LIVE_LOCK:
         _LIVE_CACHE.update(at=time.time(), data=data)
+    return data
+
+
+# ─── Directory (GET /api/ecosystem/directory, flag `ecosystem_directory`) ───────────────────────────────────────
+# Every person in ecosystem_module.directory_people (built by pipeline/ecosystem/build_directory.py from all
+# public.experts batches + the Ecosystem Master, de-duplicated). Same shape as live_people, plus public profile fields.
+# Papers: only the trusted ones (relevance_llm >= 60), like the Oracle. master_ids / name_keys / expert_ids are never
+# selected. Source codes are mapped to public provenance; the GFI contacts list is never named.
+DIRECTORY_SQL = """
+SELECT id, name, org, orgs, role, about, country, sector, topics, domains, h_index, orcid, openalex_id, linkedin_url,
+       website_urls, papers, sources, built_at
+FROM ecosystem_module.directory_people
+"""
+_PUBLIC_SOURCE = {"openalex": "openalex", "dimensions": "dimensions", "dd_list": "public", "gfi_contacts": "profile"}
+_DIR_CACHE = {"at": 0.0, "data": None}
+
+
+def directory(pg_rows):
+    """{"source": "directory", "as_of": ISO time of the build, "people": [...], "papers": [...]}. SELECT-only.
+    Raises when the table is missing or the DB is down (the route answers 503; the page falls back to live_people)."""
+    with _LIVE_LOCK:
+        if _DIR_CACHE["data"] and time.time() - _DIR_CACHE["at"] < _LIVE_TTL:
+            return _DIR_CACHE["data"]
+    rows = pg_rows(DIRECTORY_SQL, ())
+    every = sorted({int(s) for r in rows for s in (r.get("papers") or [])})
+    trusted = sorted({int(r["id"]) for r in pg_rows(
+        "SELECT id FROM sources WHERE relevance_llm >= 60 AND id = ANY(%s)", (every,))}) if every else []
+    paper_rows = pg_rows(LIVE_PAPERS_SQL, (trusted,)) if trusted else []
+    papers = [{"id": int(r["id"]), "t": r.get("t") or "", "y": r.get("y"), "j": r.get("j"), "doi": r.get("doi"),
+               "c": r.get("c"), "tp": list(r.get("tp") or []), "na": r.get("na")} for r in paper_rows]
+    have = {p["id"] for p in papers}
+    built = max((r["built_at"] for r in rows if r.get("built_at")), default=None)
+    people = []
+    for r in rows:
+        pid = str(r["id"])
+        org = r.get("org")
+        people.append({
+            "id": int(pid) if pid.isdigit() else pid, "name": r.get("name") or "", "org": org,
+            "orgs": [o for o in (r.get("orgs") or []) if o and o != org][:3],
+            "country": r.get("country"), "sector": r.get("sector") or "unknown", "h": r.get("h_index"),
+            "orcid": r.get("orcid"), "oa": r.get("openalex_id"), "role": r.get("role"), "about": r.get("about"),
+            "tp": list(r.get("topics") or []), "dm": list(r.get("domains") or []), "li": r.get("linkedin_url"),
+            "web": list(r.get("website_urls") or []),
+            "src": sorted({_PUBLIC_SOURCE[s] for s in (r.get("sources") or []) if s in _PUBLIC_SOURCE}),
+            "sids": [int(s) for s in (r.get("papers") or []) if int(s) in have],
+        })
+    people.sort(key=lambda p: p["name"].lower())
+    data = {"source": "directory",
+            "as_of": (built.isoformat(timespec="seconds") if hasattr(built, "isoformat") else str(built or "")),
+            "people": people, "papers": papers}
+    with _LIVE_LOCK:
+        _DIR_CACHE.update(at=time.time(), data=data)
     return data

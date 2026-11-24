@@ -1,3 +1,16 @@
+## 2026-11-24 16:10 UTC · Yochai (PM) with Claude · Ecosystem Directory built on branch `yochai/ecosystem-directory` (not pushed; flag `ecosystem_directory` dev ON / prod OFF)
+
+Daniel (23 Nov): the Ecosystem's expert answers were weak and he asked for browsing, not chat. Cause: Neon `experts` holds 3,225 people but the page showed ~155 (only authors matched to trusted papers), the Oracle never reads `experts`, and only 102 of Daniel's ~1,100 Master contacts were in Neon.
+- **Data:** NEW `ecosystem_module.directory_people` (migration `db/migrations/0037_ecosystem_directory.sql`), built by NEW `pipeline/ecosystem/build_directory.py` from every `experts` batch (read from production, the most complete copy) plus Daniel's Ecosystem Master workbook (private, never committed). Public fields only: no email, relationship/outreach/LinkedIn-message data or Master group membership. `public.experts` is not modified.
+- **De-duplication, high confidence only:** same ORCID / OpenAlex id / LinkedIn profile; the Master's own Contact ID -> experts.id mapping (374/374 verified); same first+last name with compatible affiliations across different source batches. Merges that would join two ORCIDs or OpenAlex ids are refused. Result: 3,225 expert rows + 3,366 Master rows -> **3,935 people**.
+- **Paper links:** author names on `sources` -> exactly one person (ambiguous names and very short names skipped). 822 people now have trusted papers (relevance >= 60), against ~155 before.
+- **Server:** `GET /api/ecosystem/directory` (server/ecosystem.py `directory()`, gzip, 10-min cache, flag-gated, 404 when off); bootstrap returns `directory`.
+- **Page** (`app/modules/ecosystem.html`): new Directory section, the landing when the flag is on ("People" becomes "Ask"). Search as you type (name, institution, role, areas, topics; accents ignored). Filters: country, sector, topic, institution, with papers in MeatCODE, each with counts that follow the other filters. Clicking an institution or topic anywhere filters by it. Profiles add the direct LinkedIn link, websites, other affiliations and areas. Mobile top bar fixed for three sections. Flag off = the page as before.
+- **Verified:** built on Neon test branch `yochai-directory-test` (child of dev); local server against it in the browser: search, filters, profiles, Ask and Radar tabs, mobile at 375px, no console errors. `node --check` passes.
+- **Not done:** the table is NOT built on Neon dev or production; the branch is NOT pushed. The Oracle does not read the directory yet.
+
+**Next:** Yochai's OK to (1) build the table on Neon dev and push to `dev` (staging), (2) demo to Daniel, (3) Daniel's OK to list his contacts before `ecosystem_directory.prod` is switched on and the table is built on production. Later: Oracle tool over the directory (Lior).
+
 ## 2026-11-22 05:40 UTC · Claude (Sonnet 5.5) · Dev Area: big version + last-update title, newest-first lists, trimmed text
 
 Lior (Dev Area screenshot): newest feature at the top, sorted newest to oldest; remove unnecessary description text; a big bold title on the main page showing the current version and the last update by date and time.

@@ -18,7 +18,7 @@
       "dev": "boolean — ON in the dev environment.",
       "prod": "boolean — ON in production."
     },
-    "last_updated": "2026-11-21 UTC · Claude (Sonnet 5.5) · add user_accounts flag (ships dark); preserve every existing switch."
+    "last_updated": "2026-11-24 UTC · Yochai (PM) with Claude · add ecosystem_directory flag (dev on, prod off); preserve every existing switch."
   },
   "flags": {
     "new_logo": {
@@ -431,6 +431,21 @@
         "file": "app/modules/ecosystem.html"
       },
       "note": "Hila's ask (16 Nov demo). Yochai, 19 Nov: on in staging for a demo to Daniel, off in production until he switches it on. Needs ecosystem_module on.",
+      "dev": true,
+      "prod": false
+    },
+    "ecosystem_directory": {
+      "label": "Ecosystem directory",
+      "description": "Browse every person in MeatCODE: type a name, institution or topic and the list narrows as you type; filters for country, sector, topic, institution and papers in the corpus; a profile per person with papers, talks, courses and links (OpenAlex, ORCID, LinkedIn, websites).",
+      "kind": "feature",
+      "added": "2026-11-24",
+      "status": "preview",
+      "where": {
+        "screen": "Ecosystem",
+        "spot": "Top bar 'Directory' section (the landing when on); GET /api/ecosystem/directory reads ecosystem_module.directory_people.",
+        "file": "app/modules/ecosystem.html + server/ecosystem.py + pipeline/ecosystem/build_directory.py"
+      },
+      "note": "Daniel's ask (23 Nov): browsing, not chat. Needs the table built on that environment's Neon branch (build_directory.py) and ecosystem_module on. Yochai, 24 Nov: staging only until Daniel approves listing his contacts.",
       "dev": true,
       "prod": false
     },

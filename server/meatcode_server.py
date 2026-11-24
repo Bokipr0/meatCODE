@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Last updated: 2026-11-22 UTC · Claude (Sonnet 5.5) · /api/version also reports build_time (newest file time) for the Dev Area's last-update title. Prior: 2026-11-22 UTC · Claude (Sonnet 5.5) · live DEV feature switches (feature_flag_overrides): a Release Center dev toggle takes effect on the dev site without a redeploy. Prior: 2026-11-22 UTC · Claude (Sonnet 5.5) · free trial sessions on our key, then the person's own Claude credits; credits_required event + usage trial/needs_credits. Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · individual accounts layer (flag user_accounts): landing/account pages, /api/account/*, Claude callback, per-request billing (_resolve_llm) on every LLM route. Prior 2026-11-19 10:58 UTC · Yochai (PM) with Claude · /api/ecosystem/bootstrap also returns
+# Last updated: 2026-11-24 UTC · Yochai (PM) with Claude · GET /api/ecosystem/directory (flag ecosystem_directory, gzip) + bootstrap `directory`. Prior: 2026-11-22 UTC · Claude (Sonnet 5.5) · /api/version also reports build_time (newest file time) for the Dev Area's last-update title. Prior: 2026-11-22 UTC · Claude (Sonnet 5.5) · live DEV feature switches (feature_flag_overrides): a Release Center dev toggle takes effect on the dev site without a redeploy. Prior: 2026-11-22 UTC · Claude (Sonnet 5.5) · free trial sessions on our key, then the person's own Claude credits; credits_required event + usage trial/needs_credits. Prior: 2026-11-21 UTC · Claude (Sonnet 5.5) · individual accounts layer (flag user_accounts): landing/account pages, /api/account/*, Claude callback, per-request billing (_resolve_llm) on every LLM route. Prior 2026-11-19 10:58 UTC · Yochai (PM) with Claude · /api/ecosystem/bootstrap also returns
 #   `crosslinks` = flag `ecosystem_crosslinks` for this environment.
 # Prev 2026-11-17 20:26 UTC · Codex · Explicit paper access lookup and complete per-source stance accounting.
 #   `ecosystem_module`): the Ecosystem's people + papers LIVE from Neon via ecosystem.live_people(pg_rows)
@@ -1205,10 +1205,16 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_response(204); self.end_headers()
 
     # ─── JSON helper ───
-    def _send_json(self, obj, code=200, headers=None):
+    def _send_json(self, obj, code=200, headers=None, compress=False):
         body = json.dumps(obj, default=str).encode("utf-8")
+        gz = compress and "gzip" in (self.headers.get("Accept-Encoding") or "")   # large payloads only (directory)
+        if gz:
+            body = gzip.compress(body, 6)
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
+        if gz:
+            self.send_header("Content-Encoding", "gzip")
+            self.send_header("Vary", "Accept-Encoding")
         self.send_header("Content-Length", str(len(body)))
         if urlparse(self.path).path.startswith(("/api/research/", "/api/account/", "/api/graph-oracle/")):
             self.send_header("Cache-Control", "no-store")
@@ -2235,7 +2241,17 @@ class Handler(SimpleHTTPRequestHandler):
         try:
             if method == "GET" and path == "/api/ecosystem/bootstrap":
                 # crosslinks = flag `ecosystem_crosslinks` for THIS environment (staging on, production off).
-                return self._send_json({**ecosystem.bootstrap(), "crosslinks": _flag_on("ecosystem_crosslinks")})
+                # directory = flag `ecosystem_directory` (staging on, production off): browse every person.
+                return self._send_json({**ecosystem.bootstrap(), "crosslinks": _flag_on("ecosystem_crosslinks"),
+                                        "directory": _flag_on("ecosystem_directory")})
+            if method == "GET" and path == "/api/ecosystem/directory":
+                # Every person in ecosystem_module.directory_people (SELECT-only, 10-min cache). Flag off -> 404.
+                # Table missing / DB error -> 503 and the page falls back to /api/ecosystem/people.
+                if not _flag_on("ecosystem_directory"):
+                    return self._send_json({"error": "not found"}, 404)
+                if not DATABASE_URL:
+                    return self._send_json({"error": "DATABASE_URL not configured"}, 503)
+                return self._send_json(ecosystem.directory(pg_rows), compress=True)
             if method == "GET" and path == "/api/ecosystem/inbox":
                 import ecosystem_inbox
                 return self._send_json(ecosystem_inbox.current(pg_rows))

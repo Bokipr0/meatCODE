@@ -1,5 +1,11 @@
 <!DOCTYPE html>
-<!-- Last updated: 2026-11-19 11:16 UTC · Yochai (PM) with Claude · Speakers parser fitted to the agent's real entries:
+<!-- Last updated: 2026-11-24 UTC · Yochai (PM) with Claude · Directory (behind flag ecosystem_directory, from
+     /api/ecosystem/bootstrap `directory`; flag off = the page as before). Daniel's ask (23 Nov): browse, not chat. Everyone in
+     ecosystem_module.directory_people (GET /api/ecosystem/directory; falls back to /people). New "Directory" section, the
+     landing when on ("People" becomes "Ask"): search as you type over name / institution / role / areas / topics; filters for
+     country, sector, topic, institution and papers in MeatCODE, with counts that follow the other filters; clicking an
+     institution or topic anywhere filters by it. Profiles add the direct LinkedIn link, websites, other affiliations and areas.
+     Prev 2026-11-19 11:16 UTC · Yochai (PM) with Claude · Speakers parser fitted to the agent's real entries:
      split on ";" outside parentheses only; titles and post-nominals dropped for matching ("Professor", "Dr", ", Ph.D.");
      unmatched entries listed as written.
      Prev 2026-11-19 10:58 UTC · Yochai (PM) with Claude · Cross-links (behind flag ecosystem_crosslinks, from
@@ -282,6 +288,40 @@ svg.map .halo{fill:var(--brand);opacity:.22;pointer-events:none}
 .extl:hover{background:var(--brand);color:var(--brand-ink)}
 .radarline{display:inline-flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;margin-top:26px;font-size:14px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:8px 10px 8px 16px;background:var(--surface)}
 .radarline button{border:0;background:var(--sunk);border-radius:999px;padding:6px 12px;font-size:13.5px;color:var(--ink)}
+/* directory (flag ecosystem_directory) */
+.dir{max-width:1080px;margin:0 auto;padding:26px 32px 120px}
+.dir h1{font-size:40px;font-weight:600;letter-spacing:-.04em;margin:0 0 6px}
+.dir .lead2{color:var(--muted);margin:0 0 18px;max-width:680px}
+.dsearch{position:relative;max-width:760px}
+.dsearch input{width:100%;border:1px solid var(--line);border-radius:999px;background:var(--surface);padding:14px 20px 14px 50px;font-size:17px;box-shadow:var(--shadow);-webkit-appearance:none;appearance:none}
+.dsearch input:focus{outline:none;border-color:color-mix(in srgb,var(--brand) 55%,var(--line))}
+.dsearch svg{position:absolute;left:19px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--muted);pointer-events:none}
+.dfilters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:16px 0 4px}
+.dfilters .rsel{max-width:250px;text-overflow:ellipsis}
+.dfilters .tgl small{color:var(--faint)}
+.dactive{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0 0}
+.dactive .seeall{padding:4px 6px;font-size:13.5px}
+.dcount{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--muted);margin:18px 0 4px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.dcount b{color:var(--ink)}
+.dlist{display:flex;flex-direction:column}
+.drow{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 4px;border-top:1px solid var(--line)}
+.drow:first-child{border-top:0}
+.drow .av{width:44px;height:44px;font-size:15px}
+.drow .av::after{width:10px;height:10px}
+.drow .nm{font-size:16.5px;line-height:1.3}
+.drow .org{font-size:13.5px}
+.dtags{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.dtags button{border:0;background:var(--sunk);border-radius:999px;padding:3px 10px;font-size:12.5px;color:var(--muted)}
+.dtags button:hover{color:var(--ink);background:var(--brand-soft)}
+.dside{text-align:right;font-size:12.5px;color:var(--muted);white-space:nowrap;min-width:64px}
+.dside b{display:block;font-size:16px;color:var(--ink);font-weight:600}
+.linkorg{border:0;background:none;padding:0;color:inherit;font:inherit;text-align:left;text-decoration:underline;text-decoration-color:var(--line-strong);text-underline-offset:3px}
+.linkorg:hover{color:var(--brand)}
+.dchip{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:4px 11px;font-size:13px;color:var(--ink);margin:0 6px 6px 0}
+mark.hl{background:color-mix(in srgb,var(--spark) 28%,transparent);color:inherit;border-radius:3px;padding:0 1px}
+@media (max-width:540px){.top .lw{display:none}.top .topl{gap:12px}}
+@media (max-width:430px){#helpBtn{display:none}}
+@media (max-width:700px){.dir{padding:18px 18px 120px}.dir h1{font-size:32px}.drow{grid-template-columns:40px minmax(0,1fr)}.drow .av{width:40px;height:40px}.dside{display:none}.dfilters .rsel{max-width:100%;flex:1 1 140px}}
 @media (max-width:700px){.nav button{padding:7px 11px}.lp{display:none}.radar{padding:20px 18px 120px}}
 
 @media (max-width:700px){.top{padding:0 18px}.results{padding:8px 18px 200px}.q{font-size:23px}.demo{display:none}.kpis{grid-template-columns:repeat(3,1fr)}}
@@ -294,7 +334,7 @@ svg.map .halo{fill:var(--brand);opacity:.22;pointer-events:none}
     <svg viewBox="0 0 28 28" aria-hidden="true"><polygon points="14,3 23.5,8.5 23.5,19.5 14,25 4.5,19.5 4.5,8.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="14" cy="3.4" r="3.2" fill="var(--brand)"/><circle cx="14" cy="24.6" r="3.2" fill="var(--spark)"/></svg>
     <span class="lw">Meat<span>CODE</span></span><span class="lp">Ecosystem</span>
   </button>
-  <nav class="nav" aria-label="Sections"><button type="button" id="navPeople" aria-current="page">People</button><button type="button" id="navRadar" aria-current="false">Radar<span class="n" id="navRadarN"></span></button></nav></div>
+  <nav class="nav" aria-label="Sections"><button type="button" id="navDir" aria-current="false" hidden>Directory</button><button type="button" id="navPeople" aria-current="page">People</button><button type="button" id="navRadar" aria-current="false">Radar<span class="n" id="navRadarN"></span></button></nav></div>
   <span style="display:flex;gap:10px;align-items:center"><button class="btn" type="button" id="helpBtn" style="min-height:36px">How it works</button><span class="demo" role="note" id="snapNote">People &amp; papers as of 8 Oct 2026</span></span>
 </header>
 
@@ -327,15 +367,19 @@ svg.map .halo{fill:var(--brand);opacity:.22;pointer-events:none}
 async function bootData(){
   const get=u=>fetch(u,{credentials:'same-origin'}).then(r=>r.ok?r.json():Promise.reject(new Error(u+' '+r.status)));
   try{const b=await get('/api/ecosystem/bootstrap');
-    const [d,live,feed]=await Promise.all([get(b.data_url||'/app/modules/ecosystem_data.json'),get('/api/ecosystem/people').catch(()=>null),get('/api/ecosystem/inbox').catch(()=>null)]);
+    /* Flag ecosystem_directory: every person from ecosystem_module.directory_people; any failure -> the live people. */
+    const people=b.directory?get('/api/ecosystem/directory').catch(()=>get('/api/ecosystem/people')):get('/api/ecosystem/people');
+    const [d,live,feed]=await Promise.all([get(b.data_url||'/app/modules/ecosystem_data.json'),people.catch(()=>null),get('/api/ecosystem/inbox').catch(()=>null)]);
     return{b,d,feed,live:(live&&Array.isArray(live.people)&&live.people.length)?live:null};}
   catch(err){document.getElementById('app').innerHTML='<section class="start"><h1>Ecosystem isn\u2019t available right now</h1><p class="lead">Please refresh in a moment. If this keeps happening, the Ecosystem may be switched off on this server.</p></section>';return null;}
 }
 const BOOT=await bootData();if(!BOOT)return;
 /* Flag `ecosystem_crosslinks` (staging on, production off until Yochai switches it on): people ↔ Radar links. */
 const XL=!!(BOOT.b&&BOOT.b.crosslinks);
+/* Flag `ecosystem_directory` (staging on, production off): the Directory section, and everyone in it. */
+const XD=!!(BOOT.live&&BOOT.live.source==='directory');
 const PEOPLE_AS_OF=BOOT.live?BOOT.live.as_of.slice(0,10):BOOT.d.snapshot.people_papers;
-document.getElementById('snapNote').textContent=BOOT.live?'People & papers: live from the MeatCODE database':'People & papers: offline copy of '+new Date(PEOPLE_AS_OF+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+document.getElementById('snapNote').textContent=XD?'Directory: '+BOOT.live.people.length.toLocaleString('en')+' people, updated '+new Date(PEOPLE_AS_OF+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):BOOT.live?'People & papers: live from the MeatCODE database':'People & papers: offline copy of '+new Date(PEOPLE_AS_OF+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
 const CONTACT=BOOT.b.contact_email||'';
 const TAX=BOOT.b.taxonomy, MAP=BOOT.d.map;
 const TOPIC=Object.fromEntries(TAX.map(t=>[t.s,t])), BYNAME=Object.fromEntries(TAX.map(t=>[t.n,t.s]));
@@ -357,7 +401,9 @@ const SECVAR={academic:'--acad',industry:'--ind',ngo:'--ngo',unknown:'--faint'};
 const ISO={'Germany':'DE','China':'CN','France':'FR','United Kingdom':'GB','New Zealand':'NZ','Sweden':'SE','Singapore':'SG','Brazil':'BR','Canada':'CA','United States':'US','Israel':'IL','Netherlands':'NL','Belgium':'BE','Spain':'ES','Switzerland':'CH'};
 const PAPERS=RD.papers.map(p=>({id:p.id,title:p.t,year:p.y,journal:p.j,doi:p.doi,claim:p.c,na:p.na,dbTopics:p.tp,topics:[],authors:[]}));
 const P=Object.fromEntries(PAPERS.map(p=>[p.id,p]));
-const EXPERTS=RD.people.map(r=>({id:r.id,name:r.name,org:r.org||'',sector:r.sector,country:r.country,h:r.h,orcid:r.orcid,oa:r.oa,papers:r.sids.filter(s=>P[s]),links:{},radar:[]}));
+const EXPERTS=RD.people.map(r=>({id:r.id,name:r.name,org:r.org||'',sector:r.sector,country:r.country,h:r.h,orcid:r.orcid,oa:r.oa,papers:r.sids.filter(s=>P[s]),links:{},radar:[],
+  /* directory-only public fields (absent in the live people / offline copy) */
+  role:r.role||undefined,expertise:r.about||undefined,orgs:r.orgs||[],tp:r.tp||[],dm:r.dm||[],li:r.li||null,web:r.web||[],src:r.src||[]}));
 const E=Object.fromEntries(EXPERTS.map(e=>[e.id,e]));
 EXPERTS.forEach(e=>e.papers.forEach(pid=>P[pid].authors.push(e.id)));
 let LINKED=[],MAXH=1;
@@ -386,6 +432,7 @@ function finishPeople(){
   INBOX.news.forEach(n=>authorsOf(n).forEach(a=>{const e=XL?matchPerson(a):byKey[nameKey(a)];if(e&&!e.radar.includes(n.id))e.radar.push(n.id);}));
   EXPERTS.forEach(e=>{const c={};e.papers.forEach(pid=>P[pid].topics.forEach(t=>c[t]=(c[t]||0)+1));
     if(!e.papers.length)paperTopics([e.expertise||'',...e.radar.map(id=>BYID[id]?BYID[id].name:'')].join(' ')).forEach(t=>c[t]=(c[t]||0)+1);
+    (e.tp||[]).forEach(t=>{if(TOPIC[t])c[t]=(c[t]||0)+1;});
     e.topics=Object.entries(c).sort((a,b)=>b[1]-a[1]);e.tc=c;
     e.latest=e.papers.length?Math.max(...e.papers.map(p=>P[p].year)):(e.isNew?2026:null);
     e.linked=e.papers.length>0||!!e.inbox;
@@ -670,7 +717,8 @@ function openProfile(id){const e=E[id];if(!e)return;
   const enc=encodeURIComponent(e.name);
   const prof=[],find=[];
   if(e.links.page)prof.push(['University page',e.links.page]);
-  find.push(['LinkedIn','https://www.linkedin.com/search/results/people/?keywords='+enc]);
+  if(e.li)prof.push(['LinkedIn',e.li]);else find.push(['LinkedIn','https://www.linkedin.com/search/results/people/?keywords='+enc]);
+  (e.web||[]).forEach(u=>{let h=u;try{h=new URL(u).host.replace(/^www\./,'');}catch(_){}prof.push([h,u]);});
   if(e.links.gs)prof.push(['Google Scholar',e.links.gs]);else find.push(['Google Scholar','https://scholar.google.com/citations?view_op=search_authors&mauthors='+enc]);
   find.push(['ResearchGate','https://www.researchgate.net/search/researcher?q='+enc]);
   if(e.orcid)prof.push(['ORCID','https://orcid.org/'+e.orcid]);
@@ -678,13 +726,14 @@ function openProfile(id){const e=E[id];if(!e)return;
   const ext=(l,u)=>`<a class="btn" href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(l)} ↗</a>`;
   const talks=XL?talksOf(e):[];
   const kp=[];if(papers.length)kp.push([papers.length,'papers in MeatCODE']);if(talks.length)kp.push([talks.length,talks.length>1?'talks and courses':'talk or course']);if(e.latest)kp.push([e.latest,'latest work']);if(e.h)kp.push([e.h,'h-index (OpenAlex)']);if(e.radar.length)kp.push([e.radar.length,'new on the Radar']);
-  inner.innerHTML=`<div class="ph">${av(e)}<div><h2>${esc(e.name)}</h2><div class="org">${esc(place(e))}${e.sector!=='unknown'?`<span class="sec" style="--sec:var(${SECVAR[e.sector]})">${SECTORS[e.sector]}</span>`:''}</div>${e.role?`<div class="note" style="margin:4px 0 0">${esc(e.role)}</div>`:''}</div></div>
+  const instBtn=o=>`<button class="linkorg" type="button" data-inst="${esc(o)}" title="Everyone at ${esc(o)}">${esc(o)}</button>`;
+  inner.innerHTML=`<div class="ph">${av(e)}<div><h2>${esc(e.name)}</h2><div class="org">${XD&&e.org?instBtn(e.org)+(e.country?', '+esc(cname(e.country)):''):esc(place(e))}${e.sector!=='unknown'?`<span class="sec" style="--sec:var(${SECVAR[e.sector]})">${SECTORS[e.sector]}</span>`:''}</div>${e.role?`<div class="note" style="margin:4px 0 0">${esc(e.role)}</div>`:''}${XD&&e.orgs&&e.orgs.length?`<div class="note" style="margin:2px 0 0">Also: ${e.orgs.map(instBtn).join('; ')}</div>`:''}</div></div>
    ${kp.length?`<div class="kpis">${kp.slice(0,3).map(([v,l])=>`<div class="kpi"><b>${v}</b><span>${l}</span></div>`).join('')}</div>`:''}
    <div class="blk"><h3>Get in touch</h3><div class="contact"><button class="btn pri" type="button" id="pIntro">Ask GFI for an introduction</button>${followBtn(e.id)}${prof.map(([l,u])=>ext(l,u)).join('')}</div>
      ${find.length?`<p class="prov">Search for them on ${find.map(([l,u])=>`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer" style="color:var(--brand)">${l}</a>`).join(', ')}.</p>`:''}
      <p class="prov"><button type="button" id="pClaim" style="border:0;background:none;padding:0;color:var(--brand);font-size:12.5px">Is this you? Suggest a correction or ask to be removed</button></p>
-     <p class="prov">Public information only: papers in the MeatCODE corpus and open profiles (ORCID, OpenAlex, institution pages). ${BOOT.live?'Live from the MeatCODE database':'Offline copy of '+esc(fmtD(dt(PEOPLE_AS_OF)))}.</p></div>
-   ${e.expertise?`<div class="blk"><h3>Works on</h3><p style="margin:0">${esc(e.expertise)}</p></div>`:''}
+     <p class="prov">${XD?'Public information only: papers in the MeatCODE corpus, open research profiles (OpenAlex, ORCID, Dimensions) and public professional pages. Directory updated '+esc(fmtD(dt(PEOPLE_AS_OF))):'Public information only: papers in the MeatCODE corpus and open profiles (ORCID, OpenAlex, institution pages). '+(BOOT.live?'Live from the MeatCODE database':'Offline copy of '+esc(fmtD(dt(PEOPLE_AS_OF))))}.</p></div>
+   ${e.expertise||(e.dm&&e.dm.length)?`<div class="blk"><h3>Works on</h3>${e.expertise?`<p style="margin:0 0 8px">${esc(e.expertise)}</p>`:''}${(e.dm||[]).filter(d=>d!==e.expertise).map(d=>`<span class="dchip">${esc(d)}</span>`).join('')}</div>`:''}
    ${e.topics.length?`<div class="blk"><h3>Known for</h3><div class="ktags">${e.topics.slice(0,12).map(([s,n])=>`<button type="button" data-topic="${s}">${esc(TOPIC[s].n)}${papers.length?`<small>${n}</small>`:''}</button>`).join('')}</div></div>`:''}
    ${e.co.length?`<div class="blk"><h3>Works with</h3><div class="faces">${e.co.slice(0,8).map(([o])=>`<button class="face" type="button" data-open="${o}">${av(E[o])}<span>${esc(E[o].name)}</span></button>`).join('')}</div><p class="prov">Co-authors on MeatCODE papers.</p></div>`:''}
    ${talks.length?`<div class="blk"><h3>Speaking and teaching</h3>${talks.map(x=>rrow(x.it,x.role)).join('')}<p class="prov">Named on the event's or course's page.</p></div>`:''}
@@ -693,11 +742,12 @@ function openProfile(id){const e=E[id];if(!e)return;
      return `<div class="paper"><button class="t" type="button" aria-expanded="false" data-paper>${esc(p.title)}</button><div class="m">${esc(p.journal||'')}${p.journal?', ':''}${p.year}</div>
      <div hidden><p class="note" style="margin:6px 0">${esc(p.claim||'')}</p><div class="authors">${co.length?'With '+co.map(a=>`<button type="button" data-open="${a}">${esc(E[a].name)}</button>`).join(', ')+(others?` and ${others} other author${others>1?'s':''}`:''):(others?others+' other authors':'')}</div>
      <div class="acts">${p.doi?`<a class="btn" style="display:inline-flex;align-items:center" href="${esc(/^10\./.test(p.doi)?'https://doi.org/'+p.doi:p.doi)}" target="_blank" rel="noopener noreferrer">Open paper ↗</a>`:''}<button class="btn" type="button" data-oracle="${esc('What does the study "'+p.title+'"'+(p.journal?' ('+p.journal+', '+p.year+')':'')+' find, and what does it mean for meat flavor?')}">Ask the Oracle</button></div></div></div>`;}).join('')}
-     <p class="prov">Papers are linked to people by exact author-name match. Abstracts only.</p></div>`:''}`;
+     <p class="prov">${XD?'Papers are linked to people by author name; a name shared by two people in the directory is left unlinked.':'Papers are linked to people by exact author-name match.'} Abstracts only.</p></div>`:''}`;
   sheet.classList.add('open');sheet.setAttribute('aria-hidden','false');scrim.classList.add('on');inner.scrollTop=0;
   inner.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openProfile(b.dataset.open));
   inner.querySelectorAll('[data-paper]').forEach(b=>b.onclick=()=>{const box=b.parentElement.lastElementChild;box.hidden=!box.hidden;b.setAttribute('aria-expanded',String(!box.hidden));});
-  inner.querySelectorAll('[data-topic]').forEach(b=>b.onclick=()=>ask('Who else works on '+TOPIC[b.dataset.topic].n+'?'));
+  inner.querySelectorAll('[data-topic]').forEach(b=>b.onclick=()=>{if(XD){viewDirectory({topic:b.dataset.topic});scrollTo(0,0);}else ask('Who else works on '+TOPIC[b.dataset.topic].n+'?');});
+  inner.querySelectorAll('[data-inst]').forEach(b=>b.onclick=()=>{viewDirectory({inst:b.dataset.inst});scrollTo(0,0);});
   wireItems(inner);
   document.getElementById('pIntro').onclick=()=>intro(id);wireFollow(inner,()=>{if(MODE==='people'&&!turns.length)viewStart();});
   document.getElementById('pClaim').onclick=()=>correction(id);
@@ -716,7 +766,7 @@ function refreshLive(id){const e=E[id];if(!e||typeof e.id!=='number'||LIVE.has(e
 function closeProfile(){sheet.classList.remove('open');sheet.setAttribute('aria-hidden','true');scrim.classList.remove('on');}
 document.getElementById('sheetClose').onclick=closeProfile;scrim.onclick=closeProfile;
 addEventListener('keydown',e=>{if(e.key==='Escape'&&sheet.classList.contains('open')&&!document.body.classList.contains('fbmode'))closeProfile();});
-document.getElementById('home').onclick=()=>{closeProfile();viewStart();scrollTo(0,0);};
+document.getElementById('home').onclick=()=>{closeProfile();if(XD)viewDirectory();else viewStart();scrollTo(0,0);};
 
 const LAST_RUN=BOOT.feed?.checked_at.slice(0,10);
 /* Radar and additional experts are published from the reviewed Google Sheet. */
@@ -848,9 +898,95 @@ function radarBlock(t){const items=t.radar||[];if(!items.length)return '';
   if(!rows)return '';
   return `<div class="radarblk"><h3>On the radar</h3>${rows}<button class="seeall" type="button" data-goradar>Open Radar</button></div>`;}
 
+/* ── Directory (flag ecosystem_directory; Daniel, 23 Nov: browse, don't chat) ──
+   Everyone in ecosystem_module.directory_people. The search runs in the browser as you type, over name, institution,
+   role, areas and topics, with accents ignored; every word must match. Each filter's counts follow the search and the
+   OTHER active filters. Clicking an institution or a topic anywhere (row, profile) filters by it. */
+const DIR={q:'',country:'',sector:'',topic:'',inst:'',papers:false,sort:'relevance',shown:50};
+const DIR_BLANK={country:'',sector:'',topic:'',inst:'',papers:false};
+const fold=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+let REGION_NAMES=null;try{REGION_NAMES=new Intl.DisplayNames(['en'],{type:'region'});}catch(_){}
+const cname=cc=>COUNTRIES[cc]||(REGION_NAMES&&cc?(()=>{try{return REGION_NAMES.of(cc);}catch(_){return cc;}})():cc);
+const instOf=e=>[e.org,...(e.orgs||[])].filter(Boolean);
+function hay(e){if(e._hay==null)e._hay=fold([e.name,...instOf(e),e.role,e.expertise,...(e.dm||[]),...e.topics.map(([s])=>TOPIC[s]?TOPIC[s].n:''),cname(e.country)||''].filter(Boolean).join(' | '));return e._hay;}
+function dirPass(e,skip){
+  if(skip!=='country'&&DIR.country&&e.country!==DIR.country)return false;
+  if(skip!=='sector'&&DIR.sector&&e.sector!==DIR.sector)return false;
+  if(skip!=='topic'&&DIR.topic&&!e.tc[DIR.topic])return false;
+  if(skip!=='inst'&&DIR.inst){const f=fold(DIR.inst);if(!instOf(e).some(o=>fold(o)===f))return false;}
+  if(skip!=='papers'&&DIR.papers&&!e.papers.length)return false;
+  return true;}
+/* Score 0 = no match. A word at the start of a name word scores highest, then anywhere in the name, then the institution. */
+function dirScore(e,toks){if(!toks.length)return 1;const h=hay(e);let s=0,n=null,o=null;
+  for(const t of toks){if(!h.includes(t.t))return 0;n=n||fold(e.name);o=o||fold(instOf(e).join(' '));
+    s+=t.re.test(n)?4:n.includes(t.t)?3:o.includes(t.t)?2:1;}
+  return s;}
+function dirCompute(){
+  const toks=fold(DIR.q).split(/[^a-z0-9]+/).filter(Boolean).map(t=>({t,re:new RegExp('(^|[^a-z0-9])'+t)}));
+  const qm=[];for(const e of EXPERTS){const sc=dirScore(e,toks);if(sc)qm.push({e,sc});}
+  const facet=(skip,keys)=>{const c=new Map();for(const x of qm){if(!dirPass(x.e,skip))continue;for(const k of keys(x.e))if(k)c.set(k,(c.get(k)||0)+1);}return c;};
+  const counts={country:facet('country',e=>[e.country]),sector:facet('sector',e=>[e.sector]),topic:facet('topic',e=>Object.keys(e.tc)),inst:facet('inst',e=>[e.org])};
+  const withPapers=qm.filter(x=>x.e.papers.length&&dirPass(x.e,'papers')).length;
+  const rows=qm.filter(x=>dirPass(x.e));
+  const active=(a,b)=>b.e.papers.length-a.e.papers.length||(b.e.h||0)-(a.e.h||0)||a.e.name.localeCompare(b.e.name);
+  rows.sort(DIR.sort==='name'?(a,b)=>a.e.name.localeCompare(b.e.name):(a,b)=>b.sc-a.sc||active(a,b));
+  return{rows,counts,withPapers,toks:toks.map(t=>t.t)};}
+/* Highlight the search words in a name or institution (accent-insensitive; skipped where folding changes length). */
+function hl(raw,toks){raw=String(raw||'');if(!toks.length)return esc(raw);const low=fold(raw);if(low.length!==raw.length)return esc(raw);
+  const m=new Array(raw.length).fill(false);toks.forEach(t=>{let i=0;while((i=low.indexOf(t,i))>=0){for(let k=i;k<i+t.length;k++)m[k]=true;i+=t.length;}});
+  let out='',on=false;for(let i=0;i<raw.length;i++){if(m[i]!==on){out+=m[i]?'<mark class="hl">':'</mark>';on=m[i];}out+=esc(raw[i]);}return out+(on?'</mark>':'');}
+function drow(e,toks){const sub=[e.role,e.org].filter(Boolean),tps=e.topics.filter(([s])=>TOPIC[s]).slice(0,3);
+  return `<article class="drow">${av(e)}<div style="min-width:0"><button class="nm" type="button" data-dopen="${esc(e.id)}">${hl(e.name,toks)}</button>
+   <div class="org">${sub.map(s=>hl(s,toks)).join(' · ')}${e.country?`${sub.length?', ':''}${esc(cname(e.country))}`:''}${e.sector!=='unknown'?`<span class="sec" style="--sec:var(${SECVAR[e.sector]})">${SECTORS[e.sector]}</span>`:''}</div>
+   ${tps.length?`<div class="dtags">${tps.map(([s])=>`<button type="button" data-dtopic="${s}" title="Everyone on ${esc(TOPIC[s].n)}">${esc(shortTopic(s))}</button>`).join('')}</div>`:''}</div>
+   <div class="dside">${e.papers.length?`<b>${e.papers.length}</b>${e.papers.length>1?'papers':'paper'}`:e.h?`<b>${e.h}</b>h-index`:''}</div></article>`;}
+const dopt=(v,label,n,cur)=>`<option value="${esc(v)}"${v===cur?' selected':''}>${esc(label)}${n!=null?` (${n.toLocaleString('en')})`:''}</option>`;
+const dsel=(id,label,opts)=>`<label class="sr" for="${id}">${label}</label><select class="rsel" id="${id}">${opts}</select>`;
+function renderDir(){const fil=document.getElementById('dfil'),res=document.getElementById('dres');if(!fil||!res)return;
+  const {rows,counts,withPapers,toks}=dirCompute();
+  const byN=m=>[...m.entries()].sort((a,b)=>b[1]-a[1]);
+  const topics=byN(counts.topic).filter(([s])=>TOPIC[s]).slice(0,90);
+  if(DIR.topic&&!topics.some(([s])=>s===DIR.topic))topics.unshift([DIR.topic,0]);
+  const insts=byN(counts.inst).filter(([o,n])=>n>=3).slice(0,150);
+  if(DIR.inst&&!insts.some(([o])=>o===DIR.inst))insts.unshift([DIR.inst,null]);
+  const chips=[];
+  if(DIR.country)chips.push(['country',cname(DIR.country)]);if(DIR.sector)chips.push(['sector',SECTORS[DIR.sector]]);
+  if(DIR.topic)chips.push(['topic',TOPIC[DIR.topic]?TOPIC[DIR.topic].n:DIR.topic]);if(DIR.inst)chips.push(['inst',DIR.inst]);if(DIR.papers)chips.push(['papers','With papers in MeatCODE']);
+  fil.innerHTML=`<div class="dfilters">
+    ${dsel('fCountry','Country',dopt('','All countries',null,DIR.country)+byN(counts.country).map(([c,n])=>dopt(c,cname(c),n,DIR.country)).join(''))}
+    ${dsel('fSector','Sector',dopt('','All sectors',null,DIR.sector)+['academic','industry','ngo'].map(s=>dopt(s,SECTORS[s],counts.sector.get(s)||0,DIR.sector)).join(''))}
+    ${dsel('fTopic','Topic',dopt('','All topics',null,DIR.topic)+topics.map(([s,n])=>dopt(s,TOPIC[s]?TOPIC[s].n:s,n,DIR.topic)).join(''))}
+    ${dsel('fInst','Institution',dopt('','All institutions',null,DIR.inst)+insts.map(([o,n])=>`<option value="${esc(o)}"${o===DIR.inst?' selected':''}>${esc(o.length>60?o.slice(0,58)+'…':o)}${n!=null?` (${n})`:''}</option>`).join(''))}
+    <label class="tgl"><input type="checkbox" id="fPapers"${DIR.papers?' checked':''}> With papers in MeatCODE <small>(${withPapers.toLocaleString('en')})</small></label></div>
+   ${chips.length?`<div class="dactive">${chips.map(([k,l])=>`<span class="tchip">${esc(l)}<button type="button" data-dclear="${k}" aria-label="Remove filter ${esc(l)}">×</button></span>`).join('')}<button class="seeall" type="button" data-dclear="all">Clear all</button></div>`:''}`;
+  const shown=rows.slice(0,DIR.shown);
+  res.innerHTML=`<div class="dcount"><span><b>${rows.length.toLocaleString('en')}</b> ${rows.length===1?'person':'people'}</span>
+     ${dsel('fSort','Sort by',dopt('relevance',DIR.q?'Best match':'Most papers first',null,DIR.sort)+dopt('name','Name A–Z',null,DIR.sort))}</div>
+   <div class="dlist">${shown.map(x=>drow(x.e,toks)).join('')||'<p class="note" style="padding:18px 4px">No one matches. Try fewer words, or clear a filter.</p>'}</div>
+   ${rows.length>shown.length?`<button class="btn" type="button" data-dmore style="margin-top:14px">Show ${Math.min(50,rows.length-shown.length)} more</button>`:''}`;}
+function viewDirectory(pre){MODE='directory';setNav('directory');dock.hidden=true;closeProfile();
+  if(pre)Object.assign(DIR,DIR_BLANK,{q:''},pre);DIR.shown=50;
+  app.innerHTML=`<section class="dir"><h1>Directory</h1>
+   <p class="lead2">${EXPERTS.length.toLocaleString('en')} people in meat-flavor R&amp;D: researchers, companies and NGOs. Type a name, an institution or a topic.</p>
+   <div class="dsearch"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M13 13l5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <label class="sr" for="dq">Search the directory</label><input id="dq" type="search" autocomplete="off" spellcheck="false" placeholder="Search people, institutions or topics" value="${esc(DIR.q)}"></div>
+   <div id="dfil"></div><div id="dres"></div></section>`;
+  const sec=app.querySelector('.dir'),q=document.getElementById('dq');let tm;
+  q.addEventListener('input',()=>{clearTimeout(tm);tm=setTimeout(()=>{DIR.q=q.value;DIR.shown=50;renderDir();},70);});
+  q.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&q.value){q.value='';DIR.q='';DIR.shown=50;renderDir();}});
+  sec.addEventListener('click',ev=>{const t=ev.target.closest('[data-dopen],[data-dtopic],[data-dclear],[data-dmore]');if(!t)return;
+    if(t.dataset.dopen!=null)openProfile(t.dataset.dopen);
+    else if(t.dataset.dtopic){DIR.topic=t.dataset.dtopic;DIR.shown=50;renderDir();}
+    else if(t.dataset.dclear){const k=t.dataset.dclear;if(k==='all')Object.assign(DIR,DIR_BLANK);else DIR[k]=DIR_BLANK[k];DIR.shown=50;renderDir();}
+    else if(t.dataset.dmore!=null){DIR.shown+=50;renderDir();}});
+  sec.addEventListener('change',ev=>{const el=ev.target,k={fCountry:'country',fSector:'sector',fTopic:'topic',fInst:'inst',fSort:'sort'}[el.id];
+    if(k)DIR[k]=el.value;else if(el.id==='fPapers')DIR.papers=el.checked;else return;DIR.shown=50;renderDir();});
+  renderDir();
+  if(innerWidth>700)q.focus({preventScroll:true});}
+
 /* radar page */
 const RADAR={tab:'overview',all:false,filter:''};
-function setNav(m){document.getElementById('navPeople').setAttribute('aria-current',m==='people'?'page':'false');document.getElementById('navRadar').setAttribute('aria-current',m==='radar'?'page':'false');}
+function setNav(m){document.getElementById('navDir').setAttribute('aria-current',m==='directory'?'page':'false');document.getElementById('navPeople').setAttribute('aria-current',m==='people'?'page':'false');document.getElementById('navRadar').setAttribute('aria-current',m==='radar'?'page':'false');}
 function viewRadar(tab){MODE='radar';setNav('radar');dock.hidden=true;closeProfile();if(tab)RADAR.tab=tab;
   const vis=ALL.filter(visible);
   const cnt=a=>vis.filter(i=>i.area===a).length;
@@ -915,12 +1051,14 @@ function forYouScore(it){if(!PREFS.branches.length)return 0;const b=itemBranches
 /* guided first visit */
 let OB=0;
 function openGuide(step){OB=step||0;renderGuide();document.getElementById('guide').hidden=false;document.body.style.overflow='hidden';}
-function closeGuide(){document.getElementById('guide').hidden=true;document.body.style.overflow='';PREFS.seen=true;saveJ(PREFS_KEY,PREFS);viewStart();}
+function closeGuide(){document.getElementById('guide').hidden=true;document.body.style.overflow='';PREFS.seen=true;saveJ(PREFS_KEY,PREFS);if(XD&&MODE!=='people')viewDirectory();else viewStart();}
 function renderGuide(){const g=document.getElementById('guideCard');const dots=[0,1,2,3].map(i=>`<i class="${i===OB?'on':''}"></i>`).join('');
   let body='';
-  if(OB===0)body=`<h2>Welcome to MeatCODE Ecosystem</h2><p>The people, papers, events and courses behind meat-flavor R&D, in one place. It has two parts.</p>
+  if(OB===0)body=XD?`<h2>Welcome to MeatCODE Ecosystem</h2><p>The people, papers, events and courses behind meat-flavor R&D, in one place. It has three parts.</p>
+    <div class="gtiles"><div class="gtile"><b>Directory</b><span>Browse everyone. Search by name, institution or topic.</span></div><div class="gtile"><b>Ask</b><span>Describe your problem and get who to talk to.</span></div><div class="gtile"><b>Radar</b><span>Events, courses, articles and funders, updated weekly.</span></div></div>`
+    :`<h2>Welcome to MeatCODE Ecosystem</h2><p>The people, papers, events and courses behind meat-flavor R&D, in one place. It has two parts.</p>
     <div class="gtiles"><div class="gtile"><b>People</b><span>Ask who to talk to about your problem.</span></div><div class="gtile"><b>Radar</b><span>Events, courses, articles and funders, updated weekly.</span></div></div>`;
-  if(OB===1)body=`<h2>People</h2><p>Describe a problem in your own words, like you would to a colleague. You get the researchers whose papers fit, why they fit, and a way to reach them.</p>
+  if(OB===1)body=`<h2>${XD?'Ask':'People'}</h2><p>Describe a problem in your own words, like you would to a colleague. You get the researchers whose papers fit, why they fit, and a way to reach them.</p>
     <div class="gex">“Our pea-protein patty tastes beany after grilling”</div><p class="note">Follow anyone to see their new papers on your start page.</p>`;
   if(OB===2)body=`<h2>Radar</h2><p>What's happening in the field: conferences with deadlines, courses, new papers and funding calls. It also shows up next to your People results when it's relevant.</p>`;
   if(OB===3)body=`<h2>What do you work on?</h2><p>Pick what you'd like to see more of. You can change this later.</p>
@@ -944,7 +1082,8 @@ wireComposer('formB','qB');
 finishPeople();
 (()=>{const dl=document.createElement('datalist');dl.id='taxlist';dl.innerHTML=TAX.map(t=>`<option value="${esc(t.n)}"></option>`).join('');document.body.appendChild(dl);})();
 document.getElementById('navRadarN').textContent=ALL.filter(visible).length;
-viewStart();
+if(XD){const nd=document.getElementById('navDir');nd.hidden=false;nd.onclick=()=>{viewDirectory();scrollTo(0,0);};document.getElementById('navPeople').textContent='Ask';viewDirectory();}
+else viewStart();
 document.getElementById('helpBtn').onclick=()=>openGuide(0);
 if(!PREFS.seen)openGuide(0);
 MC.init('ecosystem',p=>{if(!p)return;const g=document.getElementById('guide');if(!g.hidden){g.hidden=true;document.body.style.overflow='';}

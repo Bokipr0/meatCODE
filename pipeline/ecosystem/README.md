@@ -1,6 +1,23 @@
-# Publish the reviewed Ecosystem inbox
+# Ecosystem pipelines
 
-_Last updated: 2026-11-19 10:47 UTC · Yochai (PM) with Claude · documented the optional "Speakers / instructors" column_
+_Last updated: 2026-11-24 UTC · Yochai (PM) with Claude · added the Directory build (build_directory.py); prev 2026-11-19 10:47 UTC · documented the optional "Speakers / instructors" column_
+
+## Build the Directory (`build_directory.py`)
+
+Rebuilds `ecosystem_module.directory_people` (migration `db/migrations/0037_ecosystem_directory.sql`), which the Ecosystem Directory reads through `GET /api/ecosystem/directory` (flag `ecosystem_directory`).
+
+```
+python pipeline/ecosystem/build_directory.py --master <Ecosystem Master .xlsm> --source-env .env --target-env .env.dev            # report only
+python pipeline/ecosystem/build_directory.py --master <Ecosystem Master .xlsm> --source-env .env --target-env .env.dev --write    # rebuild
+```
+
+- `--source-env`: where `public.experts` is read (SELECT only). Use production (`.env`): it has every batch.
+- `--target-env`: where the table is written and where paper links are matched (`sources`). Build dev first, check staging, then production.
+- `--master`: Daniel's Ecosystem Master workbook. It is private: keep it out of Git. Only name, affiliation, role, segment, country, technical domains, LinkedIn URL and Contact ID are read. Emails, relationship, outreach and message data and group membership never reach the table.
+- The report prints merges by rule, refused merges, people by source, field coverage and paper links. The rebuild replaces the whole table in one transaction.
+- Re-run after the Master or `experts` change. The page caches for 10 minutes.
+
+# Publish the reviewed Ecosystem inbox
 
 The Codex daily sync reads the private Google Sheet through the connected Google Drive account. Render reads the last published snapshot through the authenticated, feature-gated `GET /api/ecosystem/inbox` endpoint. The spreadsheet ID and content belong in private storage. No Google credentials are needed on Render.
 
