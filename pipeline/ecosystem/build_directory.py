@@ -1,4 +1,6 @@
-# Last updated: 2026-11-24 UTC · Yochai (PM) with Claude · NEW — builds ecosystem_module.directory_people
+# Last updated: 2026-11-24 UTC · Yochai (PM) with Claude · skip first-name-only Master rows (one word; "Ph.D." and
+#   Hebrew names kept); drop "Unknown"
+#   affiliations and internal "... contact" role labels. Prev: NEW — builds ecosystem_module.directory_people
 """Build the Ecosystem Directory: one public row per person.
 
 Inputs
@@ -70,13 +72,16 @@ def bare_name(s):
     """Display name without titles, post-nominals, emoji or "(nickname)"."""
     s = re.sub(r"\(.*?\)", " ", str(s or ""))
     s = re.sub(r",\s*(ph\.?\s*d|m\.?\s*d|msc|mba|dvm|dphil|jr|sr|cfs|rd)\b.*$", "", s, flags=re.I)
+    s = re.sub(r"(\s+(ph\.?\s*d|d\.?\s*phil|m\.?\s*sc|e?mba|dvm)\.?)+\s*$", "", s, flags=re.I)   # "Ann Lee Ph.D. EMBA"
     s = re.sub(r"^\s*((assoc(iate)?|assist(ant)?)\.?\s+)?(prof(essor)?|dr|mr|mrs|ms)\.?\s+", "", s, flags=re.I)
     s = re.sub(r"[^\w\s.'’-]", " ", s)
     return re.sub(r"\s+", " ", s).strip()
 
 
 def name_tokens(s):
-    return [t for t in re.findall(r"[a-z]+", fold(re.sub(r"\(.*?\)", " ", str(s or "")))) if t not in TITLES]
+    s = re.sub(r"\(.*?\)", " ", str(s or ""))
+    s = re.sub(r"\b(ph\.?\s*d|d\.?\s*phil|m\.?\s*sc)\b\.?", " ", s, flags=re.I)       # "Ph.D." is not a surname
+    return [t for t in re.findall(r"[a-z]+", fold(s)) if t not in TITLES]
 
 
 def name_key(s):
@@ -249,6 +254,7 @@ def expert_records(rows):
     return out
 
 
+ORG_PLACEHOLDERS = {"unknown", "n/a", "na", "none", "tbd", "-", "?", "confidential"}
 PERSON_SHEETS_SKIP = {"README", "Dashboard", "Coverage Gaps", "Group Definitions",
                       "Expert DB Source", "Expert DB Integration", "Expert DB Outreach"}
 
@@ -265,20 +271,24 @@ def _sheet_rows(wb, title):
 def master_records(path):
     """Public fields only. Returns (records, mapping Contact ID -> [experts.id])."""
     wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
-    recs = []
+    recs, skipped = [], collections.Counter()
     for title in wb.sheetnames:
         if title in PERSON_SHEETS_SKIP:
             continue
         for i, d in enumerate(_sheet_rows(wb, title)):
+            if len(bare_name(d["Name"]).split()) < 2:                   # a first name only can't be identified
+                skipped["first name only"] += 1
+                continue
             role = str(d.get("Role") or d.get("Role / Career Stage") or "").strip()
-            if re.search(r"meatcode expert database", role, re.I):     # placeholder the Master gave imported rows
-                role = ""
+            aff = str(d.get("Affiliation") or "").strip()
+            if aff.lower() in ORG_PLACEHOLDERS:
+                aff = ""
             domains =[x.strip() for x in re.split(r"[;|]", str(d.get("Technical Domains") or d.get("Primary Domain") or ""))
                        if x.strip()]
             recs.append({
                 "key": "m:%s:%d" % (title, i), "kind": "master", "batch": "master",
                 "cid": str(d.get("Contact ID") or "").strip() or None,
-                "name": bare_name(d["Name"]), "orgs": [str(d["Affiliation"]).strip()] if d.get("Affiliation") else [],
+                "name": bare_name(d["Name"]), "orgs": [aff] if aff else [],
                 "role": role or None, "about": None,
                 "country_raw": d.get("Country/Region"), "segment": str(d.get("Segment") or "").strip().lower() or None,
                 "org_type": None, "h": None, "orcid": None, "oa": None,
@@ -297,6 +307,8 @@ def master_records(path):
                     pass
             if cid and ids:
                 mapping[cid] = ids
+    if skipped:
+        print("Master rows skipped:", dict(skipped))
     return recs, mapping
 
 
@@ -405,6 +417,8 @@ def merge(recs, cid_to_experts):
 
 # ── people ───────────────────────────────────────────────────────────────────────────────────────────────────
 BATCH_RANK = {"dd_list": 0, "master": 1, "openalex": 2, "dimensions": 3}
+# Internal labels, not public titles: the Master's import placeholder and its "... contact" / "Potential ..." tags.
+INTERNAL_ROLE = re.compile(r"meatcode expert database|\bcontact\s*$|^potential\b", re.I)
 
 
 def first(vals):
@@ -452,7 +466,8 @@ def build_person(group):
     keys = sorted({k for r in group for k in (r["nk"],) if k})
     return {
         "id": pid, "name": bare_name(name) or name, "org": org, "orgs": orgs, "sector": sector or "unknown",
-        "role": first(r["role"] for r in by_rank), "about": first(r["about"] for r in by_rank),
+        "role": first(r["role"] for r in by_rank if r["role"] and not INTERNAL_ROLE.search(r["role"])),
+        "about": first(r["about"] for r in by_rank),
         "country": country, "topics": [t for t, _ in topics.most_common()], "domains": domains[:8],
         "h_index": max([r["h"] for r in group if r["h"] is not None], default=None),
         "orcid": first(r["orcid"] for r in group), "openalex_id": first(r["oa"] for r in group),
